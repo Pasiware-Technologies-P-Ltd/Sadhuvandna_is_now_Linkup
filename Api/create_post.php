@@ -37,7 +37,31 @@ $stmt = $con->prepare("INSERT INTO tbl_posts (user_id, status, media, link, crea
 $stmt->bind_param("issss", $user_id, $status, $mediaString, $link, $date);
 
 if ($stmt->execute()) {
-    echo json_encode(["status" => "success", "message" => "Post created", "data" => ["id" => $stmt->insert_id]]);
+    $post_id = $stmt->insert_id;
+    echo json_encode(["status" => "success", "message" => "Post created", "data" => ["id" => $post_id]]);
+    
+    // 🔥 Send Push Notification to Followers
+    try {
+        include_once 'push_helper.php';
+        $author_name = "Someone";
+        $uQ = $con->query("SELECT name FROM tbl_members WHERE id = '$user_id' LIMIT 1");
+        if($uR = $uQ->fetch_assoc()) $author_name = $uR['name'];
+
+        // Get all followers (accepted or pending, matching app's open social style)
+        $fQ = $con->query("SELECT follower_id FROM tbl_followers WHERE following_id = '$user_id'");
+        while($fR = $fQ->fetch_assoc()) {
+            $follower_id = $fR['follower_id'];
+            sendExpoPushNotification(
+                $con, 
+                $follower_id, 
+                "New Post", 
+                "$author_name shared a new post.", 
+                ["type" => "post", "postId" => strval($post_id)]
+            );
+        }
+    } catch (Exception $e) {
+        // Silently fail push to not break post creation
+    }
 } else {
     echo json_encode(["status" => "error", "message" => "Database error"]);
 }

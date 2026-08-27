@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableOpacity, Text, StatusBar } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 interface WebCallModalProps {

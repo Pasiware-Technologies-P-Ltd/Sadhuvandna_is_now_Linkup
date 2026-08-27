@@ -1,77 +1,77 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 include 'headers.php';
 include 'connection.php';
 
-// Handle POST Actions (Like / Comment)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    $user_id = $_POST['user_id'] ?? 0;
-    $post_id = $_POST['id'] ?? 0; // feedService sends 'id'
-
-    if (!$user_id || !$post_id) {
-        echo json_encode(["status" => "error", "message" => "Invalid parameters"]);
-        exit;
-    }
-
-    if ($action === 'like') {
-        $check = $con->query("SELECT id FROM tbl_likes WHERE post_id='$post_id' AND user_id='$user_id'");
-        if ($check->num_rows == 0) {
-            $con->query("INSERT INTO tbl_likes (post_id, user_id, date) VALUES ('$post_id', '$user_id', NOW())");
-        } else {
-            $con->query("DELETE FROM tbl_likes WHERE post_id='$post_id' AND user_id='$user_id'");
-        }
-        echo json_encode(["status" => "success", "message" => "Like toggled"]);
-        exit;
-    }
-
-    if ($action === 'comment') {
-        $comment = trim($_POST['comment'] ?? ''); // feedService doesn't send comment yet in likePost, but if needed
-        // Note: feedService.ts doesn't seem to have commentPost yet?
-        // Wait, feedService doesn't have comment logic shown in Step 953.
-        // But app might use it elsewhere?
-        // I'll add it just in case.
-        if ($comment) {
-            $stmt = $con->prepare("INSERT INTO tbl_comments (post_id, user_id, comment, date) VALUES (?, ?, ?, NOW())");
-            $stmt->bind_param("iis", $post_id, $user_id, $comment);
-            $stmt->execute();
-            echo json_encode(["status" => "success", "message" => "Comment added"]);
-        } else {
-            echo json_encode(["status" => "error", "message" => "Comment empty"]);
-        }
-        exit;
-    }
+if (!$con) {
+    echo json_encode(["status" => "error", "message" => "Database connection failed"]);
+    exit;
 }
 
-$viewer_id = $_GET['user_id'] ?? 0; // Viewer (for liked status)
-$filter_user_id = $_GET['filter_user_id'] ?? 0; // Target Profile
+// Session / Auth Logic
+session_start();
+header('Content-Type: application/json');
+date_default_timezone_set("Asia/Kolkata");
 
-$where = " WHERE 1 ";
-if ($filter_user_id) {
-    $where .= " AND p.user_id = '$filter_user_id' ";
+// 1. Get User ID from Request or Session
+$user_id = 0;
+if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
+    $user_id = intval($_REQUEST['user_id']);
+}
+else if (isset($_SESSION['sadhu_user_id'])) {
+    $user_email = $_SESSION['sadhu_user_id'];
+    $user = $con->query("SELECT id FROM tbl_members WHERE email='$user_email'")->fetch_assoc();
+    if ($user)
+        $user_id = $user['id'];
 }
 
-$query = "
-    SELECT p.*, m.name, m.profile_photo
-    FROM tbl_posts p
-    JOIN tbl_members m ON p.user_id = m.id
-    $where
-    ORDER BY p.created_at DESC
-";
+// 2. Handle Actions
+$action = $_REQUEST['action'] ?? '';
 
-$res = $con->query($query);
-$posts = [];
-
-while ($p = $res->fetch_assoc()) {
-    $pid = $p['id'];
-
-    // Likes
-    $likes = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$pid")->fetch_row()[0];
-    $user_liked = false;
-    if ($viewer_id) {
-        $user_liked = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$viewer_id")->num_rows > 0;
+// ACTION: LIKE
+if ($action === 'like') {
+    if ($user_id <= 0) {
+        echo json_encode(["status" => "error", "message" => "Auth failed"]);
+        exit;
     }
+    $pid = intval($_POST['id']);
+    $check = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
 
-    // Comments
+    if ($check->num_rows == 0) {
+        $stmt = $con->prepare("INSERT INTO tbl_likes (post_id, user_id, date) VALUES (?, ?, NOW())");
+        $stmt->bind_param("ii", $pid, $user_id);
+        $stmt->execute();
+    }
+    else {
+        $con->query("DELETE FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
+    }
+    echo json_encode(["ok" => true]);
+    exit;
+}
+
+// ACTION: COMMENT
+if ($action === 'comment') {
+    if ($user_id <= 0) {
+        echo json_encode(["status" => "error", "message" => "Auth failed"]);
+        exit;
+    }
+    $pid = intval($_POST['id']);
+    $comment = trim($_POST['comment']);
+    if ($comment != "") {
+        $stmt = $con->prepare("INSERT INTO tbl_comments (post_id, user_id, comment, date) VALUES (?, ?, ?, NOW())");
+        $stmt->bind_param("iis", $pid, $user_id, $comment);
+        $stmt->execute();
+    }
+    echo json_encode(["ok" => true]);
+    exit;
+}
+
+// ACTION: FETCH COMMENTS
+if ($action === 'fetch_comments') {
+    $pid = intval($_REQUEST['id']);
     $comments = [];
     $cres = $con->query("
         SELECT c.comment, c.date, m.name, m.profile_photo
@@ -82,11 +82,86 @@ while ($p = $res->fetch_assoc()) {
     ");
     while ($c = $cres->fetch_assoc()) {
         $comments[] = [
-            'name' => $c['name'],
-            'profile_photo' => $c['profile_photo'],
-            'comment' => $c['comment'],
+            'name' => htmlspecialchars($c['name']),
+            'profile_photo' => htmlspecialchars($c['profile_photo']),
+            'comment' => htmlspecialchars($c['comment']),
             'date' => date("d M Y, h:i A", strtotime($c['date']))
         ];
+    }
+    echo json_encode($comments);
+    exit;
+}
+
+// ACTION: DEFAULT (FETCH POSTS)
+// Use $user_id already resolved above
+
+
+// 3. Filter & Pagination Logic
+$filter_user_id = 0;
+if (isset($_REQUEST['filter_user_id']) && intval($_REQUEST['filter_user_id']) > 0) {
+    $filter_user_id = intval($_REQUEST['filter_user_id']);
+}
+
+// PAGINATION PARAMETERS
+$limit = intval($_REQUEST['limit'] ?? 20);
+$offset = intval($_REQUEST['offset'] ?? 0);
+
+$whereClause = "";
+if ($filter_user_id > 0) {
+    $whereClause = "WHERE p.user_id = '$filter_user_id'";
+}
+
+if (isset($_REQUEST['post_id']) && intval($_REQUEST['post_id']) > 0) {
+    $pid_filter = intval($_REQUEST['post_id']);
+    $whereClause = "WHERE p.id = '$pid_filter'";
+}
+
+// Fetch posts matching website logic (tbl_posts p JOIN tbl_members m)
+// Exclude blocked users
+$whereBlocked = "m.status != 'Blocked'";
+$finalWhere = $whereClause ? "$whereClause AND $whereBlocked" : "WHERE $whereBlocked";
+
+$query = "SELECT p.*, m.name, m.profile_photo 
+          FROM tbl_posts p
+          JOIN tbl_members m ON p.user_id = m.id 
+          $finalWhere
+          ORDER BY p.id DESC
+          LIMIT $limit OFFSET $offset";
+
+$result = $con->query($query);
+$posts = [];
+
+while ($p = $result->fetch_assoc()) {
+    $pid = intval($p['id']);
+
+    // Likes count
+    $likes_res = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$pid");
+    $likes = $likes_res ? $likes_res->fetch_row()[0] : 0;
+
+    // User liked?
+    $user_liked = false;
+    if ($user_id > 0) {
+        $ul_res = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
+        if ($ul_res && $ul_res->num_rows > 0)
+            $user_liked = true;
+    }
+
+    // Comments
+    $comments = [];
+    $cres = $con->query("SELECT c.comment, c.date, m.name, m.profile_photo 
+                         FROM tbl_comments c 
+                         JOIN tbl_members m ON c.user_id=m.id 
+                         WHERE c.post_id=$pid 
+                         ORDER BY c.date DESC");
+    if ($cres) {
+        while ($c = $cres->fetch_assoc()) {
+            $comments[] = [
+                'name' => $c['name'],
+                'profile_photo' => $c['profile_photo'],
+                'comment' => $c['comment'],
+                'date' => $c['date']
+            ];
+        }
     }
 
     // Media
@@ -94,19 +169,23 @@ while ($p = $res->fetch_assoc()) {
     if (!empty($p['media'])) {
         $media = array_values(array_filter(explode(',', $p['media'])));
     }
+    // Fallback for legacy 'image' column
+    if (empty($media) && !empty($p['image'])) {
+        $media[] = $p['image'];
+    }
 
     $posts[] = [
         'id' => $pid,
         'user_id' => $p['user_id'],
-        'name' => $p['name'],
+        'name' => $p['name'] ?? 'Unknown User',
         'profile_photo' => $p['profile_photo'],
-        'status' => $p['status'],
-        'link' => $p['link'],
+        'description' => $p['status'] ?? $p['description'] ?? '', // Map status to description for app compatibility
+        'link' => $p['link'] ?? '',
         'likes' => $likes,
         'user_liked' => $user_liked,
         'comments' => $comments,
-        'media' => $media,
-        'created_at' => date("d M Y, h:i A", strtotime($p['created_at']))
+        'media' => $media, // Array of strings
+        'date' => $p['created_at'] ?? $p['date']
     ];
 }
 

@@ -16,7 +16,7 @@ if(isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0){
 $action = $_REQUEST['action'] ?? '';
 
 // Only block for write actions if no user
-if(($action === 'like' || $action === 'comment') && $user_id <= 0){
+if(($action === 'like' || $action === 'comment' || $action === 'report') && $user_id <= 0){
     echo json_encode(["status" => "error", "message" => "Auth failed"]); exit; 
 }
 
@@ -48,6 +48,21 @@ if($action === 'comment'){
   if($comment != ""){
     $stmt = $con->prepare("INSERT INTO tbl_comments (post_id, user_id, comment, date) VALUES (?, ?, ?, NOW())");
     $stmt->bind_param("iis", $pid, $user_id, $comment);
+    $stmt->execute();
+  }
+  echo json_encode(["ok" => true]);
+  exit;
+}
+
+/* ============================
+   📢 REPORT POST
+============================ */
+if($action === 'report'){
+  $pid = intval($_POST['id'] ?? 0);
+  $reason = trim($_POST['reason'] ?? '');
+  if($pid > 0 && $reason != ""){
+    $stmt = $con->prepare("INSERT INTO tbl_reports (post_id, user_id, reason, date) VALUES (?, ?, ?, NOW())");
+    $stmt->bind_param("iis", $pid, $user_id, $reason);
     $stmt->execute();
   }
   echo json_encode(["ok" => true]);

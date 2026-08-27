@@ -19,3 +19,12 @@ yarn-error.*
 *.pem
 .env*.local
 *.tsbuildinfo
+jdk17/
+jdk17.zip
+android_backup/
+php/
+uploads/
+*.log
+*.html
+*.txt
+*.ps1

@@ -1,15 +1,15 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# ========== DEPENDENCIES ==========
 node_modules/
 
-# Expo
+# ========== EXPO ==========
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# ========== NATIVE / SIGNING (SENSITIVE) ==========
 .kotlin/
 *.orig.*
 *.jks
@@ -17,25 +17,75 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+*.pem
+*.keystore
+key_info.txt
+signing_report.txt
+signing_report_v2.txt
+upload_cert.pem
+upload_cert_release.pem
 
-# Metro
+# ========== ENVIRONMENT / SECRETS (SENSITIVE) ==========
+.env
+.env.local
+.env*.local
+.env.development
+.env.production
+
+# ========== FIREBASE (SENSITIVE) ==========
+google-services.json
+android/app/google-services.json
+GoogleService-Info.plist
+
+# ========== ANDROID BUILD ==========
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+
+# ========== METRO ==========
 .metro-health-check*
 
-# debug
+# ========== DEBUG / LOG FILES ==========
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+build_*.log
+last_error*.log
+gradle-error*.log
+hs_err_pid*.log
+replay_pid*.log
 
-# macOS
+# ========== LARGE / UNNECESSARY FILES ==========
+jdk17/
+jdk17.zip
+logo_ascii.txt
+logo_b64.txt
+
+# ========== BACKUP / TEMP ==========
+android_backup/
+*.bak
+*.bak.*
+*.tmp
+*.temp
+
+# ========== SCRATCH / TEST FILES ==========
+scratch_*.js
+test_msg91.php
+yt_debug.html
+aastha.html
+aastha_bhajan.html
+
+# ========== VSCODE ==========
+.vscode/
+
+# ========== MACOS ==========
 .DS_Store
-*.pem
 
-# local env files
-.env*.local
-
-# typescript
+# ========== TYPESCRIPT ==========
 *.tsbuildinfo
 
-# generated native folders
+# ========== GENERATED NATIVE ==========
 /ios
 

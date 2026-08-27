@@ -2,11 +2,15 @@
 include 'headers.php';
 include 'connection.php';
 
-$post_id = $_POST['post_id'] ?? '';
-$user_id = $_POST['user_id'] ?? '';
+// Handle JSON Input from React Native App
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+
+$post_id = $data['post_id'] ?? $_POST['post_id'] ?? '';
+$user_id = $data['user_id'] ?? $_POST['user_id'] ?? '';
 
 if (!$post_id || !$user_id) {
-    echo json_encode(["status" => "error", "message" => "Invalid parameters"]);
+    echo json_encode(["status" => "error", "message" => "Invalid parameters: post_id and user_id required"]);
     exit;
 }
 
