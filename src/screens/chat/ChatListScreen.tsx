@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL_COMMUNITY = `${BASE_URL_ROOT}/uploads/photo/`;
 
 // Enable LayoutAnimation for Android

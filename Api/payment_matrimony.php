@@ -2,7 +2,7 @@
 session_start();
 include("connection.php");
 require('../vendor/autoload.php');
-include("config.php");
+include("../config.php");
 use Razorpay\Api\Api;
 
 $user_id = intval($_GET['user_id'] ?? 0);
@@ -29,14 +29,9 @@ if (empty($email)) {
     $email = "user_" . $user_id . "@sadhuvandna.app";
 }
 
-// Fetch matrimony fee from global settings
-$productprice = 500; // fallback default
-$settings_q = $con->query("SELECT `value` FROM tbl_settings WHERE `key` = 'matrimony_profile_fee' LIMIT 1");
-if ($settings_q && $settings_q->num_rows > 0) {
-    $settings_row = $settings_q->fetch_assoc();
-    $productprice = intval($settings_row['value']);
-} else if (isset($res['matrimony_profile_fee']) && intval($res['matrimony_profile_fee']) > 0) {
-    $productprice = intval($res['matrimony_profile_fee']);
+$productprice = intval($res['matrimony_profile_fee'] ?? 500);
+if ($productprice <= 0) {
+    $productprice = 500; // fallback default
 }
 
 $amounta = $productprice * 100; // in paise

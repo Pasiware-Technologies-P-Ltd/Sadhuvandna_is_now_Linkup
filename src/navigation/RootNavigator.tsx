@@ -46,6 +46,8 @@ import SearchScreen from '../screens/feed/SearchScreen';
 import SmartCardScreen from '../screens/profile/SmartCardScreen';
 import adService from '../services/adService';
 import SupportChatScreen from '../screens/support/SupportChatScreen';
+import CreateBusinessPageScreen from '../screens/profile/CreateBusinessPageScreen';
+import EditBusinessPageScreen from '../screens/profile/EditBusinessPageScreen';
 
 import { AuthStackParamList, RootStackParamList, MainTabParamList } from './types';
 
@@ -58,6 +60,28 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 /* ------------------ TAB NAVIGATOR ------------------ */
 function MainTabNavigator() {
   const { t } = useLanguage();
+  const [isBusiness, setIsBusiness] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const uStr = await import('@react-native-async-storage/async-storage').then(m => m.default.getItem('user'));
+      if (uStr) {
+        const u = JSON.parse(uStr);
+        setIsBusiness(u.is_business == 1);
+      }
+    };
+    checkUser();
+    
+    const { DeviceEventEmitter } = require('react-native');
+    const subscription = DeviceEventEmitter.addListener('profileSwitched', () => {
+      checkUser();
+    });
+    
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -86,12 +110,15 @@ function MainTabNavigator() {
         options={{ tabBarLabel: t('news') }}
         listeners={{ focus: () => adService.showAd() }}
       />
-      <Tab.Screen
-        name="Marriage"
-        component={MarriageScreen}
-        options={{ tabBarLabel: t('matrimony') }}
-        listeners={{ focus: () => adService.showAd() }}
-      />
+      {/* Marriage tab is hidden for Business profiles */}
+      {!isBusiness && (
+        <Tab.Screen
+          name="Marriage"
+          component={MarriageScreen}
+          options={{ tabBarLabel: t('matrimony') }}
+          listeners={{ focus: () => adService.showAd() }}
+        />
+      )}
       <Tab.Screen
         name="Chats"
         component={ChatListScreen}
@@ -167,6 +194,8 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="ReelsViewer" component={ReelsScreen} />
       <Stack.Screen name="SmartCard" component={SmartCardScreen} />
       <Stack.Screen name="SupportChat" component={SupportChatScreen} />
+      <Stack.Screen name="CreateBusinessPage" component={CreateBusinessPageScreen} />
+      <Stack.Screen name="EditBusinessPage" component={EditBusinessPageScreen} />
     </Stack.Navigator>
   );
 };

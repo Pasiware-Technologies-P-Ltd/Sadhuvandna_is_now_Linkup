@@ -21,7 +21,7 @@ if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         // Ensure full URL for the audio file - pointing to the same root uploads folder
         $row['file_url'] = "https://www.sadhuvandna.co.in/uploads/music/" . $row['file_name'];
-        $row['thumbnail'] = "https://www.sadhuvandna.co.in/Sadhuvandna-Api/images/logo.png";
+        $row['thumbnail'] = "https://www.sadhuvandna.co.in/images/music_default.png";
         $music_list[] = $row;
     }
     echo json_encode(array("status" => "success", "data" => $music_list));

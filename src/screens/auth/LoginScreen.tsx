@@ -13,25 +13,25 @@ const ALLOWED_CASTES = [
     "Sarpadadiya", "Ramdevputra", "Ravibhan", "Baroliya"
 ];
 
-const MSG91_WIDGET_ID  = '36636b6f736b393436333238';
+const MSG91_WIDGET_ID = '36636b6f736b393436333238';
 const MSG91_TOKEN_AUTH = '495236TgKMhDKHXV6996e94bP1';
 
 export default function LoginScreen({ navigation }: any) {
     const { t } = useLanguage();
 
     // Form states
-    const [firstName, setFirstName]   = useState('');
+    const [firstName, setFirstName] = useState('');
     const [middleName, setMiddleName] = useState('');
-    const [lastName, setLastName]     = useState('');
-    const [caste, setCaste]           = useState('Kapdi');
-    const [mobile, setMobile]         = useState('');
+    const [lastName, setLastName] = useState('');
+    const [caste, setCaste] = useState('Kapdi');
+    const [mobile, setMobile] = useState('');
 
     // OTP states
     const [showOtpScreen, setShowOtpScreen] = useState(false);
-    const [otp, setOtp]                   = useState('');
-    const [reqId, setReqId]               = useState('');
-    const [loading, setLoading]           = useState(false);
-    const [verifying, setVerifying]       = useState(false);
+    const [otp, setOtp] = useState('');
+    const [reqId, setReqId] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [verifying, setVerifying] = useState(false);
 
     // Initialize MSG91 SDK
     useEffect(() => {
@@ -66,7 +66,14 @@ export default function LoginScreen({ navigation }: any) {
 
     const handleGetLoginCode = async () => {
         if (!validateForm()) return;
-        
+
+        // Bypass for test account
+        if (mobile === '0123456789') {
+            setReqId('bypass_req_id');
+            setShowOtpScreen(true);
+            return;
+        }
+
         setLoading(true);
         try {
             // Identifier must be country code + number according to docs: '91758XXXXXXX'
@@ -74,7 +81,7 @@ export default function LoginScreen({ navigation }: any) {
                 identifier: '91' + mobile
             };
             const response = await OTPWidget.sendOTP(data);
-            
+
             // Expected response contains reqId if successful
             if (response && response.type === 'success' && response.message) {
                 setReqId(response.message); // message contains the reqId in MSG91 V5
@@ -99,15 +106,33 @@ export default function LoginScreen({ navigation }: any) {
         console.log('Starting OTP Verification:', codeToVerify);
         setVerifying(true);
         try {
-            const body = {
-                reqId: reqId,
-                otp: codeToVerify
-            };
-            console.log('Calling OTPWidget.verifyOTP...');
-            const response = await OTPWidget.verifyOTP(body);
-            console.log('OTPWidget.verifyOTP response:', response);
+            let isVerified = false;
 
-            if (response && response.type === 'success') {
+            if (mobile === '0123456789' && codeToVerify === '1234') {
+                isVerified = true;
+            } else if (mobile === '0123456789' && codeToVerify !== '1234') {
+                Alert.alert('Verification Failed', 'Invalid OTP for test account');
+                setVerifying(false);
+                return;
+            } else {
+                const body = {
+                    reqId: reqId,
+                    otp: codeToVerify
+                };
+                console.log('Calling OTPWidget.verifyOTP...');
+                const response = await OTPWidget.verifyOTP(body);
+                console.log('OTPWidget.verifyOTP response:', response);
+
+                if (response && response.type === 'success') {
+                    isVerified = true;
+                } else {
+                    Alert.alert('Verification Failed', response?.message || 'Invalid OTP');
+                    setVerifying(false);
+                    return;
+                }
+            }
+
+            if (isVerified) {
                 const fullName = `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`;
 
                 const payload = {
@@ -120,7 +145,7 @@ export default function LoginScreen({ navigation }: any) {
 
                 console.log('Calling backend verify API at:', api.defaults.baseURL + '/api_login_verify_otp.php');
                 const backendResponse = await api.post('/api_login_verify_otp.php', payload);
-                
+
                 const data = backendResponse.data;
                 console.log('Backend response data:', data);
 
@@ -131,13 +156,11 @@ export default function LoginScreen({ navigation }: any) {
                 } else {
                     Alert.alert('Login Failed', data.message || data.detail || 'Invalid response from server');
                 }
-            } else {
-                Alert.alert('Verification Failed', response?.message || 'Invalid OTP');
             }
         } catch (error: any) {
             console.error('OTP Verification Error:', error);
             let errorMsg = 'Verification request failed.';
-            
+
             if (error.isAxiosError) {
                 if (error.code === 'ECONNABORTED') {
                     errorMsg = 'Server connection timed out (30s). Please check your internet or try again later.';
@@ -149,7 +172,7 @@ export default function LoginScreen({ navigation }: any) {
             } else {
                 errorMsg = error?.message || errorMsg;
             }
-            
+
             Alert.alert('Error', errorMsg);
         } finally {
             console.log('Setting verifying to false');
@@ -292,11 +315,11 @@ export default function LoginScreen({ navigation }: any) {
                                 )}
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="mt-6 items-center flex-row justify-center py-2"
                                 onPress={() => setShowOtpScreen(false)}
                             >
-                                <Ionicons name="arrow-back" size={16} color="#64748b" style={{marginRight: 6}}/>
+                                <Ionicons name="arrow-back" size={16} color="#64748b" style={{ marginRight: 6 }} />
                                 <Text className="text-slate-500 font-medium">Change Mobile Number</Text>
                             </TouchableOpacity>
                         </View>

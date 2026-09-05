@@ -6,14 +6,9 @@ $check_col = $con->query("SHOW COLUMNS FROM tbl_stories LIKE 'music_id'");
 if ($check_col->num_rows == 0) {
     $con->query("ALTER TABLE tbl_stories ADD COLUMN music_id INT DEFAULT NULL");
 }
-$check_dur = $con->query("SHOW COLUMNS FROM tbl_stories LIKE 'duration'");
-if ($check_dur->num_rows == 0) {
-    $con->query("ALTER TABLE tbl_stories ADD COLUMN duration INT DEFAULT 10");
-}
 
 $user_id = $_POST['user_id'] ?? 0;
 $file = $_FILES['story'] ?? null;
-$duration = intval($_POST['duration'] ?? 10);
 
 if (!$user_id) {
     echo json_encode(["status" => "error", "message" => "User ID required"]);
@@ -54,15 +49,12 @@ if (move_uploaded_file($file['tmp_name'], $targetFile)) {
     $date = date("Y-m-d H:i:s");
 
     $music_id = $_POST['music_id'] ?? null;
-    error_log("story_upload.php: user_id=$user_id, music_id=$music_id, duration=$duration");
-    $stmt = $con->prepare("INSERT INTO tbl_stories (user_id, media, type, date, music_id, duration) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssii", $user_id, $dbPath, $type, $date, $music_id, $duration);
+    $stmt = $con->prepare("INSERT INTO tbl_stories (user_id, media, type, date, music_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("isssi", $user_id, $dbPath, $type, $date, $music_id);
     
     if ($stmt->execute()) {
-        error_log("story_upload.php: Success for user_id $user_id");
         echo json_encode(["status" => "success", "message" => "Story uploaded successfully"]);
     } else {
-        error_log("story_upload.php: SQL Error: " . $stmt->error);
         echo json_encode(["status" => "error", "message" => "Database error"]);
     }
 } else {

@@ -5,7 +5,7 @@ import api, { API_BASE_URL } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const TEMPLE_IMAGE_URL = `${BASE_URL_ROOT}/uploads/temple/`;
 
 const TempleScreen = ({ navigation }: any) => {

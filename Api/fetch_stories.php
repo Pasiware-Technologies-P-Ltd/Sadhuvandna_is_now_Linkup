@@ -21,7 +21,7 @@ $response = [];
 $my_stories = [];
 if ($user_id) {
     $q = $con->query("
-        SELECT s.id, s.media, s.type, s.date, s.duration,
+        SELECT s.id, s.media, s.type, s.date, 
                (SELECT COUNT(*) FROM tbl_story_views v WHERE v.story_id = s.id) as views,
                m.title AS music_title, m.artist AS music_artist, m.file_name AS music_file
         FROM tbl_stories s 
@@ -29,10 +29,8 @@ if ($user_id) {
         WHERE s.user_id='$user_id' AND s.date > (NOW() - INTERVAL 1 DAY) 
         ORDER BY s.date ASC
     ");
-    error_log("fetch_stories.php: Found " . $q->num_rows . " my stories for user $user_id");
     while ($r = $q->fetch_assoc()) {
         $r['music_url'] = $r['music_file'] ? $music_base_url . $r['music_file'] : null;
-        if ($r['music_url']) error_log("fetch_stories.php: Story " . $r['id'] . " has music: " . $r['music_title']);
         $my_stories[] = $r;
     }
 }
@@ -60,7 +58,7 @@ if ($res) {
         // Fetch stories for this user
         $uid = $row['user_id'];
         $s_q = $con->query("
-            SELECT s.id, s.media, s.type, s.date, s.duration,
+            SELECT s.id, s.media, s.type, s.date, 
                    (SELECT COUNT(*) FROM tbl_story_views v WHERE v.story_id = s.id AND v.viewer_id = '$user_id') as seen,
                    mu.title AS music_title, mu.artist AS music_artist, mu.file_name AS music_file
             FROM tbl_stories s 

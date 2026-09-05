@@ -2,10 +2,11 @@ import axios from 'axios';
 
 // Production URL
 const PROD_URL = 'https://www.sadhuvandna.co.in/Api/';
-const LOCAL_URL = 'http://10.0.2.2/bangosambadApp/Api/';
+const LOCAL_URL = 'http://localhost:8080/bangosambadApp/Api/';
 
 // Toggle between Production and Local here
-export const API_BASE_URL = PROD_URL; 
+export const API_BASE_URL = LOCAL_URL;
+export const UPLOAD_BASE_URL = PROD_URL; // Direct uploads to server
 export const WEBSITE_URL = 'https://www.sadhuvandna.co.in';
 
 export const getFullPaymentUrl = (paymentUrl: string): string => {

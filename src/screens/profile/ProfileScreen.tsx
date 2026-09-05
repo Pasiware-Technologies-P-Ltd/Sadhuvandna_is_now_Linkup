@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+import ProfileSwitcherModal from '../../components/ProfileSwitcherModal';
+
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const ProfileScreen = ({ navigation }: any) => {
     const [user, setUser] = useState<any>(null);
     const [marriageProfile, setMarriageProfile] = useState<any>(null);
     const [followStats, setFollowStats] = useState<any>({ followers: 0, following: 0, posts: 0 });
+    const [isSwitcherVisible, setSwitcherVisible] = useState(false);
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -34,12 +36,20 @@ const ProfileScreen = ({ navigation }: any) => {
             try {
                 const res = await api.get(`/get_user_details.php?user_id=${userData.id}`);
                 if (res.data.status === 'success') {
-                    setUser(res.data.data);
+                    // merge so we keep is_business etc if it wasn't returned in get_user_details
+                    const freshData = { ...userData, ...res.data.data };
+                    setUser(freshData);
+                    await AsyncStorage.setItem('user', JSON.stringify(freshData));
                 }
             } catch (e) {
                 console.log("Failed to fetch fresh user details", e);
             }
         }
+    };
+
+    const handleProfileSwitched = () => {
+        loadUser();
+        // Maybe also reset nav stack or refresh home feed
     };
 
     const fetchFollowStats = async (userId: string) => {
@@ -160,31 +170,68 @@ const ProfileScreen = ({ navigation }: any) => {
                     </View>
 
                     {/* User Profile Details */}
-                    <View style={{ marginTop: 12 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>{user.name}</Text>
-                        {user.city && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                <Ionicons name="location-outline" size={14} color="#6b7280" />
-                                <Text style={{ fontSize: 12, color: '#6b7280', marginLeft: 4 }}>{user.city}</Text>
+                    <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 22, fontWeight: '900', color: '#111827' }}>
+                                {user.name} {user.is_business == 1 && <Ionicons name="checkmark-circle" size={18} color="#0064e0" />}
+                            </Text>
+                            
+                            {/* Detailed Info List */}
+                            <View style={{ marginTop: 8, gap: 6 }}>
+                                {user.is_business == 1 ? (
+                                    <>
+                                        {user.category && (
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <Ionicons name="briefcase-outline" size={14} color="#059669" />
+                                                <Text style={{ fontSize: 13, color: '#059669', fontWeight: 'bold', marginLeft: 6 }}>{user.category}</Text>
+                                            </View>
+                                        )}
+                                        {user.city && (
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <Ionicons name="location-outline" size={14} color="#6b7280" />
+                                                <Text style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>{user.city}</Text>
+                                            </View>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {user.cast && (
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <Ionicons name="people-outline" size={14} color="#ea580c" />
+                                                <Text style={{ fontSize: 13, color: '#ea580c', fontWeight: 'bold', marginLeft: 6 }}>Caste: {user.cast}</Text>
+                                            </View>
+                                        )}
+                                        {user.city && (
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <Ionicons name="location-outline" size={14} color="#6b7280" />
+                                                <Text style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>{user.city}</Text>
+                                            </View>
+                                        )}
+                                    </>
+                                )}
                             </View>
-                        )}
-                        {user.cast && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                <Ionicons name="people-outline" size={14} color="#ea580c" />
-                                <Text style={{ fontSize: 12, color: '#ea580c', fontWeight: 'bold', marginLeft: 4 }}>Caste: {user.cast}</Text>
-                            </View>
-                        )}
+                        </View>
+                        
+                        {/* Switch Profile Button */}
+                        <TouchableOpacity 
+                            onPress={() => setSwitcherVisible(true)} 
+                            style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
+                        >
+                            <Ionicons name="swap-horizontal" size={16} color="#4b5563" />
+                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#4b5563' }}>Switch</Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Action Shortcuts */}
                     <View style={{ flexDirection: 'row', gap: 12, marginVertical: 18 }}>
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('EditProfile')}
+                            onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
                             style={{ flex: 1, backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
                           <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>Edit Profile</Text>
                         </TouchableOpacity>
+                        
                         <TouchableOpacity
                             onPress={() => navigation.navigate('PublicProfile', { userId: user.id })}
                             style={{ flex: 1, backgroundColor: '#fff7ed', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffedd5' }}
@@ -199,45 +246,30 @@ const ProfileScreen = ({ navigation }: any) => {
                 <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
                     {/* Explore Grid */}
                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
-                        {t('explore')}
+                        {user.is_business == 1 ? 'Business Tools' : t('explore')}
                     </Text>
                     
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 }}>
-                        {[
-                            { label: t('jobs'), icon: "briefcase", route: "Jobs", color: "#10b981" },
-                            { label: t('shokSandesh'), icon: "reader", route: "ShokSanvedana", color: "#6b7280" },
-                            { label: t('gallery'), icon: "images", route: "Gallery", color: "#eab308" },
-                            { label: "Festival Poster", icon: "brush", route: "FestivalPoster", color: "#f43f5e" },
-                            { label: "Smart Card", icon: "id-card", route: "SmartCard", color: "#3b82f6" },
-                        ].map((item, index) => (
-                            <TouchableOpacity
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
+                        {(user.is_business == 1 ? [
+                            { label: "My Products", icon: "cube-outline", route: "Gallery", color: "#3b82f6" },
+                            { label: "Offers", icon: "pricetag-outline", route: "Gallery", color: "#f43f5e" },
+                            { label: "Gallery", icon: "images-outline", route: "Gallery", color: "#eab308" },
+                            { label: "Insights", icon: "stats-chart-outline", route: "Settings", color: "#10b981" },
+                        ] : [
+                            { label: t('jobs'), icon: "briefcase-outline", route: "Jobs", color: "#10b981" },
+                            { label: t('shokSandesh'), icon: "reader-outline", route: "ShokSanvedana", color: "#6b7280" },
+                            { label: t('gallery'), icon: "images-outline", route: "Gallery", color: "#eab308" },
+                            { label: "Festival Poster", icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
+                            { label: "Smart Card", icon: "id-card-outline", route: "SmartCard", color: "#3b82f6" },
+                        ]).map((item, index, array) => (
+                            <MenuItem 
                                 key={index}
-                                onPress={() => navigation.navigate(item.route)}
-                                style={{
-                                    width: '48%',
-                                    backgroundColor: 'white',
-                                    padding: 16,
-                                    borderRadius: 20,
-                                    marginBottom: 14,
-                                    alignItems: 'center',
-                                    borderWidth: 1,
-                                    borderColor: '#f3f4f6',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.02,
-                                    shadowRadius: 8,
-                                    elevation: 1
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                {/* Soft tinted icon circle wrapper */}
-                                <View style={{ width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10, backgroundColor: `${item.color}15` }}>
-                                    <Ionicons name={item.icon as any} size={22} color={item.color} />
-                                </View>
-                                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151', textAlign: 'center' }}>
-                                    {item.label}
-                                </Text>
-                            </TouchableOpacity>
+                                label={item.label} 
+                                icon={item.icon} 
+                                iconColor={item.color} 
+                                onPress={() => navigation.navigate(item.route)} 
+                                isLast={index === array.length - 1} 
+                            />
                         ))}
                     </View>
 
@@ -283,6 +315,12 @@ const ProfileScreen = ({ navigation }: any) => {
                     </View>
                 </View>
             </ScrollView>
+
+            <ProfileSwitcherModal 
+                visible={isSwitcherVisible} 
+                onClose={() => setSwitcherVisible(false)} 
+                onProfileSwitched={handleProfileSwitched} 
+            />
         </View>
     );
 };

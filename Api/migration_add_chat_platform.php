@@ -9,13 +9,11 @@ $check = $con->query("SHOW COLUMNS FROM tbl_messages LIKE 'chat_platform'");
 if ($check->num_rows == 0) {
     if ($con->query("ALTER TABLE tbl_messages ADD COLUMN chat_platform VARCHAR(20) DEFAULT 'marriage' AFTER message")) {
         echo "✅ Created column 'chat_platform'.<br>";
-    }
-    else {
+    } else {
         echo "❌ Error creating column: " . $con->error . "<br>";
         exit;
     }
-}
-else {
+} else {
     echo "ℹ️ Column 'chat_platform' already exists.<br>";
 }
 

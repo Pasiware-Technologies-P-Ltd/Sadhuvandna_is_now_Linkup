@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 
 const { width } = Dimensions.get('window');
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
 
 const NewsDetailScreen = ({ route, navigation }: any) => {

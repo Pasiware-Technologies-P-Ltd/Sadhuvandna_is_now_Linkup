@@ -12,9 +12,8 @@ import { Video, ResizeMode, Audio, InterruptionModeIOS, InterruptionModeAndroid 
 
 const { width } = Dimensions.get('window');
 
-const BASE_URL_ROOT = API_BASE_URL.replace(/\/Api\/?$/, '').replace(/\/$/, '');
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
-const POST_IMAGE_URL = `${BASE_URL_ROOT}/uploads/posts/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
+const POST_IMAGE_URL = `${WEBSITE_URL}/uploads/posts/`;
 
 interface User {
     id: string;
@@ -247,10 +246,18 @@ const HomeScreen = () => {
                     activeOpacity={0.8}
                 >
                     <View style={{ width: 56, height: 56, borderRadius: 28, position: 'relative', marginBottom: 6 }}>
-                        <Image
-                            source={{ uri: user?.profile_photo ? `${PHOTO_URL}${user?.profile_photo}` : 'https://via.placeholder.com/100' }}
-                            style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' }}
-                        />
+                        {user?.profile_photo ? (
+                            <Image
+                                source={{ uri: `${PHOTO_URL}${user?.profile_photo}` }}
+                                style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' }}
+                            />
+                        ) : (
+                            <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}>
+                                <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                </Text>
+                            </View>
+                        )}
                         {/* Floating plus badge overlay */}
                         <View style={{ position: 'absolute', bottom: -2, right: -2, backgroundColor: '#ea580c', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' }}>
                             <Ionicons name="add" size={14} color="white" />
@@ -288,10 +295,18 @@ const HomeScreen = () => {
                     justifyContent: 'center',
                     alignItems: 'center'
                 }}>
-                    <Image
-                        source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/100' }}
-                        style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6' }}
-                    />
+                    {item.profile_photo ? (
+                        <Image
+                            source={{ uri: `${PHOTO_URL}${item.profile_photo}` }}
+                            style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6' }}
+                        />
+                    ) : (
+                        <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
+                                {item.isMine ? 'Y' : (item.name ? item.name.charAt(0).toUpperCase() : 'U')}
+                            </Text>
+                        </View>
+                    )}
                 </View>
                 <Text style={{ fontSize: 10, color: '#374151', fontWeight: 'bold', maxWidth: 60, textAlign: 'center' }} numberOfLines={1}>
                     {item.isMine ? 'You' : item.name}
@@ -498,7 +513,9 @@ const HomeScreen = () => {
                             id: item.user_id,
                             name: item.name,
                             avatar: getImageUrl(item.profile_photo, 'photo'),
-                        },
+                            is_business: item.is_business,
+                            category: item.category,
+                        } as any,
                         content: item.description,
                         media: item.media,
                         image: item.image,
@@ -548,7 +565,17 @@ const HomeScreen = () => {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1, zIndex: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Image source={require('../../../assets/logo.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', letterSpacing: -0.3 }}>LinkUp</Text>
+                    <View>
+                        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', letterSpacing: -0.3 }}>
+                            LinkUp
+                        </Text>
+                        {user?.is_business == 1 && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: -2 }}>
+                                <Ionicons name="briefcase" size={10} color="#0064e0" />
+                                <Text style={{ fontSize: 9, color: '#0064e0', fontWeight: 'bold', marginLeft: 3 }}>BUSINESS</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <TouchableOpacity 

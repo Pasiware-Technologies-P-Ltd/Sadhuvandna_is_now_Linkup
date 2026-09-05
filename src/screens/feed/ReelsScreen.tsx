@@ -11,7 +11,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { WebView } from 'react-native-webview';
 
 const { width, height } = Dimensions.get('window');
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 

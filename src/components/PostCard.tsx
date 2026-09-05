@@ -77,7 +77,7 @@ export interface PostType {
 const { width } = Dimensions.get('window');
 const cardWidth = width - 24;
 // Clean the base URL by stripping trailing slash and /Api
-const BASE_URL_ROOT = API_BASE_URL.replace(/\/Api\/?$/, '').replace(/\/$/, '');
+const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
 const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBuffering, poster }: any) => {
@@ -551,13 +551,31 @@ const PostCard = ({
         <View style={styles.cardContainer}>
             {/* Header */}
             <TouchableOpacity style={styles.header} onPress={() => onUserPress && onUserPress()} activeOpacity={0.7}>
-                <Image
-                    source={{ uri: post.user.avatar || 'https://via.placeholder.com/50' }}
-                    style={styles.avatar}
-                    resizeMethod="resize"
-                />
+                {post.user.avatar && !post.user.avatar.includes('placeholder.com') ? (
+                    <Image
+                        source={{ uri: post.user.avatar }}
+                        style={styles.avatar}
+                        resizeMethod="resize"
+                    />
+                ) : (
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#ffedd5' }]}>
+                        <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 16 }}>
+                            {post.user.name ? post.user.name.charAt(0).toUpperCase() : 'U'}
+                        </Text>
+                    </View>
+                )}
                 <View style={styles.headerInfo}>
-                    <Text style={styles.userName}>{post.user.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={styles.userName}>{post.user.name}</Text>
+                        {(post.user as any).is_business == 1 && (
+                            <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="briefcase" size={10} color="#2563eb" />
+                                <Text style={{ fontSize: 10, color: '#2563eb', fontWeight: 'bold' }}>
+                                    {(post.user as any).category || 'Business'}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                         {post.user.location ? (
                             <>

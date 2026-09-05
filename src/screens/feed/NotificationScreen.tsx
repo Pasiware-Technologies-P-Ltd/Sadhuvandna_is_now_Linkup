@@ -5,7 +5,7 @@ import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const NotificationScreen = ({ navigation }: any) => {
     const [notifications, setNotifications] = useState<any[]>([]);

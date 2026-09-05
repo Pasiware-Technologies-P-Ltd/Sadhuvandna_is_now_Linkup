@@ -34,7 +34,7 @@ import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 

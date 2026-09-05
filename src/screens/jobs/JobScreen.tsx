@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const JobScreen = ({ navigation }: any) => {
     const [jobs, setJobs] = useState<any[]>([]);

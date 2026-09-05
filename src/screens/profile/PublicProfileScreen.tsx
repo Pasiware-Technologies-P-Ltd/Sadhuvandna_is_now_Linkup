@@ -13,7 +13,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
 
 // Fix: Point to Root uploads, not Api/uploads
-const BASE_URL_ROOT = API_BASE_URL.replace('/Api', '');
+const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 // Matched with FamilyScreen.tsx pattern which seems to be the working one
 const FAMILY_PHOTO_URL = `${BASE_URL_ROOT}/uploads/family/`;
@@ -467,35 +467,36 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     height: 42,
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    backgroundColor: followStats.is_connected || followStats.is_following ? '#f0fdf4' :
-                                        followStats.is_requested ? '#f3f4f6' : '#ea580c',
+                                    backgroundColor: followStats.is_following || followStats.is_connected
+                                        ? '#f0fdf4'
+                                        : followStats.is_requested ? '#f3f4f6' : '#0064e0',
                                     borderWidth: 1,
-                                    borderColor: followStats.is_connected || followStats.is_following ? '#dcfce7' :
-                                        followStats.is_requested ? '#e5e7eb' : '#ea580c',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: followStats.is_connected || followStats.is_requested ? 0 : 0.05,
-                                    shadowRadius: 4,
-                                    elevation: followStats.is_connected || followStats.is_requested ? 0 : 2
+                                    borderColor: followStats.is_following || followStats.is_connected
+                                        ? '#dcfce7'
+                                        : followStats.is_requested ? '#e5e7eb' : '#0064e0',
                                 }}
                                 activeOpacity={0.8}
                             >
                                 <Text style={{
                                     fontSize: 13,
                                     fontWeight: 'bold',
-                                    color: followStats.is_connected || followStats.is_following ? '#16a34a' :
-                                        followStats.is_requested ? '#6b7280' : 'white'
+                                    color: followStats.is_following || followStats.is_connected
+                                        ? '#16a34a'
+                                        : followStats.is_requested ? '#6b7280' : 'white'
                                 }}>
                                     {togglingFollow ? 'Updating...' :
-                                        followStats.is_connected ? 'Connected' :
-                                            followStats.is_requested ? 'Requested' :
-                                                followStats.follows_me ? 'Accept Request' :
-                                                    followStats.is_following ? 'Connected' :
-                                                        'Connect'}
+                                        user.is_business
+                                            // Business page: Follow / Following
+                                            ? (followStats.is_following || followStats.is_connected ? '✓ Following' : '+ Follow')
+                                            // Personal: Connect flow
+                                            : (followStats.is_connected ? 'Connected' :
+                                                followStats.is_requested ? 'Requested' :
+                                                    followStats.follows_me ? 'Accept Request' :
+                                                        followStats.is_following ? 'Connected' : 'Connect')}
                                 </Text>
                             </TouchableOpacity>
 
-                            {(followStats.is_connected || followStats.is_following) && (
+                            {(followStats.is_connected || followStats.is_following) && !user.is_business && (
                                 <TouchableOpacity
                                     onPress={() => navigation.navigate('Chat', {
                                         receiver: {
@@ -516,7 +517,88 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     )}
                 </View>
 
-                {/* Personal Details Section Card */}
+                {/* Business Details Card - only for business profiles */}
+                {user.is_business == 1 && profile?.business_details && (
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#dbeafe', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingBottom: 10, marginBottom: 12 }}>
+                            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#0064e015', alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons name="briefcase" size={15} color="#0064e0" />
+                            </View>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827' }}>Business Details</Text>
+                        </View>
+                        <View style={{ gap: 10 }}>
+                            {profile.business_details.phone_no ? (
+                                <TouchableOpacity onPress={() => Linking.openURL(`tel:${profile.business_details.phone_no}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#10b98115', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="call-outline" size={15} color="#10b981" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Phone</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.phone_no}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
+                            {profile.business_details.email ? (
+                                <TouchableOpacity onPress={() => Linking.openURL(`mailto:${profile.business_details.email}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#3b82f615', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="mail-outline" size={15} color="#3b82f6" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Email</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.email}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
+                            {profile.business_details.website_url ? (
+                                <TouchableOpacity onPress={() => Linking.openURL(profile.business_details.website_url.startsWith('http') ? profile.business_details.website_url : `https://${profile.business_details.website_url}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#8b5cf615', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="globe-outline" size={15} color="#8b5cf6" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Website</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.website_url}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
+                            {profile.business_details.full_address ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#ea580c15', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="location-outline" size={15} color="#ea580c" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Address</Text>
+                                        <Text style={{ fontSize: 13, color: '#374151' }}>{profile.business_details.full_address}{profile.business_details.district ? `, ${profile.business_details.district}` : ''}{profile.business_details.state ? `, ${profile.business_details.state}` : ''}{profile.business_details.pincode ? ` - ${profile.business_details.pincode}` : ''}</Text>
+                                    </View>
+                                </View>
+                            ) : null}
+                            {profile.business_details.opening_hours ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eab30815', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="time-outline" size={15} color="#eab308" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Working Hours</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{profile.business_details.opening_hours}</Text>
+                                    </View>
+                                </View>
+                            ) : null}
+                            {profile.business_details.social_media_account ? (
+                                <TouchableOpacity onPress={() => Linking.openURL(profile.business_details.social_media_account.startsWith('http') ? profile.business_details.social_media_account : `https://${profile.business_details.social_media_account}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#f43f5e15', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="share-social-outline" size={15} color="#f43f5e" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Social Media</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.social_media_account}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
+                    </View>
+                )}
+
+                {/* Personal Details Section Card - only for personal profiles */}
+                {!user.is_business && (
                 <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
                     <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827', borderBottomWidth: 1, borderBottomColor: '#f9fafb', paddingBottom: 8, marginBottom: 12 }}>Personal Details</Text>
                     
@@ -578,9 +660,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         )}
                     </View>
                 </View>
+                )}
             </View>
 
-            {/* Family & Marriage Info Section Card */}
+            {/* Family & Marriage Info Section Card - only for personal profiles */}
+            {!user.is_business && (
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
                 <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#f9fafb', paddingBottom: 8, marginBottom: 12 }}>
@@ -670,6 +754,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     ) : null}
                 </View>
             </View>
+            )}
 
             <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', backgroundColor: 'white', marginTop: 8 }}>
                 <TouchableOpacity

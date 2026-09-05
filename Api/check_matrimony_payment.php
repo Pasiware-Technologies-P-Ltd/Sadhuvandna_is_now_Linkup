@@ -18,19 +18,13 @@ try {
         exit;
     }
 
-    // 1. Fetch the Matrimony Profile Fee dynamically
+    // 1. Fetch the Matrimony Profile Fee for this user
     $fee = 500; // default fee
-    $settings_q = $con->query("SELECT `value` FROM tbl_settings WHERE `key` = 'matrimony_profile_fee' LIMIT 1");
-    if ($settings_q && $settings_q->num_rows > 0) {
-        $settings_row = $settings_q->fetch_assoc();
-        $fee = intval($settings_row['value']);
-    } else {
-        $userQ = $con->query("SELECT matrimony_profile_fee FROM tbl_members WHERE id = '$user_id' LIMIT 1");
-        if ($userQ && $userQ->num_rows > 0) {
-            $userRow = $userQ->fetch_assoc();
-            if (isset($userRow['matrimony_profile_fee']) && intval($userRow['matrimony_profile_fee']) > 0) {
-                $fee = intval($userRow['matrimony_profile_fee']);
-            }
+    $userQ = $con->query("SELECT matrimony_profile_fee FROM tbl_members WHERE id = '$user_id' LIMIT 1");
+    if ($userQ && $userQ->num_rows > 0) {
+        $userRow = $userQ->fetch_assoc();
+        if (isset($userRow['matrimony_profile_fee']) && intval($userRow['matrimony_profile_fee']) > 0) {
+            $fee = intval($userRow['matrimony_profile_fee']);
         }
     }
 
