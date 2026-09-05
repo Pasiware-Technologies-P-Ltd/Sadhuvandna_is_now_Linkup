@@ -11,6 +11,14 @@ interface ProfileSwitcherModalProps {
     onProfileSwitched: () => void;
 }
 
+const getInitials = (name: string) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSwitcherModalProps) => {
     const [profiles, setProfiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -127,10 +135,18 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                     backgroundColor: 'white'
                 }}
             >
-                <Image 
-                    source={{ uri: item.photo ? `${WEBSITE_URL}/uploads/photo/${item.photo}` : 'https://via.placeholder.com/100' }} 
-                    style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6' }} 
-                />
+                {item.photo ? (
+                    <Image 
+                        source={{ uri: `${WEBSITE_URL}/uploads/photo/${item.photo}` }} 
+                        style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6' }} 
+                    />
+                ) : (
+                    <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#9ca3af' }}>
+                            {getInitials(item.name)}
+                        </Text>
+                    </View>
+                )}
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{item.name}</Text>
                     {item.type === 'Page' && (

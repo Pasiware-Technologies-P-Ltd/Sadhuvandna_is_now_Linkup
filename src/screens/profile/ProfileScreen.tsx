@@ -9,6 +9,14 @@ import ProfileSwitcherModal from '../../components/ProfileSwitcherModal';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
+const getInitials = (name: string) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const ProfileScreen = ({ navigation }: any) => {
     const [user, setUser] = useState<any>(null);
     const [marriageProfile, setMarriageProfile] = useState<any>(null);
@@ -138,10 +146,18 @@ const ProfileScreen = ({ navigation }: any) => {
                                 elevation: 5
                             }}
                         >
-                            <Image
-                                source={{ uri: user.profile_photo ? `${PHOTO_URL}${user.profile_photo}` : 'https://via.placeholder.com/100' }}
-                                style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#f3f4f6' }}
-                            />
+                            {user.profile_photo ? (
+                                <Image
+                                    source={{ uri: `${PHOTO_URL}${user.profile_photo}` }}
+                                    style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#f3f4f6' }}
+                                />
+                            ) : (
+                                <View style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#9ca3af' }}>
+                                        {getInitials(user.name)}
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
 
                         {/* Stats Bar */}

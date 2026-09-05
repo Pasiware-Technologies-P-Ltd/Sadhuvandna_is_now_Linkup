@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 
 const PHOTO_URL = `${API_BASE_URL}/uploads/photo/`;
 
@@ -107,7 +107,8 @@ const EditProfileScreen = ({ navigation }: any) => {
                 formData.append('cover', { uri: cover, name: filename, type } as any);
             }
 
-            const res = await api.post('/update_profile.php', formData, {
+            // Use UPLOAD_BASE_URL to directly upload to the production server
+            const res = await api.post(`${UPLOAD_BASE_URL}update_profile.php`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
