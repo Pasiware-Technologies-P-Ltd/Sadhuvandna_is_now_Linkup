@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode, Audio } from 'expo-av';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
@@ -234,12 +234,16 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 if (filename?.toLowerCase().endsWith('.mp4')) type = 'video/mp4';
                 formData.append('media[]', { uri, name: filename, type } as any);
             });
-            const res = await api.post('create_post.php', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-            if (res.data.status === 'success') {
+            const response = await fetch(`${UPLOAD_BASE_URL}create_post.php`, {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
                 navigation.goBack();
                 Alert.alert("Success", "Post shared successfully");
             } else {
-                Alert.alert("Error", res.data.message || "Failed to share post");
+                Alert.alert("Error", data.message || "Failed to share post");
             }
         } catch (error) {
             Alert.alert("Error", "Network request failed");
@@ -429,13 +433,13 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                         {images.map((img, index) => (
                             <View key={index} style={styles.imageItemContainer}>
                                 {img.toLowerCase().endsWith('.mp4') ? (
-                                    <Video 
-                                        source={{ uri: img }} 
-                                        style={{ width: '100%', height: '100%' }} 
-                                        resizeMode={ResizeMode.COVER} 
-                                        shouldPlay={false} 
-                                        useNativeControls 
-                                        rate={recordingSpeed} 
+                                    <Video
+                                        source={{ uri: img }}
+                                        style={{ width: '100%', height: '100%' }}
+                                        resizeMode={ResizeMode.COVER}
+                                        shouldPlay={false}
+                                        useNativeControls
+                                        rate={recordingSpeed}
                                         isMuted={false}
                                         volume={1.0}
                                     />

@@ -450,7 +450,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 <View style={{ marginVertical: 16 }}>
                     {isOwner ? (
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('EditProfile')}
+                            onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
                             style={{ backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >

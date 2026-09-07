@@ -11,6 +11,17 @@ const SettingsScreen = ({ navigation }: any) => {
     const { fontFamily, setFontFamily } = useFont();
     const [fontModalVisible, setFontModalVisible] = useState(false);
     const [langModalVisible, setLangModalVisible] = useState(false);
+    const [user, setUser] = useState<any>(null);
+
+    React.useEffect(() => {
+        const loadUser = async () => {
+            const u = await AsyncStorage.getItem('user');
+            if (u) {
+                setUser(JSON.parse(u));
+            }
+        };
+        loadUser();
+    }, []);
 
     const handleLogout = async () => {
         Alert.alert(t('logout'), t('logoutConfirm'), [
@@ -96,7 +107,7 @@ const SettingsScreen = ({ navigation }: any) => {
         {
             title: "Account",
             items: [
-                { label: t('editProfile'), icon: "person-outline", action: () => navigation.navigate('EditProfile') },
+                { label: t('editProfile'), icon: "person-outline", action: () => navigation.navigate(user?.is_business == 1 ? 'EditBusinessPage' : 'EditProfile') },
                 { label: "Change Password", icon: "lock-closed-outline", action: () => navigation.navigate('ChangePassword') },
             ]
         },

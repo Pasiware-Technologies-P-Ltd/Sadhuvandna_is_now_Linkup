@@ -42,10 +42,10 @@ const ProfileScreen = ({ navigation }: any) => {
 
             // Fetch fresh details for latest photo, cover_photo, city, cast, etc.
             try {
-                const res = await api.get(`/get_user_details.php?user_id=${userData.id}`);
-                if (res.data.status === 'success') {
+                const res = await api.get(`/get_user_profile.php?user_id=${userData.id}`);
+                if (res.data.status === 'success' && res.data.user) {
                     // merge so we keep is_business etc if it wasn't returned in get_user_details
-                    const freshData = { ...userData, ...res.data.data };
+                    const freshData = { ...userData, ...res.data.user };
                     setUser(freshData);
                     await AsyncStorage.setItem('user', JSON.stringify(freshData));
                 }
@@ -267,10 +267,11 @@ const ProfileScreen = ({ navigation }: any) => {
                     
                     <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         {(user.is_business == 1 ? [
-                            { label: "My Products", icon: "cube-outline", route: "Gallery", color: "#3b82f6" },
-                            { label: "Offers", icon: "pricetag-outline", route: "Gallery", color: "#f43f5e" },
+                            { label: "My Posts", icon: "grid-outline", route: "MyPosts", color: "#3b82f6" },
                             { label: "Gallery", icon: "images-outline", route: "Gallery", color: "#eab308" },
-                            { label: "Insights", icon: "stats-chart-outline", route: "Settings", color: "#10b981" },
+                            { label: "Festival Poster", icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
+                            { label: "Add Manager", icon: "people-outline", route: "ComingSoon", color: "#10b981" },
+                            { label: "Smart Card", icon: "id-card-outline", route: "SmartCard", color: "#8b5cf6" },
                         ] : [
                             { label: t('jobs'), icon: "briefcase-outline", route: "Jobs", color: "#10b981" },
                             { label: t('shokSandesh'), icon: "reader-outline", route: "ShokSanvedana", color: "#6b7280" },
@@ -283,7 +284,13 @@ const ProfileScreen = ({ navigation }: any) => {
                                 label={item.label} 
                                 icon={item.icon} 
                                 iconColor={item.color} 
-                                onPress={() => navigation.navigate(item.route)} 
+                                onPress={() => {
+                                    if (item.route === 'ComingSoon') {
+                                        Alert.alert("Coming Soon! 🚀", "We are working on this feature. Stay tuned!");
+                                    } else {
+                                        navigation.navigate(item.route);
+                                    }
+                                }} 
                                 isLast={index === array.length - 1} 
                             />
                         ))}
