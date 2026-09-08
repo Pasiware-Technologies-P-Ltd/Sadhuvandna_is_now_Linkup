@@ -1095,8 +1095,8 @@ const ChatScreen = ({ navigation, route }: any) => {
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 20}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}     
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 5: 0}
             >
                 <FlatList
                     ref={flatListRef}
@@ -1346,20 +1346,20 @@ const ChatScreen = ({ navigation, route }: any) => {
 
                 {/* Input Area */}
                 {isBlocked ? (
-                    <View className="bg-gray-100 p-4 rounded-xl items-center justify-center border border-gray-200 m-4">
+                    <View className="bg-gray-100 p-4 rounded-xl items-center justify-center border border-gray-200 m-4" style={{ marginBottom: Math.max(16, insets.bottom) }}>
                         <Text className="text-gray-500 font-medium text-center">
                             You have blocked this user. Unblock to send messages.
                         </Text>
                     </View>
                 ) : (groupAdminsOnly && !isMeAdmin) ? (
-                    <View className="bg-gray-50 p-4 rounded-xl items-center justify-center border border-gray-100 m-4">
+                    <View className="bg-gray-50 p-4 rounded-xl items-center justify-center border border-gray-100 m-4" style={{ marginBottom: Math.max(16, insets.bottom) }}>
                         <Ionicons name="lock-closed" size={20} color="#9ca3af" className="mb-1" />
                         <Text className="text-gray-500 font-medium text-center text-sm">
                             Only admins can send messages to this group.
                         </Text>
                     </View>
                 ) : (
-                    <View style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: Math.max(10, insets.bottom), backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <TouchableOpacity 
                             onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
                             style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#ffedd5' : '#f9fafb', borderWidth: 1, borderColor: showAttachmentMenu ? '#ffedd5' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}

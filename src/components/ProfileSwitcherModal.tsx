@@ -96,8 +96,23 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                 });
 
                 if (res.data.status === 'success') {
-                    // Update Async Storage with new profile
-                    await AsyncStorage.setItem('user', JSON.stringify(res.data.data));
+                    let freshData = res.data.data;
+                    
+                    // Fetch full profile to ensure we have 'profile_photo' and other details
+                    try {
+                        const profileRes = await api.get(`/get_user_profile.php?user_id=${targetProfileId}`);
+                        if (profileRes.data.status === 'success' && profileRes.data.user) {
+                            freshData = { ...freshData, ...profileRes.data.user };
+                        }
+                    } catch (e) {
+                        console.log("Failed to fetch fresh user details during switch", e);
+                    }
+
+                    // Remove cache for the new profile to force fresh data load
+                    await AsyncStorage.removeItem(`home_cache_${targetProfileId}`);
+                    
+                    // Update Async Storage with new comprehensive profile
+                    await AsyncStorage.setItem('user', JSON.stringify(freshData));
                     
                     const { DeviceEventEmitter } = require('react-native');
                     DeviceEventEmitter.emit('profileSwitched');

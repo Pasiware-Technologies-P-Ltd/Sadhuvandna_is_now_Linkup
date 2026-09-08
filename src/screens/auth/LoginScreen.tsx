@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';                  
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -184,10 +185,13 @@ export default function LoginScreen({ navigation }: any) {
         handleVerifyOtpWithCode(otp);
     };
 
+
+
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-[#fffaf5]">
-            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40 }}>
-                {!showOtpScreen ? (
+        <SafeAreaView className="flex-1 bg-[#fffaf5]" edges={['top', 'bottom']}>
+            <KeyboardAvoidingView behavior="padding" className="flex-1">
+                <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40 }}>
+                    {!showOtpScreen ? (
                     <>
                         <View className="items-center mb-8 mt-10">
                             <View className="bg-orange-100 p-4 rounded-3xl mb-4">
@@ -325,7 +329,8 @@ export default function LoginScreen({ navigation }: any) {
                         </View>
                     </View>
                 )}
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }

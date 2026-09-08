@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Dimensions, Modal, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -208,7 +208,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     };
 
     const handlePost = async () => {
-        if (!content && images.length === 0) return;
+        if (!content && images.length === 0 && !selectedMusic && !params.filterId) return;
         setLoading(true);
         try {
             const formData = new FormData();
@@ -264,16 +264,17 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                     <Text style={{ fontSize: 20, color: '#111827', fontWeight: '400' }}>Create Post</Text>
                 </View>
                 <TouchableOpacity
-                    style={[styles.postButton, (content || images.length > 0) ? styles.postButtonActive : styles.postButtonDisabled]}
-                    disabled={(!content && images.length === 0) || loading}
+                    style={[styles.postButton, (content || images.length > 0 || selectedMusic || params.filterId) ? styles.postButtonActive : styles.postButtonDisabled]}
+                    disabled={(!content && images.length === 0 && !selectedMusic && !params.filterId) || loading}
                     onPress={handlePost}
                 >
                     {loading ? <ActivityIndicator size="small" color="#fff" /> :
-                        <Text style={[styles.postButtonText, (content || images.length > 0) ? { color: 'white' } : { color: '#6b7280' }]}>POST</Text>}
+                        <Text style={[styles.postButtonText, (content || images.length > 0 || selectedMusic || params.filterId) ? { color: 'white' } : { color: '#6b7280' }]}>POST</Text>}
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ flex: 1, padding: 16 }}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
+            <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
                 <View style={{ flexDirection: 'row', marginBottom: 16, alignItems: 'center' }}>
                     <View style={styles.userAvatar}>
                         {user?.profile_photo ? (
@@ -453,7 +454,6 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 )}
             </ScrollView>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <View style={styles.bottomActions}>
                     <TouchableOpacity style={styles.actionItem} onPress={pickImage}><Ionicons name="images" size={28} color="#45bd62" /><Text style={styles.actionText}>Photo/Video</Text></TouchableOpacity>
                     <TouchableOpacity style={[styles.actionItem, { borderTopWidth: 1, borderTopColor: '#f9fafb' }]} onPress={() => setMusicModalVisible(true)}><Ionicons name="musical-notes" size={28} color="#ea580c" /><Text style={styles.actionText}>Music Library</Text></TouchableOpacity>

@@ -119,7 +119,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
             <View className="flex-row items-center border-b border-gray-200 p-2">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
                     <Ionicons name="arrow-back" size={24} color="black" />
@@ -127,39 +127,42 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                 <Text className="font-bold text-lg ml-2">{currentPost?.user?.name || 'Post'}'s Post</Text>
             </View>
 
-            {loadingPost ? (
-                <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#ea580c" />
-                </View>
-            ) : currentPost ? (
-                <FlatList
-                    data={comments}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={renderComment}
-                    ListHeaderComponent={
-                        <View className="mb-2">
-                            <PostCard
-                                post={currentPost}
-                                shouldPlay={true}
-                                onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
-                            />
-                            <Text className="p-3 font-bold text-gray-500 text-sm">Comments</Text>
-                        </View>
-                    }
-                    ListEmptyComponent={
-                        !loadingComments ? (
-                            <Text className="text-center text-gray-400 py-10">No comments yet. Be the first!</Text>
-                        ) : (
-                            <ActivityIndicator className="py-10" color="orange" />
-                        )
-                    }
-                    contentContainerStyle={{ paddingBottom: 80 }}
-                />
-            ) : null}
+            <View className="flex-1">
+                {loadingPost ? (
+                    <View className="flex-1 justify-center items-center">
+                        <ActivityIndicator size="large" color="#ea580c" />
+                    </View>
+                ) : currentPost ? (
+                    <FlatList
+                        data={comments}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={renderComment}
+                        ListHeaderComponent={
+                            <View className="mb-2">
+                                <PostCard
+                                    post={currentPost}
+                                    shouldPlay={true}
+                                    onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
+                                />
+                                <Text className="p-3 font-bold text-gray-500 text-sm">Comments</Text>
+                            </View>
+                        }
+                        ListEmptyComponent={
+                            !loadingComments ? (
+                                <Text className="text-center text-gray-400 py-10">No comments yet. Be the first!</Text>
+                            ) : (
+                                <ActivityIndicator className="py-10" color="orange" />
+                            )
+                        }
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                    />
+                ) : null}
+            </View>
 
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2"
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="bg-white border-t border-gray-200 p-2"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
             >
                 <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-1">
                     <TextInput

@@ -81,6 +81,27 @@ const HomeScreen = () => {
         init();
     }, []);
 
+    useEffect(() => {
+        const { DeviceEventEmitter } = require('react-native');
+        const subscription = DeviceEventEmitter.addListener('profileSwitched', async () => {
+            try {
+                const uStr = await AsyncStorage.getItem('user');
+                if (uStr) {
+                    const u = JSON.parse(uStr);
+                    setUser(u);
+                    setPosts([]); // Clear visually to show refresh
+                    setStories([]);
+                    setReels([]);
+                    fetchData(u.id);
+                    fetchNotificationCount(u.id);
+                }
+            } catch (err) {
+                console.error("Switch error:", err);
+            }
+        });
+        return () => subscription.remove();
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
             const initUser = async () => {
@@ -683,13 +704,6 @@ const HomeScreen = () => {
                         <Ionicons name="add" size={20} color="#ea580c" />
                     </TouchableOpacity>
                     <TouchableOpacity 
-                        onPress={() => navigation.navigate('Requests')} 
-                        activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                        <Ionicons name="people-outline" size={18} color="#374151" />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
                         onPress={() => navigation.navigate('Notifications')} 
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
@@ -703,14 +717,12 @@ const HomeScreen = () => {
                             </View>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.7}>
-                        {user?.profile_photo ? (
-                            <Image source={{ uri: `${PHOTO_URL}${user?.profile_photo}` }} style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: '#ffedd5', backgroundColor: '#f3f4f6' }} />
-                        ) : (
-                            <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#ffedd5', backgroundColor: '#fff7ed' }}>
-                                <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 12 }}>{user?.name?.[0] || 'U'}</Text>
-                            </View>
-                        )}
+                    <TouchableOpacity 
+                        onPress={() => navigation.navigate('Chats')} 
+                        activeOpacity={0.7}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        <Ionicons name="chatbubbles-outline" size={18} color="#374151" />
                     </TouchableOpacity>
                 </View>
             </View>

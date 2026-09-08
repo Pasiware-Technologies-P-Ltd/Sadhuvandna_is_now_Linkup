@@ -3,7 +3,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View } from 'react-native';
+import { View, TouchableOpacity, Image } from 'react-native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import { WEBSITE_URL } from '../services/api';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -11,6 +13,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/feed/HomeScreen';
 import MarriageScreen from '../screens/marriage/MarriageScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import ProfileSwitcherModal from '../components/ProfileSwitcherModal';
 import MarriageDetailScreen from '../screens/marriage/MarriageDetailScreen';
 import ChatScreen from '../screens/chat/ChatScreen';
 import ChatListScreen from '../screens/chat/ChatListScreen';
@@ -57,16 +60,22 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 /* ------------------ TAB NAVIGATOR ------------------ */
 function MainTabNavigator() {
   const { t } = useLanguage();
+  const navigation = useNavigation();
   const [isBusiness, setIsBusiness] = React.useState(false);
+  const [user, setUser] = React.useState<any>(null);
+  const [isSwitcherVisible, setSwitcherVisible] = React.useState(false);
 
   React.useEffect(() => {
     const checkUser = async () => {
-      const uStr = await import('@react-native-async-storage/async-storage').then(m => m.default.getItem('user'));
+      const uStr = await AsyncStorage.getItem('user');
       if (uStr) {
         const u = JSON.parse(uStr);
+        setUser(u);
         setIsBusiness(u.is_business == 1);
       }
     };
@@ -83,20 +92,31 @@ function MainTabNavigator() {
   }, []);
 
   return (
+    <>
     <Tab.Navigator
+      key={user?.id || 'default'}
       initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: '#ea580c',
         tabBarInactiveTintColor: 'gray',
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '500' },
         tabBarIcon: ({ focused, color, size }) => {
+          if (route.name === 'Profile' && user?.profile_photo) {
+            return (
+              <Image 
+                source={{ uri: `${WEBSITE_URL}/uploads/photo/${user.profile_photo}` }} 
+                style={{ width: size, height: size, borderRadius: size / 2, borderWidth: focused ? 2 : 0, borderColor: color, backgroundColor: '#f3f4f6' }} 
+              />
+            );
+          }
+
           let iconName: any = 'home';
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Reels') iconName = focused ? 'videocam-sharp' : 'videocam-outline';
           else if (route.name === 'News') iconName = focused ? 'newspaper' : 'newspaper-outline';
           else if (route.name === 'Marriage') iconName = focused ? 'heart' : 'heart-outline';
-          else if (route.name === 'Chats') iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -120,12 +140,29 @@ function MainTabNavigator() {
         />
       )}
       <Tab.Screen
-        name="Chats"
-        component={ChatListScreen}
-        options={{ tabBarLabel: t('chat') }}
+        name="Profile"
+        component={ProfileScreen}
+        options={{ 
+          tabBarLabel: t('profile') || 'Profile',
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              onLongPress={() => setSwitcherVisible(true)}
+            />
+          ),
+        }}
         listeners={{ focus: () => adService.showAd() }}
       />
     </Tab.Navigator>
+    <ProfileSwitcherModal
+        visible={isSwitcherVisible}
+        onClose={() => setSwitcherVisible(false)}
+        onProfileSwitched={() => {
+            setSwitcherVisible(false);
+            // checkUser is triggered by event listener anyway
+        }}
+    />
+    </>
   );
 }
 
@@ -196,6 +233,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="SupportChat" component={SupportChatScreen} />
       <Stack.Screen name="CreateBusinessPage" component={CreateBusinessPageScreen} />
       <Stack.Screen name="EditBusinessPage" component={EditBusinessPageScreen} />
+      <Stack.Screen name="Chats" component={ChatListScreen} />
     </Stack.Navigator>
   );
 };

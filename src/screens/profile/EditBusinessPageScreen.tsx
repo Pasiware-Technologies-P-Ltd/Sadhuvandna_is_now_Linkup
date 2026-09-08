@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
@@ -19,6 +21,7 @@ const categories = [
 ];
 
 const EditBusinessPageScreen = ({ navigation, route }: any) => {
+    const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
     
     // Form State
@@ -184,7 +187,7 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
     );
 
     return (
-        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#ffffff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
             {/* Custom Header with Shadow */}
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16, backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4, zIndex: 10 }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, backgroundColor: '#f3f4f6', borderRadius: 20 }}>
@@ -196,7 +199,14 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <KeyboardAwareScrollView 
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ paddingBottom: 100 + insets.bottom }} 
+                showsVerticalScrollIndicator={false}
+                enableOnAndroid={true}
+                extraScrollHeight={100}
+                keyboardShouldPersistTaps="handled"
+            >
                 
                 {/* 0. Photos Section */}
                 <View style={{ marginBottom: 30 }}>
@@ -333,10 +343,10 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                     {renderInput("time-outline", "Opening Hours (e.g. 9 AM - 8 PM)", openingHours, setOpeningHours)}
                 </View>
                 </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             {/* Floating Submit Button */}
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#f3f4f6' }}>
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#f3f4f6' }}>
                 <TouchableOpacity
                     onPress={handleSubmit}
                     disabled={loading}
@@ -369,7 +379,7 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                 </TouchableOpacity>
             </View>
 
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 

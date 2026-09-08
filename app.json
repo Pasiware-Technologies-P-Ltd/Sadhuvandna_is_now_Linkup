@@ -111,7 +111,8 @@
             "ndkVersion": "27.1.12297006"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

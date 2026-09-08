@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -148,78 +148,80 @@ const EditProfileScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView className="flex-1">
-                {/* Cover Photo */}
-                <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
-                    {displayCover && (
-                        <Image source={{ uri: displayCover }} className="w-full h-full" resizeMode="cover" />
-                    )}
-                    <View className="absolute inset-0 items-center justify-center bg-black/20">
-                        <View className="bg-black/50 p-2 rounded-full">
-                            <Ionicons name="camera" size={24} color="white" />
-                        </View>
-                    </View>
-                </TouchableOpacity>
-
-                {/* Profile Photo - Overlapping */}
-                <View className="items-center -mt-12 mb-4">
-                    <TouchableOpacity onPress={pickImage} className="relative">
-                        {displayImage ? (
-                            <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white" />
-                        ) : (
-                            <View className="w-24 h-24 rounded-full bg-orange-200 items-center justify-center border-4 border-white">
-                                <Text className="text-4xl text-orange-700">{name?.[0] || 'U'}</Text>
-                            </View>
+            <KeyboardAvoidingView behavior="padding" className="flex-1">
+                <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 30 }}>
+                    {/* Cover Photo */}
+                    <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
+                        {displayCover && (
+                            <Image source={{ uri: displayCover }} className="w-full h-full" resizeMode="cover" />
                         )}
-                        <View className="absolute bottom-0 right-0 bg-orange-600 p-1.5 rounded-full border-2 border-white">
-                            <Ionicons name="camera" size={16} color="white" />
+                        <View className="absolute inset-0 items-center justify-center bg-black/20">
+                            <View className="bg-black/50 p-2 rounded-full">
+                                <Ionicons name="camera" size={24} color="white" />
+                            </View>
                         </View>
                     </TouchableOpacity>
-                </View>
 
-                <View className="px-5 space-y-6">
-                    <View>
-                        <Text className="text-gray-500 text-sm mb-1 ml-1">Full Name</Text>
-                        <TextInput
-                            value={name}
-                            onChangeText={setName}
-                            className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                        />
+                    {/* Profile Photo - Overlapping */}
+                    <View className="items-center -mt-12 mb-4">
+                        <TouchableOpacity onPress={pickImage} className="relative">
+                            {displayImage ? (
+                                <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white" />
+                            ) : (
+                                <View className="w-24 h-24 rounded-full bg-orange-200 items-center justify-center border-4 border-white">
+                                    <Text className="text-4xl text-orange-700">{name?.[0] || 'U'}</Text>
+                                </View>
+                            )}
+                            <View className="absolute bottom-0 right-0 bg-orange-600 p-1.5 rounded-full border-2 border-white">
+                                <Ionicons name="camera" size={16} color="white" />
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                    <View>
-                        <Text className="text-gray-500 text-sm mb-1 ml-1">City</Text>
-                        <TextInput
-                            value={location} // Using location state for city
-                            onChangeText={setLocation}
-                            className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                        />
+
+                    <View className="px-5 space-y-6 mt-4">
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">Full Name</Text>
+                            <TextInput
+                                value={name}
+                                onChangeText={setName}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">City</Text>
+                            <TextInput
+                                value={location} // Using location state for city
+                                onChangeText={setLocation}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">Date of Birth (YYYY-MM-DD)</Text>
+                            <TextInput
+                                value={dob}
+                                onChangeText={setDob}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">Cast</Text>
+                            <TextInput
+                                value={cast}
+                                onChangeText={setCast}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">Gender</Text>
+                            <TextInput
+                                value={gender}
+                                onChangeText={setGender}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
                     </View>
-                    <View>
-                        <Text className="text-gray-500 text-sm mb-1 ml-1">Date of Birth (YYYY-MM-DD)</Text>
-                        <TextInput
-                            value={dob}
-                            onChangeText={setDob}
-                            className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                        />
-                    </View>
-                    <View>
-                        <Text className="text-gray-500 text-sm mb-1 ml-1">Cast</Text>
-                        <TextInput
-                            value={cast}
-                            onChangeText={setCast}
-                            className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                        />
-                    </View>
-                    <View>
-                        <Text className="text-gray-500 text-sm mb-1 ml-1">Gender</Text>
-                        <TextInput
-                            value={gender}
-                            onChangeText={setGender}
-                            className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                        />
-                    </View>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };

@@ -144,7 +144,7 @@ const SupportChatScreen = ({ navigation }: any) => {
 
             {/* Messages Screen Container */}
             <KeyboardAvoidingView 
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
                 className="flex-1"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >

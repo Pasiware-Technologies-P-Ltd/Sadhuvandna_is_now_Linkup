@@ -90,7 +90,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
             <View className="flex-row items-center p-4 border-b border-gray-100">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
@@ -99,10 +99,10 @@ const CommentsScreen = ({ route, navigation }: any) => {
             </View>
 
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
                 className="flex-1"
-                enabled={Platform.OS === 'ios'}
+                enabled={true}
             >
                 {loading ? (
                     <ActivityIndicator size="large" color="#ea580c" className="mt-10" />

@@ -117,13 +117,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             if (postsRes.data.status === 'success') {
                 const allPosts = postsRes.data.data;
                 const photos = allPosts.filter((p: any) => {
-                    const videoExt = ['mp4', 'mov', 'avi'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)));
-                    const isReel = videoExt || (p.link && typeof p.link === 'string' && (p.link.includes('filterId') || p.link.includes('music_url') || p.link.includes('youtube_music')));
+                    const isReel = ['mp4', 'mov', 'avi', 'mkv', '3gp'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)));
                     return !isReel;
                 });
                 const reels = allPosts.filter((p: any) => {
-                    const videoExt = ['mp4', 'mov', 'avi'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)));
-                    const isReel = videoExt || (p.link && typeof p.link === 'string' && (p.link.includes('filterId') || p.link.includes('music_url') || p.link.includes('youtube_music')));
+                    const isReel = ['mp4', 'mov', 'avi', 'mkv', '3gp'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)));
                     return isReel;
                 });
                 setPhotoPosts(photos);
@@ -434,6 +432,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             </View>
                         )}
                     </View>
+                    {user.is_business == 1 && user.category ? (
+                        <View style={{ marginTop: 4, flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="pricetag-outline" size={13} color="#ea580c" />
+                            <Text style={{ fontSize: 13, color: '#ea580c', marginLeft: 4, fontWeight: '600' }}>{user.category}</Text>
+                        </View>
+                    ) : null}
                     {user.joined_date && !user.joined_date.startsWith('0000') && (
                         <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Joined {new Date(user.joined_date).toLocaleDateString()}</Text>
                     )}
@@ -469,11 +473,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     justifyContent: 'center',
                                     backgroundColor: followStats.is_following || followStats.is_connected
                                         ? '#f0fdf4'
-                                        : followStats.is_requested ? '#f3f4f6' : '#0064e0',
+                                        : (followStats.is_requested && !user.is_business) ? '#f3f4f6' : '#ea580c',
                                     borderWidth: 1,
                                     borderColor: followStats.is_following || followStats.is_connected
                                         ? '#dcfce7'
-                                        : followStats.is_requested ? '#e5e7eb' : '#0064e0',
+                                        : (followStats.is_requested && !user.is_business) ? '#e5e7eb' : '#ea580c',
                                 }}
                                 activeOpacity={0.8}
                             >
@@ -482,12 +486,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     fontWeight: 'bold',
                                     color: followStats.is_following || followStats.is_connected
                                         ? '#16a34a'
-                                        : followStats.is_requested ? '#6b7280' : 'white'
+                                        : (followStats.is_requested && !user.is_business) ? '#6b7280' : 'white'
                                 }}>
                                     {togglingFollow ? 'Updating...' :
                                         user.is_business
                                             // Business page: Follow / Following
-                                            ? (followStats.is_following || followStats.is_connected ? '✓ Following' : '+ Follow')
+                                            ? (followStats.is_following || followStats.is_connected || followStats.is_requested ? 'Following' : '+ Follow')
                                             // Personal: Connect flow
                                             : (followStats.is_connected ? 'Connected' :
                                                 followStats.is_requested ? 'Requested' :

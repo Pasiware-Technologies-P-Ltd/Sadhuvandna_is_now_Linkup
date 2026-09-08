@@ -160,7 +160,12 @@ const ChatListScreen = ({ navigation }: any) => {
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
             {/* Header Toolbar */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: 'white', zIndex: 50 }}>
-                <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 8 }} activeOpacity={0.7}>
+                        <Ionicons name="arrow-back" size={24} color="#111827" />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
+                </View>
                 <TouchableOpacity onPress={toggleMenu} style={{ padding: 4 }} activeOpacity={0.7}>
                     <Ionicons name="ellipsis-vertical" size={20} color="#374151" />
                 </TouchableOpacity>

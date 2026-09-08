@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator, Linking } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -217,9 +218,14 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 <Text className="text-xl font-bold text-gray-800">{isEdit ? 'Edit Matrimony Profile' : 'Create Matrimony Profile'}</Text>
             </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-                <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-
+            <KeyboardAwareScrollView 
+                className="flex-1" 
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} 
+                showsVerticalScrollIndicator={false}
+                enableOnAndroid={true}
+                extraScrollHeight={100}
+                keyboardShouldPersistTaps="handled"
+            >
                     {/* Photo Upload */}
                     <View className="items-center my-6">
                         <TouchableOpacity onPress={pickImage} className="relative">
@@ -373,8 +379,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </TouchableOpacity>
 
                     <View className="h-10" />
-                </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 };

@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import api from '../../services/api';
 
 const { width } = Dimensions.get('window');
@@ -15,6 +17,7 @@ const categories = [
 ];
 
 const CreateBusinessPageScreen = ({ navigation }: any) => {
+    const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
     
     // Form State
@@ -101,7 +104,7 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
     );
 
     return (
-        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#ffffff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
             {/* Custom Header with Shadow */}
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16, backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4, zIndex: 10 }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, backgroundColor: '#f3f4f6', borderRadius: 20 }}>
@@ -113,98 +116,107 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <KeyboardAwareScrollView 
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ paddingBottom: 100 + insets.bottom }} 
+                showsVerticalScrollIndicator={false}
+                enableOnAndroid={true}
+                extraScrollHeight={100}
+                keyboardShouldPersistTaps="handled"
+            >
                 
-                {/* 1. Basic Info Section */}
-                <View style={{ marginBottom: 30 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                            <Ionicons name="briefcase" size={16} color="#ea580c" />
+                <View style={{ paddingHorizontal: 24, paddingTop: 10 }}>
+                    {/* 1. Basic Info Section */}
+                    <View style={{ marginBottom: 30 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                                <Ionicons name="briefcase" size={16} color="#ea580c" />
+                            </View>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Basic Details</Text>
                         </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Basic Details</Text>
+
+                        {renderInput("business", "Business Name (e.g. Sharma Sweets) *", businessName, setBusinessName)}
+
+                        <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 14 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 14 }}>
+                                <Ionicons name="grid" size={20} color="#9ca3af" />
+                                <Picker
+                                    selectedValue={selectedCategory}
+                                    onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                                    style={{ flex: 1, height: 50, color: '#1f2937' }}
+                                >
+                                    {categories.map((cat, idx) => (
+                                        <Picker.Item key={idx} label={cat} value={cat} />
+                                    ))}
+                                </Picker>
+                            </View>
+                        </View>
+
+                        {selectedCategory === 'Other' && renderInput("pencil", "Specify Other Category *", otherCategory, setOtherCategory)}
                     </View>
 
-                    {renderInput("business", "Business Name (e.g. Sharma Sweets) *", businessName, setBusinessName)}
+                    {/* 2. Contact Section */}
+                    <View style={{ marginBottom: 30 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                                <Ionicons name="call" size={16} color="#3b82f6" />
+                            </View>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Contact Info</Text>
+                        </View>
 
-                    <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 14 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 14 }}>
-                            <Ionicons name="grid" size={20} color="#9ca3af" />
-                            <Picker
-                                selectedValue={selectedCategory}
-                                onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                                style={{ flex: 1, height: 50, color: '#1f2937' }}
-                            >
-                                {categories.map((cat, idx) => (
-                                    <Picker.Item key={idx} label={cat} value={cat} />
-                                ))}
-                            </Picker>
+                        {renderInput("call-outline", "Phone Number", phoneNo, setPhoneNo, { keyboardType: "phone-pad" })}
+                        {renderInput("mail-outline", "Email Address", email, setEmail, { keyboardType: "email-address", autoCapitalize: "none" })}
+                        {renderInput("globe-outline", "Website URL", websiteUrl, setWebsiteUrl, { autoCapitalize: "none" })}
+                        {renderInput("logo-instagram", "Social Media Link", socialMedia, setSocialMedia, { autoCapitalize: "none" })}
+                    </View>
+
+                    {/* 3. Address Section */}
+                    <View style={{ marginBottom: 30 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                                <Ionicons name="location" size={16} color="#22c55e" />
+                            </View>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Location & Address</Text>
+                        </View>
+
+                        {renderInput("map-outline", "Full Address (Street, Building, Area)", fullAddress, setFullAddress, { multiline: true })}
+                        
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 0.48 }}>
+                                {renderInput("business-outline", "District", district, setDistrict)}
+                            </View>
+                            <View style={{ flex: 0.48 }}>
+                                {renderInput("navigate-outline", "Pincode", pincode, setPincode, { keyboardType: "number-pad" })}
+                            </View>
+                        </View>
+                        
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 0.48 }}>
+                                {renderInput("map", "State", state, setState)}
+                            </View>
+                            <View style={{ flex: 0.48 }}>
+                                {renderInput("earth", "Country", country, setCountry)}
+                            </View>
                         </View>
                     </View>
 
-                    {selectedCategory === 'Other' && renderInput("pencil", "Specify Other Category *", otherCategory, setOtherCategory)}
+                    {/* 4. Operations Section */}
+                    <View style={{ marginBottom: 40 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                                <Ionicons name="time" size={16} color="#d97706" />
+                            </View>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Operations</Text>
+                        </View>
+
+                        {renderInput("time-outline", "Opening Hours (e.g. 9 AM - 8 PM)", openingHours, setOpeningHours)}
+                    </View>
                 </View>
 
-                {/* 2. Contact Section */}
-                <View style={{ marginBottom: 30 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                            <Ionicons name="call" size={16} color="#3b82f6" />
-                        </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Contact Info</Text>
-                    </View>
-
-                    {renderInput("call-outline", "Phone Number", phoneNo, setPhoneNo, { keyboardType: "phone-pad" })}
-                    {renderInput("mail-outline", "Email Address", email, setEmail, { keyboardType: "email-address", autoCapitalize: "none" })}
-                    {renderInput("globe-outline", "Website URL", websiteUrl, setWebsiteUrl, { autoCapitalize: "none" })}
-                    {renderInput("logo-instagram", "Social Media Link", socialMedia, setSocialMedia, { autoCapitalize: "none" })}
-                </View>
-
-                {/* 3. Address Section */}
-                <View style={{ marginBottom: 30 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                            <Ionicons name="location" size={16} color="#22c55e" />
-                        </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Location & Address</Text>
-                    </View>
-
-                    {renderInput("map-outline", "Full Address (Street, Building, Area)", fullAddress, setFullAddress, { multiline: true })}
-                    
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 0.48 }}>
-                            {renderInput("business-outline", "District", district, setDistrict)}
-                        </View>
-                        <View style={{ flex: 0.48 }}>
-                            {renderInput("navigate-outline", "Pincode", pincode, setPincode, { keyboardType: "number-pad" })}
-                        </View>
-                    </View>
-                    
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 0.48 }}>
-                            {renderInput("map", "State", state, setState)}
-                        </View>
-                        <View style={{ flex: 0.48 }}>
-                            {renderInput("earth", "Country", country, setCountry)}
-                        </View>
-                    </View>
-                </View>
-
-                {/* 4. Operations Section */}
-                <View style={{ marginBottom: 40 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                            <Ionicons name="time" size={16} color="#d97706" />
-                        </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Operations</Text>
-                    </View>
-
-                    {renderInput("time-outline", "Opening Hours (e.g. 9 AM - 8 PM)", openingHours, setOpeningHours)}
-                </View>
-
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             {/* Floating Submit Button */}
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#f3f4f6' }}>
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#f3f4f6' }}>
                 <TouchableOpacity
                     onPress={handleSubmit}
                     disabled={loading}
@@ -237,7 +249,7 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
             </View>
 
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Dimensions, Platform, KeyboardAvoidingView, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Dimensions, Platform, StyleSheet, StatusBar } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -456,7 +457,7 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
             <SafeAreaView style={{ flex: 1 }}>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <View style={{ flex: 1 }}>
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
                             <Ionicons name="chevron-back" size={24} color={COLORS.text} />
@@ -476,7 +477,14 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+                    <KeyboardAwareScrollView 
+                        style={{ flex: 1 }} 
+                        showsVerticalScrollIndicator={false} 
+                        contentContainerStyle={{ paddingBottom: 60 }}
+                        enableOnAndroid={true}
+                        extraScrollHeight={100}
+                        keyboardShouldPersistTaps="handled"
+                    >
                         <View style={styles.topPreviewWrapper}>
                             <View style={styles.previewContainer}>
                                 <View style={styles.previewCard}>
@@ -618,8 +626,8 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                 />
                             </View>
                         </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
+                    </KeyboardAwareScrollView>
+                </View>
             </SafeAreaView>
         </View>
     );

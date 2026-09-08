@@ -3,7 +3,7 @@ export type MainTabParamList = {
   Reels: undefined;
   News: undefined;
   Marriage: undefined;
-  Chats: undefined;
+  Profile: undefined;
 };
 
 export type AuthStackParamList = {
@@ -54,4 +54,6 @@ export type RootStackParamList = {
   JoinGroup: { inviteCode: string };
   SupportChat: undefined;
   CreateBusinessPage: undefined;
+  EditBusinessPage: undefined;
+  Chats: undefined;
 };

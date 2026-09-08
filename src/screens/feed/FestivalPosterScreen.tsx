@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, FlatList, StyleSheet, Dimensions, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, FlatList, StyleSheet, Dimensions, Platform } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -358,7 +359,13 @@ const FestivalPosterScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+            <KeyboardAwareScrollView 
+                className="flex-1" 
+                showsVerticalScrollIndicator={false}
+                enableOnAndroid={true}
+                extraScrollHeight={100}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Header */}
                 <View className="flex-row items-center px-4 py-4 border-b border-gray-100 justify-between">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
@@ -379,8 +386,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                    {/* Visual Preview */}
+                {/* Visual Preview */}
                     <View className="p-4 bg-gray-50 items-center justify-center">
                         <View style={styles.shadowBox}>
                              {isDownloading && (
@@ -479,8 +485,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                              </View>
                         </View>
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 };
