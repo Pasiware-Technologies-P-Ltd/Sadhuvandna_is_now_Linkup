@@ -63,7 +63,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
             if (!result.canceled && result.assets) {
                 const selectedMedia = result.assets.map(asset => ({
                     uri: asset.uri,
-                    type: asset.type === 'video' ? 'video' : 'image'
+                    type: (asset.type === 'video' ? 'video' : 'image') as 'video' | 'image'
                 }));
                 setMediaFiles(prev => [...prev, ...selectedMedia]);
             }
@@ -257,7 +257,18 @@ const CreateNewsScreen = ({ navigation }: any) => {
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Add New News</Text>
-                <View style={{ width: 40 }} />
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('MyNews')}
+                    style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
+                        borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
+                    }}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
+                </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -418,7 +429,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             {termsAccepted && <Ionicons name="checkmark" size={14} color="white" />}
                         </View>
                         <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', decorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
+                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
                         </Text>
                     </TouchableOpacity>
 
@@ -448,7 +459,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             {policyAccepted && <Ionicons name="checkmark" size={14} color="white" />}
                         </View>
                         <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', decorationLine: 'underline' }}>Privacy Policy</Text>
+                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Privacy Policy</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>

@@ -9,6 +9,8 @@ import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';
 import { WebView } from 'react-native-webview';
+import { Modal, TextInput } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -151,6 +153,50 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const tapCount = useRef<number>(0);
     const timer = useRef<any>(null);
     const heartScale = useRef(new Animated.Value(0)).current;
+
+    const REPORT_CATEGORIES = [
+        'Child Safety Concern',
+        'Sexual/Exploitative Content',
+        'Harassment/Abuse',
+        'Nudity/Sexual Content',
+        'Violence',
+        'Other'
+    ];
+    
+    const [reportModalVisible, setReportModalVisible] = useState(false);
+    const [reportCategory, setReportCategory] = useState('Child Safety Concern');
+    const [reportReason, setReportReason] = useState('');
+    const [reporting, setReporting] = useState(false);
+
+    const submitReport = async () => {
+        if (!reportReason.trim()) {
+            Alert.alert("Reason Required", "Please enter a reason for reporting this reel.");
+            return;
+        }
+
+        setReporting(true);
+        try {
+            const payload = {
+                id: item.id,
+                user_id: currentUserId || '',
+                action: 'report',
+                reason: `[${reportCategory}] ${reportReason.trim()}`
+            };
+            const response = await api.post('like_comment_action.php', payload);
+            if (response.data && (response.data.ok || response.data.status === 'success')) {
+                Alert.alert("Reel Reported", "Thank you for reporting. We will review this reel shortly.");
+                setReportModalVisible(false);
+                setReportReason('');
+            } else {
+                Alert.alert("Error", response.data?.message || "Failed to submit report. Please try again.");
+            }
+        } catch (e) {
+            console.error("Report failed", e);
+            Alert.alert("Error", "A network error occurred. Please try again.");
+        } finally {
+            setReporting(false);
+        }
+    };
 
     // Sync state when item changes (e.g. on refresh)
     useEffect(() => {
@@ -295,6 +341,56 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
             await Share.share({ message, url: postUrl });
         } catch (error: any) {
             Alert.alert(error.message);
+        }
+    };
+
+    const handleOptions = () => {
+        if (!currentUserId) return;
+
+        if (String(item.user_id) === String(currentUserId)) {
+            Alert.alert("Manage Reel", "What would you like to do?", [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete Reel",
+                    style: "destructive",
+                    onPress: () => {
+                        Alert.alert(
+                            "Delete Reel",
+                            "Are you sure you want to delete this reel?",
+                            [
+                                { text: "Cancel", style: "cancel" },
+                                { 
+                                    text: "Delete", 
+                                    style: "destructive", 
+                                    onPress: async () => {
+                                        try {
+                                            const res = await api.post('delete_post.php', { id: item.id, user_id: currentUserId });
+                                            if (res.data.ok || res.data.status === 'success') {
+                                                Alert.alert("Deleted", "Reel deleted successfully. Please refresh the page.");
+                                            } else {
+                                                Alert.alert("Error", res.data.message || "Failed to delete reel");
+                                            }
+                                        } catch (e) {
+                                            Alert.alert("Error", "Network error");
+                                        }
+                                    } 
+                                }
+                            ]
+                        );
+                    }
+                }
+            ]);
+        } else {
+            Alert.alert("Reel Options", "What would you like to do?", [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Report Reel", 
+                    style: "destructive", 
+                    onPress: () => {
+                        setReportModalVisible(true);
+                    } 
+                }
+            ]);
         }
     };
 
@@ -530,10 +626,75 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     <Ionicons name="paper-plane-outline" size={28} color="white" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.iconButton}>
+                <TouchableOpacity style={styles.iconButton} onPress={handleOptions}>
                     <Ionicons name="ellipsis-vertical" size={24} color="white" />
                 </TouchableOpacity>
             </View>
+
+            {/* Report Reel Modal */}
+            <Modal
+                visible={reportModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setReportModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Report Reel</Text>
+                            <TouchableOpacity onPress={() => setReportModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="#374151" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.modalSubtitle}>Please select a category for reporting:</Text>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={reportCategory}
+                                onValueChange={(itemValue) => setReportCategory(itemValue)}
+                                style={styles.picker}
+                            >
+                                {REPORT_CATEGORIES.map((category) => (
+                                    <Picker.Item key={category} label={category} value={category} />
+                                ))}
+                            </Picker>
+                        </View>
+
+                        <Text style={styles.modalSubtitle}>Describe your reason:</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="Write the detailed reason here..."
+                            placeholderTextColor="#9ca3af"
+                            multiline={true}
+                            numberOfLines={4}
+                            value={reportReason}
+                            onChangeText={setReportReason}
+                        />
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.cancelButton]} 
+                                onPress={() => setReportModalVisible(false)}
+                                disabled={reporting}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.submitButton]} 
+                                onPress={submitReport}
+                                disabled={reporting}
+                            >
+                                {reporting ? (
+                                    <ActivityIndicator color="white" size="small" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>Submit</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -552,6 +713,10 @@ const ReelsScreen = ({ navigation, route }: any) => {
     const [initialPage, setInitialPage] = useState(0);
     const [layoutHeight, setLayoutHeight] = useState(height);
     const flatListRef = useRef<FlatList>(null);
+    // Refs to avoid stale closures in onViewableItemsChanged
+    const reelsRef = useRef<any[]>([]);
+    const isFetchingMoreRef = useRef(false);
+    const activeIndexRef = useRef(0);
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 80,
     }).current;
@@ -561,8 +726,10 @@ const ReelsScreen = ({ navigation, route }: any) => {
             const index = viewableItems[0].index;
             if (index !== null) {
                 setActiveIndex(index);
-                if (index >= reels.length - 3) {
-                    loadReels(true);
+                activeIndexRef.current = index;
+                // Use refs to get fresh values, avoiding stale closure
+                if (!isFetchingMoreRef.current && index >= reelsRef.current.length - 3) {
+                    loadMoreReels();
                 }
             }
         }
@@ -607,13 +774,53 @@ const ReelsScreen = ({ navigation, route }: any) => {
         };
     }, [navigation, isFocused]);
 
+    const loadMoreReels = async () => {
+        if (isFetchingMoreRef.current) return;
+        isFetchingMoreRef.current = true;
+        setIsFetchingMore(true);
+        try {
+            const uStr = await AsyncStorage.getItem('user');
+            let uid = '';
+            if (uStr) {
+                const u = JSON.parse(uStr);
+                uid = u.id;
+            }
+            const currentReels = reelsRef.current;
+            const offset = currentReels.length; // Use actual list length as offset
+            let url = `get_posts.php?user_id=${uid}&limit=50&offset=${offset}`;
+            if (filterUserId) {
+                url += `&filter_user_id=${filterUserId}`;
+            }
+            const res = await api.get(url);
+            if (res.data.status === 'success' && Array.isArray(res.data.data)) {
+                const videoPosts = res.data.data.filter((post: any) =>
+                    post.media && post.media.some((m: string) => isVideo(m))
+                );
+                if (videoPosts.length > 0) {
+                    setReels((prev: any[]) => {
+                        const existingIds = new Set(prev.map((p: any) => p.id));
+                        const uniqueNew = videoPosts.filter((p: any) => !existingIds.has(p.id));
+                        const merged = [...prev, ...uniqueNew];
+                        reelsRef.current = merged;
+                        return merged;
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('[Reels] Load more error:', error);
+        } finally {
+            isFetchingMoreRef.current = false;
+            setIsFetchingMore(false);
+        }
+    };
+
     const loadReels = async (isLoadMore = false) => {
         if (isLoadMore) {
-            if (isFetchingMore) return;
-            setIsFetchingMore(true);
-        } else {
-            setLoading(true);
+            // Use the new dedicated function for load more
+            loadMoreReels();
+            return;
         }
+        setLoading(true);
         try {
             const uStr = await AsyncStorage.getItem('user');
             let uid = '';
@@ -623,8 +830,7 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 setCurrentUserId(uid);
             }
 
-            const offset = isLoadMore ? (activeIndex + 20) : 0; // Better offset for large batch
-            let url = `get_posts.php?user_id=${uid}&limit=150&offset=${offset}`;
+            let url = `get_posts.php?user_id=${uid}&limit=50&offset=0`;
             if (filterUserId) {
                 url += `&filter_user_id=${filterUserId}`;
             }
@@ -635,30 +841,22 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 const videoPosts = res.data.data.filter((post: any) =>
                     post.media && post.media.some((m: string) => isVideo(m))
                 );
-
-                if (isLoadMore) {
-                    setReels((prev: any[]) => {
-                        const existingIds = new Set(prev.map((p: any) => p.id));
-                        const uniqueNew = videoPosts.filter((p: any) => !existingIds.has(p.id));
-                        return [...prev, ...uniqueNew];
-                    });
-                } else {
-                    setReels(videoPosts);
-                    // If initialReelId is provided, find its index
-                    if (initialReelId) {
-                        const idx = videoPosts.findIndex((r: any) => r.id.toString() === initialReelId.toString());
-                        if (idx !== -1) {
-                            setInitialPage(idx);
-                            setActiveIndex(idx);
-                        }
+                setReels(videoPosts);
+                reelsRef.current = videoPosts;
+                // If initialReelId is provided, find its index
+                if (initialReelId) {
+                    const idx = videoPosts.findIndex((r: any) => r.id.toString() === initialReelId.toString());
+                    if (idx !== -1) {
+                        setInitialPage(idx);
+                        setActiveIndex(idx);
+                        activeIndexRef.current = idx;
                     }
                 }
             }
         } catch (error) {
             console.error(error);
         } finally {
-            if (isLoadMore) setIsFetchingMore(false);
-            else setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -868,6 +1066,100 @@ const styles = StyleSheet.create({
     vignettePart: {
         position: 'absolute',
         backgroundColor: 'rgba(0,0,0,0.25)',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: Dimensions.get('window').width - 40,
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        paddingBottom: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#111827',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 8,
+        marginTop: 8,
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        backgroundColor: '#f9fafb',
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    picker: {
+        width: '100%',
+        height: 50,
+        color: '#111827',
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 14,
+        color: '#111827',
+        backgroundColor: '#f9fafb',
+        textAlignVertical: 'top',
+        height: 100,
+        marginBottom: 20,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    modalButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        minWidth: 90,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#f3f4f6',
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+    },
+    cancelButtonText: {
+        color: '#374151',
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    submitButton: {
+        backgroundColor: '#ea580c',
+    },
+    submitButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 14,
     }
 });
 

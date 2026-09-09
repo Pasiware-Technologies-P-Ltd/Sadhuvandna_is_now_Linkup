@@ -13,7 +13,9 @@ import {
     Alert,
     Modal,
     Pressable,
-    Linking
+    Linking,
+    Keyboard,
+    ScrollView
 } from 'react-native';
 
 // Enable LayoutAnimation for Android
@@ -25,7 +27,6 @@ import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
-import EmojiSelector from 'react-native-emoji-selector';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import WebCallModal from '../../components/WebCallModal';
@@ -75,9 +76,6 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [groupTypingUser, setGroupTypingUser] = useState<string | null>(null);
     const typingDotAnim = useRef(new Animated.Value(0)).current;
 
-    // Emoji Picker State
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
     // Block User State
     const [isBlocked, setIsBlocked] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -102,6 +100,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [expandedMessageIds, setExpandedMessageIds] = useState<number[]>([]);
     const [fontSize, setFontSize] = useState(16);
     const [showFontSizeControl, setShowFontSizeControl] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     // Search State
     const [isSearchActive, setIsSearchActive] = useState(false);
@@ -124,6 +123,17 @@ const ChatScreen = ({ navigation, route }: any) => {
     const flatListRef = useRef<FlatList>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', (e) => {
+            setKeyboardHeight(e.endCoordinates.height);
+        });
+        const hide = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardHeight(0);
+        });
+        return () => { show.remove(); hide.remove(); };
+    }, []);
 
     useEffect(() => {
         init();
@@ -159,7 +169,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                 updateMyOnlineStatus(user.id);
             }
             const savedFontSize = await AsyncStorage.getItem('chat_font_size');
-            if (savedFontSize) setFontSize(parseInt(savedFontSize));
+            if (savedFontSize) {
+                const parsed = parseInt(savedFontSize);
+                if (!isNaN(parsed)) {
+                    setFontSize(Math.max(12, Math.min(30, parsed)));
+                }
+            }
         } catch (e) {
             console.error(e);
         }
@@ -285,8 +300,9 @@ const ChatScreen = ({ navigation, route }: any) => {
     };
 
     const saveFontSize = async (size: number) => {
-        setFontSize(size);
-        await AsyncStorage.setItem('chat_font_size', size.toString());
+        const validSize = isNaN(size) ? 16 : Math.max(12, Math.min(30, size));
+        setFontSize(validSize);
+        await AsyncStorage.setItem('chat_font_size', validSize.toString());
     };
 
     const formatTime = (dateStr: string) => {
@@ -321,8 +337,8 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             const isGroup = route.params?.isGroup;
             const endpoint = isGroup 
-                ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}`
-                : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}`;
+                ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}&t=${Date.now()}`
+                : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}&t=${Date.now()}`;
             const res = await api.get(endpoint);
             if (res.data.status === 'success' && isMountedRef.current) {
                 // Map group messages for common keys
@@ -371,7 +387,7 @@ const ChatScreen = ({ navigation, route }: any) => {
             // For group chats, fetch group typing status
             try {
                 const res = await api.get(
-                    `get_group_typing.php?group_id=${receiver?.id}&user_id=${userId}`
+                    `get_group_typing.php?group_id=${receiver?.id}&user_id=${userId}&t=${Date.now()}`
                 );
                 if (res.data.status === 'success' && isMountedRef.current) {
                     setGroupTypingUser(res.data.typing_user || null);
@@ -385,7 +401,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             // Note: API now expects profile_id (receiver) and my_profile_id (me)
             const res = await api.get(
-                `get_chat_user_status.php?profile_id=${receiver.id}&my_profile_id=${currentId}&platform=${platform}`
+                `get_chat_user_status.php?profile_id=${receiver.id}&my_profile_id=${currentId}&platform=${platform}&t=${Date.now()}`
             );
             if (res.data.status === 'success' && isMountedRef.current) {
                 setReceiverOnline(res.data.online);
@@ -668,7 +684,7 @@ const ChatScreen = ({ navigation, route }: any) => {
             [
                 { text: "Cancel", style: "cancel" },
                 {
-                    text: "Unblock",
+                    text: isBlocked ? "Unblock" : "Block",
                     style: isBlocked ? "default" : "destructive",
                     onPress: async () => {
                         try {
@@ -1093,13 +1109,10 @@ const ChatScreen = ({ navigation, route }: any) => {
                 </View>
             )}
 
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}     
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 5: 0}
-            >
+            <View style={{ flex: 1, marginBottom: Platform.OS === 'android' ? keyboardHeight : 0 }}>
                 <FlatList
                     ref={flatListRef}
+                    keyboardShouldPersistTaps="handled"
                     data={searchQuery.trim() ? messages.filter(m => m.message?.toLowerCase().includes(searchQuery.toLowerCase())) : messages}
                     keyExtractor={(item, index) => item?.id?.toString() ?? index.toString()}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 20 }}
@@ -1171,7 +1184,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                 />
                                             ) : item.file_type === 'document' ? (
                                                 <TouchableOpacity 
-                                                    onPress={() => Linking.openURL(fileUrl as string)}
+                                                    onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : Linking.openURL(fileUrl as string)}
+                                                    onLongPress={() => !isDeleted && handleLongPress(item)}
                                                     className={`p-3 flex-row items-center space-x-3 w-[200px] ${isMe ? 'bg-orange-700' : 'bg-gray-50'}`}
                                                 >
                                                     <Ionicons name="document-text" size={32} color={isMe ? "white" : "#ea580c"} />
@@ -1183,7 +1197,10 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                     </View>
                                                 </TouchableOpacity>
                                             ) : (
-                                                <TouchableOpacity onPress={() => setFullScreenImage(fileUrl)}>
+                                                <TouchableOpacity 
+                                                    onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : setFullScreenImage(fileUrl)}
+                                                    onLongPress={() => !isDeleted && handleLongPress(item)}
+                                                >
                                                     <Image
                                                         source={{ uri: fileUrl as string }}
                                                         style={{ width: 200, height: 200, backgroundColor: 'transparent' }}
@@ -1359,9 +1376,24 @@ const ChatScreen = ({ navigation, route }: any) => {
                         </Text>
                     </View>
                 ) : (
-                    <View style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: Math.max(10, insets.bottom), backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{
+                        paddingHorizontal: 12,
+                        paddingTop: 10,
+                        paddingBottom: Platform.OS === 'android'
+                            ? Math.max(10, insets.bottom)
+                            : Math.max(10, insets.bottom),
+                        backgroundColor: 'white',
+                        borderTopWidth: 1,
+                        borderTopColor: '#f3f4f6',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8
+                    }}>
                         <TouchableOpacity 
-                            onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                            onPress={() => {
+                                Keyboard.dismiss();
+                                setShowAttachmentMenu(!showAttachmentMenu);
+                            }}
                             style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#ffedd5' : '#f9fafb', borderWidth: 1, borderColor: showAttachmentMenu ? '#ffedd5' : '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.7}
                         >
@@ -1381,8 +1413,16 @@ const ChatScreen = ({ navigation, route }: any) => {
                                     setShowAttachmentMenu(false);
                                 }}
                             />
-                            <TouchableOpacity onPress={() => setShowEmojiPicker(!showEmojiPicker)} style={{ padding: 4 }} activeOpacity={0.7}>
-                                <Ionicons name="happy-outline" size={22} color="#9ca3af" />
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Keyboard.dismiss();
+                                    setShowEmojiPicker(prev => !prev);
+                                    setShowAttachmentMenu(false);
+                                }}
+                                style={{ padding: 4 }}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#ea580c" : "#9ca3af"} />
                             </TouchableOpacity>
                         </View>
 
@@ -1413,16 +1453,42 @@ const ChatScreen = ({ navigation, route }: any) => {
                     </View>
                 )}
 
-                {showEmojiPicker && (
-                    <View style={{ height: 300, backgroundColor: 'white' }}>
-                        <EmojiSelector
-                            onEmojiSelected={(emoji) => setText(prev => prev + emoji)}
-                            showSearchBar={false}
-                            columns={8}
-                        />
-                    </View>
-                )}
-            </KeyboardAvoidingView>
+                {/* Custom Emoji Picker */}
+                {showEmojiPicker && (() => {
+                    const emojiRows = [
+                        ['😀','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳','😜','😝','🤑','🤗','😇'],
+                        ['😢','😭','😤','😠','🤪','😱','😨','😰','😥','😓','🙄','😬','🤥','😶','😐'],
+                        ['👍','👎','👏','🙌','🤝','✊','👊','🤲','🙏','💪','👌','✌️','🤞','🖐️','👋'],
+                        ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','💕','💞','💓','💗','💖'],
+                        ['🔥','💯','⭐','🌟','✨','💫','🎉','🎊','🎈','🎁','🏆','🥇','🎯','💎','🚨'],
+                        ['😴','🤔','🤗','😏','😒','😞','😑','🥺','😔','😟','🤒','🤕','🤧','😷','🥴'],
+                        ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐧'],
+                        ['🍕','🍔','🍟','🌮','🌯','🍜','🍱','🍣','🍩','🍪','🍰','🎂','🍫','🍬','🍭'],
+                        ['⚽','🏀','🏈','⚾','🎾','🏐','🎱','🏓','🏸','🥊','🏋️','🤸','⛹️','🏊','🚴'],
+                        ['🚀','🛸','🌈','🌊','🌋','🌸','🌺','🌻','🌹','🌿','🍀','🌴','🌵','🍁','🍄'],
+                    ];
+                    return (
+                        <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
+                            {emojiRows.map((row, rowIndex) => (
+                                <ScrollView key={rowIndex} horizontal showsHorizontalScrollIndicator={false}>
+                                    <View style={{ flexDirection: 'row', paddingHorizontal: 4, paddingVertical: 4 }}>
+                                        {row.map((emoji, i) => (
+                                            <TouchableOpacity
+                                                key={i}
+                                                onPress={() => setText(prev => prev + emoji)}
+                                                style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
+                                                activeOpacity={0.6}
+                                            >
+                                                <Text style={{ fontSize: 24 }}>{emoji}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </ScrollView>
+                            ))}
+                        </View>
+                    );
+                })()}
+            </View>
 
             {/* Full Screen Image Modal */}
             <Modal visible={!!fullScreenImage} transparent={true} animationType="fade">

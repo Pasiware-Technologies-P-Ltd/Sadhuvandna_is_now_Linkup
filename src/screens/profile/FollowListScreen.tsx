@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -18,6 +18,8 @@ const FollowListScreen = ({ route, navigation }: any) => {
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
         const loadCurrentUser = async () => {
@@ -32,9 +34,12 @@ const FollowListScreen = ({ route, navigation }: any) => {
 
     useEffect(() => {
         if (currentUserId) {
-            fetchUsersList(false);
+            const delayDebounceFn = setTimeout(() => {
+                fetchUsersList(false);
+            }, 500);
+            return () => clearTimeout(delayDebounceFn);
         }
-    }, [currentUserId, userId, action]);
+    }, [currentUserId, userId, action, searchQuery]);
 
     const fetchUsersList = async (isMore = false) => {
         if (isMore && (loadingMore || !hasMore)) return;
@@ -50,7 +55,8 @@ const FollowListScreen = ({ route, navigation }: any) => {
             const currentOffset = isMore ? (page + 1) * 20 : 0;
             const res = await api.post(`/api_follow.php?action=${action}&limit=20&offset=${currentOffset}`, {
                 current_user_id: currentUserId,
-                user_id: userId
+                user_id: userId,
+                search: searchQuery
             });
 
             if (res.data.ok) {
@@ -218,21 +224,43 @@ const FollowListScreen = ({ route, navigation }: any) => {
         <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
             {/* Custom Header */}
             <View className="px-4 py-4 bg-white border-b border-gray-100 flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        className="mr-4 w-10 h-10 bg-gray-50 rounded-full items-center justify-center border border-gray-100"
-                    >
-                        <Ionicons name="chevron-back" size={24} color="#1f2937" />
-                    </TouchableOpacity>
-                    <View>
-                        <Text className="text-xl font-black text-gray-900">{title}</Text>
-                        <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Connect with Community</Text>
+                {isSearching ? (
+                    <View className="flex-row items-center flex-1 bg-gray-50 rounded-full px-3 py-1 border border-gray-200">
+                        <Ionicons name="search-outline" size={20} color="#9ca3af" />
+                        <TextInput
+                            autoFocus
+                            placeholder="Search by name or city..."
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            className="flex-1 ml-2 text-base text-gray-900 py-2"
+                            placeholderTextColor="#9ca3af"
+                        />
+                        <TouchableOpacity onPress={() => { setIsSearching(false); setSearchQuery(''); }}>
+                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                        </TouchableOpacity>
                     </View>
-                </View>
-                <TouchableOpacity className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center border border-orange-100">
-                    <Ionicons name="search-outline" size={20} color="#ea580c" />
-                </TouchableOpacity>
+                ) : (
+                    <>
+                        <View className="flex-row items-center">
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                className="mr-4 w-10 h-10 bg-gray-50 rounded-full items-center justify-center border border-gray-100"
+                            >
+                                <Ionicons name="chevron-back" size={24} color="#1f2937" />
+                            </TouchableOpacity>
+                            <View>
+                                <Text className="text-xl font-black text-gray-900">{title}</Text>
+                                <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Connect with Community</Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity 
+                            className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center border border-orange-100"
+                            onPress={() => setIsSearching(true)}
+                        >
+                            <Ionicons name="search-outline" size={20} color="#ea580c" />
+                        </TouchableOpacity>
+                    </>
+                )}
             </View>
 
             {loading && users.length === 0 ? (

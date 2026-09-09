@@ -127,54 +127,56 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                 <Text className="font-bold text-lg ml-2">{currentPost?.user?.name || 'Post'}'s Post</Text>
             </View>
 
-            <View className="flex-1">
-                {loadingPost ? (
-                    <View className="flex-1 justify-center items-center">
-                        <ActivityIndicator size="large" color="#ea580c" />
-                    </View>
-                ) : currentPost ? (
-                    <FlatList
-                        data={comments}
-                        keyExtractor={(item, index) => index.toString()}
-                        renderItem={renderComment}
-                        ListHeaderComponent={
-                            <View className="mb-2">
-                                <PostCard
-                                    post={currentPost}
-                                    shouldPlay={true}
-                                    onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
-                                />
-                                <Text className="p-3 font-bold text-gray-500 text-sm">Comments</Text>
-                            </View>
-                        }
-                        ListEmptyComponent={
-                            !loadingComments ? (
-                                <Text className="text-center text-gray-400 py-10">No comments yet. Be the first!</Text>
-                            ) : (
-                                <ActivityIndicator className="py-10" color="orange" />
-                            )
-                        }
-                        contentContainerStyle={{ paddingBottom: 20 }}
-                    />
-                ) : null}
-            </View>
-
             <KeyboardAvoidingView
+                style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="bg-white border-t border-gray-200 p-2"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
             >
-                <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-1">
-                    <TextInput
-                        className="flex-1 py-2 text-gray-700 max-h-24"
-                        placeholder="Write a comment..."
-                        value={newComment}
-                        onChangeText={setNewComment}
-                        multiline
-                    />
-                    <TouchableOpacity onPress={handleSendComment} disabled={!newComment.trim()}>
-                        <Ionicons name="send" size={20} color={newComment.trim() ? '#ea580c' : '#bdc3c7'} />
-                    </TouchableOpacity>
+                <View className="flex-1">
+                    {loadingPost ? (
+                        <View className="flex-1 justify-center items-center">
+                            <ActivityIndicator size="large" color="#ea580c" />
+                        </View>
+                    ) : currentPost ? (
+                        <FlatList
+                            data={comments}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={renderComment}
+                            ListHeaderComponent={
+                                <View className="mb-2">
+                                    <PostCard
+                                        post={currentPost}
+                                        shouldPlay={true}
+                                        onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
+                                    />
+                                    <Text className="p-3 font-bold text-gray-500 text-sm">Comments</Text>
+                                </View>
+                            }
+                            ListEmptyComponent={
+                                !loadingComments ? (
+                                    <Text className="text-center text-gray-400 py-10">No comments yet. Be the first!</Text>
+                                ) : (
+                                    <ActivityIndicator className="py-10" color="orange" />
+                                )
+                            }
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        />
+                    ) : null}
+                </View>
+
+                <View className="bg-white border-t border-gray-200 p-2">
+                    <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-1">
+                        <TextInput
+                            className="flex-1 py-2 text-gray-700 max-h-24"
+                            placeholder="Write a comment..."
+                            value={newComment}
+                            onChangeText={setNewComment}
+                            multiline
+                        />
+                        <TouchableOpacity onPress={handleSendComment} disabled={!newComment.trim()}>
+                            <Ionicons name="send" size={20} color={newComment.trim() ? '#ea580c' : '#bdc3c7'} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>

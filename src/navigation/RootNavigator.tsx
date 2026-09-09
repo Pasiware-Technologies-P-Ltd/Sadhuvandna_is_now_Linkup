@@ -21,6 +21,7 @@ import RequestScreen from '../screens/marriage/RequestScreen';
 import NewsDetailScreen from '../screens/news/NewsDetailScreen';
 import NewsScreen from '../screens/news/NewsScreen';
 import CreateNewsScreen from '../screens/news/CreateNewsScreen';
+import MyNewsScreen from '../screens/news/MyNewsScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
 import CreateReelScreen from '../screens/post/CreateReelScreen';
@@ -144,7 +145,7 @@ function MainTabNavigator() {
         component={ProfileScreen}
         options={{ 
           tabBarLabel: t('profile') || 'Profile',
-          tabBarButton: (props) => (
+          tabBarButton: (props: any) => (
             <TouchableOpacity
               {...props}
               onLongPress={() => setSwitcherVisible(true)}
@@ -203,6 +204,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="AddGroupMembers" component={AddGroupMembersScreen} />
       <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
       <Stack.Screen name="CreateNews" component={CreateNewsScreen} />
+      <Stack.Screen name="MyNews" component={MyNewsScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="Comments" component={CommentsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />

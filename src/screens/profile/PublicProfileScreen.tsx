@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, FlatList, RefreshControl, Animated, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { Video, ResizeMode } from 'expo-av';
@@ -22,6 +22,7 @@ const POST_IMAGE_URL = `${BASE_URL_ROOT}/uploads/posts/`;
 const { width } = Dimensions.get('window');
 
 const PublicProfileScreen = ({ route, navigation }: any) => {
+    const insets = useSafeAreaInsets();
     const { userId } = route.params;
     const [profile, setProfile] = useState<any>(null);
     const [posts, setPosts] = useState<any[]>([]);
@@ -40,6 +41,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
         is_connected: false,
         follows_me: false,
     });
+    const [statsLoading, setStatsLoading] = useState(true);
     const [togglingFollow, setTogglingFollow] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -78,13 +80,17 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             if (uStr) {
                 const u = JSON.parse(uStr);
                 setCurrentUserId(u.id);
+            } else {
+                // Not logged in, still fetch with userId=0
+                setCurrentUserId('0');
             }
         };
         loadCurrentUser();
     }, []);
 
     useEffect(() => {
-        if (currentUserId !== null || userId) {
+        // Only fire once currentUserId is confirmed loaded (not null)
+        if (currentUserId !== null) {
             fetchProfileData();
         }
     }, [userId, currentUserId]);
@@ -102,6 +108,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
         try {
             const uid = userId || currentUserId;
             if (!uid) return;
+
+            setStatsLoading(true);
 
             const [profileRes, postsRes, followRes] = await Promise.all([
                 api.get(`get_user_profile.php?user_id=${uid}`),
@@ -135,6 +143,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             console.error(error);
         } finally {
             setLoading(false);
+            setStatsLoading(false);
         }
     };
 
@@ -398,7 +407,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     {/* Stats Bar */}
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                         <View style={{ alignItems: 'center' }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.posts || 0}</Text>
+                            {statsLoading ? (
+                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                            ) : (
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.posts || 0}</Text>
+                            )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Posts</Text>
                         </View>
                         <TouchableOpacity
@@ -406,7 +419,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             style={{ alignItems: 'center' }}
                             activeOpacity={0.7}
                         >
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.followers || 0}</Text>
+                            {statsLoading ? (
+                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                            ) : (
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.followers || 0}</Text>
+                            )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Followers</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -414,7 +431,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             style={{ alignItems: 'center' }}
                             activeOpacity={0.7}
                         >
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.following || 0}</Text>
+                            {statsLoading ? (
+                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                            ) : (
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.following || 0}</Text>
+                            )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Following</Text>
                         </TouchableOpacity>
                     </View>
@@ -928,7 +949,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 onPress={() => navigation.goBack()} 
                 style={{ 
                     position: 'absolute', 
-                    top: Platform.OS === 'ios' ? 44 : 16, 
+                    top: Math.max(insets.top + 8, 16), 
                     left: 16, 
                     width: 36, 
                     height: 36, 

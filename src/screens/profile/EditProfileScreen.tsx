@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, UPLOAD_BASE_URL, WEBSITE_URL } from '../../services/api';
 
-const PHOTO_URL = `${API_BASE_URL}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const EditProfileScreen = ({ navigation }: any) => {
     const [name, setName] = useState('');
@@ -21,6 +21,8 @@ const EditProfileScreen = ({ navigation }: any) => {
     const [currentCover, setCurrentCover] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [deletePhoto, setDeletePhoto] = useState(false);
+    const [deleteCover, setDeleteCover] = useState(false);
 
     useEffect(() => {
         loadUser();
@@ -61,6 +63,7 @@ const EditProfileScreen = ({ navigation }: any) => {
 
         if (!result.canceled) {
             setAvatar(result.assets[0].uri);
+            setDeletePhoto(false);
         }
     };
 
@@ -74,6 +77,7 @@ const EditProfileScreen = ({ navigation }: any) => {
 
         if (!result.canceled) {
             setCover(result.assets[0].uri);
+            setDeleteCover(false);
         }
     };
 
@@ -107,6 +111,14 @@ const EditProfileScreen = ({ navigation }: any) => {
                 formData.append('cover', { uri: cover, name: filename, type } as any);
             }
 
+            if (deletePhoto) {
+                formData.append('remove_photo', '1');
+            }
+
+            if (deleteCover) {
+                formData.append('remove_cover', '1');
+            }
+
             // Use UPLOAD_BASE_URL to directly upload to the production server
             const res = await api.post(`${UPLOAD_BASE_URL}update_profile.php`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -130,11 +142,11 @@ const EditProfileScreen = ({ navigation }: any) => {
 
     const displayImage = avatar
         ? avatar
-        : (currentPhoto ? `${PHOTO_URL}${currentPhoto}` : null);
+        : (currentPhoto && !deletePhoto ? (currentPhoto.startsWith('http') ? currentPhoto : `${PHOTO_URL}${currentPhoto}`) : null);
 
     const displayCover = cover
         ? cover
-        : (currentCover ? `${PHOTO_URL}${currentCover}` : null);
+        : (currentCover && !deleteCover ? (currentCover.startsWith('http') ? currentCover : `${PHOTO_URL}${currentCover}`) : null);
 
     return (
         <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -151,31 +163,57 @@ const EditProfileScreen = ({ navigation }: any) => {
             <KeyboardAvoidingView behavior="padding" className="flex-1">
                 <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 30 }}>
                     {/* Cover Photo */}
-                    <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
-                        {displayCover && (
-                            <Image source={{ uri: displayCover }} className="w-full h-full" resizeMode="cover" />
-                        )}
-                        <View className="absolute inset-0 items-center justify-center bg-black/20">
-                            <View className="bg-black/50 p-2 rounded-full">
-                                <Ionicons name="camera" size={24} color="white" />
+                    <View className="relative">
+                        <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
+                            {displayCover && (
+                                <Image source={{ uri: displayCover }} className="w-full h-full" resizeMode="cover" />
+                            )}
+                            <View className="absolute inset-0 items-center justify-center bg-black/20">
+                                <View className="bg-black/50 p-2 rounded-full">
+                                    <Ionicons name="camera" size={24} color="white" />
+                                </View>
                             </View>
-                        </View>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                        {displayCover && (
+                            <TouchableOpacity 
+                                className="absolute top-2 right-2 bg-white/80 rounded-full shadow-md p-1 border border-gray-100"
+                                onPress={() => {
+                                    setCover(null);
+                                    setDeleteCover(true);
+                                }}
+                            >
+                                <Ionicons name="close-circle" size={24} color="#ea580c" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
                     {/* Profile Photo - Overlapping */}
                     <View className="items-center -mt-12 mb-4">
-                        <TouchableOpacity onPress={pickImage} className="relative">
-                            {displayImage ? (
-                                <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white" />
-                            ) : (
-                                <View className="w-24 h-24 rounded-full bg-orange-200 items-center justify-center border-4 border-white">
-                                    <Text className="text-4xl text-orange-700">{name?.[0] || 'U'}</Text>
+                        <View className="relative">
+                            <TouchableOpacity onPress={pickImage}>
+                                {displayImage ? (
+                                    <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white" />
+                                ) : (
+                                    <View className="w-24 h-24 rounded-full bg-orange-200 items-center justify-center border-4 border-white">
+                                        <Text className="text-4xl text-orange-700">{name?.[0]?.toUpperCase() || 'U'}</Text>
+                                    </View>
+                                )}
+                                <View className="absolute bottom-0 right-0 bg-orange-600 p-1.5 rounded-full border-2 border-white">
+                                    <Ionicons name="camera" size={16} color="white" />
                                 </View>
+                            </TouchableOpacity>
+                            {displayImage && (
+                                <TouchableOpacity 
+                                    className="absolute -top-1 -right-1 bg-white rounded-full shadow-md p-1 border border-gray-100"
+                                    onPress={() => {
+                                        setAvatar(null);
+                                        setDeletePhoto(true);
+                                    }}
+                                >
+                                    <Ionicons name="close-circle" size={24} color="#ea580c" />
+                                </TouchableOpacity>
                             )}
-                            <View className="absolute bottom-0 right-0 bg-orange-600 p-1.5 rounded-full border-2 border-white">
-                                <Ionicons name="camera" size={16} color="white" />
-                            </View>
-                        </TouchableOpacity>
+                        </View>
                     </View>
 
                     <View className="px-5 space-y-6 mt-4">
