@@ -37,6 +37,9 @@ mobileAds()
 
 
 
+import { UploadProvider } from './src/context/UploadContext';
+import UploadProgressBanner from './src/components/UploadProgressBanner';
+
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
 
@@ -134,11 +137,14 @@ export default function App() {
       <SafeAreaProvider>
         <FontProvider>
           <LanguageProvider>
-            <NavigationContainer ref={navigationRef} linking={linking}>
-              <StatusBar style="dark" />
-              <RootNavigator initialRoute={initialRoute} />
-              <GlobalCallListener />
-            </NavigationContainer>
+            <UploadProvider>
+              <NavigationContainer ref={navigationRef} linking={linking}>
+                <StatusBar style="dark" />
+                <RootNavigator initialRoute={initialRoute} />
+                <GlobalCallListener />
+              </NavigationContainer>
+              <UploadProgressBanner />
+            </UploadProvider>
           </LanguageProvider>
         </FontProvider>
       </SafeAreaProvider>
