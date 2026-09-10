@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, StyleSheet, Modal, Pressable, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, StyleSheet, Modal, Pressable, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 
 const CATEGORY_MAP = [
@@ -29,6 +30,13 @@ const CreateNewsScreen = ({ navigation }: any) => {
     const [category, setCategory] = useState('ताज़ा खबर');
     const [mediaFiles, setMediaFiles] = useState<{ uri: string; type: 'image' | 'video' }[]>([]);
     const [loading, setLoading] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        AsyncStorage.getItem('user').then(u => {
+            if (u) setCurrentUserId(JSON.parse(u).id);
+        });
+    }, []);
 
     // AI Writer States
     const [aiModalVisible, setAiModalVisible] = useState(false);
@@ -213,6 +221,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
             formData.append('title', title);
             formData.append('description', description);
             formData.append('category', category);
+            if (currentUserId) formData.append('user_id', currentUserId);
 
             mediaFiles.forEach((file, index) => {
                 const filename = file.uri.split('/').pop() || `news_media_${index}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
@@ -251,6 +260,11 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -478,6 +492,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                     )}
                 </TouchableOpacity>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* AI Assistant Modal */}
             <Modal

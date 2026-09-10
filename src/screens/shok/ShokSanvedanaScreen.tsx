@@ -33,9 +33,19 @@ const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multi
         <TouchableOpacity 
             activeOpacity={onPress ? 0.7 : 1} 
             onPress={onPress}
-            style={[styles.inputWrapper, isFocused && styles.inputFocused, style]}
+            style={[
+                styles.inputWrapper, 
+                multiline ? { alignItems: 'flex-start', paddingVertical: 12 } : null,
+                isFocused && styles.inputFocused, 
+                style
+            ]}
         >
-            <MaterialCommunityIcons name={icon} size={20} color={isFocused ? COLORS.primary : COLORS.textLight} style={styles.inputIcon} />
+            <MaterialCommunityIcons 
+                name={icon} 
+                size={20} 
+                color={isFocused ? COLORS.primary : COLORS.textLight} 
+                style={[styles.inputIcon, multiline ? { marginTop: Platform.OS === 'ios' ? 4 : 2 } : null]} 
+            />
             <TextInput 
                 placeholder={placeholder} 
                 placeholderTextColor={COLORS.textLight}
@@ -48,7 +58,7 @@ const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multi
                 onBlur={() => setIsFocused(false)}
                 editable={editable}
                 pointerEvents={onPress ? 'none' : 'auto'}
-                style={styles.input}
+                style={[styles.input, multiline ? { paddingTop: 0, textAlignVertical: 'top' } : null]}
             />
         </TouchableOpacity>
     );
@@ -135,11 +145,13 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
     const [samadhiDate, setSamadhiDate] = useState('');
     const [ceremonyTime, setCeremonyTime] = useState('');
     const [familyDetails, setFamilyDetails] = useState('');
+    
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showCeremonyDatePicker, setShowCeremonyDatePicker] = useState(false);
     const [language, setLanguage] = useState<'Hindi' | 'English' | 'Gujarati'>('Hindi');
     
     const [photoBase64, setPhotoBase64] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const webViewRef = useRef<WebView>(null);
 
     const handleDateConfirm = (formattedDate: string) => {
@@ -610,6 +622,14 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     placeholder="Funeral Date (अंतिम संस्कार तिथि)" 
                                     value={ceremonyTime} 
                                     onChangeText={setCeremonyTime} 
+                                    onPress={() => setShowCeremonyDatePicker(true)}
+                                    editable={false}
+                                />
+                                <CustomDatePicker
+                                    visible={showCeremonyDatePicker}
+                                    value={ceremonyTime}
+                                    onClose={() => setShowCeremonyDatePicker(false)}
+                                    onConfirm={(date: string) => { setCeremonyTime(date); setShowCeremonyDatePicker(false); }}
                                 />
                             </View>
 
@@ -742,9 +762,8 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     langToggleWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: 'column',
+        alignItems: 'stretch',
         marginBottom: 25,
         backgroundColor: '#FFF',
         padding: 12,
@@ -762,7 +781,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F0F0',
         borderRadius: 10,
         padding: 3,
-        width: 220,
+        marginTop: 10,
     },
     langBtn: {
         flex: 1,
@@ -863,6 +882,7 @@ const styles = StyleSheet.create({
         borderColor: '#F0F1F2',
         marginBottom: 15,
         paddingHorizontal: 15,
+        minHeight: 54,
     },
     inputFocused: {
         borderColor: COLORS.secondary,
@@ -873,10 +893,10 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        paddingVertical: 14,
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
+        paddingVertical: Platform.OS === 'ios' ? 14 : 8,
     },
     row: {
         flexDirection: 'row',

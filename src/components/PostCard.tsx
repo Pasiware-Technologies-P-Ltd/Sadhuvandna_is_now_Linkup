@@ -272,6 +272,11 @@ const PostCard = ({
     const [videoReady, setVideoReady] = useState(false);
     const [musicMuted, setMusicMuted] = useState(false);
     const [paused, setPaused] = useState(false);
+
+    useEffect(() => {
+        setLiked(post.isLiked);
+        setLikeCount(post.likes);
+    }, [post.isLiked, post.likes]);
     const [soundReady, setSoundReady] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);

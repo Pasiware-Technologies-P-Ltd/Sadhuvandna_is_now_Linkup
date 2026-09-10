@@ -118,6 +118,7 @@ const MyNewsScreen = ({ navigation }: any) => {
                                 <Ionicons name="eye-outline" size={13} color="#ea580c" />
                                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#ea580c', marginLeft: 4 }}>View</Text>
                             </TouchableOpacity>
+                            {/* Delete button temporarily disabled
                             <TouchableOpacity
                                 onPress={() => handleDelete(String(item.id))}
                                 style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef2f2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 }}
@@ -126,6 +127,7 @@ const MyNewsScreen = ({ navigation }: any) => {
                                 <Ionicons name="trash-outline" size={13} color="#dc2626" />
                                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#dc2626', marginLeft: 4 }}>Delete</Text>
                             </TouchableOpacity>
+                            */}
                         </View>
                     </View>
                 </View>

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, Modal } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +32,12 @@ const FamilyScreen = ({ navigation }: any) => {
     const [photo, setPhoto] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
+
+    // Date picker state
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [pickerDay, setPickerDay] = useState(1);
+    const [pickerMonth, setPickerMonth] = useState(1);
+    const [pickerYear, setPickerYear] = useState(2000);
 
     useEffect(() => {
         AsyncStorage.getItem('user').then(u => {
@@ -154,6 +160,40 @@ const FamilyScreen = ({ navigation }: any) => {
         setCaste('');
         setKuldevi('');
         setPhoto(null);
+    };
+
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+    const YEARS = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i);
+
+    const openDatePicker = () => {
+        // Pre-fill picker from current dob value if set
+        if (dob) {
+            const parts = dob.split('-');
+            if (parts.length === 3) {
+                setPickerYear(parseInt(parts[0]) || 2000);
+                setPickerMonth(parseInt(parts[1]) || 1);
+                setPickerDay(parseInt(parts[2]) || 1);
+            }
+        }
+        setShowDatePicker(true);
+    };
+
+    const confirmDate = () => {
+        const y = pickerYear;
+        const m = String(pickerMonth).padStart(2, '0');
+        const d = String(pickerDay).padStart(2, '0');
+        setDob(`${y}-${m}-${d}`);
+        setShowDatePicker(false);
+    };
+
+    const formatDisplayDate = (val: string) => {
+        if (!val) return '';
+        const parts = val.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]} ${MONTHS[parseInt(parts[1]) - 1]} ${parts[0]}`;
+        }
+        return val;
     };
 
     const handleDelete = async (id: string) => {
@@ -296,8 +336,17 @@ const FamilyScreen = ({ navigation }: any) => {
                                 <TextInput value={occupation} onChangeText={setOccupation} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="e.g. Engineer" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">DOB (YYYY-MM-DD)</Text>
-                                <TextInput value={dob} onChangeText={setDob} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="2000-01-01" />
+                                <Text className="mb-1 text-gray-600">Date of Birth</Text>
+                                <TouchableOpacity
+                                    onPress={openDatePicker}
+                                    style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={{ color: dob ? '#111827' : '#9ca3af', fontSize: 15 }}>
+                                        {dob ? formatDisplayDate(dob) : 'Select Date of Birth'}
+                                    </Text>
+                                    <Text style={{ fontSize: 18 }}>📅</Text>
+                                </TouchableOpacity>
                             </View>
 
                             <View className="flex-row gap-4">
@@ -338,6 +387,70 @@ const FamilyScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Date Picker Modal */}
+            <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+                <TouchableOpacity
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+                    activeOpacity={1}
+                    onPress={() => setShowDatePicker(false)}
+                >
+                    <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+                        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34 }}>
+                            {/* Header */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                    <Text style={{ fontSize: 16, color: '#6b7280' }}>Cancel</Text>
+                                </TouchableOpacity>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>Select Date of Birth</Text>
+                                <TouchableOpacity onPress={confirmDate}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#ea580c' }}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Picker Columns */}
+                            <View style={{ flexDirection: 'row', height: 200, paddingHorizontal: 8 }}>
+                                {/* Day */}
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>DAY</Text>
+                                    <ScrollView showsVerticalScrollIndicator={false}>
+                                        {DAYS.map(d => (
+                                            <TouchableOpacity key={d} onPress={() => setPickerDay(d)}
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#ea580c' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                                {/* Month */}
+                                <View style={{ flex: 1.4 }}>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>MONTH</Text>
+                                    <ScrollView showsVerticalScrollIndicator={false}>
+                                        {MONTHS.map((m, i) => (
+                                            <TouchableOpacity key={m} onPress={() => setPickerMonth(i + 1)}
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#ea580c' : '#374151' }}>{m}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                                {/* Year */}
+                                <View style={{ flex: 1.4 }}>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>YEAR</Text>
+                                    <ScrollView showsVerticalScrollIndicator={false}>
+                                        {YEARS.map(y => (
+                                            <TouchableOpacity key={y} onPress={() => setPickerYear(y)}
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#ea580c' : '#374151' }}>{y}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             </Modal>
         </SafeAreaView>
     );

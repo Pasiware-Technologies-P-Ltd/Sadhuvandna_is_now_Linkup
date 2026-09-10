@@ -7,12 +7,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUpload } from '../../context/UploadContext';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const CreatePostScreen = ({ navigation, route }: any) => {
+    const { startUpload } = useUpload();
     const params = route.params || {};
     // Node.js server for audio streams (Agora/ytdl)
     const NODE_SERVER = __DEV__ ? 'http://192.168.31.124:3000' : 'https://www.sadhuvandna.co.in';
@@ -209,7 +211,6 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 
     const handlePost = async () => {
         if (!content && images.length === 0 && !selectedMusic && !params.filterId) return;
-        setLoading(true);
         try {
             const formData = new FormData();
             formData.append('user_id', user?.id);
@@ -234,21 +235,14 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 if (filename?.toLowerCase().endsWith('.mp4')) type = 'video/mp4';
                 formData.append('media[]', { uri, name: filename, type } as any);
             });
-            const response = await fetch(`${UPLOAD_BASE_URL}create_post.php`, {
-                method: 'POST',
-                body: formData,
-            });
-            const data = await response.json();
-            if (data.status === 'success') {
-                navigation.goBack();
-                Alert.alert("Success", "Post shared successfully");
-            } else {
-                Alert.alert("Error", data.message || "Failed to share post");
-            }
+            
+            const thumbUri = images.length > 0 ? images[0] : null;
+            
+            startUpload(formData, thumbUri);
+            
+            navigation.goBack();
         } catch (error) {
-            Alert.alert("Error", "Network request failed");
-        } finally {
-            setLoading(false);
+            Alert.alert("Error", "Failed to prepare upload");
         }
     };
 
