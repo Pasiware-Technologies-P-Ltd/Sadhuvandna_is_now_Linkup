@@ -164,7 +164,7 @@ const ProfileScreen = ({ navigation }: any) => {
                         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                             <View style={{ alignItems: 'center' }}>
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.posts || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Posts</Text>
+                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                             </View>
                             <TouchableOpacity
                                 onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_followers', title: 'Followers' })}
@@ -172,7 +172,7 @@ const ProfileScreen = ({ navigation }: any) => {
                                 activeOpacity={0.7}
                             >
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.followers || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Followers</Text>
+                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_following', title: 'Following' })}
@@ -180,7 +180,7 @@ const ProfileScreen = ({ navigation }: any) => {
                                 activeOpacity={0.7}
                             >
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.following || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Following</Text>
+                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -234,7 +234,7 @@ const ProfileScreen = ({ navigation }: any) => {
                             style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
                         >
                             <Ionicons name="swap-horizontal" size={16} color="#4b5563" />
-                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#4b5563' }}>Switch</Text>
+                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#4b5563' }}>{t('switchProfile')}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -245,7 +245,7 @@ const ProfileScreen = ({ navigation }: any) => {
                             style={{ flex: 1, backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
-                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>Edit Profile</Text>
+                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity
@@ -253,7 +253,7 @@ const ProfileScreen = ({ navigation }: any) => {
                             style={{ flex: 1, backgroundColor: '#fff7ed', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffedd5' }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>Public Feed</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('publicFeed')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -262,22 +262,24 @@ const ProfileScreen = ({ navigation }: any) => {
                 <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
                     {/* Explore Grid */}
                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
-                        {user.is_business == 1 ? 'Business Tools' : t('explore')}
+                        {user.is_business == 1 ? t('businessTools') : t('explore')}
                     </Text>
                     
                     <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         {(user.is_business == 1 ? [
-                            { label: "My Posts", icon: "grid-outline", route: "MyPosts", color: "#3b82f6" },
-                            { label: "Gallery", icon: "images-outline", route: "Gallery", color: "#eab308" },
-                            { label: "Festival Poster", icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
-                            { label: "Add Manager", icon: "people-outline", route: "ComingSoon", color: "#10b981" },
-                            { label: "Smart Card", icon: "id-card-outline", route: "SmartCard", color: "#8b5cf6" },
+                            { label: t('myPosts'), icon: "grid-outline", route: "MyPosts", color: "#3b82f6" },
+                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#ea580c" },
+                            { label: t('gallery'), icon: "images-outline", route: "Gallery", color: "#eab308" },
+                            { label: t('festivalPoster'), icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
+                            { label: t('addManager'), icon: "people-outline", route: "ComingSoon", color: "#10b981" },
+                            { label: t('smartCard'), icon: "id-card-outline", route: "SmartCard", color: "#8b5cf6" },
                         ] : [
+                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#ea580c" },
                             { label: t('jobs'), icon: "briefcase-outline", route: "Jobs", color: "#10b981" },
                             { label: t('shokSandesh'), icon: "reader-outline", route: "ShokSanvedana", color: "#6b7280" },
                             { label: t('gallery'), icon: "images-outline", route: "Gallery", color: "#eab308" },
-                            { label: "Festival Poster", icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
-                            { label: "Smart Card", icon: "id-card-outline", route: "SmartCard", color: "#3b82f6" },
+                            { label: t('festivalPoster'), icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
+                            { label: t('smartCard'), icon: "id-card-outline", route: "SmartCard", color: "#3b82f6" },
                         ]).map((item, index, array) => (
                             <MenuItem 
                                 key={index}
@@ -303,7 +305,7 @@ const ProfileScreen = ({ navigation }: any) => {
                     
                     <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         <MenuItem label={t('settings')} icon="settings-outline" iconColor="#4b5563" onPress={() => navigation.navigate('Settings')} />
-                        <MenuItem label="Linko - AI Support" icon="chatbubble-ellipses-outline" iconColor="#3b82f6" onPress={() => navigation.navigate('SupportChat')} isLast />
+                        <MenuItem label={t('linkoSupport')} icon="chatbubble-ellipses-outline" iconColor="#3b82f6" onPress={() => navigation.navigate('SupportChat')} isLast />
                     </View>
 
                     <TouchableOpacity

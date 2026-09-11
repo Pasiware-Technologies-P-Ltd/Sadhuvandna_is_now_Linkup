@@ -28,6 +28,7 @@ export type RootStackParamList = {
   StoryViewer: { stories: any[], initialIndex: number };
   EditProfile: undefined;
   MyPosts: undefined;
+  SavedPosts: undefined;
   Gallery: undefined;
   CreateMarriageProfile: { profile?: any };
   Temples: undefined;

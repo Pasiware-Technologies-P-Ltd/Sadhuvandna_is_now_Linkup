@@ -3,12 +3,14 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Linking, Ale
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const JobScreen = ({ navigation }: any) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useLanguage();
 
     useEffect(() => {
         fetchJobs();
@@ -41,7 +43,7 @@ const JobScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">Jobs & Education</Text>
+                <Text className="text-xl font-bold text-gray-800">{t('jobsEducation')}</Text>
             </View>
 
             <FlatList
@@ -51,7 +53,7 @@ const JobScreen = ({ navigation }: any) => {
                 contentContainerStyle={{ paddingVertical: 10 }}
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
-                        <Text className="text-gray-500 text-center text-lg">No updates available.</Text>
+                        <Text className="text-gray-500 text-center text-lg">{t('noUpdatesAvailable')}</Text>
                     </View>
                 }
             />
@@ -61,6 +63,7 @@ const JobScreen = ({ navigation }: any) => {
 
 const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
     const [expanded, setExpanded] = useState(false);
+    const { t } = useLanguage();
     const description = item.description || '';
     const isLong = description.length > 150;
 
@@ -114,7 +117,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
             <View className="flex-row justify-between items-start mb-2">
                 <View className="flex-1">
                     <Text className={`text-xs font-bold px-2 py-1 rounded self-start mb-2 ${item.type === 'job' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {item.type ? item.type.toUpperCase() : 'UPDATE'}
+                        {item.type ? item.type.toUpperCase() : t('updateBadge')}
                     </Text>
                     <Text className="text-lg font-bold text-gray-900 leading-6">{item.title}</Text>
                 </View>
@@ -127,7 +130,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
 
             {isLong && (
                 <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mb-4">
-                    <Text className="text-orange-600 font-bold text-xs">{expanded ? 'Read Less' : 'Read More'}</Text>
+                    <Text className="text-orange-600 font-bold text-xs">{expanded ? t('readLess') : t('readMore')}</Text>
                 </TouchableOpacity>
             )}
 
@@ -145,7 +148,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                         className="bg-orange-600 py-2.5 px-4 rounded-lg flex-row items-center"
                         onPress={handleApply}
                     >
-                        <Text className="text-white font-bold text-sm">Apply Now</Text>
+                        <Text className="text-white font-bold text-sm">{t('applyNow')}</Text>
                     </TouchableOpacity>
                 )}
 
@@ -155,7 +158,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                         onPress={handleLink}
                     >
                         <Ionicons name="link" size={16} color="white" />
-                        <Text className="text-white font-bold text-sm ml-1">Visit Link</Text>
+                        <Text className="text-white font-bold text-sm ml-1">{t('visitLink')}</Text>
                     </TouchableOpacity>
                 )}
             </View>

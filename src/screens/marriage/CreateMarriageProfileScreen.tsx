@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
     const { profile: routeProfile } = route.params || {};
@@ -58,6 +59,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
     const [pickerDay, setPickerDay] = useState(1);
     const [pickerMonth, setPickerMonth] = useState(1);
     const [pickerYear, setPickerYear] = useState(2000);
+    const { t } = useLanguage();
 
     const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -256,7 +258,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">{isEdit ? 'Edit Matrimony Profile' : 'Create Matrimony Profile'}</Text>
+                <Text className="text-xl font-bold text-gray-800">{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
             </View>
 
             <KeyboardAwareScrollView 
@@ -275,7 +277,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                             ) : (
                                 <View className="w-32 h-32 rounded-full bg-orange-50 items-center justify-center border-2 border-dashed border-orange-300">
                                     <Ionicons name="camera" size={36} color="#ea580c" />
-                                    <Text className="text-xs text-orange-600 mt-1 font-semibold">Add Photo</Text>
+                                    <Text className="text-xs text-orange-600 mt-1 font-semibold">{t('addPhoto')}</Text>
                                 </View>
                             )}
                             {isEdit && !photo && <Text className="text-xs text-gray-400 mt-2 text-center">Current photo kept if unchanged</Text>}
@@ -286,12 +288,12 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </View>
 
                     {/* Basic Details */}
-                    <SectionHeader title="Basic Details" icon="person-outline" />
+                    <SectionHeader title={t('basicDetails')} icon="person-outline" />
                     <View className="space-y-4">
-                        <Input label="Full Name" value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} required />
+                        <Input label={t('fullName')} value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} required />
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">Gender <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('genderLabel')} <Text className="text-red-500">*</Text></Text>
                             <View className="flex-row gap-2">
                                 {['Male', 'Female', 'Other'].map(g => (
                                     <TouchableOpacity
@@ -299,21 +301,21 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                         onPress={() => handleChange('gender', g)}
                                         className={`flex-1 py-3 items-center rounded-xl border ${formData.gender === g ? 'bg-orange-500 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
                                     >
-                                        <Text className={formData.gender === g ? 'text-white font-bold' : 'text-gray-600'}>{g}</Text>
+                                        <Text className={formData.gender === g ? 'text-white font-bold' : 'text-gray-600'}>{g === 'Male' ? t('male') : g === 'Female' ? t('female') : t('other')}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         </View>
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">Date of Birth <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('dateOfBirth')} <Text className="text-red-500">*</Text></Text>
                             <TouchableOpacity
                                 onPress={openDatePicker}
                                 style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                                 activeOpacity={0.7}
                             >
                                 <Text style={{ color: formatDisplayDate(formData.dob) ? '#1f2937' : '#9ca3af', fontSize: 15 }}>
-                                    {formatDisplayDate(formData.dob) || 'Select Date of Birth'}
+                                    {formatDisplayDate(formData.dob) || t('selectDateOfBirth')}
                                 </Text>
                                 <Text style={{ fontSize: 18 }}>📅</Text>
                             </TouchableOpacity>
@@ -321,75 +323,84 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
 
                         <View className="flex-row gap-3">
                             <View className="flex-1">
-                                <Input label="Height" value={formData.height} onChangeText={(t) => handleChange('height', t)} placeholder="5 ft 10 in" />
+                                <Input label={t('heightLabel')} value={formData.height} onChangeText={(t) => handleChange('height', t)} placeholder="5 ft 10 in" />
                             </View>
                             <View className="flex-1">
-                                <Input label="Weight" value={formData.weight} onChangeText={(t) => handleChange('weight', t)} placeholder="65 kg" />
+                                <Input label={t('weightLabel')} value={formData.weight} onChangeText={(t) => handleChange('weight', t)} placeholder="65 kg" />
                             </View>
                         </View>
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">Marital Status <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('maritalStatus')} <Text className="text-red-500">*</Text></Text>
                             <View className="flex-row flex-wrap gap-2">
-                                {['Unmarried', 'Married', 'Divorced', 'Widowed', 'Separated'].map(s => (
-                                    <TouchableOpacity
-                                        key={s}
-                                        onPress={() => handleChange('status', s)}
-                                        className={`px-3 py-2 rounded-lg border ${formData.status === s ? 'bg-orange-500 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
-                                    >
-                                        <Text className={formData.status === s ? 'text-white text-xs font-bold' : 'text-gray-600 text-xs'}>{s}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                                {['Unmarried', 'Married', 'Divorced', 'Widowed', 'Separated'].map(s => {
+                                    const tlMap: any = {
+                                        Unmarried: t('unmarried'),
+                                        Married: t('married'),
+                                        Divorced: t('divorced'),
+                                        Widowed: t('widowed'),
+                                        Separated: t('separated')
+                                    };
+                                    return (
+                                        <TouchableOpacity
+                                            key={s}
+                                            onPress={() => handleChange('status', s)}
+                                            className={`px-3 py-2 rounded-lg border ${formData.status === s ? 'bg-orange-500 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
+                                        >
+                                            <Text className={formData.status === s ? 'text-white text-xs font-bold' : 'text-gray-600 text-xs'}>{tlMap[s]}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         </View>
 
-                        <Input label="Religion" value={formData.religion} onChangeText={(t) => handleChange('religion', t)} />
-                        <Input label="Caste/Community" value={formData.caste} onChangeText={(t) => handleChange('caste', t)} />
+                        <Input label={t('religionLabel')} value={formData.religion} onChangeText={(t) => handleChange('religion', t)} />
+                        <Input label={t('casteCommunity')} value={formData.caste} onChangeText={(t) => handleChange('caste', t)} />
                     </View>
 
                     {/* Contact & Location */}
-                    <SectionHeader title="Contact & Location" icon="location-outline" />
+                    <SectionHeader title={t('contactLocation')} icon="location-outline" />
                     <View className="space-y-4">
-                        <Input label="Phone Number" value={formData.phone} onChangeText={(t) => handleChange('phone', t)} keyboardType="phone-pad" required />
-                        <Input label="Email ID" value={formData.email} onChangeText={(t) => handleChange('email', t)} keyboardType="email-address" />
-                        <Input label="City" value={formData.city} onChangeText={(t) => handleChange('city', t)} required />
-                        <Input label="Residence Address" value={formData.residence} onChangeText={(t) => handleChange('residence', t)} multiline />
+                        <Input label={t('phoneNumber')} value={formData.phone} onChangeText={(t) => handleChange('phone', t)} keyboardType="phone-pad" required />
+                        <Input label={t('emailId')} value={formData.email} onChangeText={(t) => handleChange('email', t)} keyboardType="email-address" />
+                        <Input label={t('city')} value={formData.city} onChangeText={(t) => handleChange('city', t)} required />
+                        <Input label={t('residenceAddress')} value={formData.residence} onChangeText={(t) => handleChange('residence', t)} multiline />
                     </View>
 
                     {/* Career */}
-                    <SectionHeader title="Education & Career" icon="briefcase-outline" />
+                    <SectionHeader title={t('educationCareer')} icon="briefcase-outline" />
                     <View className="space-y-4">
-                        <Input label="Education" value={formData.education} onChangeText={(t) => handleChange('education', t)} />
-                        <Input label="Occupation" value={formData.occupation} onChangeText={(t) => handleChange('occupation', t)} />
-                        <Input label="Work Place" value={formData.work_place} onChangeText={(t) => handleChange('work_place', t)} />
-                        <Input label="Annual Income" value={formData.income} onChangeText={(t) => handleChange('income', t)} keyboardType="numeric" />
+                        <Input label={t('educationLabel')} value={formData.education} onChangeText={(t) => handleChange('education', t)} />
+                        <Input label={t('occupationLabel')} value={formData.occupation} onChangeText={(t) => handleChange('occupation', t)} />
+                        <Input label={t('workPlace')} value={formData.work_place} onChangeText={(t) => handleChange('work_place', t)} />
+                        <Input label={t('annualIncome')} value={formData.income} onChangeText={(t) => handleChange('income', t)} keyboardType="numeric" />
                     </View>
 
                     {/* Family */}
-                    <SectionHeader title="Family Details" icon="people-outline" />
+                    <SectionHeader title={t('familyDetails')} icon="people-outline" />
                     <View className="space-y-4">
-                        <Input label="Father's Name" value={formData.father_name} onChangeText={(t) => handleChange('father_name', t)} />
-                        <Input label="Father's Occupation" value={formData.father_occupation} onChangeText={(t) => handleChange('father_occupation', t)} />
-                        <Input label="Mother's Name" value={formData.mother_name} onChangeText={(t) => handleChange('mother_name', t)} />
-                        <Input label="Siblings (Brothers/Sisters)" value={formData.siblings} onChangeText={(t) => handleChange('siblings', t)} placeholder="2 Brothers, 1 Sister" />
-                        <Input label="Family Type" value={formData.family_type} onChangeText={(t) => handleChange('family_type', t)} placeholder="Nuclear / Joint" />
+                        <Input label={t('fatherName')} value={formData.father_name} onChangeText={(t) => handleChange('father_name', t)} />
+                        <Input label={t('fatherOccupation')} value={formData.father_occupation} onChangeText={(t) => handleChange('father_occupation', t)} />
+                        <Input label={t('motherName')} value={formData.mother_name} onChangeText={(t) => handleChange('mother_name', t)} />
+                        <Input label={t('siblingsCount')} value={formData.siblings} onChangeText={(t) => handleChange('siblings', t)} placeholder="2 Brothers, 1 Sister" />
+                        <Input label={t('familyType')} value={formData.family_type} onChangeText={(t) => handleChange('family_type', t)} placeholder="Nuclear / Joint" />
                     </View>
 
                     {/* Personal */}
-                    <SectionHeader title="Personal Details" icon="cafe-outline" />
+                    <SectionHeader title={t('personalDetails')} icon="cafe-outline" />
                     <View className="space-y-4">
-                        <Input label="Nature / Personality" value={formData.nature} onChangeText={(t) => handleChange('nature', t)} placeholder="Calm, Cheerful..." />
-                        <Input label="Food Habit" value={formData.food} onChangeText={(t) => handleChange('food', t)} placeholder="Vegetarian / Non-Veg" />
-                        <Input label="Habits (Drinking/Smoking)" value={formData.habits} onChangeText={(t) => handleChange('habits', t)} placeholder="No Smoking / Drinking" />
-                        <Input label="Hobbies" value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="Reading, Traveling..." />
+                        <Input label={t('naturePersonality')} value={formData.nature} onChangeText={(t) => handleChange('nature', t)} placeholder="Calm, Cheerful..." />
+                        <Input label={t('foodHabit')} value={formData.food} onChangeText={(t) => handleChange('food', t)} placeholder="Vegetarian / Non-Veg" />
+                        <Input label={t('habitsDrinkingSmoking')} value={formData.habits} onChangeText={(t) => handleChange('habits', t)} placeholder="No Smoking / Drinking" />
+                        <Input label={t('hobbiesLabel')} value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="Reading, Traveling..." />
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">About Me</Text>
+                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('aboutMe')}</Text>
                             <TextInput
                                 className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24"
                                 value={formData.about}
                                 onChangeText={(t) => handleChange('about', t)}
-                                placeholder="Tell us about yourself..."
+                                placeholder={t('tellUsAboutYourself')}
                                 placeholderTextColor="#9ca3af"
                                 multiline
                                 textAlignVertical="top"
@@ -398,24 +409,24 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </View>
 
                     {/* Partner Preferences */}
-                    <SectionHeader title="Partner Preference" icon="heart-outline" />
+                    <SectionHeader title={t('partnerPreference')} icon="heart-outline" />
                     <View className="space-y-4">
                         <View className="flex-row gap-3">
                             <View className="flex-1">
-                                <Input label="Age From" value={formData.partner_age_from} onChangeText={(t) => handleChange('partner_age_from', t)} keyboardType="numeric" />
+                                <Input label={t('ageFrom')} value={formData.partner_age_from} onChangeText={(t) => handleChange('partner_age_from', t)} keyboardType="numeric" />
                             </View>
                             <View className="flex-1">
-                                <Input label="Age To" value={formData.partner_age_to} onChangeText={(t) => handleChange('partner_age_to', t)} keyboardType="numeric" />
+                                <Input label={t('ageTo')} value={formData.partner_age_to} onChangeText={(t) => handleChange('partner_age_to', t)} keyboardType="numeric" />
                             </View>
                         </View>
-                        <Input label="Expected Education" value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} />
+                        <Input label={t('expectedEducation')} value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} />
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">Expectations</Text>
+                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('expectations')}</Text>
                             <TextInput
                                 className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24"
                                 value={formData.partner_expectations}
                                 onChangeText={(t) => handleChange('partner_expectations', t)}
-                                placeholder="What are you looking for?"
+                                placeholder={t('whatAreYouLookingFor')}
                                 placeholderTextColor="#9ca3af"
                                 multiline
                                 textAlignVertical="top"
@@ -428,7 +439,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         onPress={handleSubmit}
                         disabled={loading}
                     >
-                        {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">{isEdit ? 'Update Profile' : 'Save Marriage Profile'}</Text>}
+                        {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">{isEdit ? t('updateProfile') : t('saveMarriageProfile')}</Text>}
                     </TouchableOpacity>
 
                     <View className="h-10" />
@@ -446,17 +457,17 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34 }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
                                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                    <Text style={{ fontSize: 16, color: '#6b7280' }}>Cancel</Text>
+                                    <Text style={{ fontSize: 16, color: '#6b7280' }}>{t('cancelLabel')}</Text>
                                 </TouchableOpacity>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>Select Date of Birth</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>{t('selectDateOfBirth')}</Text>
                                 <TouchableOpacity onPress={confirmDate}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#ea580c' }}>Done</Text>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#ea580c' }}>{t('doneLabel')}</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', height: 200, paddingHorizontal: 8 }}>
                                 {/* Day */}
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>DAY</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('dayLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {DAYS.map(d => (
                                             <TouchableOpacity key={d} onPress={() => setPickerDay(d)}
@@ -468,7 +479,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                 </View>
                                 {/* Month */}
                                 <View style={{ flex: 1.4 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>MONTH</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('monthLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {MONTHS.map((m, i) => (
                                             <TouchableOpacity key={m} onPress={() => setPickerMonth(i + 1)}
@@ -480,7 +491,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                 </View>
                                 {/* Year */}
                                 <View style={{ flex: 1.4 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>YEAR</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('yearLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {YEARS.map(y => (
                                             <TouchableOpacity key={y} onPress={() => setPickerYear(y)}

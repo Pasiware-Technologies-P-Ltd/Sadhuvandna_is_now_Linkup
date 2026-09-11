@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useLanguage } from '../../context/LanguageContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
@@ -23,6 +24,7 @@ const categories = [
 const EditBusinessPageScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
+    const { t } = useLanguage();
     
     // Form State
     const [businessName, setBusinessName] = useState('');
@@ -194,8 +196,8 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                     <Ionicons name="arrow-back" size={22} color="#111827" />
                 </TouchableOpacity>
                 <View style={{ marginLeft: 16 }}>
-                    <Text style={{ fontSize: 19, fontWeight: '900', color: '#111827', letterSpacing: 0.5 }}>Update Page</Text>
-                    <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Update your business details</Text>
+                    <Text style={{ fontSize: 19, fontWeight: '900', color: '#111827', letterSpacing: 0.5 }}>{t('updatePage')}</Text>
+                    <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{t('updateBusinessDetails')}</Text>
                 </View>
             </View>
 
@@ -223,7 +225,7 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         ) : (
                             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                                 <Ionicons name="image-outline" size={32} color="#9ca3af" />
-                                <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Tap to add Cover Photo</Text>
+                                <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{t('tapToAddCoverPhoto')}</Text>
                             </View>
                         )}
                         <View style={{ position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 20 }}>
@@ -263,10 +265,10 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                             <Ionicons name="briefcase" size={16} color="#ea580c" />
                         </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Basic Details</Text>
+                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>{t('basicDetails')}</Text>
                     </View>
 
-                    {renderInput("business", "Business Name (e.g. Sharma Sweets) *", businessName, setBusinessName)}
+                    {renderInput("business", t('businessName'), businessName, setBusinessName)}
 
                     <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 14 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 14 }}>
@@ -283,7 +285,7 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         </View>
                     </View>
 
-                    {selectedCategory === 'Other' && renderInput("pencil", "Specify Other Category *", otherCategory, setOtherCategory)}
+                    {selectedCategory === 'Other' && renderInput("pencil", t('otherCategory'), otherCategory, setOtherCategory)}
                 </View>
 
                 {/* 2. Contact Section */}
@@ -292,13 +294,13 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                             <Ionicons name="call" size={16} color="#3b82f6" />
                         </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Contact Info</Text>
+                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>{t('contactInfo')}</Text>
                     </View>
 
-                    {renderInput("call-outline", "Phone Number", phoneNo, setPhoneNo, { keyboardType: "phone-pad" })}
-                    {renderInput("mail-outline", "Email Address", email, setEmail, { keyboardType: "email-address", autoCapitalize: "none" })}
-                    {renderInput("globe-outline", "Website URL", websiteUrl, setWebsiteUrl, { autoCapitalize: "none" })}
-                    {renderInput("logo-instagram", "Social Media Link", socialMedia, setSocialMedia, { autoCapitalize: "none" })}
+                    {renderInput("call-outline", t('phoneNumber'), phoneNo, setPhoneNo, { keyboardType: "phone-pad" })}
+                    {renderInput("mail-outline", t('emailAddress'), email, setEmail, { keyboardType: "email-address", autoCapitalize: "none" })}
+                    {renderInput("globe-outline", t('websiteUrl'), websiteUrl, setWebsiteUrl, { autoCapitalize: "none" })}
+                    {renderInput("logo-instagram", t('socialMediaLink'), socialMedia, setSocialMedia, { autoCapitalize: "none" })}
                 </View>
 
                 {/* 3. Address Section */}
@@ -307,26 +309,26 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                             <Ionicons name="location" size={16} color="#22c55e" />
                         </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Location & Address</Text>
+                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>{t('locationAddress')}</Text>
                     </View>
 
-                    {renderInput("map-outline", "Full Address (Street, Building, Area)", fullAddress, setFullAddress, { multiline: true })}
+                    {renderInput("map-outline", t('fullAddress'), fullAddress, setFullAddress, { multiline: true })}
                     
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View style={{ flex: 0.48 }}>
-                            {renderInput("business-outline", "District", district, setDistrict)}
+                            {renderInput("business-outline", t('district'), district, setDistrict)}
                         </View>
                         <View style={{ flex: 0.48 }}>
-                            {renderInput("navigate-outline", "Pincode", pincode, setPincode, { keyboardType: "number-pad" })}
+                            {renderInput("navigate-outline", t('pincode'), pincode, setPincode, { keyboardType: "number-pad" })}
                         </View>
                     </View>
                     
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                         <View style={{ flex: 0.48 }}>
-                            {renderInput("map", "State", state, setState)}
+                            {renderInput("map", t('state'), state, setState)}
                         </View>
                         <View style={{ flex: 0.48 }}>
-                            {renderInput("earth", "Country", country, setCountry)}
+                            {renderInput("earth", t('country'), country, setCountry)}
                         </View>
                     </View>
                 </View>
@@ -337,10 +339,10 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                         <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                             <Ionicons name="time" size={16} color="#d97706" />
                         </View>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Operations</Text>
+                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>{t('operations')}</Text>
                     </View>
 
-                    {renderInput("time-outline", "Opening Hours (e.g. 9 AM - 8 PM)", openingHours, setOpeningHours)}
+                    {renderInput("time-outline", t('openingHours'), openingHours, setOpeningHours)}
                 </View>
                 </View>
             </KeyboardAwareScrollView>
@@ -368,12 +370,12 @@ const EditBusinessPageScreen = ({ navigation, route }: any) => {
                     {loading ? (
                         <>
                             <ActivityIndicator color="white" style={{ marginRight: 10 }} />
-                            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Creating Page...</Text>
+                            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{t('creatingPage')}</Text>
                         </>
                     ) : (
                         <>
                             <Ionicons name="save" size={20} color="white" style={{ marginRight: 10 }} />
-                            <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold', letterSpacing: 0.5 }}>Update Business Page</Text>
+                            <Text style={{ color: 'white', fontSize: 17, fontWeight: 'bold', letterSpacing: 0.5 }}>{t('updateBusinessPage')}</Text>
                         </>
                     )}
                 </TouchableOpacity>

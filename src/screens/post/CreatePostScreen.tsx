@@ -249,7 +249,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     const PREVIEW_JS = ''; // No longer used
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'bottom']}>
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>

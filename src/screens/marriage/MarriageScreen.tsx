@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -19,6 +20,7 @@ const MarriageScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(true);
     const [myProfileId, setMyProfileId] = useState<number>(0);
     const [requestCount, setRequestCount] = useState<number>(0);
+    const { t } = useLanguage();
 
     // Filters
     const [search, setSearch] = useState('');
@@ -289,7 +291,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     />
                     {/* Flame compatibility score badge */}
                     <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255, 255, 255, 0.85)', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                        <Text style={{ fontSize: 9, fontWeight: 'extrabold', color: '#ea580c' }}>🔥 {compatibilityScore}%</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '900', color: '#ea580c' }}>🔥 {compatibilityScore}%</Text>
                     </View>
                     <View style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255, 255, 255, 0.85)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
                         <Text style={{ color: '#ea580c', fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.status || 'UNMARRIED'}</Text>
@@ -311,7 +313,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         <View
                             style={{ width: '100%', backgroundColor: '#fff7ed', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#ffedd5' }}
                         >
-                            <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>View Profile</Text>
+                            <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>{t('viewProfileMatrimony')}</Text>
                         </View>
                     )}
 
@@ -319,7 +321,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         <View
                             style={{ width: '100%', backgroundColor: '#f9fafb', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#e5e7eb' }}
                         >
-                            <Text style={{ color: '#9ca3af', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>Requested</Text>
+                            <Text style={{ color: '#9ca3af', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>{t('requested')}</Text>
                         </View>
                     )}
 
@@ -329,7 +331,7 @@ const MarriageScreen = ({ navigation }: any) => {
                             onPress={() => navigation.navigate('Chat', { receiver: item, platform: 'marriage' })}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ color: '#16a34a', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>Message</Text>
+                            <Text style={{ color: '#16a34a', fontWeight: 'bold', fontSize: 11, letterSpacing: 0.3 }}>{t('message')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -341,7 +343,7 @@ const MarriageScreen = ({ navigation }: any) => {
         <SafeAreaView className="flex-1 bg-gray-50">
             <View className="px-4 py-3 bg-white border-b border-gray-100 shadow-sm z-10">
                 <View className="flex-row justify-between items-center">
-                    <Text className="text-2xl font-extrabold text-gray-800 tracking-tight">Matrimony</Text>
+                    <Text className="text-2xl font-extrabold text-gray-800 tracking-tight">{t('matrimony')}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <TouchableOpacity 
                             onPress={() => navigation.navigate('Requests')} 
@@ -351,7 +353,7 @@ const MarriageScreen = ({ navigation }: any) => {
                             <Ionicons name="heart" size={16} color="#db2777" />
                             {requestCount > 0 && (
                                 <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', minWidth: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2, borderWidth: 1, borderColor: 'white' }}>
-                                    <Text style={{ color: 'white', fontSize: 7, fontWeight: 'extrabold' }}>{requestCount}</Text>
+                                    <Text style={{ color: 'white', fontSize: 7, fontWeight: '900' }}>{requestCount}</Text>
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -401,18 +403,18 @@ const MarriageScreen = ({ navigation }: any) => {
                         <View className="bg-orange-100 p-5 rounded-full mb-5">
                             <Ionicons name="heart-circle-outline" size={52} color="#ea580c" />
                         </View>
-                        <Text className="text-xl font-extrabold text-gray-800 mb-2 text-center">Welcome to Matrimony!</Text>
+                        <Text className="text-xl font-extrabold text-gray-800 mb-2 text-center">{t('welcomeMatrimony')}</Text>
                         <Text className="text-gray-500 text-sm text-center leading-5 mb-6">
-                            To browse profiles and send proposals, you first need to create your own marriage profile.
+                            {t('browseProfilesMsg')}
                         </Text>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('CreateMarriageProfile', { profile: null })}
                             className="bg-orange-600 w-full py-3.5 rounded-2xl items-center shadow-sm mb-3"
                         >
-                            <Text className="text-white font-extrabold text-base">Create My Profile</Text>
+                            <Text className="text-white font-extrabold text-base">{t('createMyProfile')}</Text>
                         </TouchableOpacity>
                         <Text className="text-gray-400 text-xs text-center">
-                            After creating your profile, you can view other profiles and send requests.
+                            {t('afterCreatingMsg')}
                         </Text>
                     </View>
                 </View>
@@ -425,21 +427,21 @@ const MarriageScreen = ({ navigation }: any) => {
                             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: gender === '' ? 'white' : 'transparent', borderRadius: 20, shadowColor: gender === '' ? '#000' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: gender === '' ? 2 : 0 }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === '' ? '#ea580c' : '#4b5563' }}>All Matches</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === '' ? '#ea580c' : '#4b5563' }}>{t('allMatches')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => handleGenderSegmentPress('Male')}
                             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: gender === 'Male' ? 'white' : 'transparent', borderRadius: 20, shadowColor: gender === 'Male' ? '#000' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: gender === 'Male' ? 2 : 0 }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Male' ? '#ea580c' : '#4b5563' }}>Grooms</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Male' ? '#ea580c' : '#4b5563' }}>{t('grooms')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => handleGenderSegmentPress('Female')}
                             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: gender === 'Female' ? 'white' : 'transparent', borderRadius: 20, shadowColor: gender === 'Female' ? '#000' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: gender === 'Female' ? 2 : 0 }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Female' ? '#ea580c' : '#4b5563' }}>Brides</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Female' ? '#ea580c' : '#4b5563' }}>{t('brides')}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -505,10 +507,10 @@ const MarriageScreen = ({ navigation }: any) => {
                             ListEmptyComponent={
                                 <View className="items-center justify-center py-20">
                                     <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/7486/7486744.png' }} className="w-20 h-20 opacity-30 mb-4" />
-                                    <Text className="text-gray-500 font-bold text-lg">No Profiles Found</Text>
-                                    <Text className="text-gray-400 text-xs mt-1 text-center w-64">Try changing filters or check back later for new matches.</Text>
+                                    <Text className="text-gray-500 font-bold text-lg">{t('noProfilesFound')}</Text>
+                                    <Text className="text-gray-400 text-xs mt-1 text-center w-64">{t('tryChangingFilters')}</Text>
                                     <TouchableOpacity onPress={() => fetchProfiles()} className="mt-6 bg-orange-100 px-6 py-2 rounded-full">
-                                        <Text className="text-orange-600 font-bold text-xs">Refresh</Text>
+                                        <Text className="text-orange-600 font-bold text-xs">{t('refresh')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             }
@@ -562,52 +564,52 @@ const MarriageScreen = ({ navigation }: any) => {
                                     ]
                                 }}
                             >
-                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Gender</Text>
+                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>{t('genderLabel')}</Text>
                                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                                     <TouchableOpacity 
                                         onPress={() => setGender('Male')} 
                                         style={{ flex: 1, borderRadius: 24, borderWidth: 1, borderColor: gender === 'Male' ? '#ea580c' : '#e5e7eb', backgroundColor: gender === 'Male' ? '#ea580c' : '#f9fafb', paddingVertical: 12, alignItems: 'center' }}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Male' ? 'white' : '#4b5563' }}>Groom (Male)</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Male' ? 'white' : '#4b5563' }}>{t('groomMale')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity 
                                         onPress={() => setGender('Female')} 
                                         style={{ flex: 1, borderRadius: 24, borderWidth: 1, borderColor: gender === 'Female' ? '#db2777' : '#e5e7eb', backgroundColor: gender === 'Female' ? '#db2777' : '#f9fafb', paddingVertical: 12, alignItems: 'center' }}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Female' ? 'white' : '#4b5563' }}>Bride (Female)</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: gender === 'Female' ? 'white' : '#4b5563' }}>{t('brideFemale')}</Text>
                                     </TouchableOpacity>
                                 </View>
 
-                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Age Range</Text>
+                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>{t('ageRange')}</Text>
                                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 24, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
-                                        <TextInput placeholder="Min Age" value={minAge} onChangeText={setMinAge} keyboardType="numeric" style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
+                                        <TextInput placeholder={t('minAge')} value={minAge} onChangeText={setMinAge} keyboardType="numeric" style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
                                     </View>
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 24, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
-                                        <TextInput placeholder="Max Age" value={maxAge} onChangeText={setMaxAge} keyboardType="numeric" style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
+                                        <TextInput placeholder={t('maxAge')} value={maxAge} onChangeText={setMaxAge} keyboardType="numeric" style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
                                     </View>
                                 </View>
 
-                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Location & Education</Text>
+                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>{t('locationEducation')}</Text>
                                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 24, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
                                         <Ionicons name="location-outline" size={16} color="#9ca3af" style={{ marginRight: 4 }} />
-                                        <TextInput placeholder="City..." value={city} onChangeText={setCity} style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
+                                        <TextInput placeholder={t('cityPlaceholder')} value={city} onChangeText={setCity} style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
                                     </View>
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 24, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
                                         <Ionicons name="school-outline" size={16} color="#9ca3af" style={{ marginRight: 4 }} />
-                                        <TextInput placeholder="Degree..." value={education} onChangeText={setEducation} style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
+                                        <TextInput placeholder={t('degreePlaceholder')} value={education} onChangeText={setEducation} style={{ flex: 1, paddingVertical: 10, fontSize: 13, color: '#111827' }} placeholderTextColor="#9ca3af" />
                                     </View>
                                 </View>
 
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderColor: '#f3f4f6' }}>
                                     <TouchableOpacity onPress={() => { setGender(''); setCity(''); setEducation(''); setMinAge(''); setMaxAge(''); }} style={{ paddingHorizontal: 12, paddingVertical: 6 }} activeOpacity={0.7}>
-                                        <Text style={{ color: '#ea580c', fontSize: 13, fontWeight: 'bold' }}>Reset All</Text>
+                                        <Text style={{ color: '#ea580c', fontSize: 13, fontWeight: 'bold' }}>{t('resetAll')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => { toggleFilter(); fetchProfiles(); }} style={{ backgroundColor: '#ea580c', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 24, shadowColor: '#ea580c', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 }} activeOpacity={0.8}>
-                                        <Text style={{ color: 'white', fontSize: 13, fontWeight: 'bold' }}>Apply Filters</Text>
+                                        <Text style={{ color: 'white', fontSize: 13, fontWeight: 'bold' }}>{t('applyFilters')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </Animated.View>

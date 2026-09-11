@@ -19,6 +19,7 @@ interface User {
     id: string;
     name: string;
     profile_photo?: string;
+    is_business?: number;
 }
 
 const isVideo = (uri: string) => {
@@ -374,7 +375,7 @@ const HomeScreen = () => {
                             <Ionicons name="add" size={14} color="white" />
                         </View>
                     </View>
-                    <Text style={{ fontSize: 10, color: '#4b5563', fontWeight: 'bold' }}>{t('add') || 'Add'}</Text>
+                    <Text style={{ fontSize: 10, color: '#4b5563', fontWeight: 'bold' }}>{t('add')}</Text>
                 </TouchableOpacity>
             );
         }
@@ -420,7 +421,7 @@ const HomeScreen = () => {
                     )}
                 </View>
                 <Text style={{ fontSize: 10, color: '#374151', fontWeight: 'bold', maxWidth: 60, textAlign: 'center' }} numberOfLines={1}>
-                    {item.isMine ? 'You' : item.name}
+                    {item.isMine ? t('you') : item.name}
                 </Text>
             </TouchableOpacity>
         );
@@ -473,7 +474,7 @@ const HomeScreen = () => {
             {/* Stories Rail */}
             <View style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
                 <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1f2937', marginBottom: 12, marginLeft: 4 }}>
-                    {t('stories') || 'Stories'}
+                    {t('stories')}
                 </Text>
                 <FlatList
                     data={[{ id: 'add', isAdd: true }, ...stories]}
@@ -491,10 +492,10 @@ const HomeScreen = () => {
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
                     <Ionicons name="people" size={18} color="#ea580c" />
-                    <Text className="font-bold text-gray-800 text-sm ml-2">People You May Know</Text>
+                    <Text className="font-bold text-gray-800 text-sm ml-2">{t('peopleYouMayKnow')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.push('FollowList', { userId: user?.id, action: 'fetch_all_members', title: 'All Members' })} activeOpacity={0.7}>
-                    <Text className="text-orange-600 font-bold text-xs">See All</Text>
+                    <Text className="text-orange-600 font-bold text-xs">{t('viewAll') || 'See All'}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -529,7 +530,7 @@ const HomeScreen = () => {
                                 activeOpacity={0.7}
                             >
                                 <Text className={`text-[10px] font-bold ${isFollowed ? 'text-gray-500' : 'text-white'}`}>
-                                    {isFollowed ? 'Following' : 'Follow'}
+                                    {isFollowed ? t('followingStatus') : t('followStatus')}
                                 </Text>
                             </TouchableOpacity>
                         </TouchableOpacity>
@@ -544,10 +545,10 @@ const HomeScreen = () => {
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
                     <Ionicons name="videocam" size={18} color="#ea580c" />
-                    <Text className="font-bold text-gray-800 text-sm ml-2">Reels</Text>
+                    <Text className="font-bold text-gray-800 text-sm ml-2">{t('reels')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.navigate('Reels')} activeOpacity={0.7}>
-                    <Text className="text-orange-600 font-bold text-xs">View All</Text>
+                    <Text className="text-orange-600 font-bold text-xs">{t('viewAll')}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -567,7 +568,7 @@ const HomeScreen = () => {
                                 <View className="bg-orange-100 w-10 h-10 rounded-full items-center justify-center mb-2">
                                     <Ionicons name="add" size={24} color="#ea580c" />
                                 </View>
-                                <Text className="text-orange-700 font-bold text-xs">Create</Text>
+                                <Text className="text-orange-700 font-bold text-xs">{t('create')}</Text>
                             </TouchableOpacity>
                         );
                     }
@@ -683,7 +684,7 @@ const HomeScreen = () => {
                         {user?.is_business == 1 && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: -2 }}>
                                 <Ionicons name="briefcase" size={10} color="#0064e0" />
-                                <Text style={{ fontSize: 9, color: '#0064e0', fontWeight: 'bold', marginLeft: 3 }}>BUSINESS</Text>
+                                <Text style={{ fontSize: 9, color: '#0064e0', fontWeight: 'bold', marginLeft: 3 }}>{t('business')}</Text>
                             </View>
                         )}
                     </View>
@@ -796,8 +797,8 @@ const HomeScreen = () => {
                     <View className="bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
                         <View className="items-center mb-6">
                             <View className="w-12 h-1.5 bg-gray-200 rounded-full mb-6" />
-                            <Text className="text-xl font-bold text-gray-800">Create New</Text>
-                            <Text className="text-gray-500 text-sm mt-1">What would you like to share today?</Text>
+                            <Text className="text-xl font-bold text-gray-800">{t('createNew')}</Text>
+                            <Text className="text-gray-500 text-sm mt-1">{t('whatToShare')}</Text>
                         </View>
 
                         <View className="gap-3">

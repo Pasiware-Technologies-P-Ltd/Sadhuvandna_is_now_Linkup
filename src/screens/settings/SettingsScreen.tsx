@@ -94,10 +94,10 @@ const SettingsScreen = ({ navigation }: any) => {
             ]
         },
         {
-            title: "Appearance",
+            title: t('appearance'),
             items: [
                 {
-                    label: "Change Font Family",
+                    label: t('changeFontFamily'),
                     icon: "text-outline",
                     action: handleChangeFont,
                     value: getFontLabel(fontFamily)
@@ -105,22 +105,22 @@ const SettingsScreen = ({ navigation }: any) => {
             ]
         },
         {
-            title: "Account",
+            title: t('account'),
             items: [
                 { label: t('editProfile'), icon: "person-outline", action: () => navigation.navigate(user?.is_business == 1 ? 'EditBusinessPage' : 'EditProfile') },
-                { label: "Change Password", icon: "lock-closed-outline", action: () => navigation.navigate('ChangePassword') },
+                { label: t('changePassword'), icon: "lock-closed-outline", action: () => navigation.navigate('ChangePassword') },
             ]
         },
         {
-            title: "Support & Legal",
+            title: t('supportLegal'),
             items: [
-                { label: "Privacy Policy", icon: "shield-checkmark-outline", action: () => openLink('https://sadhu-vandana.com/privacy-policy') },
-                { label: "Terms & Conditions", icon: "document-text-outline", action: () => openLink('https://sadhu-vandana.com/terms') },
-                { label: "Contact Us", icon: "mail-outline", action: () => openLink('mailto:support@sadhu-vandana.com') },
+                { label: t('privacyPolicy'), icon: "shield-checkmark-outline", action: () => openLink('https://sadhu-vandana.com/privacy-policy') },
+                { label: t('termsConditions'), icon: "document-text-outline", action: () => openLink('https://sadhu-vandana.com/terms') },
+                { label: t('contactUs'), icon: "mail-outline", action: () => openLink('mailto:support@sadhu-vandana.com') },
             ]
         },
         {
-            title: "Actions",
+            title: t('actions'),
             items: [
                 { label: t('logout'), icon: "log-out-outline", action: handleLogout, color: '#ef4444' },
             ]
@@ -330,7 +330,7 @@ const SettingsScreen = ({ navigation }: any) => {
                                         <TouchableOpacity
                                             key={opt.key}
                                             onPress={() => {
-                                                setLanguage(opt.key);
+                                                setLanguage(opt.key as 'en' | 'hi' | 'gu');
                                                 setLangModalVisible(false);
                                             }}
                                             style={{

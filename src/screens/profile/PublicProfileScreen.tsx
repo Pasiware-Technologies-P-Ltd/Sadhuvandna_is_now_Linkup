@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Fix: Point to Root uploads, not Api/uploads
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -23,12 +24,14 @@ const { width } = Dimensions.get('window');
 
 const PublicProfileScreen = ({ route, navigation }: any) => {
     const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
     const { userId } = route.params;
     const [profile, setProfile] = useState<any>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [photoPosts, setPhotoPosts] = useState<any[]>([]);
     const [reelPosts, setReelPosts] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'photos' | 'reels'>('photos');
+    const [savedPosts, setSavedPosts] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'photos' | 'reels' | 'saved'>('photos');
     const [loading, setLoading] = useState(true);
     const flatListRef = useRef<FlatList>(null);
 
@@ -111,19 +114,30 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
             setStatsLoading(true);
 
-            const [profileRes, postsRes, followRes] = await Promise.all([
+            const promises: Promise<any>[] = [
                 api.get(`get_user_profile.php?user_id=${uid}`),
                 api.get(`get_posts.php?filter_user_id=${uid}&user_id=${currentUserId || 0}`),
                 api.post(`api_follow.php?action=get_counts`, { current_user_id: currentUserId || 0, user_id: uid }, {
                     headers: { 'Content-Type': 'application/json' }
                 })
-            ]);
+            ];
+
+            const isCurrentOwner = currentUserId && uid.toString() === currentUserId.toString();
+            if (isCurrentOwner) {
+                promises.push(api.get(`get_posts.php?filter_saved=1&user_id=${currentUserId}`));
+            }
+
+            const results = await Promise.all(promises);
+            const profileRes = results[0];
+            const postsRes = results[1];
+            const followRes = results[2];
+            const savedRes = isCurrentOwner ? results[3] : null;
 
             if (profileRes.data.status === 'success') {
                 setProfile(profileRes.data);
             }
             if (postsRes.data.status === 'success') {
-                const allPosts = postsRes.data.data;
+                const allPosts = postsRes.data.data || [];
                 const photos = allPosts.filter((p: any) => {
                     const isReel = ['mp4', 'mov', 'avi', 'mkv', '3gp'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)));
                     return !isReel;
@@ -135,6 +149,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 setPhotoPosts(photos);
                 setReelPosts(reels);
                 setPosts(allPosts);
+            }
+            if (savedRes && savedRes.data?.status === 'success') {
+                setSavedPosts(savedRes.data.data || []);
             }
             if (followRes.data.ok) {
                 setFollowStats(followRes.data);
@@ -412,7 +429,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             ) : (
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.posts || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Posts</Text>
+                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                         </View>
                         <TouchableOpacity
                             onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_followers', title: 'Followers' })}
@@ -424,7 +441,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             ) : (
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.followers || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Followers</Text>
+                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_following', title: 'Following' })}
@@ -436,7 +453,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             ) : (
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.following || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Following</Text>
+                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -449,7 +466,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         </Text>
                         {followStats.follows_me && (
                             <View style={{ backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-                                <Text style={{ fontSize: 9, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>Follows You</Text>
+                                <Text style={{ fontSize: 9, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followsYou')}</Text>
                             </View>
                         )}
                     </View>
@@ -479,7 +496,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             style={{ backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>Edit Profile</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
                         </TouchableOpacity>
                     ) : (
                         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -509,15 +526,15 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         ? '#16a34a'
                                         : (followStats.is_requested && !user.is_business) ? '#6b7280' : 'white'
                                 }}>
-                                    {togglingFollow ? 'Updating...' :
+                                    {togglingFollow ? t('updating') :
                                         user.is_business
                                             // Business page: Follow / Following
-                                            ? (followStats.is_following || followStats.is_connected || followStats.is_requested ? 'Following' : '+ Follow')
+                                            ? (followStats.is_following || followStats.is_connected || followStats.is_requested ? t('following') : `+ ${t('followers')}`)
                                             // Personal: Connect flow
-                                            : (followStats.is_connected ? 'Connected' :
-                                                followStats.is_requested ? 'Requested' :
-                                                    followStats.follows_me ? 'Accept Request' :
-                                                        followStats.is_following ? 'Connected' : 'Connect')}
+                                            : (followStats.is_connected ? t('connected') :
+                                                followStats.is_requested ? t('requested') :
+                                                    followStats.follows_me ? t('acceptRequest') :
+                                                        followStats.is_following ? t('connected') : t('connect'))}
                                 </Text>
                             </TouchableOpacity>
 
@@ -535,7 +552,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     activeOpacity={0.8}
                                 >
                                     <Ionicons name="chatbubble-ellipses" size={16} color="#ea580c" />
-                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>Message</Text>
+                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('message')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -636,6 +653,41 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Education</Text>
                                     <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.education}</Text>
+                                </View>
+                            </View>
+                        )}
+                        {user.gender && (
+                            <View style={{ width: '47%', flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#8b5cf612', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="male-female-outline" size={14} color="#8b5cf6" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Gender</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.gender}</Text>
+                                </View>
+                            </View>
+                        )}
+                        {user.dob && !user.dob.startsWith('0000') && !isNaN(new Date(user.dob).getTime()) && (
+                            <View style={{ width: '47%', flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#f59e0b12', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="calendar-outline" size={14} color="#f59e0b" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>DOB</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>
+                                        {new Date(user.dob).toLocaleDateString()}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                        {user.state && (
+                            <View style={{ width: '47%', flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#14b8a612', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="map-outline" size={14} color="#14b8a6" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>State</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.state}</Text>
                                 </View>
                             </View>
                         )}
@@ -774,7 +826,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             activeOpacity={0.8}
                         >
                             <Ionicons name="heart-outline" size={18} color="#ea580c" />
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>Create Matrimony Profile</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('createMatrimonyProfile')}</Text>
                         </TouchableOpacity>
                     ) : null}
                 </View>
@@ -789,7 +841,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 >
                     <Ionicons name="images-outline" size={18} color={activeTab === 'photos' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
                     <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'photos' ? '#ea580c' : '#6b7280' }}>
-                        Photos ({photoPosts.length})
+                        {t('photos')} ({photoPosts.length})
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -799,9 +851,21 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 >
                     <Ionicons name="film-outline" size={18} color={activeTab === 'reels' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
                     <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'reels' ? '#ea580c' : '#6b7280' }}>
-                        Reels ({reelPosts.length})
+                        {t('reels')} ({reelPosts.length})
                     </Text>
                 </TouchableOpacity>
+                {isOwner && (
+                    <TouchableOpacity
+                        onPress={() => setActiveTab('saved')}
+                        style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'saved' ? 2 : 0, borderBottomColor: '#ea580c' }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name={activeTab === 'saved' ? "bookmark" : "bookmark-outline"} size={18} color={activeTab === 'saved' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'saved' ? '#ea580c' : '#6b7280' }}>
+                            {t('saved')} ({savedPosts.length})
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </>
     );
@@ -838,8 +902,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 id: item.id,
                 user: {
                     id: item.user_id,
-                    name: user.name,
-                    avatar: getImageUrl(user.profile_photo, PHOTO_URL) || '',
+                    name: item.name || user.name,
+                    avatar: item.profile_photo ? getImageUrl(item.profile_photo, PHOTO_URL) : (getImageUrl(user.profile_photo, PHOTO_URL) || ''),
                 },
                 content: item.description,
                 media: item.media,
@@ -855,13 +919,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         });
                     })() : '',
                 isLiked: item.user_liked,
+                isSaved: item.user_saved === 1 || item.is_saved === 1 || activeTab === 'saved',
                 link: item.link
             }}
             currentUserId={currentUserId || ''}
             onDeletePress={() => handleDelete(item.id)}
             shouldPlay={activePostId === item.id}
         />
-    ), [user, currentUserId, activePostId]);
+    ), [user, currentUserId, activePostId, activeTab]);
 
     const renderReelRow = useCallback(({ item: row, index: rowIndex }: { item: any[], index: number }) => {
         return (
@@ -922,8 +987,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     }, [navigation, width]);
 
     const renderItem = useCallback(({ item, index }: any) => {
-        if (activeTab === 'photos') return renderPostItem({ item, index });
-        return renderReelRow({ item, index });
+        if (activeTab === 'reels') return renderReelRow({ item, index });
+        return renderPostItem({ item, index });
     }, [activeTab, renderPostItem, renderReelRow]);
 
     if (loading) {
@@ -967,7 +1032,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             <Animated.View style={{ flex: 1, opacity: tabFadeAnim }}>
                 <FlatList
                     ref={flatListRef}
-                    data={activeTab === 'photos' ? photoPosts : reelRows}
+                    data={activeTab === 'photos' ? photoPosts : activeTab === 'reels' ? reelRows : savedPosts}
                     renderItem={renderItem}
                     keyExtractor={(item: any, index) => (Array.isArray(item) ? item[0]?.id : item.id)?.toString() || index.toString()}
                     numColumns={1}
@@ -976,7 +1041,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     viewabilityConfig={viewabilityConfig}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
-                        <Text className="text-center text-gray-500 py-10">No {activeTab} shared yet.</Text>
+                        <Text className="text-center text-gray-500 py-10">
+                            {activeTab === 'saved' ? (t('noSavedPosts') || 'No saved posts yet.') : `No ${activeTab} shared yet.`}
+                        </Text>
                     }
                     contentContainerStyle={{ paddingBottom: 40 }}
                     className="bg-gray-50"

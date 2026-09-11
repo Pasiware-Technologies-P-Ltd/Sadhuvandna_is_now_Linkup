@@ -189,6 +189,8 @@ import JoinGroupScreen from '../screens/chat/JoinGroupScreen';
 import GroupSettingsScreen from '../screens/chat/GroupSettingsScreen';
 import AddGroupMembersScreen from '../screens/chat/AddGroupMembersScreen';
 
+import SavedPostsScreen from '../screens/profile/SavedPostsScreen';
+
 const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
@@ -213,6 +215,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="StoryViewer" component={StoryViewerScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyPosts" component={MyPostsScreen} />
+      <Stack.Screen name="SavedPosts" component={SavedPostsScreen} />
       <Stack.Screen name="Gallery" component={GalleryScreen} />
       <Stack.Screen name="CreateMarriageProfile" component={CreateMarriageProfileScreen} />
       <Stack.Screen name="Temples" component={TempleScreen} />

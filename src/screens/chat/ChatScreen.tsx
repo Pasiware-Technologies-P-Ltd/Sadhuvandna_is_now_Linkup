@@ -123,11 +123,15 @@ const ChatScreen = ({ navigation, route }: any) => {
     const flatListRef = useRef<FlatList>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
+    const isFetchingRef = useRef(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     useEffect(() => {
         const show = Keyboard.addListener('keyboardDidShow', (e) => {
             setKeyboardHeight(e.endCoordinates.height);
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         });
         const hide = Keyboard.addListener('keyboardDidHide', () => {
             setKeyboardHeight(0);
@@ -143,14 +147,34 @@ const ChatScreen = ({ navigation, route }: any) => {
     }, []);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (paymentStatus === 'paid' && myProfileId) {
-                fetchMessages();
-                fetchUserStatus();
-                updateMyOnlineStatus();
-                checkBlockStatus(); // Poll for block status
+        if (paymentStatus !== 'paid' || !myProfileId) return;
+
+        let lastOnlineCheck = 0;
+        let lastBlockCheck = 0;
+
+        const interval = setInterval(async () => {
+            if (isFetchingRef.current || !isMountedRef.current) return;
+            isFetchingRef.current = true;
+            try {
+                const now = Date.now();
+                await fetchMessages();
+                if (!isMountedRef.current) return;
+                await fetchUserStatus();
+
+                if (now - lastOnlineCheck > 15000 && isMountedRef.current) {
+                    lastOnlineCheck = now;
+                    updateMyOnlineStatus();
+                }
+
+                if (now - lastBlockCheck > 30000 && isMountedRef.current) {
+                    lastBlockCheck = now;
+                    checkBlockStatus();
+                }
+            } catch (e) {
+            } finally {
+                isFetchingRef.current = false;
             }
-        }, 2000);
+        }, 3000);
 
         return () => {
             clearInterval(interval);
@@ -232,7 +256,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             const id = uid || userId;
             if (id) {
-                await api.post('update_app_online.php', { user_id: id });
+                await api.post('update_app_online.php', { user_id: id }).catch(() => {});
             }
         } catch { }
     };
@@ -340,7 +364,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                 ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}&t=${Date.now()}`
                 : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}&t=${Date.now()}`;
             const res = await api.get(endpoint);
-            if (res.data.status === 'success' && isMountedRef.current) {
+            if (res?.data?.status === 'success' && Array.isArray(res?.data?.data) && isMountedRef.current) {
                 // Map group messages for common keys
                 const mappedData = res.data.data.map((m: any) => {
                     const att = isGroup ? (m.attachment || '') : (m.file || '');
@@ -365,7 +389,22 @@ const ChatScreen = ({ navigation, route }: any) => {
                         )
                     };
                 });
-                setMessages(mappedData);
+                setMessages(prev => {
+                    if (prev.length === mappedData.length) {
+                        let changed = false;
+                        for (let i = 0; i < prev.length; i++) {
+                            if (prev[i].id !== mappedData[i].id || 
+                                prev[i].seen !== mappedData[i].seen || 
+                                prev[i].is_deleted !== mappedData[i].is_deleted ||
+                                prev[i].message !== mappedData[i].message) {
+                                changed = true;
+                                break;
+                            }
+                        }
+                        if (!changed) return prev;
+                    }
+                    return mappedData;
+                });
                 
                 if (isGroup) {
                     setGroupAdminsOnly(res.data.admins_only == 1);
@@ -373,7 +412,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     const currentUId = userIdRef.current || userId;
                     if (currentUId) {
                         const resMembers = await api.get(`/get_group_members.php?group_id=${receiver.id}`);
-                        if (resMembers.data.status === 'success') {
+                        if (resMembers?.data?.status === 'success' && Array.isArray(resMembers?.data?.data)) {
                             const myMember = resMembers.data.data.find((m: any) => m.user_id == currentUId);
                             setIsMeAdmin(myMember?.role === 'admin' || resMembers.data.creator_id == currentUId);
                         }
@@ -390,7 +429,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     `get_group_typing.php?group_id=${receiver?.id}&user_id=${userId}&t=${Date.now()}`
                 );
                 if (res.data.status === 'success' && isMountedRef.current) {
-                    setGroupTypingUser(res.data.typing_user || null);
+                    setGroupTypingUser(prev => (prev === res.data.typing_user ? prev : (res.data.typing_user || null)));
                 }
             } catch (e) { }
             return;
@@ -404,12 +443,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                 `get_chat_user_status.php?profile_id=${receiver.id}&my_profile_id=${currentId}&platform=${platform}&t=${Date.now()}`
             );
             if (res.data.status === 'success' && isMountedRef.current) {
-                setReceiverOnline(res.data.online);
-                setReceiverLastSeen(res.data.last_active);
-                setIsReceiverTyping(res.data.is_typing);
-
-                // Incoming call is now handled by GlobalCallListener
-
+                setReceiverOnline(prev => (prev === res.data.online ? prev : res.data.online));
+                setReceiverLastSeen(prev => (prev === res.data.last_active ? prev : res.data.last_active));
+                setIsReceiverTyping(prev => (prev === res.data.is_typing ? prev : res.data.is_typing));
             }
         } catch (e) { console.log("Fetch Status Error", e); }
     };
@@ -911,10 +947,10 @@ const ChatScreen = ({ navigation, route }: any) => {
     if (!receiver) return null;
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }} edges={['top', 'bottom']}>
             {/* Header */}
             {isSelectionMode ? (
-                <View style={{ paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 50 : 12) + (Platform.OS === 'android' ? 10 : 0), paddingBottom: 12, paddingHorizontal: 16, backgroundColor: '#ea580c', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#ea580c', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity 
                         onPress={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }} 
                         style={{ marginRight: 16, padding: 4 }}
@@ -948,7 +984,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     </View>
                 </View>
             ) : (
-                <View style={{ paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 50 : 12) + (Platform.OS === 'android' ? 10 : 0), paddingBottom: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8, padding: 6 }} activeOpacity={0.7}>
                         <Ionicons name="arrow-back" size={24} color="#1f2937" />
                     </TouchableOpacity>
@@ -1109,12 +1145,21 @@ const ChatScreen = ({ navigation, route }: any) => {
                 </View>
             )}
 
-            <View style={{ flex: 1, marginBottom: Platform.OS === 'android' ? keyboardHeight : 0 }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                className="flex-1"
+                enabled={true}
+            >
                 <FlatList
                     ref={flatListRef}
                     keyboardShouldPersistTaps="handled"
                     data={searchQuery.trim() ? messages.filter(m => m.message?.toLowerCase().includes(searchQuery.toLowerCase())) : messages}
                     keyExtractor={(item, index) => item?.id?.toString() ?? index.toString()}
+                    initialNumToRender={20}
+                    maxToRenderPerBatch={15}
+                    windowSize={10}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 20 }}
                     renderItem={({ item, index }) => {
                         const isMe = item.is_mine;
@@ -1363,13 +1408,13 @@ const ChatScreen = ({ navigation, route }: any) => {
 
                 {/* Input Area */}
                 {isBlocked ? (
-                    <View className="bg-gray-100 p-4 rounded-xl items-center justify-center border border-gray-200 m-4" style={{ marginBottom: Math.max(16, insets.bottom) }}>
+                    <View className="bg-gray-100 p-4 rounded-xl items-center justify-center border border-gray-200 m-4">
                         <Text className="text-gray-500 font-medium text-center">
                             You have blocked this user. Unblock to send messages.
                         </Text>
                     </View>
                 ) : (groupAdminsOnly && !isMeAdmin) ? (
-                    <View className="bg-gray-50 p-4 rounded-xl items-center justify-center border border-gray-100 m-4" style={{ marginBottom: Math.max(16, insets.bottom) }}>
+                    <View className="bg-gray-50 p-4 rounded-xl items-center justify-center border border-gray-100 m-4">
                         <Ionicons name="lock-closed" size={20} color="#9ca3af" className="mb-1" />
                         <Text className="text-gray-500 font-medium text-center text-sm">
                             Only admins can send messages to this group.
@@ -1378,10 +1423,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                 ) : (
                     <View style={{
                         paddingHorizontal: 12,
-                        paddingTop: 10,
-                        paddingBottom: Platform.OS === 'android'
-                            ? Math.max(10, insets.bottom)
-                            : Math.max(10, insets.bottom),
+                        paddingVertical: 10,
                         backgroundColor: 'white',
                         borderTopWidth: 1,
                         borderTopColor: '#f3f4f6',
@@ -1488,7 +1530,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         </View>
                     );
                 })()}
-            </View>
+            </KeyboardAvoidingView>
 
             {/* Full Screen Image Modal */}
             <Modal visible={!!fullScreenImage} transparent={true} animationType="fade">
@@ -1716,7 +1758,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     </View>
                 </View>
             )}
-        </View>
+        </SafeAreaView>
     );
 };
 

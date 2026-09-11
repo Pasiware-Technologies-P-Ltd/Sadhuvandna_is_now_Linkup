@@ -197,13 +197,13 @@ export default function LoginScreen({ navigation }: any) {
                             <View className="bg-orange-100 p-4 rounded-3xl mb-4">
                                 <Ionicons name="people" size={40} color="#ff6b00" />
                             </View>
-                            <Text className="text-3xl font-extrabold text-[#1a2b4c] text-center">Welcome</Text>
-                            <Text className="text-gray-500 font-medium mt-2 text-center text-base">Enter your details to login or create account</Text>
+                            <Text className="text-3xl font-extrabold text-[#1a2b4c] text-center">{t('welcomeLogin')}</Text>
+                            <Text className="text-gray-500 font-medium mt-2 text-center text-base">{t('enterDetailsLogin')}</Text>
                         </View>
 
                         <View className="space-y-4">
                             <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">FIRST NAME <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('firstName')} <Text className="text-red-500">*</Text></Text>
                                 <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
                                     <Ionicons name="person" size={20} color="#ff6b00" />
                                     <TextInput
@@ -217,7 +217,7 @@ export default function LoginScreen({ navigation }: any) {
                             </View>
 
                             <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">MIDDLE NAME <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('middleName')} <Text className="text-red-500">*</Text></Text>
                                 <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
                                     <Ionicons name="person" size={20} color="#ff6b00" />
                                     <TextInput
@@ -231,7 +231,7 @@ export default function LoginScreen({ navigation }: any) {
                             </View>
 
                             <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">LAST NAME <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('lastName')} <Text className="text-red-500">*</Text></Text>
                                 <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
                                     <Ionicons name="people" size={20} color="#ff6b00" />
                                     <TextInput
@@ -247,7 +247,7 @@ export default function LoginScreen({ navigation }: any) {
 
 
                             <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">MOBILE NUMBER <Text className="text-red-500">*</Text></Text>
+                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('mobileNumber')} <Text className="text-red-500">*</Text></Text>
                                 <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
                                     <Ionicons name="phone-portrait-outline" size={20} color="#6b7280" />
                                     <TextInput
@@ -272,7 +272,7 @@ export default function LoginScreen({ navigation }: any) {
                                 <ActivityIndicator color="white" />
                             ) : (
                                 <View className="flex-row items-center">
-                                    <Text className="text-white font-bold text-lg mr-2">Get Login Code</Text>
+                                    <Text className="text-white font-bold text-lg mr-2">{t('getLoginCode')}</Text>
                                     <Ionicons name="arrow-forward" size={20} color="white" />
                                 </View>
                             )}
@@ -283,13 +283,13 @@ export default function LoginScreen({ navigation }: any) {
                         <View className="bg-orange-100 p-5 rounded-full mb-6">
                             <Ionicons name="chatbubble-ellipses-outline" size={50} color="#ff6b00" />
                         </View>
-                        <Text className="text-2xl font-bold text-[#1a2b4c] mb-2 text-center">Verify OTP</Text>
+                        <Text className="text-2xl font-bold text-[#1a2b4c] mb-2 text-center">{t('verifyOtp')}</Text>
                         <Text className="text-gray-500 text-center mb-8 px-4">
-                            We've sent a verification code to +91 {mobile}
+                            {t('sentCodeTo')} +91 {mobile}
                         </Text>
 
                         <View className="w-full bg-white rounded-2xl p-6 shadow-sm shadow-gray-200">
-                            <Text className="text-xs font-bold text-gray-400 mb-2">ENTER OTP</Text>
+                            <Text className="text-xs font-bold text-gray-400 mb-2">{t('enterOtp')}</Text>
                             <View className="bg-[#f8fafc] rounded-xl px-4 py-2 border border-gray-100 flex-row items-center mb-6">
                                 <Ionicons name="keypad-outline" size={24} color="#94a3b8" />
                                 <TextInput
@@ -315,7 +315,7 @@ export default function LoginScreen({ navigation }: any) {
                                 {verifying ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text className="text-white font-bold text-lg">Verify & Login</Text>
+                                    <Text className="text-white font-bold text-lg">{t('verifyAndLogin')}</Text>
                                 )}
                             </TouchableOpacity>
 
@@ -324,7 +324,7 @@ export default function LoginScreen({ navigation }: any) {
                                 onPress={() => setShowOtpScreen(false)}
                             >
                                 <Ionicons name="arrow-back" size={16} color="#64748b" style={{ marginRight: 6 }} />
-                                <Text className="text-slate-500 font-medium">Change Mobile Number</Text>
+                                <Text className="text-slate-500 font-medium">{t('changeMobileNumber')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

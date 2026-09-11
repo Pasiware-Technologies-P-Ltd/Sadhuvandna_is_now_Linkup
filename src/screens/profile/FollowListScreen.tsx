@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -20,6 +20,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const isFetchingRef = useRef(false);
 
     useEffect(() => {
         const loadCurrentUser = async () => {
@@ -42,8 +43,10 @@ const FollowListScreen = ({ route, navigation }: any) => {
     }, [currentUserId, userId, action, searchQuery]);
 
     const fetchUsersList = async (isMore = false) => {
-        if (isMore && (loadingMore || !hasMore)) return;
+        if (isFetchingRef.current) return;
+        if (isMore && (!hasMore || loadingMore || loading)) return;
 
+        isFetchingRef.current = true;
         if (isMore) setLoadingMore(true);
         else {
             setLoading(true);
@@ -78,6 +81,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
             console.error("Fetch list error", error);
             Alert.alert("Error", "Network error while loading list.");
         } finally {
+            isFetchingRef.current = false;
             setLoading(false);
             setLoadingMore(false);
         }
@@ -272,6 +276,10 @@ const FollowListScreen = ({ route, navigation }: any) => {
                     data={users}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderItem}
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={renderEmpty}
                     contentContainerStyle={{ paddingVertical: 12 }}
                     showsVerticalScrollIndicator={false}

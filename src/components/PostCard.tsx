@@ -8,6 +8,7 @@ import PostImage from './PostImage';
 import { WEBSITE_URL, API_BASE_URL } from '../services/api';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import api from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -71,6 +72,9 @@ export interface PostType {
     comments: number;
     timeAgo: string;
     isLiked?: boolean;
+    isSaved?: boolean;
+    user_saved?: boolean;
+    is_saved?: boolean;
     link?: string;
 }
 
@@ -269,6 +273,7 @@ const PostCard = ({
     const isFocused = useIsFocused();
     const [liked, setLiked] = useState(post.isLiked);
     const [likeCount, setLikeCount] = useState(post.likes);
+    const [saved, setSaved] = useState(Boolean(post.isSaved || (post as any).user_saved || (post as any).is_saved));
     const [videoReady, setVideoReady] = useState(false);
     const [musicMuted, setMusicMuted] = useState(false);
     const [paused, setPaused] = useState(false);
@@ -277,6 +282,46 @@ const PostCard = ({
         setLiked(post.isLiked);
         setLikeCount(post.likes);
     }, [post.isLiked, post.likes]);
+
+    useEffect(() => {
+        setSaved(Boolean(post.isSaved || (post as any).user_saved || (post as any).is_saved));
+    }, [post.isSaved, (post as any).user_saved, (post as any).is_saved]);
+
+    const saveScale = useRef(new Animated.Value(1)).current;
+
+    const toggleSave = async () => {
+        const nextSaved = !saved;
+        setSaved(nextSaved);
+
+        Animated.sequence([
+            Animated.spring(saveScale, { toValue: 1.35, useNativeDriver: true }),
+            Animated.spring(saveScale, { toValue: 1, useNativeDriver: true }),
+        ]).start();
+
+        try {
+            const u = await AsyncStorage.getItem('user');
+            const uid = currentUserId || (u ? JSON.parse(u).id : null);
+            if (!uid) return;
+
+            // Sync with local AsyncStorage for fast offline retrieval
+            const stored = await AsyncStorage.getItem('saved_post_ids');
+            let ids: string[] = stored ? JSON.parse(stored) : [];
+            if (nextSaved) {
+                if (!ids.includes(String(post.id))) ids.push(String(post.id));
+            } else {
+                ids = ids.filter(id => id !== String(post.id));
+            }
+            await AsyncStorage.setItem('saved_post_ids', JSON.stringify(ids));
+
+            await api.post('like_comment_action.php', {
+                action: 'save',
+                id: post.id,
+                user_id: uid
+            });
+        } catch (e) {
+            console.log("Toggle save error", e);
+        }
+    };
     const [soundReady, setSoundReady] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -835,8 +880,14 @@ const PostCard = ({
                     )}
                 </View>
 
-                <TouchableOpacity activeOpacity={0.7}>
-                    <Ionicons name="bookmark-outline" size={22} color="#374151" />
+                <TouchableOpacity onPress={toggleSave} activeOpacity={0.7} style={styles.actionButton}>
+                    <Animated.View style={{ transform: [{ scale: saveScale }] }}>
+                        <Ionicons
+                            name={saved ? "bookmark" : "bookmark-outline"}
+                            size={22}
+                            color={saved ? "#ea580c" : "#374151"}
+                        />
+                    </Animated.View>
                 </TouchableOpacity>
             </View>
 

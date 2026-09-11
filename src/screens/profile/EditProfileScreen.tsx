@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL, UPLOAD_BASE_URL, WEBSITE_URL } from '../../services/api';
+import api, { UPLOAD_BASE_URL, WEBSITE_URL } from '../../services/api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useLanguage } from '../../context/LanguageContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
@@ -15,6 +17,14 @@ const EditProfileScreen = ({ navigation }: any) => {
     const [dob, setDob] = useState('');
     const [cast, setCast] = useState('');
     const [gender, setGender] = useState('');
+    const [maritalStatus, setMaritalStatus] = useState('');
+    const [education, setEducation] = useState('');
+    const [occupation, setOccupation] = useState('');
+    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
+    const [address, setAddress] = useState('');
+    const [stateName, setStateName] = useState('');
+    const [hobbies, setHobbies] = useState('');
     const [avatar, setAvatar] = useState<string | null>(null);
     const [currentPhoto, setCurrentPhoto] = useState<string | null>(null);
     const [cover, setCover] = useState<string | null>(null);
@@ -23,6 +33,8 @@ const EditProfileScreen = ({ navigation }: any) => {
     const [user, setUser] = useState<any>(null);
     const [deletePhoto, setDeletePhoto] = useState(false);
     const [deleteCover, setDeleteCover] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const { t } = useLanguage();
 
     useEffect(() => {
         loadUser();
@@ -35,15 +47,34 @@ const EditProfileScreen = ({ navigation }: any) => {
             setUser(localUser);
             // Fetch fresh data
             try {
-                const res = await api.get(`/get_user_details.php?user_id=${localUser.id}`);
+                const res = await api.get(`/get_user_profile.php?user_id=${localUser.id}`);
                 if (res.data.status === 'success') {
-                    const freshUser = res.data.data;
+                    const freshUser = res.data.user;
                     setUser(freshUser);
                     setName(freshUser.name || '');
                     setLocation(freshUser.city || '');
-                    setDob(freshUser.dob || '');
+                    
+                    // Parse DOB gracefully since it could be garbage data initially
+                    let parsedDob = '';
+                    if (freshUser.dob) {
+                        const d = new Date(freshUser.dob);
+                        if (!isNaN(d.getTime())) {
+                            parsedDob = d.toISOString().split('T')[0];
+                        }
+                    }
+                    setDob(parsedDob);
+
                     setCast(freshUser.cast || '');
                     setGender(freshUser.gender || '');
+                    setBio(freshUser.bio || freshUser.about_me || '');
+                    setMaritalStatus(freshUser.marital_status || '');
+                    setEducation(freshUser.education || '');
+                    setOccupation(freshUser.occupation || '');
+                    setPhone(freshUser.mobile || freshUser.phone || freshUser.phone_number || localUser.mobile || localUser.phone || localUser.phone_number || '');
+                    setEmail(freshUser.email || '');
+                    setAddress(freshUser.address || freshUser.current_address || '');
+                    setStateName(freshUser.state || '');
+                    setHobbies(freshUser.hobbies || freshUser.interests || '');
                     setCurrentPhoto(freshUser.profile_photo);
                     setCurrentCover(freshUser.cover_photo);
                 }
@@ -96,6 +127,15 @@ const EditProfileScreen = ({ navigation }: any) => {
             formData.append('dob', dob);
             formData.append('cast', cast);
             formData.append('gender', gender);
+            formData.append('about', bio);
+            formData.append('maritial_status', maritalStatus);
+            formData.append('education', education);
+            formData.append('occupation', occupation);
+            formData.append('mobile', phone);
+            formData.append('email', email);
+            formData.append('address', address);
+            formData.append('state', stateName);
+            formData.append('hobbi', hobbies);
 
             if (avatar) {
                 const filename = avatar.split('/').pop();
@@ -152,11 +192,11 @@ const EditProfileScreen = ({ navigation }: any) => {
         <SafeAreaView className="flex-1 bg-white" edges={['top']}>
             <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text className="text-lg text-gray-500">Cancel</Text>
+                    <Text className="text-lg text-gray-500">{t('cancel')}</Text>
                 </TouchableOpacity>
-                <Text className="font-bold text-lg text-gray-900">Edit Profile</Text>
+                <Text className="font-bold text-lg text-gray-900">{t('editProfile')}</Text>
                 <TouchableOpacity onPress={handleSave} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#ea580c" /> : <Text className="text-lg font-bold text-orange-600">Save</Text>}
+                    {loading ? <ActivityIndicator color="#ea580c" /> : <Text className="text-lg font-bold text-orange-600">{t('save')}</Text>}
                 </TouchableOpacity>
             </View>
 
@@ -218,7 +258,7 @@ const EditProfileScreen = ({ navigation }: any) => {
 
                     <View className="px-5 space-y-6 mt-4">
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">Full Name</Text>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('fullName')}</Text>
                             <TextInput
                                 value={name}
                                 onChangeText={setName}
@@ -226,7 +266,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">City</Text>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('city')}</Text>
                             <TextInput
                                 value={location} // Using location state for city
                                 onChangeText={setLocation}
@@ -234,15 +274,33 @@ const EditProfileScreen = ({ navigation }: any) => {
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">Date of Birth (YYYY-MM-DD)</Text>
-                            <TextInput
-                                value={dob}
-                                onChangeText={setDob}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
-                            />
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('dateOfBirthFull')}</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                                <View pointerEvents="none">
+                                    <TextInput
+                                        value={dob}
+                                        editable={false}
+                                        placeholder={t('selectDate')}
+                                        className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                    />
+                                </View>
+                            </TouchableOpacity>
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={dob ? new Date(dob) : new Date()}
+                                    mode="date"
+                                    display="default"
+                                    onChange={(event: any, selectedDate?: Date) => {
+                                        setShowDatePicker(false);
+                                        if (selectedDate) {
+                                            setDob(selectedDate.toISOString().split('T')[0]);
+                                        }
+                                    }}
+                                />
+                            )}
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">Cast</Text>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('cast')}</Text>
                             <TextInput
                                 value={cast}
                                 onChangeText={setCast}
@@ -250,11 +308,94 @@ const EditProfileScreen = ({ navigation }: any) => {
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">Gender</Text>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('gender')}</Text>
                             <TextInput
                                 value={gender}
                                 onChangeText={setGender}
                                 className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('maritalStatus')}</Text>
+                            <TextInput
+                                value={maritalStatus}
+                                onChangeText={setMaritalStatus}
+                                placeholder={t('selectMaritalStatus')}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('education')}</Text>
+                            <TextInput
+                                value={education}
+                                onChangeText={setEducation}
+                                placeholder={t('highestQualification')}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('occupation')}</Text>
+                            <TextInput
+                                value={occupation}
+                                onChangeText={setOccupation}
+                                placeholder={t('professionJob')}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('phoneNumberRegistered')}</Text>
+                            <TextInput
+                                value={phone}
+                                editable={false}
+                                className="bg-gray-200 p-4 rounded-xl text-gray-500 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('emailId')}</Text>
+                            <TextInput
+                                value={email}
+                                onChangeText={setEmail}
+                                keyboardType="email-address"
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('addressPresent')}</Text>
+                            <TextInput
+                                value={address}
+                                onChangeText={setAddress}
+                                placeholder={t('currentAddress')}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('state')}</Text>
+                            <TextInput
+                                value={stateName}
+                                onChangeText={setStateName}
+                                placeholder="State"
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('hobbiesInterests')}</Text>
+                            <TextInput
+                                value={hobbies}
+                                onChangeText={setHobbies}
+                                placeholder="Singing, Reading..."
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                            />
+                        </View>
+                        <View>
+                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('aboutMeBiodata')}</Text>
+                            <TextInput
+                                value={bio}
+                                onChangeText={setBio}
+                                placeholder={t('yourBio')}
+                                multiline
+                                numberOfLines={4}
+                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100 min-h-[100px]"
+                                style={{ textAlignVertical: 'top' }}
                             />
                         </View>
                     </View>

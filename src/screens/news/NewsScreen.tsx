@@ -11,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 const { width } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
+import { useLanguage } from '../../context/LanguageContext';
 
 const TickerItem = ({ text }: { text: string }) => {
     return (
@@ -22,6 +23,7 @@ const TickerItem = ({ text }: { text: string }) => {
 };
 
 const NewsTicker = ({ tickerData, onClose }: { tickerData: string[]; onClose: () => void }) => {
+    const { t } = useLanguage();
     const scrollAnim = useRef(new Animated.Value(0)).current;
     const [contentWidth, setContentWidth] = useState(0);
 
@@ -51,7 +53,7 @@ const NewsTicker = ({ tickerData, onClose }: { tickerData: string[]; onClose: ()
     return (
         <View className="bg-red-600 flex-row items-center h-9 overflow-hidden w-full shadow-sm">
             <View className="bg-red-700 h-full justify-center px-3 z-10" style={{ borderRightWidth: 1.5, borderRightColor: 'rgba(255,255,255,0.2)' }}>
-                <Text className="text-white font-extrabold text-[10px] uppercase tracking-wider">🚨 Breaking</Text>
+                <Text className="text-white font-extrabold text-[10px] uppercase tracking-wider">{t('breaking')}</Text>
             </View>
             <View className="flex-1 overflow-hidden relative justify-center">
                 <Animated.View 
@@ -129,6 +131,7 @@ const NewsScreen = ({ navigation }: any) => {
     const [bookmarks, setBookmarks] = useState<string[]>([]);
     const [showTicker, setShowTicker] = useState(true);
     const shimmerAnim = useRef(new Animated.Value(0.4)).current;
+    const { t } = useLanguage();
 
     useEffect(() => {
         const loadingActive = loading || ytLoading || aasthaLoading;
@@ -429,8 +432,8 @@ const NewsScreen = ({ navigation }: any) => {
                                 <Text className="text-[9px] text-orange-600 font-extrabold">{item.category}</Text>
                             </View>
                         )}
-                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>⏱️ {readTime} min read</Text>
-                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>👁️ {viewsCount} views</Text>
+                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>⏱️ {readTime} {t('minRead')}</Text>
+                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>👁️ {viewsCount} {t('views')}</Text>
                     </View>
 
                     <View className="flex-row">
@@ -440,19 +443,19 @@ const NewsScreen = ({ navigation }: any) => {
                             </Text>
                             <View className="flex-row mt-3 items-center gap-4">
                                 <TouchableOpacity onPress={() => navigation.navigate('NewsDetail', { news: item })} activeOpacity={0.7}>
-                                    <Text className="text-orange-600 font-bold text-xs tracking-wide">Read More</Text>
+                                    <Text className="text-orange-600 font-bold text-xs tracking-wide">{t('readMore')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
                                     <View className="flex-row items-center">
                                         <Ionicons name="share-social-outline" size={14} color="#6b7280" />
-                                        <Text className="text-gray-500 font-bold text-xs ml-1">Share</Text>
+                                        <Text className="text-gray-500 font-bold text-xs ml-1">{t('share')}</Text>
                                     </View>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => toggleBookmark(item.id?.toString())} activeOpacity={0.7}>
                                     <View className="flex-row items-center">
                                         <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={14} color={isBookmarked ? "#ea580c" : "#6b7280"} />
                                         <Text className={`${isBookmarked ? 'text-orange-600' : 'text-gray-500'} font-bold text-xs ml-1`}>
-                                            {isBookmarked ? 'Saved' : 'Save'}
+                                            {isBookmarked ? t('saved') : t('saveAction')}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>
@@ -541,7 +544,7 @@ const NewsScreen = ({ navigation }: any) => {
                         </View>
                         <TouchableOpacity onPress={handleShareYT} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb' }}>
                             <Ionicons name="share-social" size={14} color="#4b5563" />
-                            <Text style={{ color: '#4b5563', fontSize: 12, fontWeight: 'bold', marginLeft: 6 }}>Share</Text>
+                            <Text style={{ color: '#4b5563', fontSize: 12, fontWeight: 'bold', marginLeft: 6 }}>{t('share')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -554,7 +557,7 @@ const NewsScreen = ({ navigation }: any) => {
             {/* Header & Tabs */}
             <View className="bg-white pt-4 border-b border-gray-100 shadow-sm z-10">
                 <View className="flex-row justify-between items-center px-5 mb-4">
-                    <Text className="text-xl font-extrabold text-gray-900">News & Updates</Text>
+                    <Text className="text-xl font-extrabold text-gray-900">{t('newsUpdates')}</Text>
                     {anchorStatus === 'Approved' ? (
                         <TouchableOpacity 
                             onPress={() => navigation.navigate('CreateNews')}
@@ -562,16 +565,16 @@ const NewsScreen = ({ navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             <Ionicons name="create-outline" size={14} color="white" />
-                            <Text className="text-white font-bold text-xs ml-1">Post News</Text>
+                            <Text className="text-white font-bold text-xs ml-1">{t('postNews')}</Text>
                         </TouchableOpacity>
                     ) : anchorStatus === 'Pending' ? (
                         <TouchableOpacity 
-                            onPress={() => Alert.alert("Pending Application", "Aapki news anchor application pending hai, please approval ka wait karein.")}
+                            onPress={() => Alert.alert(t('pendingApproval'), t('pendingApprovalMsg'))}
                             className="bg-gray-400 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
                             activeOpacity={0.7}
                         >
                             <Ionicons name="time-outline" size={14} color="white" />
-                            <Text className="text-white font-bold text-xs ml-1">Pending Approval</Text>
+                            <Text className="text-white font-bold text-xs ml-1">{t('pendingApproval')}</Text>
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity 
@@ -602,7 +605,7 @@ const NewsScreen = ({ navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             <Ionicons name="mic-outline" size={14} color="white" />
-                            <Text className="text-white font-bold text-xs ml-1">{anchorStatus === 'Rejected' ? 'Reapply Anchor' : 'Apply for News Anchor'}</Text>
+                            <Text className="text-white font-bold text-xs ml-1">{anchorStatus === 'Rejected' ? t('reapplyAnchor') : t('applyForNewsAnchor')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -615,7 +618,7 @@ const NewsScreen = ({ navigation }: any) => {
                         activeOpacity={0.7}
                     >
                         <Ionicons name="newspaper-outline" size={15} color={activeTab === 'apna' ? '#ea580c' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-gray-900' : 'text-gray-500'}`}>Apna News</Text>
+                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-gray-900' : 'text-gray-500'}`}>{t('apnaNews')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -625,7 +628,7 @@ const NewsScreen = ({ navigation }: any) => {
                         activeOpacity={0.7}
                     >
                         <Ionicons name="logo-youtube" size={15} color={activeTab === 'ddnews' ? '#dc2626' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-gray-900' : 'text-gray-500'}`}>DD News</Text>
+                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-gray-900' : 'text-gray-500'}`}>{t('ddNews')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -635,7 +638,7 @@ const NewsScreen = ({ navigation }: any) => {
                         activeOpacity={0.7}
                     >
                         <Ionicons name="flower-outline" size={15} color={activeTab === 'aastha' ? '#d97706' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-gray-900' : 'text-gray-500'}`}>Aastha</Text>
+                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-gray-900' : 'text-gray-500'}`}>{t('aastha')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -681,7 +684,7 @@ const NewsScreen = ({ navigation }: any) => {
                         <Ionicons name="search" size={18} color="#9ca3af" style={{ marginRight: 6 }} />
                         <TextInput
                             style={{ flex: 1, fontSize: 13, color: '#1f2937', padding: 0 }}
-                            placeholder="Search news updates..."
+                            placeholder={t('searchNewsUpdates')}
                             placeholderTextColor="#9ca3af"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -715,7 +718,7 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingVertical: 12 }}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" />}
                         renderItem={renderNewsItem}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">No news available</Text>}
+                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noNewsAvailable')}</Text>}
                     />
                 )
             )}
@@ -735,7 +738,7 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingVertical: 12 }}
                         refreshControl={<RefreshControl refreshing={ytRefreshing} onRefresh={onRefreshYT} colors={['#dc2626']} tintColor="#dc2626" />}
                         renderItem={renderYTNewsItem}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">No videos available right now</Text>}
+                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noVideosAvailable')}</Text>}
                     />
                 )
             )}
@@ -755,7 +758,7 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingVertical: 12 }}
                         refreshControl={<RefreshControl refreshing={aasthaRefreshing} onRefresh={onRefreshAastha} colors={['#d97706']} tintColor="#d97706" />}
                         renderItem={renderYTNewsItem}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">No streams available right now</Text>}
+                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noStreamsAvailable')}</Text>}
                     />
                 )
             )}
@@ -770,7 +773,7 @@ const NewsScreen = ({ navigation }: any) => {
             >
                 <SafeAreaView className="flex-1 bg-black">
                     <View className="flex-row items-center justify-between p-4 bg-black">
-                        <Text className="text-white font-bold text-lg">Video News Player</Text>
+                        <Text className="text-white font-bold text-lg">{t('videoNewsPlayer')}</Text>
                         <TouchableOpacity onPress={() => setSelectedVideoId(null)} className="p-1.5 rounded-full bg-white/20">
                             <Ionicons name="close" size={24} color="white" />
                         </TouchableOpacity>

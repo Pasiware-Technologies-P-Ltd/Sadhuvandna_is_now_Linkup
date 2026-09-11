@@ -97,6 +97,14 @@ if ($action === 'fetch_comments') {
 
 
 // 3. Filter & Pagination Logic
+$con->query("CREATE TABLE IF NOT EXISTS tbl_saved_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    post_id INT NOT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY user_post (user_id, post_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 $filter_user_id = 0;
 if (isset($_REQUEST['filter_user_id']) && intval($_REQUEST['filter_user_id']) > 0) {
     $filter_user_id = intval($_REQUEST['filter_user_id']);
@@ -107,7 +115,9 @@ $limit = intval($_REQUEST['limit'] ?? 20);
 $offset = intval($_REQUEST['offset'] ?? 0);
 
 $whereClause = "";
-if ($filter_user_id > 0) {
+if (isset($_REQUEST['filter_saved']) && $_REQUEST['filter_saved'] == '1' && $user_id > 0) {
+    $whereClause = "WHERE p.id IN (SELECT post_id FROM tbl_saved_posts WHERE user_id='$user_id')";
+} else if ($filter_user_id > 0) {
     $whereClause = "WHERE p.user_id = '$filter_user_id'";
 }
 
@@ -144,6 +154,14 @@ while ($p = $result->fetch_assoc()) {
         $ul_res = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
         if ($ul_res && $ul_res->num_rows > 0)
             $user_liked = true;
+    }
+
+    // User saved / bookmarked?
+    $user_saved = false;
+    if ($user_id > 0) {
+        $us_res = $con->query("SELECT id FROM tbl_saved_posts WHERE post_id=$pid AND user_id=$user_id");
+        if ($us_res && $us_res->num_rows > 0)
+            $user_saved = true;
     }
 
     // Comments
@@ -183,6 +201,8 @@ while ($p = $result->fetch_assoc()) {
         'link' => $p['link'] ?? '',
         'likes' => $likes,
         'user_liked' => $user_liked,
+        'user_saved' => $user_saved,
+        'is_saved' => $user_saved,
         'comments' => $comments,
         'media' => $media, // Array of strings
         'date' => $p['created_at'] ?? $p['date']
