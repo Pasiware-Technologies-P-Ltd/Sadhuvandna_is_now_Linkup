@@ -40,6 +40,9 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                     .then(() => s.unloadAsync())
                     .catch(() => {});
             }
+            if (videoRef.current) {
+                videoRef.current.unloadAsync().catch(() => {});
+            }
         };
     }, []);
 

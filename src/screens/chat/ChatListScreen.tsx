@@ -220,6 +220,10 @@ const ChatListScreen = ({ navigation }: any) => {
                 renderItem={renderItem}
                 keyExtractor={(item, index) => item.partner_id ? `${item.isGroup ? 'group_' : 'user_'}${item.partner_id}` : index.toString()}
                 contentContainerStyle={{ paddingVertical: 4 }}
+                initialNumToRender={12}
+                maxToRenderPerBatch={10}
+                windowSize={7}
+                removeClippedSubviews={true}
                 ListEmptyComponent={
                     <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 20 }}>
                         <Ionicons name="chatbubbles-outline" size={60} color="#fed7aa" />

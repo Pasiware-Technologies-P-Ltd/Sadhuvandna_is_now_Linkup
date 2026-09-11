@@ -114,22 +114,25 @@ if (isset($_REQUEST['filter_user_id']) && intval($_REQUEST['filter_user_id']) > 
 $limit = intval($_REQUEST['limit'] ?? 20);
 $offset = intval($_REQUEST['offset'] ?? 0);
 
-$whereClause = "";
+$conditions = [];
+$conditions[] = "m.status != 'Blocked'";
+
 if (isset($_REQUEST['filter_saved']) && $_REQUEST['filter_saved'] == '1' && $user_id > 0) {
-    $whereClause = "WHERE p.id IN (SELECT post_id FROM tbl_saved_posts WHERE user_id='$user_id')";
+    $conditions[] = "p.id IN (SELECT post_id FROM tbl_saved_posts WHERE user_id='$user_id')";
 } else if ($filter_user_id > 0) {
-    $whereClause = "WHERE p.user_id = '$filter_user_id'";
+    $conditions[] = "p.user_id = '$filter_user_id'";
+}
+
+if (isset($_REQUEST['filter_reels']) && $_REQUEST['filter_reels'] == '1') {
+    $conditions[] = "(p.media LIKE '%.mp4%' OR p.media LIKE '%.mov%' OR p.media LIKE '%.m4v%' OR p.media LIKE '%.3gp%' OR p.media LIKE '%.mkv%')";
 }
 
 if (isset($_REQUEST['post_id']) && intval($_REQUEST['post_id']) > 0) {
     $pid_filter = intval($_REQUEST['post_id']);
-    $whereClause = "WHERE p.id = '$pid_filter'";
+    $conditions[] = "p.id = '$pid_filter'";
 }
 
-// Fetch posts matching website logic (tbl_posts p JOIN tbl_members m)
-// Exclude blocked users
-$whereBlocked = "m.status != 'Blocked'";
-$finalWhere = $whereClause ? "$whereClause AND $whereBlocked" : "WHERE $whereBlocked";
+$finalWhere = "WHERE " . implode(" AND ", $conditions);
 
 $query = "SELECT p.*, m.name, m.profile_photo 
           FROM tbl_posts p

@@ -18,20 +18,24 @@ const GlobalCallListener = () => {
         });
     }, []);
 
+    const isPollingRef = useRef(false);
+
     useEffect(() => {
         if (!myUserId) return;
 
         const checkStatus = async () => {
-            if (isProcessing.current) return;
+            if (isProcessing.current || isPollingRef.current) return;
             
             // If already in a call, don't show another popup
             if (navigationRef.isReady()) {
                 const currentRoute = navigationRef.getCurrentRoute()?.name;
                 if (currentRoute === 'AgoraCall') {
-                    if (incomingCall) setIncomingCall(null);
+                    setIncomingCall((prev: any) => prev ? null : prev);
                     return;
                 }
             }
+            
+            isPollingRef.current = true;
             try {
                 const payload = { user_id: myUserId };
                 const res = await api.post('get_global_status.php', payload);
@@ -46,13 +50,16 @@ const GlobalCallListener = () => {
                     });
                 } else {
                     if (!isProcessing.current) {
-                        setIncomingCall(null);
+                        setIncomingCall((prev: any) => prev ? null : prev);
                     }
                 }
-            } catch (e) { }
+            } catch (e) { 
+            } finally {
+                isPollingRef.current = false;
+            }
         };
 
-        const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
+        const interval = setInterval(checkStatus, 8000); // Check every 8 seconds
         return () => clearInterval(interval);
     }, [myUserId]);
 

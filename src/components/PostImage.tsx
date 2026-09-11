@@ -1,66 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Image, View, ActivityIndicator, Dimensions, Text, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { Image, View, ActivityIndicator, Text } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 
 interface PostImageProps {
     uri: string;
 }
 
-const { width } = Dimensions.get('window');
-
 const PostImage: React.FC<PostImageProps> = ({ uri }) => {
-    const [aspectRatio, setAspectRatio] = useState<number>(4 / 3); // Default
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const imageOpacity = useRef(new Animated.Value(0)).current;
 
-    useEffect(() => {
-        if (!uri) {
-            setLoading(false);
-            return;
-        }
-
-        // Skip size calculation for videos
-        const isVideo = uri.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
-        if (isVideo) {
-            setLoading(false);
-            return;
-        }
-
-        Image.getSize(
-            uri,
-            (w, h) => {
-                if (w && h) {
-                    setAspectRatio(w / h);
-                }
-                setLoading(false);
-            },
-            (err) => {
-                // console.warn("Failed to get image size", uri);
-                setLoading(false);
-                setError(true);
-            }
-        );
-    }, [uri]);
-
-    const handleLoad = () => {
-        Animated.timing(imageOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    if (error) {
+    if (!uri || error) {
         return (
-            <View className="w-full h-64 bg-gray-200 rounded-xl justify-center items-center">
-                <Text className="text-gray-500 text-xs">Image not available</Text>
+            <View className="w-full h-64 bg-gray-100 rounded-xl justify-center items-center">
+                <Text className="text-gray-400 text-xs">Image not available</Text>
             </View>
         );
     }
 
-    // Safely check for video extension
-    const isVideo = uri ? uri.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i) : null;
+    const isVideo = uri.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
 
     if (isVideo) {
         return (
@@ -82,17 +40,21 @@ const PostImage: React.FC<PostImageProps> = ({ uri }) => {
     }
 
     return (
-        <View className="w-full bg-gray-50 rounded-xl overflow-hidden relative">
-            <Animated.Image
+        <View className="w-full bg-gray-50 rounded-xl overflow-hidden relative" style={{ minHeight: 220, maxHeight: 420 }}>
+            <Image
                 source={{ uri }}
-                style={{ width: '100%', aspectRatio, opacity: imageOpacity }}
+                style={{ width: '100%', height: 320 }}
                 resizeMode="cover"
-                onLoad={handleLoad}
-                onError={() => setError(true)}
+                onLoadStart={() => setLoading(true)}
+                onLoadEnd={() => setLoading(false)}
+                onError={() => {
+                    setLoading(false);
+                    setError(true);
+                }}
             />
             {loading && (
                 <View className="absolute inset-0 justify-center items-center bg-gray-100">
-                    <ActivityIndicator color="#ea580c" />
+                    <ActivityIndicator color="#ea580c" size="small" />
                 </View>
             )}
         </View>

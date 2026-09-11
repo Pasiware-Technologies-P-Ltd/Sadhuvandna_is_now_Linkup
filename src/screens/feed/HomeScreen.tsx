@@ -221,7 +221,7 @@ const HomeScreen = () => {
             const [postsRes, storiesRes, reelsRes, suggestRes] = await Promise.all([
                 api.get(`get_posts.php?user_id=${uid}&limit=20&offset=${offset}&lazy=true`),
                 isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('fetch_stories.php?user_id=' + uid),
-                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('get_posts.php?limit=15&user_id=' + uid),
+                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('get_posts.php?filter_reels=1&limit=6&user_id=' + uid),
                 isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get(`api_follow.php?action=fetch_suggestions&current_user_id=${uid}&limit=10`)
             ]);
 

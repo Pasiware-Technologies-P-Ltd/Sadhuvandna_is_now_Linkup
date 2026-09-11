@@ -713,9 +713,10 @@ const ReelsScreen = ({ navigation, route }: any) => {
     const [initialPage, setInitialPage] = useState(0);
     const [layoutHeight, setLayoutHeight] = useState(height);
     const flatListRef = useRef<FlatList>(null);
-    // Refs to avoid stale closures in onViewableItemsChanged
+    const REELS_BATCH_SIZE = 4;
     const reelsRef = useRef<any[]>([]);
     const isFetchingMoreRef = useRef(false);
+    const hasMoreReelsRef = useRef(true);
     const activeIndexRef = useRef(0);
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 80,
@@ -724,11 +725,11 @@ const ReelsScreen = ({ navigation, route }: any) => {
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0) {
             const index = viewableItems[0].index;
-            if (index !== null) {
+            if (index !== null && index !== undefined) {
                 setActiveIndex(index);
                 activeIndexRef.current = index;
-                // Use refs to get fresh values, avoiding stale closure
-                if (!isFetchingMoreRef.current && index >= reelsRef.current.length - 3) {
+                // Preload next batch of 4 reels when 1-2 items away from end
+                if (!isFetchingMoreRef.current && hasMoreReelsRef.current && index >= reelsRef.current.length - 2) {
                     loadMoreReels();
                 }
             }
@@ -775,7 +776,7 @@ const ReelsScreen = ({ navigation, route }: any) => {
     }, [navigation, isFocused]);
 
     const loadMoreReels = async () => {
-        if (isFetchingMoreRef.current) return;
+        if (isFetchingMoreRef.current || !hasMoreReelsRef.current) return;
         isFetchingMoreRef.current = true;
         setIsFetchingMore(true);
         try {
@@ -786,8 +787,8 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 uid = u.id;
             }
             const currentReels = reelsRef.current;
-            const offset = currentReels.length; // Use actual list length as offset
-            let url = `get_posts.php?user_id=${uid}&limit=50&offset=${offset}`;
+            const offset = currentReels.length;
+            let url = `get_posts.php?filter_reels=1&user_id=${uid}&limit=${REELS_BATCH_SIZE}&offset=${offset}`;
             if (filterUserId) {
                 url += `&filter_user_id=${filterUserId}`;
             }
@@ -796,6 +797,9 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 const videoPosts = res.data.data.filter((post: any) =>
                     post.media && post.media.some((m: string) => isVideo(m))
                 );
+                if (videoPosts.length === 0 || videoPosts.length < REELS_BATCH_SIZE) {
+                    hasMoreReelsRef.current = false;
+                }
                 if (videoPosts.length > 0) {
                     setReels((prev: any[]) => {
                         const existingIds = new Set(prev.map((p: any) => p.id));
@@ -805,6 +809,8 @@ const ReelsScreen = ({ navigation, route }: any) => {
                         return merged;
                     });
                 }
+            } else {
+                hasMoreReelsRef.current = false;
             }
         } catch (error) {
             console.error('[Reels] Load more error:', error);
@@ -816,11 +822,11 @@ const ReelsScreen = ({ navigation, route }: any) => {
 
     const loadReels = async (isLoadMore = false) => {
         if (isLoadMore) {
-            // Use the new dedicated function for load more
             loadMoreReels();
             return;
         }
         setLoading(true);
+        hasMoreReelsRef.current = true;
         try {
             const uStr = await AsyncStorage.getItem('user');
             let uid = '';
@@ -830,19 +836,21 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 setCurrentUserId(uid);
             }
 
-            let url = `get_posts.php?user_id=${uid}&limit=50&offset=0`;
+            let url = `get_posts.php?filter_reels=1&user_id=${uid}&limit=${REELS_BATCH_SIZE}&offset=0`;
             if (filterUserId) {
                 url += `&filter_user_id=${filterUserId}`;
             }
             const res = await api.get(url);
 
             if (res.data.status === 'success' && Array.isArray(res.data.data)) {
-                // Filter only videos on frontend as requested
                 const videoPosts = res.data.data.filter((post: any) =>
                     post.media && post.media.some((m: string) => isVideo(m))
                 );
                 setReels(videoPosts);
                 reelsRef.current = videoPosts;
+                if (videoPosts.length < REELS_BATCH_SIZE) {
+                    hasMoreReelsRef.current = false;
+                }
                 // If initialReelId is provided, find its index
                 if (initialReelId) {
                     const idx = videoPosts.findIndex((r: any) => r.id.toString() === initialReelId.toString());
@@ -871,7 +879,7 @@ const ReelsScreen = ({ navigation, route }: any) => {
             onUserPress={(uid: string) => navigation.navigate('PublicProfile', { userId: uid })}
             onCommentPress={(pid: string) => navigation.navigate('Comments', { postId: pid })}
         />
-    ), [activeIndex, isFocused, currentUserId]);
+    ), [activeIndex, isFocused, currentUserId, layoutHeight]);
 
     if (loading) {
         return (
@@ -921,8 +929,10 @@ const ReelsScreen = ({ navigation, route }: any) => {
                     offset: layoutHeight * index,
                     index,
                 })}
+                onEndReached={() => loadMoreReels()}
                 onEndReachedThreshold={0.5}
                 removeClippedSubviews={true}
+                initialNumToRender={2}
                 maxToRenderPerBatch={2}
                 windowSize={3}
                 decelerationRate="fast"
