@@ -28,9 +28,19 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
     }, [currentUserId, profile]);
 
     const loadUser = async () => {
-        const uStr = await AsyncStorage.getItem('user_id');
-        if (uStr) {
-            setCurrentUserId(uStr);
+        try {
+            const uStr = await AsyncStorage.getItem('user');
+            if (uStr) {
+                const u = JSON.parse(uStr);
+                setCurrentUserId(String(u.id));
+                return;
+            }
+            const directUid = await AsyncStorage.getItem('user_id');
+            if (directUid) {
+                setCurrentUserId(directUid);
+            }
+        } catch (e) {
+            console.error("loadUser error", e);
         }
     };
 

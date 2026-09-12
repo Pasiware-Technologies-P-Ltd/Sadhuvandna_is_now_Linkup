@@ -5,8 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL, getFullPaymentUrl } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
     const { profile: routeProfile } = route.params || {};
@@ -50,7 +52,9 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
     });
 
     const [photo, setPhoto] = useState<string | null>(null);
+    const [existingPhoto, setExistingPhoto] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [loadingProfile, setLoadingProfile] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
     const [isEdit, setIsEdit] = useState(false);
 
@@ -95,74 +99,108 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
         return ''; // Return empty string for invalid garbage dates
     };
 
-    useEffect(() => {
-        // Pre-fill if editing
-        if (routeProfile) {
-            const profile = routeProfile;
-            setFormData({
-                full_name: profile.full_name || '',
-                gender: profile.gender || '',
-                dob: profile.dob || '',
-                status: profile.status || '',
-                height: profile.height || '',
-                weight: profile.weight || '',
-                religion: profile.religion || '',
-                phone: profile.phone || '',
-                email: profile.email || '',
-                education: profile.education || '',
-                occupation: profile.occupation || '',
-                work_place: profile.work_place || '',
-                income: profile.income || '',
-                city: profile.city || '',
-                residence: profile.residence || '',
-                caste: profile.caste || '',
-                about: profile.about || '',
+    const populateFormFromProfile = (profile: any) => {
+        if (!profile) return;
+        setFormData({
+            full_name: profile.full_name || '',
+            gender: profile.gender || '',
+            dob: profile.dob || '',
+            status: profile.status || '',
+            height: profile.height || '',
+            weight: profile.weight || '',
+            religion: profile.religion || '',
+            phone: profile.phone || '',
+            email: profile.email || '',
+            education: profile.education || '',
+            occupation: profile.occupation || '',
+            work_place: profile.work_place || '',
+            income: profile.income ? String(profile.income) : '',
+            city: profile.city || '',
+            residence: profile.residence || '',
+            caste: profile.caste || '',
+            about: profile.about || '',
 
-                father_name: profile.father_name || '',
-                father_occupation: profile.father_occupation || '',
-                mother_name: profile.mother_name || '',
-                siblings: profile.siblings || '',
-                family_type: profile.family_type || '',
+            father_name: profile.father_name || '',
+            father_occupation: profile.father_occupation || '',
+            mother_name: profile.mother_name || '',
+            siblings: profile.siblings || '',
+            family_type: profile.family_type || '',
 
-                nature: profile.nature || '',
-                food: profile.food || '',
-                habits: profile.habits || '',
-                hobbies: profile.hobbies || '',
+            nature: profile.nature || '',
+            food: profile.food || '',
+            habits: profile.habits || '',
+            hobbies: profile.hobbies || '',
 
-                partner_age_from: profile.partner_age_from || '',
-                partner_age_to: profile.partner_age_to || '',
-                partner_education: profile.partner_education || '',
-                partner_expectations: profile.partner_expectations || ''
-            });
+            partner_age_from: profile.partner_age_from ? String(profile.partner_age_from) : '',
+            partner_age_to: profile.partner_age_to ? String(profile.partner_age_to) : '',
+            partner_education: profile.partner_education || '',
+            partner_expectations: profile.partner_expectations || ''
+        });
 
-            if (profile.photo && !profile.photo.includes('default')) {
-                // We don't set 'photo' uri directly from server URL as ImagePicker/Upload logic expects local validation mostly, 
-                // but we can leave it null to indicate "no new photo selected"
-            }
-            setIsEdit(true);
+        if (profile.photo && !profile.photo.includes('default')) {
+            setExistingPhoto(profile.photo);
         }
+        setIsEdit(true);
+    };
 
-        AsyncStorage.getItem('user').then(u => {
-            if (u) {
-                const user = JSON.parse(u);
-                setUserId(user.id);
-                // Auto-fill from main profile if not edit
-                if (!isEdit && !routeProfile) {
+    useEffect(() => {
+        const init = async () => {
+            try {
+                setLoadingProfile(true);
+                const u = await AsyncStorage.getItem('user');
+                let currentUid: string | null = null;
+                let userData: any = null;
+                if (u) {
+                    userData = JSON.parse(u);
+                    currentUid = String(userData.id);
+                    setUserId(currentUid);
+                }
+
+                // If routeProfile has full details already
+                if (routeProfile && (routeProfile.full_name || routeProfile.father_name || routeProfile.education)) {
+                    populateFormFromProfile(routeProfile);
+                    setLoadingProfile(false);
+                    return;
+                }
+
+                // Fetch from server using get_my_profile.php
+                const uidToFetch = currentUid || (routeProfile?.user_id ? String(routeProfile.user_id) : null);
+                if (uidToFetch) {
+                    try {
+                        const res = await api.get(`/get_my_profile.php?user_id=${uidToFetch}`);
+                        if (res.data.status === 'success' && res.data.data) {
+                            populateFormFromProfile(res.data.data);
+                            setLoadingProfile(false);
+                            return;
+                        }
+                    } catch (err) {
+                        console.log("Error fetching my profile", err);
+                    }
+                }
+
+                // If creating fresh, pre-fill from user account
+                if (userData) {
                     setFormData(prev => ({
                         ...prev,
-                        full_name: user.name,
-                        city: user.city || '',
-                        phone: user.mobile || '',
-                        email: user.email || '',
-                        dob: user.dob || '',
-                        gender: user.gender || '',
-                        status: user.maritial_status || '',
-                        caste: user.cast || ''
+                        full_name: userData.name || '',
+                        city: userData.city || '',
+                        phone: userData.mobile || '',
+                        email: userData.email || '',
+                        dob: userData.dob || '',
+                        gender: userData.gender || '',
+                        status: userData.maritial_status || '',
+                        caste: userData.cast || ''
                     }));
                 }
+            } catch (e) {
+                console.error("Init Error", e);
+            } finally {
+                setLoadingProfile(false);
             }
-        });
-    }, []);
+        };
+
+        init();
+    }, [routeProfile]);
 
     const handleChange = (name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -261,36 +299,44 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 <Text className="text-xl font-bold text-gray-800">{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
             </View>
 
-            <KeyboardAwareScrollView 
-                className="flex-1" 
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} 
-                showsVerticalScrollIndicator={false}
-                enableOnAndroid={true}
-                extraScrollHeight={100}
-                keyboardShouldPersistTaps="handled"
-            >
+            {loadingProfile ? (
+                <View className="flex-1 justify-center items-center py-20">
+                    <ActivityIndicator size="large" color="#ea580c" />
+                    <Text className="text-gray-400 text-sm mt-3 font-medium">Loading profile details...</Text>
+                </View>
+            ) : (
+                <KeyboardAwareScrollView 
+                    className="flex-1" 
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} 
+                    showsVerticalScrollIndicator={false}
+                    enableOnAndroid={true}
+                    extraScrollHeight={100}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {/* Photo Upload */}
                     <View className="items-center my-6">
                         <TouchableOpacity onPress={pickImage} className="relative">
                             {photo ? (
                                 <Image source={{ uri: photo }} className="w-32 h-32 rounded-full bg-gray-200 border-4 border-orange-100" />
+                            ) : existingPhoto ? (
+                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} className="w-32 h-32 rounded-full bg-gray-200 border-4 border-orange-100" />
                             ) : (
                                 <View className="w-32 h-32 rounded-full bg-orange-50 items-center justify-center border-2 border-dashed border-orange-300">
                                     <Ionicons name="camera" size={36} color="#ea580c" />
                                     <Text className="text-xs text-orange-600 mt-1 font-semibold">{t('addPhoto')}</Text>
                                 </View>
                             )}
-                            {isEdit && !photo && <Text className="text-xs text-gray-400 mt-2 text-center">Current photo kept if unchanged</Text>}
                             <View className="absolute bottom-0 right-0 bg-orange-500 rounded-full p-2 border-2 border-white">
                                 <Ionicons name="pencil" size={16} color="white" />
                             </View>
                         </TouchableOpacity>
+                        {isEdit && !photo && existingPhoto && <Text className="text-xs text-gray-400 mt-2 text-center">Tap to change photo</Text>}
                     </View>
 
                     {/* Basic Details */}
                     <SectionHeader title={t('basicDetails')} icon="person-outline" />
                     <View className="space-y-4">
-                        <Input label={t('fullName')} value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} required />
+                        <Input label={t('fullName')} value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} placeholder="e.g. Rahul Sharma" required />
 
                         <View>
                             <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('genderLabel')} <Text className="text-red-500">*</Text></Text>
@@ -323,10 +369,10 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
 
                         <View className="flex-row gap-3">
                             <View className="flex-1">
-                                <Input label={t('heightLabel')} value={formData.height} onChangeText={(t) => handleChange('height', t)} placeholder="5 ft 10 in" />
+                                <Input label={t('heightLabel')} value={formData.height} onChangeText={(t) => handleChange('height', t)} placeholder="e.g. 5 ft 10 in" />
                             </View>
                             <View className="flex-1">
-                                <Input label={t('weightLabel')} value={formData.weight} onChangeText={(t) => handleChange('weight', t)} placeholder="65 kg" />
+                                <Input label={t('weightLabel')} value={formData.weight} onChangeText={(t) => handleChange('weight', t)} placeholder="e.g. 65 kg" />
                             </View>
                         </View>
 
@@ -354,53 +400,53 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                             </View>
                         </View>
 
-                        <Input label={t('religionLabel')} value={formData.religion} onChangeText={(t) => handleChange('religion', t)} />
-                        <Input label={t('casteCommunity')} value={formData.caste} onChangeText={(t) => handleChange('caste', t)} />
+                        <Input label={t('religionLabel')} value={formData.religion} onChangeText={(t) => handleChange('religion', t)} placeholder="e.g. Jain, Hindu, etc." />
+                        <Input label={t('casteCommunity')} value={formData.caste} onChangeText={(t) => handleChange('caste', t)} placeholder="e.g. Digambar, Shwetambar, etc." />
                     </View>
 
                     {/* Contact & Location */}
                     <SectionHeader title={t('contactLocation')} icon="location-outline" />
                     <View className="space-y-4">
-                        <Input label={t('phoneNumber')} value={formData.phone} onChangeText={(t) => handleChange('phone', t)} keyboardType="phone-pad" required />
-                        <Input label={t('emailId')} value={formData.email} onChangeText={(t) => handleChange('email', t)} keyboardType="email-address" />
-                        <Input label={t('city')} value={formData.city} onChangeText={(t) => handleChange('city', t)} required />
-                        <Input label={t('residenceAddress')} value={formData.residence} onChangeText={(t) => handleChange('residence', t)} multiline />
+                        <Input label={t('phoneNumber')} value={formData.phone} onChangeText={(t) => handleChange('phone', t)} keyboardType="phone-pad" placeholder="Enter 10-digit mobile number" required />
+                        <Input label={t('emailId')} value={formData.email} onChangeText={(t) => handleChange('email', t)} keyboardType="email-address" placeholder="e.g. rahul@example.com" />
+                        <Input label={t('city')} value={formData.city} onChangeText={(t) => handleChange('city', t)} placeholder="e.g. Mumbai, Surat, Delhi" required />
+                        <Input label={t('residenceAddress')} value={formData.residence} onChangeText={(t) => handleChange('residence', t)} placeholder="Enter complete residential address / state" multiline />
                     </View>
 
                     {/* Career */}
                     <SectionHeader title={t('educationCareer')} icon="briefcase-outline" />
                     <View className="space-y-4">
-                        <Input label={t('educationLabel')} value={formData.education} onChangeText={(t) => handleChange('education', t)} />
-                        <Input label={t('occupationLabel')} value={formData.occupation} onChangeText={(t) => handleChange('occupation', t)} />
-                        <Input label={t('workPlace')} value={formData.work_place} onChangeText={(t) => handleChange('work_place', t)} />
-                        <Input label={t('annualIncome')} value={formData.income} onChangeText={(t) => handleChange('income', t)} keyboardType="numeric" />
+                        <Input label={t('educationLabel')} value={formData.education} onChangeText={(t) => handleChange('education', t)} placeholder="e.g. B.Tech, MBA, MBBS, CA" />
+                        <Input label={t('occupationLabel')} value={formData.occupation} onChangeText={(t) => handleChange('occupation', t)} placeholder="e.g. Software Engineer, Businessman" />
+                        <Input label={t('workPlace')} value={formData.work_place} onChangeText={(t) => handleChange('work_place', t)} placeholder="e.g. TCS Mumbai, Self Employed" />
+                        <Input label={t('annualIncome')} value={formData.income} onChangeText={(t) => handleChange('income', t)} keyboardType="numeric" placeholder="e.g. 12,00,000 (Annual in ₹)" />
                     </View>
 
                     {/* Family */}
                     <SectionHeader title={t('familyDetails')} icon="people-outline" />
                     <View className="space-y-4">
-                        <Input label={t('fatherName')} value={formData.father_name} onChangeText={(t) => handleChange('father_name', t)} />
-                        <Input label={t('fatherOccupation')} value={formData.father_occupation} onChangeText={(t) => handleChange('father_occupation', t)} />
-                        <Input label={t('motherName')} value={formData.mother_name} onChangeText={(t) => handleChange('mother_name', t)} />
-                        <Input label={t('siblingsCount')} value={formData.siblings} onChangeText={(t) => handleChange('siblings', t)} placeholder="2 Brothers, 1 Sister" />
-                        <Input label={t('familyType')} value={formData.family_type} onChangeText={(t) => handleChange('family_type', t)} placeholder="Nuclear / Joint" />
+                        <Input label={t('fatherName')} value={formData.father_name} onChangeText={(t) => handleChange('father_name', t)} placeholder="Enter father's name" />
+                        <Input label={t('fatherOccupation')} value={formData.father_occupation} onChangeText={(t) => handleChange('father_occupation', t)} placeholder="e.g. Businessman, Govt. Service" />
+                        <Input label={t('motherName')} value={formData.mother_name} onChangeText={(t) => handleChange('mother_name', t)} placeholder="Enter mother's name" />
+                        <Input label={t('siblingsCount')} value={formData.siblings} onChangeText={(t) => handleChange('siblings', t)} placeholder="e.g. 2 Brothers, 1 Sister" />
+                        <Input label={t('familyType')} value={formData.family_type} onChangeText={(t) => handleChange('family_type', t)} placeholder="e.g. Nuclear Family / Joint Family" />
                     </View>
 
                     {/* Personal */}
                     <SectionHeader title={t('personalDetails')} icon="cafe-outline" />
                     <View className="space-y-4">
-                        <Input label={t('naturePersonality')} value={formData.nature} onChangeText={(t) => handleChange('nature', t)} placeholder="Calm, Cheerful..." />
-                        <Input label={t('foodHabit')} value={formData.food} onChangeText={(t) => handleChange('food', t)} placeholder="Vegetarian / Non-Veg" />
-                        <Input label={t('habitsDrinkingSmoking')} value={formData.habits} onChangeText={(t) => handleChange('habits', t)} placeholder="No Smoking / Drinking" />
-                        <Input label={t('hobbiesLabel')} value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="Reading, Traveling..." />
+                        <Input label={t('naturePersonality')} value={formData.nature} onChangeText={(t) => handleChange('nature', t)} placeholder="e.g. Calm, Cheerful, Caring..." />
+                        <Input label={t('foodHabit')} value={formData.food} onChangeText={(t) => handleChange('food', t)} placeholder="e.g. Pure Vegetarian / Jain Food" />
+                        <Input label={t('habitsDrinkingSmoking')} value={formData.habits} onChangeText={(t) => handleChange('habits', t)} placeholder="e.g. Non-smoker, Non-drinker" />
+                        <Input label={t('hobbiesLabel')} value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="e.g. Reading, Traveling, Music..." />
 
                         <View>
                             <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('aboutMe')}</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24"
+                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24 text-base"
                                 value={formData.about}
                                 onChangeText={(t) => handleChange('about', t)}
-                                placeholder={t('tellUsAboutYourself')}
+                                placeholder={t('tellUsAboutYourself') || "Tell us about yourself, background, personality..."}
                                 placeholderTextColor="#9ca3af"
                                 multiline
                                 textAlignVertical="top"
@@ -413,20 +459,20 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     <View className="space-y-4">
                         <View className="flex-row gap-3">
                             <View className="flex-1">
-                                <Input label={t('ageFrom')} value={formData.partner_age_from} onChangeText={(t) => handleChange('partner_age_from', t)} keyboardType="numeric" />
+                                <Input label={t('ageFrom')} value={formData.partner_age_from} onChangeText={(t) => handleChange('partner_age_from', t)} keyboardType="numeric" placeholder="e.g. 24" />
                             </View>
                             <View className="flex-1">
-                                <Input label={t('ageTo')} value={formData.partner_age_to} onChangeText={(t) => handleChange('partner_age_to', t)} keyboardType="numeric" />
+                                <Input label={t('ageTo')} value={formData.partner_age_to} onChangeText={(t) => handleChange('partner_age_to', t)} keyboardType="numeric" placeholder="e.g. 28" />
                             </View>
                         </View>
-                        <Input label={t('expectedEducation')} value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} />
+                        <Input label={t('expectedEducation')} value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} placeholder="e.g. Graduate, Post Graduate, MBA" />
                         <View>
                             <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('expectations')}</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24"
+                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24 text-base"
                                 value={formData.partner_expectations}
                                 onChangeText={(t) => handleChange('partner_expectations', t)}
-                                placeholder={t('whatAreYouLookingFor')}
+                                placeholder={t('whatAreYouLookingFor') || "What qualities and values are you looking for..."}
                                 placeholderTextColor="#9ca3af"
                                 multiline
                                 textAlignVertical="top"
@@ -443,7 +489,8 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </TouchableOpacity>
 
                     <View className="h-10" />
-            </KeyboardAwareScrollView>
+                </KeyboardAwareScrollView>
+            )}
         </SafeAreaView>
 
             {/* DOB Date Picker Modal */}
@@ -520,22 +567,26 @@ interface InputProps {
     required?: boolean;
 }
 
-const Input = ({ label, value, onChangeText, placeholder, keyboardType, multiline, required }: InputProps) => (
-    <View>
-        <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">
-            {label} {required && <Text className="text-red-500">*</Text>}
-        </Text>
-        <TextInput
-            className={`bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-base ${multiline ? 'h-20' : ''}`}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor="#9ca3af"
-            keyboardType={keyboardType}
-            multiline={multiline}
-            textAlignVertical={multiline ? 'top' : 'center'}
-        />
-    </View>
-);
+const Input = ({ label, value, onChangeText, placeholder, keyboardType, multiline, required }: InputProps) => {
+    const cleanLabel = (label || '').replace('*', '').trim();
+    const defaultPlaceholder = placeholder || (cleanLabel ? `Enter ${cleanLabel.toLowerCase()}` : '');
+    return (
+        <View>
+            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">
+                {label} {required && <Text className="text-red-500">*</Text>}
+            </Text>
+            <TextInput
+                className={`bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-base ${multiline ? 'h-20' : ''}`}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={defaultPlaceholder}
+                placeholderTextColor="#9ca3af"
+                keyboardType={keyboardType}
+                multiline={multiline}
+                textAlignVertical={multiline ? 'top' : 'center'}
+            />
+        </View>
+    );
+};
 
 export default CreateMarriageProfileScreen;

@@ -47,6 +47,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     const [statsLoading, setStatsLoading] = useState(true);
     const [togglingFollow, setTogglingFollow] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Family Add State
     const [modalVisible, setModalVisible] = useState(false);
@@ -82,9 +83,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             const uStr = await AsyncStorage.getItem('user');
             if (uStr) {
                 const u = JSON.parse(uStr);
+                setCurrentUser(u);
                 setCurrentUserId(u.id);
             } else {
                 // Not logged in, still fetch with userId=0
+                setCurrentUser(null);
                 setCurrentUserId('0');
             }
         };
@@ -371,6 +374,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     const viewabilityConfig = React.useRef({
         itemVisiblePercentThreshold: 70,
     }).current;
+
+    const user = profile?.user || {};
+    const family = profile?.family || [];
+    const marriage_profile = profile?.marriage_profile || null;
+    const isOwner = currentUserId == user.id;
+    const isCurrentViewerBusiness = currentUser?.is_business == 1 || currentUser?.is_business === '1';
+    const isTargetBusiness = user?.is_business == 1 || user?.is_business === '1';
+    const canShowMatrimony = !isCurrentViewerBusiness && !isTargetBusiness;
 
     const renderHeader = () => (
         <>
@@ -801,34 +812,36 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         <Text style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>No family members added.</Text>
                     )}
 
-                    {marriage_profile ? (
-                        <View style={{ backgroundColor: '#fff7ed', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: '#ffedd5', flexDirection: 'row', alignItems: 'center' }}>
+                    {canShowMatrimony && (
+                        marriage_profile ? (
+                            <View style={{ backgroundColor: '#fff7ed', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: '#ffedd5', flexDirection: 'row', alignItems: 'center' }}>
+                                <TouchableOpacity
+                                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                                    onPress={() => navigation.navigate('MarriageDetail', { profile: marriage_profile })}
+                                    activeOpacity={0.8}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <Ionicons name="heart" size={20} color="#ea580c" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#7c2d12' }}>Marriage Profile</Text>
+                                        <Text style={{ fontSize: 11, color: '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#ea580c', marginRight: 4 }}>VIEW</Text>
+                                    <Ionicons name="chevron-forward" size={16} color="#ea580c" />
+                                </TouchableOpacity>
+                            </View>
+                        ) : isOwner ? (
                             <TouchableOpacity
-                                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                                onPress={() => navigation.navigate('MarriageDetail', { profile: marriage_profile })}
+                                style={{ backgroundColor: '#fff7ed', borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#ffedd5', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
+                                onPress={() => navigation.navigate('CreateMarriageProfile')}
                                 activeOpacity={0.8}
                             >
-                                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                    <Ionicons name="heart" size={20} color="#ea580c" />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#7c2d12' }}>Marriage Profile</Text>
-                                    <Text style={{ fontSize: 11, color: '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
-                                </View>
-                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#ea580c', marginRight: 4 }}>VIEW</Text>
-                                <Ionicons name="chevron-forward" size={16} color="#ea580c" />
+                                <Ionicons name="heart-outline" size={18} color="#ea580c" />
+                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('createMatrimonyProfile')}</Text>
                             </TouchableOpacity>
-                        </View>
-                    ) : isOwner ? (
-                        <TouchableOpacity
-                            style={{ backgroundColor: '#fff7ed', borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#ffedd5', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
-                            onPress={() => navigation.navigate('CreateMarriageProfile')}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="heart-outline" size={18} color="#ea580c" />
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('createMatrimonyProfile')}</Text>
-                        </TouchableOpacity>
-                    ) : null}
+                        ) : null
+                    )}
                 </View>
             </View>
             )}
@@ -869,11 +882,6 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </View>
         </>
     );
-
-    const user = profile?.user || {};
-    const family = profile?.family || [];
-    const marriage_profile = profile?.marriage_profile || null;
-    const isOwner = currentUserId == user.id;
 
     const reelRows = useMemo(() => {
         const result = [];

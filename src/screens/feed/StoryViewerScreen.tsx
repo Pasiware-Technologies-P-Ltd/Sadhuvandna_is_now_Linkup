@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, Dimensions, Modal, Animated, Style
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { useIsFocused } from '@react-navigation/native';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,6 +13,10 @@ const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const StoryViewerScreen = ({ navigation, route }: any) => {
     const { stories: initialStories, initialIndex = 0, userId: storyOwnerId, userName, userPhoto } = route.params;
+
+    const isFocused = useIsFocused();
+    const isFocusedRef = useRef(true);
+    isFocusedRef.current = isFocused;
 
     const [stories, setStories] = useState(initialStories || []);
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -23,7 +28,23 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
     const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
     const videoRef = useRef<Video>(null);
-    const timerRef = useRef<any>(null);
+    const animRef = useRef<Animated.CompositeAnimation | null>(null);
+    const currentProgressRef = useRef(0);
+    const pressStartTimeRef = useRef(0);
+    const isPressingRef = useRef(false);
+
+    // State for viewers
+    const [viewers, setViewers] = useState<any[]>([]);
+    const [showViewers, setShowViewers] = useState(false);
+
+    useEffect(() => {
+        const listenerId = progress.addListener(({ value }) => {
+            currentProgressRef.current = value;
+        });
+        return () => {
+            progress.removeListener(listenerId);
+        };
+    }, []);
 
     useEffect(() => {
         AsyncStorage.getItem('user').then(u => {
@@ -32,7 +53,10 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
         setLoading(false);
 
         return () => {
-            console.log("[StoryViewer] Cleaning up sound on unmount");
+            console.log("[StoryViewer] Cleaning up on unmount");
+            if (animRef.current) {
+                animRef.current.stop();
+            }
             if (soundRef.current) {
                 const s = soundRef.current;
                 soundRef.current = null;
@@ -64,14 +88,13 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
             }
             const { sound: newSound, status } = await Audio.Sound.createAsync(
                 { uri: url },
-                { shouldPlay: !paused, isLooping: true }
+                { shouldPlay: !paused && !showViewers && isFocused, isLooping: true }
             );
             console.log(`[StoryViewer] Music loaded. Status:`, status.isLoaded);
             soundRef.current = newSound;
             setIsMusicPlaying(true);
         } catch (e: any) {
             console.error("Error loading music:", e);
-            Alert.alert("Music Error", "Failed to load: " + e.message);
         }
     };
 
@@ -87,13 +110,99 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
         }
     };
 
+    const startProgress = (fromProgress: number = 0) => {
+        if (stories[currentIndex]?.type === 'video') return;
+
+        const storyDuration = stories[currentIndex]?.duration ? parseInt(stories[currentIndex].duration) * 1000 : 7000;
+        const remainingDuration = storyDuration * (1 - fromProgress);
+
+        if (remainingDuration <= 0) {
+            if (isFocusedRef.current) nextStory();
+            return;
+        }
+
+        if (animRef.current) {
+            animRef.current.stop();
+        }
+
+        progress.setValue(fromProgress);
+        currentProgressRef.current = fromProgress;
+
+        const anim = Animated.timing(progress, {
+            toValue: 1,
+            duration: remainingDuration,
+            useNativeDriver: false,
+        });
+        animRef.current = anim;
+
+        anim.start(({ finished }) => {
+            if (finished && isFocusedRef.current) nextStory();
+        });
+    };
+
+    const pauseStory = () => {
+        setPaused(true);
+        if (animRef.current) {
+            animRef.current.stop();
+        }
+        if (soundRef.current) {
+            soundRef.current.pauseAsync().catch(() => {});
+        }
+    };
+
+    const resumeStory = () => {
+        setPaused(false);
+        if (stories[currentIndex]?.type !== 'video') {
+            startProgress(currentProgressRef.current);
+        }
+        if (soundRef.current) {
+            soundRef.current.playAsync().catch(() => {});
+        }
+    };
+
+    // Handle Story index change
     useEffect(() => {
         if (!stories[currentIndex]) {
             navigation.goBack();
             return;
         }
-        startProgress();
+        currentProgressRef.current = 0;
+        progress.setValue(0);
+        if (!paused && !showViewers && isFocused) {
+            startProgress(0);
+        }
     }, [currentIndex]);
+
+    // Handle focus / blur (pause when navigating away, resume when returning)
+    useEffect(() => {
+        if (!isFocused) {
+            pauseStory();
+        } else {
+            if (!showViewers && !isPressingRef.current) {
+                resumeStory();
+            }
+        }
+    }, [isFocused]);
+
+    // Handle viewers modal pause/resume
+    useEffect(() => {
+        if (showViewers || !isFocused) {
+            pauseStory();
+        } else if (!isPressingRef.current) {
+            resumeStory();
+        }
+    }, [showViewers, isFocused]);
+
+    // Handle sound playback when paused/viewers/focus state changes
+    useEffect(() => {
+        if (soundRef.current) {
+            if (paused || showViewers || !isFocused) {
+                soundRef.current.pauseAsync().catch(() => {});
+            } else {
+                soundRef.current.playAsync().catch(() => {});
+            }
+        }
+    }, [paused, showViewers, isFocused]);
 
     const markAsViewed = async (storyId: number) => {
         if (!viewerId) return;
@@ -108,24 +217,9 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
         } catch (e) { console.error(e); }
     };
 
-    const startProgress = (fixedDuration?: number) => {
-        // If it's a video, we don't use the timer-based progress unless it fails to load or something
-        if (stories[currentIndex]?.type === 'video') return;
-
-        const storyDuration = stories[currentIndex]?.duration ? parseInt(stories[currentIndex].duration) * 1000 : 10000;
-        const duration = fixedDuration || storyDuration;
-
-        progress.setValue(0);
-        Animated.timing(progress, {
-            toValue: 1,
-            duration: duration,
-            useNativeDriver: false,
-        }).start(({ finished }) => {
-            if (finished) nextStory();
-        });
-    };
-
     const nextStory = () => {
+        if (!isFocusedRef.current) return;
+        if (animRef.current) animRef.current.stop();
         if (currentIndex < stories.length - 1) {
             setCurrentIndex(currentIndex + 1);
         } else {
@@ -134,20 +228,41 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
     };
 
     const prevStory = () => {
+        if (animRef.current) animRef.current.stop();
         if (currentIndex > 0) {
             setCurrentIndex(currentIndex - 1);
         } else {
-            setCurrentIndex(0);
-            startProgress();
+            currentProgressRef.current = 0;
+            progress.setValue(0);
+            if (isFocusedRef.current) {
+                startProgress(0);
+            }
         }
     };
 
-    const handlePress = (evt: any) => {
-        const x = evt.nativeEvent.locationX;
-        if (x < width / 3) {
-            prevStory();
+    const handlePressIn = () => {
+        pressStartTimeRef.current = Date.now();
+        isPressingRef.current = true;
+        if (!showViewers) {
+            pauseStory();
+        }
+    };
+
+    const handlePressOut = (evt: any) => {
+        const pressDuration = Date.now() - pressStartTimeRef.current;
+        isPressingRef.current = false;
+
+        if (pressDuration < 250) {
+            const x = evt.nativeEvent.locationX;
+            if (x < width / 3) {
+                prevStory();
+            } else {
+                nextStory();
+            }
         } else {
-            nextStory();
+            if (!showViewers && isFocused) {
+                resumeStory();
+            }
         }
     };
 
@@ -184,26 +299,6 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
         }
     };
 
-    const currentStory = stories[currentIndex];
-    if (!currentStory) return null;
-
-    const mediaUrl = `${BASE_URL_ROOT}/${currentStory.media}`;
-    const isVideo = currentStory.type === 'video';
-
-    // State for viewers
-    const [viewers, setViewers] = useState<any[]>([]);
-    const [showViewers, setShowViewers] = useState(false);
-
-    useEffect(() => {
-        if (soundRef.current) {
-            if (paused || showViewers) {
-                soundRef.current.pauseAsync();
-            } else {
-                soundRef.current.playAsync();
-            }
-        }
-    }, [paused, showViewers]);
-
     useEffect(() => {
         if (viewerId && stories[currentIndex]) {
             if (String(storyOwnerId) !== String(viewerId)) {
@@ -226,7 +321,6 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
     const formatViewerTime = (dateString: string) => {
         if (!dateString) return '';
         try {
-            // Simple split for MySQL datetime "YYYY-MM-DD HH:mm:ss"
             const parts = dateString.split(' ');
             if (parts.length === 2) {
                 const timeParts = parts[1].split(':');
@@ -234,7 +328,7 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                 const minutes = timeParts[1];
                 const ampm = hours >= 12 ? 'PM' : 'AM';
                 hours = hours % 12;
-                hours = hours ? hours : 12; // the hour '0' should be '12'
+                hours = hours ? hours : 12;
                 return `${hours}:${minutes} ${ampm}`;
             }
             return dateString;
@@ -242,6 +336,12 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
             return dateString;
         }
     };
+
+    const currentStory = stories[currentIndex];
+    if (!currentStory) return null;
+
+    const mediaUrl = `${BASE_URL_ROOT}/${currentStory.media}`;
+    const isVideo = currentStory.type === 'video';
 
     const renderViewersModal = () => (
         <Modal
@@ -265,7 +365,8 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                                 style={styles.viewerItem}
                                 onPress={() => {
                                     setShowViewers(false);
-                                    (navigation as any).navigate('PublicProfile', { userId: item.user_id });
+                                    pauseStory();
+                                    (navigation as any).navigate('PublicProfile', { userId: item.user_id || item.id });
                                 }}
                             >
                                 <Image
@@ -312,7 +413,7 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity
                     style={styles.userInfo}
                     onPress={() => {
-                        // Navigate to profile. If mine, go to Profile tab? Or just PublicProfile with my ID
+                        pauseStory();
                         (navigation as any).navigate('PublicProfile', { userId: storyOwnerId });
                     }}
                 >
@@ -345,7 +446,12 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
             </View>
 
             {/* Media */}
-            <TouchableOpacity activeOpacity={1} onPress={handlePress} style={styles.mediaContainer}>
+            <TouchableOpacity
+                activeOpacity={1}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                style={styles.mediaContainer}
+            >
                 {isVideo ? (
                     <Video
                         ref={videoRef}
@@ -354,15 +460,14 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                         volume={1.0}
                         isMuted={false}
                         resizeMode={ResizeMode.CONTAIN}
-                        shouldPlay={!paused && !showViewers}
+                        shouldPlay={!paused && !showViewers && isFocused}
                         style={styles.media}
                         onPlaybackStatusUpdate={status => {
                             if (status.isLoaded) {
                                 if (status.durationMillis && status.positionMillis) {
-                                    // Update progress animated value directly
                                     progress.setValue(status.positionMillis / status.durationMillis);
                                 }
-                                if (status.didJustFinish) nextStory();
+                                if (status.didJustFinish && isFocusedRef.current) nextStory();
                             }
                         }}
                         onError={(e) => {
@@ -379,7 +484,6 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity
                     style={styles.footer}
                     onPress={() => {
-                        setPaused(true);
                         setShowViewers(true);
                     }}
                 >

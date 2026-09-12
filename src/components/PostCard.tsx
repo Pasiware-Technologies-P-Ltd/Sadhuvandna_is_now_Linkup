@@ -473,7 +473,7 @@ const PostCard = ({
 
     const handlePostPress = () => {
         // @ts-ignore
-        navigationRef.navigate('PostDetail', { post });
+        navigationRef.navigate('PostDetail', { post: { ...post, isSaved: saved, isLiked: liked, likes: likeCount } });
     };
 
     // Prepare media list
@@ -773,72 +773,71 @@ const PostCard = ({
                 })()}
             </View>
 
-            <TouchableOpacity
-                activeOpacity={0.95}
-                onPress={() => setPaused(!paused)}
-                style={{ alignSelf: 'center' }}
-            >
-                {/* Media Carousel */}
-                {mediaList.length > 0 && (
-                    <View style={{ width: cardWidth, borderRadius: 12, overflow: 'hidden' }}>
-                        <ScrollView
-                            horizontal
-                            pagingEnabled
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{ alignItems: 'center' }}
-                            onScroll={(event) => {
-                                const slide = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
-                                if (slide !== activeMediaIndex) {
-                                    setActiveMediaIndex(slide);
-                                }
-                            }}
-                            scrollEventThrottle={16}
-                        >
-                            {mediaList.map((uri, index) => (
-                                <View key={index} style={{ width: cardWidth, aspectRatio: isVideo(uri) ? 9 / 16 : undefined, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
-                                    {isVideo(uri) ? (
-                                        <View style={{ width: '100%', height: '100%' }}>
-                                            <VideoItem
-                                                uri={uri}
-                                                poster={mediaList.find(m => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
-                                                shouldPlay={index === 0 && actualShouldPlay}
-                                                forwardedRef={index === 0 ? videoRef : null}
-                                                onReady={() => setVideoReady(true)}
-                                                onBuffering={setIsBuffering}
-                                                isMuted={musicMuted}
-                                            />
-                                            {isBuffering && (
-                                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                                    <ActivityIndicator color="white" size="large" />
-                                                </View>
-                                            )}
-                                        </View>
-                                    ) : (
-                                        <PostImage uri={uri} />
-                                    )}
-                                </View>
-                            ))}
-                        </ScrollView>
-                        {mediaList.length > 1 && (
-                            <View style={styles.mediaBadge}>
-                                <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
+            {/* Media Carousel */}
+            {mediaList.length > 0 && (
+                <View style={{ width: cardWidth, borderRadius: 12, overflow: 'hidden', alignSelf: 'center' }}>
+                    <ScrollView
+                        horizontal
+                        pagingEnabled
+                        nestedScrollEnabled={true}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ alignItems: 'center' }}
+                        onScroll={(event) => {
+                            const slide = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
+                            if (slide !== activeMediaIndex) {
+                                setActiveMediaIndex(slide);
+                            }
+                        }}
+                        scrollEventThrottle={16}
+                    >
+                        {mediaList.map((uri, index) => (
+                            <View key={index} style={{ width: cardWidth, aspectRatio: isVideo(uri) ? 9 / 16 : undefined, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
+                                {isVideo(uri) ? (
+                                    <TouchableOpacity
+                                        activeOpacity={0.95}
+                                        onPress={() => setPaused(!paused)}
+                                        style={{ width: '100%', height: '100%' }}
+                                    >
+                                        <VideoItem
+                                            uri={uri}
+                                            poster={mediaList.find(m => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
+                                            shouldPlay={index === activeMediaIndex && actualShouldPlay}
+                                            forwardedRef={index === activeMediaIndex ? videoRef : null}
+                                            onReady={() => setVideoReady(true)}
+                                            onBuffering={setIsBuffering}
+                                            isMuted={musicMuted}
+                                        />
+                                        {isBuffering && (
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <ActivityIndicator color="white" size="large" />
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                ) : (
+                                    <PostImage uri={uri} />
+                                )}
                             </View>
-                        )}
-                        {/* Apply Filter Overlay if meta contains filterId */}
-                        {(() => {
-                            try {
-                                if (post.link) {
-                                    const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
-                                    if (meta.filterId && meta.filterId !== 'none') {
-                                        return <FilterOverlay filterId={meta.filterId} />;
-                                    }
+                        ))}
+                    </ScrollView>
+                    {mediaList.length > 1 && (
+                        <View style={styles.mediaBadge}>
+                            <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
+                        </View>
+                    )}
+                    {/* Apply Filter Overlay if meta contains filterId */}
+                    {(() => {
+                        try {
+                            if (post.link) {
+                                const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
+                                if (meta.filterId && meta.filterId !== 'none') {
+                                    return <FilterOverlay filterId={meta.filterId} />;
                                 }
-                            } catch (e) { }
-                            return null;
-                        })()}
-                    </View>
-                )}
-            </TouchableOpacity>
+                            }
+                        } catch (e) { }
+                        return null;
+                    })()}
+                </View>
+            )}
 
             {/* Actions */}
             <View style={styles.actions}>

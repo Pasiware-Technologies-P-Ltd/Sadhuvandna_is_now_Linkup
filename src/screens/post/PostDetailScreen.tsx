@@ -19,18 +19,36 @@ const PostDetailScreen = ({ route, navigation }: any) => {
     const [currentPost, setCurrentPost] = useState<PostType | null>(post || null);
 
     useEffect(() => {
-        loadUser();
-        if (post) {
-            fetchComments(post.id);
-        } else if (postId) {
-            fetchSinglePost(postId);
-        }
+        loadUserAndInit();
     }, [postId]);
 
-    const fetchSinglePost = async (id: string) => {
+    const loadUserAndInit = async () => {
+        let currentU: any = null;
+        try {
+            const u = await AsyncStorage.getItem('user');
+            if (u) {
+                currentU = JSON.parse(u);
+                setUser(currentU);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        const targetPostId = post?.id || postId;
+        if (targetPostId) {
+            fetchComments(String(targetPostId));
+        }
+
+        if (!post && postId) {
+            fetchSinglePost(postId, currentU?.id);
+        }
+    };
+
+    const fetchSinglePost = async (id: string, uid?: string | number) => {
         try {
             setLoadingPost(true);
-            const res = await api.get(`get_posts.php?post_id=${id}`);
+            const userParam = uid ? `&user_id=${uid}` : '';
+            const res = await api.get(`get_posts.php?post_id=${id}${userParam}`);
             if (res.data.status === 'success' && res.data.data && res.data.data.length > 0) {
                 const item = res.data.data[0];
                 const transformedPost: PostType = {
@@ -46,10 +64,10 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                     comments: Array.isArray(item.comments) ? item.comments.length : (parseInt(item.comments) || 0),
                     timeAgo: item.date || '',
                     isLiked: !!item.user_liked,
+                    isSaved: Boolean(item.user_saved || item.is_saved),
                     link: item.link
                 };
                 setCurrentPost(transformedPost);
-                fetchComments(String(item.id));
             } else {
                 Alert.alert("Error", "Post not found");
                 navigation.goBack();
@@ -146,6 +164,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                 <View className="mb-2">
                                     <PostCard
                                         post={currentPost}
+                                        currentUserId={user ? String(user.id) : undefined}
                                         shouldPlay={true}
                                         onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
                                     />

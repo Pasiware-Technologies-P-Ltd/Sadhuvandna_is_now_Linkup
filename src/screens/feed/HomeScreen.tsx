@@ -635,6 +635,7 @@ const HomeScreen = () => {
                         comments: item.comments?.length || 0,
                         timeAgo: item.date,
                         isLiked: item.user_liked,
+                        isSaved: Boolean(item.user_saved || item.is_saved),
                         link: item.link
                     }}
                     currentUserId={user?.id}

@@ -17,6 +17,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const ChatListScreen = ({ navigation }: any) => {
     const [friends, setFriends] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchContacts, setSearchContacts] = useState<any[]>([]);
+    const [searchingContacts, setSearchingContacts] = useState(false);
     const [loading, setLoading] = useState(true);
     const activePlatform = 'community';
     const { t } = useLanguage();
@@ -26,6 +28,7 @@ const ChatListScreen = ({ navigation }: any) => {
     const [joining, setJoining] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
     const [showMenu, setShowMenu] = useState(false);
+    const searchTimeoutRef = React.useRef<any>(null);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -34,6 +37,49 @@ const ChatListScreen = ({ navigation }: any) => {
         fetchFriends(); // Initial fetch
         return unsubscribe;
     }, [navigation, activePlatform]);
+
+    // Debounced search for connected contacts (even those with no messages)
+    useEffect(() => {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        if (!searchQuery.trim() || !userId) {
+            setSearchContacts([]);
+            return;
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+            fetchSearchContacts(searchQuery.trim());
+        }, 400);
+        return () => {
+            if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        };
+    }, [searchQuery, userId]);
+
+    const fetchSearchContacts = async (query: string) => {
+        setSearchingContacts(true);
+        try {
+            const res = await api.get(`/api_search.php?query=${encodeURIComponent(query)}&user_id=${userId}&connected_only=true`);
+            if (res.data.ok) {
+                // Map api_search users shape to chat list shape
+                const mapped = (res.data.users || []).map((u: any) => ({
+                    partner_id:      u.id,
+                    full_name:       u.name,
+                    profile_photo:   u.profile_photo,
+                    last_message:    null,
+                    time:            null,
+                    unread:          0,
+                    is_online:       false,
+                    isGroup:         false,
+                    is_contact_only: true,
+                }));
+                // Filter out users already in the active chats list
+                const existingIds = new Set(friends.map((f: any) => f.partner_id));
+                setSearchContacts(mapped.filter((c: any) => !existingIds.has(c.partner_id)));
+            }
+        } catch (e) {
+            // silently fail – search contacts are supplementary
+        } finally {
+            setSearchingContacts(false);
+        }
+    };
 
     const fetchFriends = async () => {
         setLoading(true);
@@ -146,11 +192,15 @@ const ChatListScreen = ({ navigation }: any) => {
         );
     };
 
-    // Filter friends list based on search query
-    const filteredFriends = friends.filter(friend => 
-        friend.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        friend.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter existing chats by query, then append connected contacts not yet in chats
+    const filteredFriends = [
+        ...friends.filter(friend =>
+            friend.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            friend.last_message?.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+        // Append search contacts (connected users with no prior messages) only when searching
+        ...(searchQuery.trim().length > 0 ? searchContacts : [])
+    ];
 
     if (loading && friends.length === 0) {
         return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}><ActivityIndicator color="#ea580c" size="large" /></View>;
@@ -224,13 +274,22 @@ const ChatListScreen = ({ navigation }: any) => {
                 maxToRenderPerBatch={10}
                 windowSize={7}
                 removeClippedSubviews={true}
+                ListFooterComponent={
+                    searchingContacts ? (
+                        <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                            <ActivityIndicator size="small" color="#ea580c" />
+                        </View>
+                    ) : null
+                }
                 ListEmptyComponent={
-                    <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 20 }}>
-                        <Ionicons name="chatbubbles-outline" size={60} color="#fed7aa" />
-                        <Text style={{ color: '#9ca3af', fontSize: 15, fontWeight: '600', marginTop: 12, textAlign: 'center' }}>
-                            {searchQuery.length > 0 ? `No results found for "${searchQuery}"` : `No chats found`}
-                        </Text>
-                    </View>
+                    !searchingContacts ? (
+                        <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 20 }}>
+                            <Ionicons name="chatbubbles-outline" size={60} color="#fed7aa" />
+                            <Text style={{ color: '#9ca3af', fontSize: 15, fontWeight: '600', marginTop: 12, textAlign: 'center' }}>
+                                {searchQuery.length > 0 ? `No results found for "${searchQuery}"` : `No chats found`}
+                            </Text>
+                        </View>
+                    ) : null
                 }
             />
 

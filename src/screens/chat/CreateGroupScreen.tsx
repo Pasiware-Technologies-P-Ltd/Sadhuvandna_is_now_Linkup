@@ -204,7 +204,7 @@ const CreateGroupScreen = ({ navigation }: any) => {
                         renderItem={renderFriend}
                         keyExtractor={(item, index) => item.partner_id ? `user_${item.partner_id}` : index.toString()}
                         contentContainerStyle={{ paddingBottom: 100 }}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-4">No users found.</Text>}
+                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-4">No connected members found.</Text>}
                     />
                 )}
             </View>

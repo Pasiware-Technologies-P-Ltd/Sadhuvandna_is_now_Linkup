@@ -77,7 +77,9 @@ const ChatScreen = ({ navigation, route }: any) => {
     const typingDotAnim = useRef(new Animated.Value(0)).current;
 
     // Block User State
-    const [isBlocked, setIsBlocked] = useState(false);
+    const [isBlockedByMe, setIsBlockedByMe] = useState(false);
+    const [isBlockedByThem, setIsBlockedByThem] = useState(false);
+    const isBlocked = isBlockedByMe || isBlockedByThem;
     const [showMenu, setShowMenu] = useState(false);
 
     const toggleMenu = () => {
@@ -303,10 +305,10 @@ const ChatScreen = ({ navigation, route }: any) => {
 
         // Local Check first
         try {
-            const storedStatus = await AsyncStorage.getItem(`blocked_${mid}_${receiver.id}`);
-            if (storedStatus !== null) {
-                setIsBlocked(storedStatus === 'true');
-            }
+            const storedByMe = await AsyncStorage.getItem(`blocked_by_me_${mid}_${receiver.id}`);
+            const storedByThem = await AsyncStorage.getItem(`blocked_by_them_${mid}_${receiver.id}`);
+            if (storedByMe !== null) setIsBlockedByMe(storedByMe === 'true');
+            if (storedByThem !== null) setIsBlockedByThem(storedByThem === 'true');
         } catch (e) { }
 
         try {
@@ -317,8 +319,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                 action: 'check'
             });
             if (res.data.status === 'success') {
-                setIsBlocked(res.data.blocked);
-                AsyncStorage.setItem(`blocked_${mid}_${receiver.id}`, String(res.data.blocked));
+                const byMe = !!res.data.blocked_by_me;
+                const byThem = !!res.data.blocked_by_them;
+                setIsBlockedByMe(byMe);
+                setIsBlockedByThem(byThem);
+                AsyncStorage.setItem(`blocked_by_me_${mid}_${receiver.id}`, String(byMe));
+                AsyncStorage.setItem(`blocked_by_them_${mid}_${receiver.id}`, String(byThem));
             }
         } catch (e) { }
     };
@@ -638,7 +644,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const initiateCall = async (type: 'audio' | 'video') => {
         if (!myProfileId || !receiver?.id) return;
         if (isBlocked) {
-            Alert.alert("Blocked", "You cannot call a blocked user.");
+            Alert.alert("Blocked", isBlockedByMe ? "You have blocked this user. Unblock to make calls." : "You cannot call this user.");
             return;
         }
 
@@ -681,12 +687,12 @@ const ChatScreen = ({ navigation, route }: any) => {
     const checkBlockStatus = async () => {
         if (!myProfileId || !receiver?.id) return;
 
-        // Check local storage first (fallback because server might not have check logic yet)
+        // Check local storage first
         try {
-            const storedStatus = await AsyncStorage.getItem(`blocked_${myProfileId}_${receiver.id}`);
-            if (storedStatus !== null) {
-                setIsBlocked(storedStatus === 'true');
-            }
+            const storedByMe = await AsyncStorage.getItem(`blocked_by_me_${myProfileId}_${receiver.id}`);
+            const storedByThem = await AsyncStorage.getItem(`blocked_by_them_${myProfileId}_${receiver.id}`);
+            if (storedByMe !== null) setIsBlockedByMe(storedByMe === 'true');
+            if (storedByThem !== null) setIsBlockedByThem(storedByThem === 'true');
         } catch (e) { }
 
         try {
@@ -697,9 +703,13 @@ const ChatScreen = ({ navigation, route }: any) => {
                 action: 'check'
             });
             if (res.data.status === 'success') {
-                setIsBlocked(res.data.blocked);
+                const byMe = !!res.data.blocked_by_me;
+                const byThem = !!res.data.blocked_by_them;
+                setIsBlockedByMe(byMe);
+                setIsBlockedByThem(byThem);
                 // Sync storage
-                AsyncStorage.setItem(`blocked_${myProfileId}_${receiver.id}`, String(res.data.blocked));
+                AsyncStorage.setItem(`blocked_by_me_${myProfileId}_${receiver.id}`, String(byMe));
+                AsyncStorage.setItem(`blocked_by_them_${myProfileId}_${receiver.id}`, String(byThem));
             }
         } catch (e) { console.log("Check Block Error", e); }
     };
@@ -709,19 +719,19 @@ const ChatScreen = ({ navigation, route }: any) => {
 
         setShowMenu(false); // Close menu
 
-        const action = isBlocked ? 'unblock' : 'block';
-        const confirmMsg = isBlocked
+        const action = isBlockedByMe ? 'unblock' : 'block';
+        const confirmMsg = isBlockedByMe
             ? "Are you sure you want to Unblock this user?"
             : "Are you sure you want to Block this user? They won't be able to message you.";
 
         Alert.alert(
-            isBlocked ? "Unblock User" : "Block User",
+            isBlockedByMe ? "Unblock User" : "Block User",
             confirmMsg,
             [
                 { text: "Cancel", style: "cancel" },
                 {
-                    text: isBlocked ? "Unblock" : "Block",
-                    style: isBlocked ? "default" : "destructive",
+                    text: isBlockedByMe ? "Unblock" : "Block",
+                    style: isBlockedByMe ? "default" : "destructive",
                     onPress: async () => {
                         try {
                             const res = await api.post('block_user.php', {
@@ -731,10 +741,10 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 platform: platform
                             });
                             if (res.data.status === 'success') {
-                                const newState = !isBlocked;
-                                setIsBlocked(newState);
-                                AsyncStorage.setItem(`blocked_${myProfileId}_${receiver.id}`, String(newState));
-                                Alert.alert("Success", isBlocked ? "User Unblocked" : "User Blocked");
+                                const newState = !isBlockedByMe;
+                                setIsBlockedByMe(newState);
+                                AsyncStorage.setItem(`blocked_by_me_${myProfileId}_${receiver.id}`, String(newState));
+                                Alert.alert("Success", isBlockedByMe ? "User Unblocked" : "User Blocked");
                             } else {
                                 Alert.alert("Error", res.data.message || "Action failed");
                             }
@@ -1095,12 +1105,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 className="flex-row items-center px-4 py-3 active:bg-gray-50 bg-white"
                             >
                                 <Ionicons
-                                    name={isBlocked ? "person-add-outline" : "person-remove-outline"}
+                                    name={isBlockedByMe ? "person-add-outline" : "person-remove-outline"}
                                     size={20}
-                                    color={isBlocked ? "#16a34a" : "#dc2626"}
+                                    color={isBlockedByMe ? "#16a34a" : "#dc2626"}
                                 />
-                                <Text className={`ml-3 font-medium ${isBlocked ? "text-green-600" : "text-red-600"}`}>
-                                    {isBlocked ? "Unblock User" : "Block User"}
+                                <Text className={`ml-3 font-medium ${isBlockedByMe ? "text-green-600" : "text-red-600"}`}>
+                                    {isBlockedByMe ? "Unblock User" : "Block User"}
                                 </Text>
                             </TouchableOpacity>
 
@@ -1410,7 +1420,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                 {isBlocked ? (
                     <View className="bg-gray-100 p-4 rounded-xl items-center justify-center border border-gray-200 m-4">
                         <Text className="text-gray-500 font-medium text-center">
-                            You have blocked this user. Unblock to send messages.
+                            {isBlockedByMe
+                                ? "You have blocked this user. Unblock to send messages."
+                                : "You cannot send messages to this user."}
                         </Text>
                     </View>
                 ) : (groupAdminsOnly && !isMeAdmin) ? (

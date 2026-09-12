@@ -239,6 +239,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="CreateBusinessPage" component={CreateBusinessPageScreen} />
       <Stack.Screen name="EditBusinessPage" component={EditBusinessPageScreen} />
       <Stack.Screen name="Chats" component={ChatListScreen} />
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
     </Stack.Navigator>
   );
 };

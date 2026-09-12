@@ -40,47 +40,82 @@ const EditProfileScreen = ({ navigation }: any) => {
         loadUser();
     }, []);
 
-    const loadUser = async () => {
-        const u = await AsyncStorage.getItem('user');
-        if (u) {
-            const localUser = JSON.parse(u);
-            setUser(localUser);
-            // Fetch fresh data
-            try {
-                const res = await api.get(`/get_user_profile.php?user_id=${localUser.id}`);
-                if (res.data.status === 'success') {
-                    const freshUser = res.data.user;
-                    setUser(freshUser);
-                    setName(freshUser.name || '');
-                    setLocation(freshUser.city || '');
-                    
-                    // Parse DOB gracefully since it could be garbage data initially
-                    let parsedDob = '';
-                    if (freshUser.dob) {
-                        const d = new Date(freshUser.dob);
-                        if (!isNaN(d.getTime())) {
-                            parsedDob = d.toISOString().split('T')[0];
-                        }
-                    }
-                    setDob(parsedDob);
-
-                    setCast(freshUser.cast || '');
-                    setGender(freshUser.gender || '');
-                    setBio(freshUser.bio || freshUser.about_me || '');
-                    setMaritalStatus(freshUser.marital_status || '');
-                    setEducation(freshUser.education || '');
-                    setOccupation(freshUser.occupation || '');
-                    setPhone(freshUser.mobile || freshUser.phone || freshUser.phone_number || localUser.mobile || localUser.phone || localUser.phone_number || '');
-                    setEmail(freshUser.email || '');
-                    setAddress(freshUser.address || freshUser.current_address || '');
-                    setStateName(freshUser.state || '');
-                    setHobbies(freshUser.hobbies || freshUser.interests || '');
-                    setCurrentPhoto(freshUser.profile_photo);
-                    setCurrentCover(freshUser.cover_photo);
-                }
-            } catch (error) {
-                console.error("Failed to load profile", error);
+    const populateUserData = (userData: any) => {
+        if (!userData) return;
+        if (userData.name || userData.full_name) setName(userData.name || userData.full_name || '');
+        if (userData.city || userData.location) setLocation(userData.city || userData.location || '');
+        
+        const rawDob = userData.dob || userData.date_of_birth;
+        if (rawDob && typeof rawDob === 'string' && !rawDob.startsWith('0000')) {
+            const d = new Date(rawDob);
+            if (!isNaN(d.getTime())) {
+                setDob(d.toISOString().split('T')[0]);
             }
+        }
+
+        if (userData.cast || userData.caste) setCast(userData.cast || userData.caste || '');
+        if (userData.gender || userData.sex) setGender(userData.gender || userData.sex || '');
+        
+        // Handle bio aliases: about, bio, about_me, biodata, description
+        const userBio = userData.about || userData.bio || userData.about_me || userData.biodata || userData.description || '';
+        if (userBio) setBio(userBio);
+
+        // Handle marital status aliases: maritial_status (DB column typo), marital_status, maritalStatus
+        const userMarital = userData.maritial_status || userData.marital_status || userData.maritalStatus || '';
+        if (userMarital) setMaritalStatus(userMarital);
+
+        if (userData.education || userData.qualification) setEducation(userData.education || userData.qualification || '');
+        if (userData.occupation || userData.profession || userData.job) setOccupation(userData.occupation || userData.profession || userData.job || '');
+        
+        const userPhone = userData.mobile || userData.phone || userData.phone_number || '';
+        if (userPhone) setPhone(userPhone);
+
+        if (userData.email) setEmail(userData.email || '');
+        
+        const userAddress = userData.address || userData.current_address || userData.present_address || '';
+        if (userAddress) setAddress(userAddress);
+
+        const userState = userData.state || userData.state_name || userData.stateName || '';
+        if (userState) setStateName(userState);
+
+        // Handle hobbies aliases: hobbi (DB column name), hobbies, hobby, interests
+        const userHobbies = userData.hobbi || userData.hobbies || userData.hobby || userData.interests || '';
+        if (userHobbies) setHobbies(userHobbies);
+
+        if (userData.profile_photo || userData.photo || userData.avatar) {
+            setCurrentPhoto(userData.profile_photo || userData.photo || userData.avatar || null);
+        }
+        if (userData.cover_photo || userData.cover) {
+            setCurrentCover(userData.cover_photo || userData.cover || null);
+        }
+    };
+
+    const loadUser = async () => {
+        try {
+            const u = await AsyncStorage.getItem('user');
+            if (u) {
+                const localUser = JSON.parse(u);
+                setUser(localUser);
+                // Prefill immediately from local stored user cache
+                populateUserData(localUser);
+
+                // Fetch fresh data from backend
+                try {
+                    const res = await api.get(`/get_user_profile.php?user_id=${localUser.id}`);
+                    if (res.data.status === 'success' && res.data.user) {
+                        const freshUser = res.data.user;
+                        setUser(freshUser);
+                        populateUserData(freshUser);
+                        // Save merged latest user into local storage
+                        const mergedUser = { ...localUser, ...freshUser };
+                        await AsyncStorage.setItem('user', JSON.stringify(mergedUser));
+                    }
+                } catch (error) {
+                    console.error("Failed to load profile", error);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to read user storage", err);
         }
     };
 
@@ -128,14 +163,18 @@ const EditProfileScreen = ({ navigation }: any) => {
             formData.append('cast', cast);
             formData.append('gender', gender);
             formData.append('about', bio);
+            formData.append('bio', bio);
             formData.append('maritial_status', maritalStatus);
+            formData.append('marital_status', maritalStatus);
             formData.append('education', education);
             formData.append('occupation', occupation);
             formData.append('mobile', phone);
             formData.append('email', email);
             formData.append('address', address);
             formData.append('state', stateName);
+            formData.append('state_name', stateName);
             formData.append('hobbi', hobbies);
+            formData.append('hobbies', hobbies);
 
             if (avatar) {
                 const filename = avatar.split('/').pop();
@@ -165,7 +204,30 @@ const EditProfileScreen = ({ navigation }: any) => {
             });
 
             if (res.data.status === 'success') {
-                const updatedUser = { ...user, ...res.data.user };
+                const updatedUser = { 
+                    ...user, 
+                    ...(res.data.user || {}),
+                    name,
+                    city: location,
+                    dob,
+                    cast,
+                    gender,
+                    about: bio,
+                    bio,
+                    maritial_status: maritalStatus,
+                    marital_status: maritalStatus,
+                    education,
+                    occupation,
+                    mobile: phone,
+                    email,
+                    address,
+                    state: stateName,
+                    hobbi: hobbies,
+                    hobbies,
+                };
+                if (res.data.profile_photo) updatedUser.profile_photo = res.data.profile_photo;
+                if (res.data.cover_photo) updatedUser.cover_photo = res.data.cover_photo;
+
                 await AsyncStorage.setItem('user', JSON.stringify(updatedUser)); // Update local session
                 Alert.alert('Success', 'Profile updated successfully');
                 navigation.goBack();

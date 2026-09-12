@@ -133,7 +133,7 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
     return null;
 };
 
-const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHeight, onUserPress, onCommentPress }: any) => {
+const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHeight, onUserPress, onCommentPress, onDelete }: any) => {
     const active = index === activeIndex;
     const isNearby = active; // Aggressive optimization: Only load the active video to prevent crashes
     const videoRef = useRef<Video>(null);
@@ -146,6 +146,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     }, []);
     const [liked, setLiked] = useState(item.user_liked);
     const [likeCount, setLikeCount] = useState(parseInt(item.likes) || 0);
+    const [saved, setSaved] = useState(Boolean(item.is_saved || item.user_saved));
     const [paused, setPaused] = useState(false);
     const [soundReady, setSoundReady] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
@@ -153,6 +154,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const tapCount = useRef<number>(0);
     const timer = useRef<any>(null);
     const heartScale = useRef(new Animated.Value(0)).current;
+    const saveScale = useRef(new Animated.Value(1)).current;
 
     const REPORT_CATEGORIES = [
         'Child Safety Concern',
@@ -202,7 +204,43 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     useEffect(() => {
         setLiked(item.user_liked);
         setLikeCount(parseInt(item.likes) || 0);
-    }, [item.user_liked, item.likes]);
+        setSaved(Boolean(item.is_saved || item.user_saved));
+    }, [item.user_liked, item.likes, item.is_saved, item.user_saved]);
+
+    const toggleSave = async () => {
+        const nextSaved = !saved;
+        setSaved(nextSaved);
+
+        Animated.sequence([
+            Animated.spring(saveScale, { toValue: 1.35, useNativeDriver: true }),
+            Animated.spring(saveScale, { toValue: 1, useNativeDriver: true }),
+        ]).start();
+
+        try {
+            const u = await AsyncStorage.getItem('user');
+            const uid = currentUserId || (u ? JSON.parse(u).id : null);
+            if (!uid) return;
+
+            // Sync with local AsyncStorage for fast offline retrieval
+            const stored = await AsyncStorage.getItem('saved_post_ids');
+            let ids: string[] = stored ? JSON.parse(stored) : [];
+            if (nextSaved) {
+                if (!ids.includes(String(item.id))) ids.push(String(item.id));
+            } else {
+                ids = ids.filter(id => id !== String(item.id));
+            }
+            await AsyncStorage.setItem('saved_post_ids', JSON.stringify(ids));
+
+            await api.post('like_comment_action.php', {
+                action: 'save',
+                id: item.id,
+                post_id: item.id,
+                user_id: uid
+            });
+        } catch (e) {
+            console.log("Toggle save reel error", e);
+        }
+    };
 
     useEffect(() => {
         const hasMusic = !!item.link;
@@ -351,6 +389,10 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
             Alert.alert("Manage Reel", "What would you like to do?", [
                 { text: "Cancel", style: "cancel" },
                 {
+                    text: saved ? "Unsave Reel" : "Save Reel",
+                    onPress: toggleSave
+                },
+                {
                     text: "Delete Reel",
                     style: "destructive",
                     onPress: () => {
@@ -364,9 +406,10 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                                     style: "destructive", 
                                     onPress: async () => {
                                         try {
-                                            const res = await api.post('delete_post.php', { id: item.id, user_id: currentUserId });
+                                            const res = await api.post('delete_post.php', { post_id: item.id, id: item.id, user_id: currentUserId });
                                             if (res.data.ok || res.data.status === 'success') {
-                                                Alert.alert("Deleted", "Reel deleted successfully. Please refresh the page.");
+                                                if (onDelete) onDelete(item.id);
+                                                Alert.alert("Deleted", "Reel deleted successfully.");
                                             } else {
                                                 Alert.alert("Error", res.data.message || "Failed to delete reel");
                                             }
@@ -383,6 +426,10 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         } else {
             Alert.alert("Reel Options", "What would you like to do?", [
                 { text: "Cancel", style: "cancel" },
+                {
+                    text: saved ? "Unsave Reel" : "Save Reel",
+                    onPress: toggleSave
+                },
                 { 
                     text: "Report Reel", 
                     style: "destructive", 
@@ -624,6 +671,16 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
 
                 <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
                     <Ionicons name="paper-plane-outline" size={28} color="white" />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.iconButton} onPress={toggleSave} activeOpacity={0.7}>
+                    <Animated.View style={{ transform: [{ scale: saveScale }] }}>
+                        <Ionicons
+                            name={saved ? "bookmark" : "bookmark-outline"}
+                            size={28}
+                            color={saved ? "#ea580c" : "white"}
+                        />
+                    </Animated.View>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.iconButton} onPress={handleOptions}>
@@ -878,6 +935,9 @@ const ReelsScreen = ({ navigation, route }: any) => {
             layoutHeight={layoutHeight}
             onUserPress={(uid: string) => navigation.navigate('PublicProfile', { userId: uid })}
             onCommentPress={(pid: string) => navigation.navigate('Comments', { postId: pid })}
+            onDelete={(deletedId: string) => {
+                setReels((prev: any[]) => prev.filter((r: any) => r.id !== deletedId));
+            }}
         />
     ), [activeIndex, isFocused, currentUserId, layoutHeight]);
 

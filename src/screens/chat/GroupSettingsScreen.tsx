@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator, FlatList, Share } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator, ScrollView, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -172,10 +172,10 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
         }
     };
 
-    const handleRemoveMember = async (targetUserId: number, targetUserName: string) => {
+    const handleRemoveMember = async (memberId: number, memberName: string) => {
         Alert.alert(
             "Remove Member",
-            `Are you sure you want to remove ${targetUserName} from the group?`,
+            `Are you sure you want to remove ${memberName} from this group?`,
             [
                 { text: "Cancel", style: "cancel" },
                 {
@@ -185,12 +185,12 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                         try {
                             const res = await api.post('/remove_group_member.php', {
                                 group_id: group.id || group.partner_id,
-                                user_id: targetUserId,
+                                user_id: memberId,
                                 admin_id: userId
                             });
                             if (res.data.status === 'success') {
-                                setMembers(prev => prev.filter(m => m.user_id !== targetUserId));
-                                Alert.alert("Success", "Member removed successfully");
+                                Alert.alert("Success", "Member removed");
+                                fetchMembers();
                             } else {
                                 Alert.alert("Error", res.data.message);
                             }
@@ -204,10 +204,10 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
         );
     };
 
-    const handleExitGroup = async () => {
+    const handleExitGroup = () => {
         Alert.alert(
             "Exit Group",
-            "Are you sure you want to leave this group?",
+            "Are you sure you want to exit this group?",
             [
                 { text: "Cancel", style: "cancel" },
                 {
@@ -221,7 +221,7 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                             });
                             if (res.data.status === 'success') {
                                 Alert.alert("Success", res.data.message);
-                                navigation.navigate('ChatList');
+                                navigation.navigate('Chats');
                             } else {
                                 Alert.alert("Error", res.data.message);
                             }
@@ -239,156 +239,7 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
         ? { uri: groupIcon.uri } 
         : (group.profile_photo || group.photo ? { uri: `${PHOTO_URL}${encodeURIComponent(group.profile_photo || group.photo)}` } : null);
 
-    const renderHeader = () => (
-        <View className="p-6 items-center">
-            <TouchableOpacity onPress={pickImage} disabled={!isAdmin} className="relative mb-6">
-                <View className="w-32 h-32 rounded-full bg-gray-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
-                    {currentImageSource ? (
-                        <Image source={currentImageSource} className="w-full h-full" />
-                    ) : (
-                        <Ionicons name="people-outline" size={60} color="#9ca3af" />
-                    )}
-                </View>
-                {isAdmin && (
-                    <View className="absolute bottom-0 right-0 bg-orange-600 rounded-full p-2 border-2 border-white">
-                        <Ionicons name="camera" size={20} color="white" />
-                    </View>
-                )}
-            </TouchableOpacity>
-
-            <View className="w-full">
-                <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Name</Text>
-                <TextInput
-                    className={`border rounded-lg p-3 text-base ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
-                    value={groupName}
-                    onChangeText={setGroupName}
-                    editable={isAdmin}
-                    placeholder="Enter group name"
-                />
-            </View>
-
-            <View className="w-full mt-4">
-                <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Description</Text>
-                <TextInput
-                    className={`border rounded-lg p-3 text-base min-h-[80px] ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
-                    value={groupDescription}
-                    onChangeText={setGroupDescription}
-                    editable={isAdmin}
-                    placeholder="Enter group description..."
-                    multiline
-                    textAlignVertical="top"
-                />
-            </View>
-
-            {!isAdmin && (
-                <Text className="text-gray-400 text-sm mt-4 text-center">
-                    Only the group admin can edit the group icon and name.
-                </Text>
-            )}
-
-            {/* Group Permissions (Admin Only) */}
-            {isAdmin && (
-                <View className="w-full mt-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <View className="flex-row justify-between items-center">
-                        <View className="flex-1 mr-4">
-                            <Text className="text-gray-800 font-bold text-base">Only Admins Send Messages</Text>
-                            <Text className="text-gray-500 text-xs mt-1">If enabled, only group admins can send messages to this group.</Text>
-                        </View>
-                        <TouchableOpacity 
-                            onPress={toggleAdminsOnly}
-                            disabled={updatingSettings}
-                            className={`w-12 h-6 rounded-full px-1 justify-center ${adminsOnly ? 'bg-orange-600' : 'bg-gray-300'}`}
-                        >
-                            <View className={`w-4 h-4 rounded-full bg-white ${adminsOnly ? 'translate-x-6' : 'translate-x-0'} transition-all`} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
-
-            {/* Invite Link Section */}
-            <View className="w-full mt-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-sm text-orange-800 font-bold uppercase">Invite Link</Text>
-                    <TouchableOpacity onPress={handleShareInvite} className="bg-orange-600 px-3 py-1.5 rounded-full flex-row items-center">
-                        <Ionicons name="share-social" size={14} color="white" />
-                        <Text className="text-white text-xs font-bold ml-1.5">Share</Text>
-                    </TouchableOpacity>
-                </View>
-                {loadingInvite ? (
-                    <ActivityIndicator size="small" color="#ea580c" />
-                ) : (
-                    <TouchableOpacity 
-                        onPress={handleShareInvite}
-                        className="bg-white p-3 rounded-xl border border-orange-100 flex-row items-center justify-between active:bg-orange-50"
-                    >
-                        <Text className="text-gray-600 font-medium flex-1 mr-2" numberOfLines={1}>
-                            {inviteCode ? `sadhuvandna.co.in/Api/join_group.php?inviteCode=${inviteCode}` : 'Generating link...'}
-                        </Text>
-                        <Ionicons name={inviteCode ? "share-social" : "sync"} size={18} color="#ea580c" />
-                    </TouchableOpacity>
-                )}
-                <Text className="text-[10px] text-orange-400 mt-2 text-center">Anyone with this link can join the group</Text>
-            </View>
-
-            <View className="w-full mt-8">
-                <View className="flex-row justify-between items-center mb-3">
-                    <View className="flex-1">
-                        <Text className="text-sm text-gray-500 font-bold uppercase">
-                            Group Members ({members.length})
-                        </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                        <TouchableOpacity 
-                            onPress={() => setIsMemberSearchActive(!isMemberSearchActive)}
-                            className="bg-orange-100 p-1.5 rounded-full mr-2"
-                        >
-                            <Ionicons name={isMemberSearchActive ? "close" : "search"} size={18} color="#ea580c" />
-                        </TouchableOpacity>
-                        {isAdmin && (
-                            <TouchableOpacity 
-                                onPress={() => navigation.navigate('AddGroupMembers', { group, currentMembers: members })}
-                                className="bg-orange-100 px-3 py-1.5 rounded-full"
-                            >
-                                <Text className="text-orange-600 text-xs font-bold">+ Add</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
-
-                {/* Member Search Bar */}
-                {isMemberSearchActive && (
-                    <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2 mb-4 border border-gray-200">
-                        <Ionicons name="search" size={18} color="#6b7280" />
-                        <TextInput
-                            className="flex-1 ml-2 text-base text-gray-800 p-0"
-                            placeholder="Search members..."
-                            placeholderTextColor="#9ca3af"
-                            value={memberSearchQuery}
-                            onChangeText={setMemberSearchQuery}
-                            autoFocus
-                        />
-                        {memberSearchQuery !== '' && (
-                            <TouchableOpacity onPress={() => setMemberSearchQuery('')}>
-                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-            </View>
-        </View>
-    );
-
-    const renderFooter = () => (
-        <View className="px-6 pb-10">
-            <TouchableOpacity 
-                onPress={handleExitGroup}
-                className="flex-row items-center justify-center p-4 mt-4 bg-red-50 rounded-2xl border border-red-100"
-            >
-                <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-                <Text className="text-red-600 font-bold ml-2">Exit Group</Text>
-            </TouchableOpacity>
-        </View>
-    );
+    const filteredMembers = members.filter(m => m.name?.toLowerCase().includes(memberSearchQuery.toLowerCase()));
 
     return (
         <SafeAreaView className="flex-1 bg-white">
@@ -409,59 +260,210 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                     <ActivityIndicator color="#ea580c" size="large" />
                 </View>
             ) : (
-                <FlatList
-                    data={members.filter(m => m.name?.toLowerCase().includes(memberSearchQuery.toLowerCase()))}
-                    keyExtractor={(item) => item.user_id.toString()}
-                    ListHeaderComponent={renderHeader}
-                    ListFooterComponent={renderFooter}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            className="flex-row items-center px-6 py-3 mb-2 mx-1 bg-white"
-                            onPress={() => {
-                                if (item.user_id != userId) {
-                                    navigation.push('Chat', {
-                                        receiver: {
-                                            id: item.user_id,
-                                            full_name: item.name,
-                                            photo: item.profile_photo
-                                        },
-                                        platform: 'community',
-                                        isGroup: false
-                                    });
-                                }
-                            }}
-                        >
-                            <View className="relative mr-3">
-                                <Image
-                                    source={{ uri: item.profile_photo ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                                    className="w-10 h-10 rounded-full bg-gray-200 border border-gray-100"
-                                />
-                                <View 
-                                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
-                                />
+                <ScrollView 
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                >
+                    <View className="p-6 items-center">
+                        <TouchableOpacity onPress={pickImage} disabled={!isAdmin} className="relative mb-6">
+                            <View className="w-32 h-32 rounded-full bg-gray-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
+                                {currentImageSource ? (
+                                    <Image source={currentImageSource} className="w-full h-full" />
+                                ) : (
+                                    <Ionicons name="people-outline" size={60} color="#9ca3af" />
+                                )}
                             </View>
-                            <View className="flex-1">
-                                <Text className="text-base font-medium text-gray-800">{item.name} {item.user_id == userId ? '(You)' : ''}</Text>
-                                <Text className="text-xs text-gray-500 capitalize">{item.role}</Text>
-                            </View>
-                            {item.role === 'admin' ? (
-                                <View className="bg-orange-100 px-2 py-1 rounded">
-                                    <Text className="text-orange-600 text-xs font-bold">Admin</Text>
+                            {isAdmin && (
+                                <View className="absolute bottom-0 right-0 bg-orange-600 rounded-full p-2 border-2 border-white">
+                                    <Ionicons name="camera" size={20} color="white" />
                                 </View>
-                            ) : (
-                                isAdmin && item.user_id != userId && (
-                                    <TouchableOpacity 
-                                        onPress={() => handleRemoveMember(item.user_id, item.name)}
-                                        className="p-2 bg-red-50 rounded-full"
-                                    >
-                                        <Ionicons name="trash-outline" size={18} color="#dc2626" />
-                                    </TouchableOpacity>
-                                )
                             )}
                         </TouchableOpacity>
-                    )}
-                    showsVerticalScrollIndicator={false}
-                />
+
+                        <View className="w-full">
+                            <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Name</Text>
+                            <TextInput
+                                className={`border rounded-lg p-3 text-base ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
+                                value={groupName}
+                                onChangeText={setGroupName}
+                                editable={isAdmin}
+                                placeholder="Enter group name"
+                            />
+                        </View>
+
+                        <View className="w-full mt-4">
+                            <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Description</Text>
+                            <TextInput
+                                className={`border rounded-lg p-3 text-base min-h-[80px] ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
+                                value={groupDescription}
+                                onChangeText={setGroupDescription}
+                                editable={isAdmin}
+                                placeholder="Enter group description..."
+                                multiline
+                                textAlignVertical="top"
+                            />
+                        </View>
+
+                        {!isAdmin && (
+                            <Text className="text-gray-400 text-sm mt-4 text-center">
+                                Only the group admin can edit the group icon and name.
+                            </Text>
+                        )}
+
+                        {/* Group Permissions (Admin Only) */}
+                        {isAdmin && (
+                            <View className="w-full mt-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                <View className="flex-row justify-between items-center">
+                                    <View className="flex-1 mr-4">
+                                        <Text className="text-gray-800 font-bold text-base">Only Admins Send Messages</Text>
+                                        <Text className="text-gray-500 text-xs mt-1">If enabled, only group admins can send messages to this group.</Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        onPress={toggleAdminsOnly}
+                                        disabled={updatingSettings}
+                                        className={`w-12 h-6 rounded-full px-1 justify-center ${adminsOnly ? 'bg-orange-600' : 'bg-gray-300'}`}
+                                    >
+                                        <View className={`w-4 h-4 rounded-full bg-white ${adminsOnly ? 'translate-x-6' : 'translate-x-0'} transition-all`} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Invite Link Section */}
+                        <View className="w-full mt-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
+                            <View className="flex-row justify-between items-center mb-2">
+                                <Text className="text-sm text-orange-800 font-bold uppercase">Invite Link</Text>
+                                <TouchableOpacity onPress={handleShareInvite} className="bg-orange-600 px-3 py-1.5 rounded-full flex-row items-center">
+                                    <Ionicons name="share-social" size={14} color="white" />
+                                    <Text className="text-white text-xs font-bold ml-1.5">Share</Text>
+                                </TouchableOpacity>
+                            </View>
+                            {loadingInvite ? (
+                                <ActivityIndicator size="small" color="#ea580c" />
+                            ) : (
+                                <TouchableOpacity 
+                                    onPress={handleShareInvite}
+                                    className="bg-white p-3 rounded-xl border border-orange-100 flex-row items-center justify-between active:bg-orange-50"
+                                >
+                                    <Text className="text-gray-600 font-medium flex-1 mr-2" numberOfLines={1}>
+                                        {inviteCode ? `sadhuvandna.co.in/Api/join_group.php?inviteCode=${inviteCode}` : 'Generating link...'}
+                                    </Text>
+                                    <Ionicons name={inviteCode ? "share-social" : "sync"} size={18} color="#ea580c" />
+                                </TouchableOpacity>
+                            )}
+                            <Text className="text-[10px] text-orange-400 mt-2 text-center">Anyone with this link can join the group</Text>
+                        </View>
+
+                        <View className="w-full mt-8">
+                            <View className="flex-row justify-between items-center mb-3">
+                                <View className="flex-1">
+                                    <Text className="text-sm text-gray-500 font-bold uppercase">
+                                        Group Members ({members.length})
+                                    </Text>
+                                </View>
+                                <View className="flex-row items-center">
+                                    <TouchableOpacity 
+                                        onPress={() => setIsMemberSearchActive(!isMemberSearchActive)}
+                                        className="bg-orange-100 p-1.5 rounded-full mr-2"
+                                    >
+                                        <Ionicons name={isMemberSearchActive ? "close" : "search"} size={18} color="#ea580c" />
+                                    </TouchableOpacity>
+                                    {isAdmin && (
+                                        <TouchableOpacity 
+                                            onPress={() => navigation.navigate('AddGroupMembers', { group, currentMembers: members })}
+                                            className="bg-orange-100 px-3 py-1.5 rounded-full"
+                                        >
+                                            <Text className="text-orange-600 text-xs font-bold">+ Add</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
+
+                            {/* Member Search Bar */}
+                            {isMemberSearchActive && (
+                                <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2 mb-4 border border-gray-200">
+                                    <Ionicons name="search" size={18} color="#6b7280" />
+                                    <TextInput
+                                        className="flex-1 ml-2 text-base text-gray-800 p-0"
+                                        placeholder="Search members..."
+                                        placeholderTextColor="#9ca3af"
+                                        value={memberSearchQuery}
+                                        onChangeText={setMemberSearchQuery}
+                                        autoFocus
+                                    />
+                                    {memberSearchQuery !== '' && (
+                                        <TouchableOpacity onPress={() => setMemberSearchQuery('')}>
+                                            <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Members List */}
+                    <View className="px-5">
+                        {filteredMembers.map((item) => (
+                            <TouchableOpacity 
+                                key={item.user_id.toString()}
+                                className="flex-row items-center py-3 mb-2 bg-white"
+                                onPress={() => {
+                                    if (item.user_id != userId) {
+                                        navigation.push('Chat', {
+                                            receiver: {
+                                                id: item.user_id,
+                                                full_name: item.name,
+                                                photo: item.profile_photo
+                                            },
+                                            platform: 'community',
+                                            isGroup: false
+                                        });
+                                    }
+                                }}
+                            >
+                                <View className="relative mr-3">
+                                    <Image
+                                        source={{ uri: item.profile_photo ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
+                                        className="w-10 h-10 rounded-full bg-gray-200 border border-gray-100"
+                                    />
+                                    <View 
+                                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
+                                    />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className="text-base font-medium text-gray-800">{item.name} {item.user_id == userId ? '(You)' : ''}</Text>
+                                    <Text className="text-xs text-gray-500 capitalize">{item.role}</Text>
+                                </View>
+                                {item.role === 'admin' ? (
+                                    <View className="bg-orange-100 px-2 py-1 rounded">
+                                        <Text className="text-orange-600 text-xs font-bold">Admin</Text>
+                                    </View>
+                                ) : (
+                                    isAdmin && item.user_id != userId && (
+                                        <TouchableOpacity 
+                                            onPress={() => handleRemoveMember(item.user_id, item.name)}
+                                            className="p-2 bg-red-50 rounded-full"
+                                        >
+                                            <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                                        </TouchableOpacity>
+                                    )
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Exit Group Button */}
+                    <View className="px-6 pb-10">
+                        <TouchableOpacity 
+                            onPress={handleExitGroup}
+                            className="flex-row items-center justify-center p-4 mt-4 bg-red-50 rounded-2xl border border-red-100"
+                        >
+                            <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+                            <Text className="text-red-600 font-bold ml-2">Exit Group</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             )}
         </SafeAreaView>
     );

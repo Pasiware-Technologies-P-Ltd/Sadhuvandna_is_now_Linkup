@@ -58,4 +58,5 @@ export type RootStackParamList = {
   CreateBusinessPage: undefined;
   EditBusinessPage: undefined;
   Chats: undefined;
+  ChatList: undefined;
 };

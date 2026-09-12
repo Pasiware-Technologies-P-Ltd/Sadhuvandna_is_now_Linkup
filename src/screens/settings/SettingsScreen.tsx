@@ -108,15 +108,15 @@ const SettingsScreen = ({ navigation }: any) => {
             title: t('account'),
             items: [
                 { label: t('editProfile'), icon: "person-outline", action: () => navigation.navigate(user?.is_business == 1 ? 'EditBusinessPage' : 'EditProfile') },
-                { label: t('changePassword'), icon: "lock-closed-outline", action: () => navigation.navigate('ChangePassword') },
+                // { label: t('changePassword'), icon: "lock-closed-outline", action: () => navigation.navigate('ChangePassword') },
             ]
         },
         {
             title: t('supportLegal'),
             items: [
-                { label: t('privacyPolicy'), icon: "shield-checkmark-outline", action: () => openLink('https://sadhu-vandana.com/privacy-policy') },
-                { label: t('termsConditions'), icon: "document-text-outline", action: () => openLink('https://sadhu-vandana.com/terms') },
-                { label: t('contactUs'), icon: "mail-outline", action: () => openLink('mailto:support@sadhu-vandana.com') },
+                { label: t('privacyPolicy'), icon: "shield-checkmark-outline", action: () => openLink('https://www.sadhuvandna.co.in/policy.php') },
+                { label: t('termsConditions'), icon: "document-text-outline", action: () => openLink('https://www.sadhuvandna.co.in/terms.php') },
+                { label: t('contactUs'), icon: "mail-outline", action: () => openLink('https://www.sadhuvandna.co.in/contact.php') },
             ]
         },
         {
