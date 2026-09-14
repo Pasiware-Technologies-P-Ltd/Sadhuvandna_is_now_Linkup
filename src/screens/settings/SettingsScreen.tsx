@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';
-import { useFont } from '../../context/FontContext';
+import { useFont, FONT_CATALOG } from '../../context/FontContext';
 
 const SettingsScreen = ({ navigation }: any) => {
     const { language, setLanguage, t } = useLanguage();
@@ -198,62 +198,16 @@ const SettingsScreen = ({ navigation }: any) => {
 
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <View style={{ gap: 10 }}>
-                                {[
-                                    { 
-                                        key: 'System', 
-                                        label: language === 'hi' ? 'सिस्टम डिफ़ॉल्ट' : language === 'gu' ? 'સિસ્ટમ ડિફોલ્ટ' : 'System Default', 
-                                        fontStyle: undefined, 
-                                        description: language === 'hi' ? 'डिवाइस का मुख्य फ़ॉन्ट' : language === 'gu' ? 'ડિવાઇસના મુખ્ય ફોન્ટ' : 'Default system typography' 
-                                    },
-                                    { 
-                                        key: 'Devnagari Noto', 
-                                        label: language === 'hi' ? 'देवनागरी स्पष्ट (Noto Sans)' : language === 'gu' ? 'દેવનાગરી સ્પષ્ટ (Noto Sans)' : 'Devanagari Clean', 
-                                        fontStyle: 'NotoSansDevanagari', 
-                                        description: language === 'hi' ? 'साफ़ और पढ़ने में आसान देवनागरी लेख' : language === 'gu' ? 'સાફ અને વાંચવામાં સરળ દેવનાગરી લેખ' : 'Clean Noto Sans Devanagari text' 
-                                    },
-                                    { 
-                                        key: 'Devnagari Rozha', 
-                                        label: language === 'hi' ? 'देवनागरी कलात्मक (Rozha One)' : language === 'gu' ? 'દેવનાગરી કલાત્મક (Rozha One)' : 'Devanagari Stylised', 
-                                        fontStyle: 'RozhaOne', 
-                                        description: language === 'hi' ? 'मोटे और सुंदर डिज़ाइनर शीर्षक' : language === 'gu' ? 'જાડા અને સુંદર ડિઝાઇનર શીર્ષક' : 'Bold artistic Rozha One headings' 
-                                    },
-                                    { 
-                                        key: 'Devnagari Yatra', 
-                                        label: language === 'hi' ? 'देवनागरी आर्ट (Yatra One)' : language === 'gu' ? 'દેવનાગરી આર્ટ (Yatra One)' : 'Devanagari Art', 
-                                        fontStyle: 'YatraOne', 
-                                        description: language === 'hi' ? 'पारंपरिक देवनागरी सुलेख' : language === 'gu' ? 'પરંપરાગત દેવનાગરી સુલેખન' : 'Classic Yatra One calligraphy' 
-                                    },
-                                    { 
-                                        key: 'Serif', 
-                                        label: language === 'hi' ? 'सेरिफ़ क्लासिक (Serif)' : language === 'gu' ? 'સેરિફ ક્લાસિક (Serif)' : 'Serif Classic', 
-                                        fontStyle: Platform.OS === 'android' ? 'serif' : 'Georgia', 
-                                        description: language === 'hi' ? 'क्लासिक और गंभीर लिखावट' : language === 'gu' ? 'ક્લાસિક અને ગંભીર લખાણ' : 'Classic elegant Georgia serif font' 
-                                    },
-                                    { 
-                                        key: 'Monospace', 
-                                        label: language === 'hi' ? 'मोनोस्पेस कोड (Monospace)' : language === 'gu' ? 'મોનોસ્પેસ કોડ (Monospace)' : 'Monospace Code', 
-                                        fontStyle: Platform.OS === 'android' ? 'monospace' : 'Courier', 
-                                        description: language === 'hi' ? 'टाइपराइटर जैसे समान आकार के अक्षर' : language === 'gu' ? 'ટાઈપરાઈટર જેવા સમાન કદના અક્ષરો' : 'Clean typewriter coding font' 
-                                    },
-                                    { 
-                                        key: 'Condensed', 
-                                        label: language === 'hi' ? 'कंडेंस्ड सांस (Condensed)' : language === 'gu' ? 'કન્ડેન્સ્ડ સાંસ (Condensed)' : 'Condensed Sans', 
-                                        fontStyle: Platform.OS === 'android' ? 'sans-serif-condensed' : 'Arial', 
-                                        description: language === 'hi' ? 'सघन और पतली लिखावट' : language === 'gu' ? 'સઘન અને પાતળું લખાણ' : 'Sleek compact Arial sans-serif' 
-                                    },
-                                    { 
-                                        key: 'Light', 
-                                        label: language === 'hi' ? 'लाइट मॉडर्न (Light)' : language === 'gu' ? 'લાઇટ મોર્ડન (Light)' : 'Light Modern', 
-                                        fontStyle: Platform.OS === 'android' ? 'sans-serif-light' : 'Helvetica-Light', 
-                                        description: language === 'hi' ? 'पतले और आधुनिक अक्षर' : language === 'gu' ? 'પાતળા અને આધુનિક અક્ષરો' : 'Thin minimal modern typography' 
-                                    },
-                                ].map((opt) => {
-                                    const isSelected = fontFamily === opt.key;
+                                {Object.keys(FONT_CATALOG).map((key) => {
+                                    const opt = FONT_CATALOG[key];
+                                    const isSelected = fontFamily === key;
+                                    const label = language === 'hi' ? opt.labelHi : language === 'gu' ? opt.labelGu : opt.labelEn;
+                                    const fontStyle = opt.familyName || undefined;
                                     return (
                                         <TouchableOpacity
-                                            key={opt.key}
+                                            key={key}
                                             onPress={() => {
-                                                setFontFamily(opt.key);
+                                                setFontFamily(key);
                                                 setFontModalVisible(false);
                                             }}
                                             style={{
@@ -268,17 +222,16 @@ const SettingsScreen = ({ navigation }: any) => {
                                             activeOpacity={0.7}
                                         >
                                             <View style={{ flex: 1 }}>
-                                                {/* Preview label styled in the actual font! */}
                                                 <Text style={{
                                                     fontSize: 16,
                                                     fontWeight: 'bold',
                                                     color: isSelected ? '#ea580c' : '#1f2937',
-                                                    fontFamily: opt.fontStyle
+                                                    fontFamily: fontStyle
                                                 }}>
-                                                    {opt.label}
+                                                    {label}
                                                 </Text>
                                                 <Text style={{ fontSize: 11, color: isSelected ? '#c2410c' : '#9ca3af', marginTop: 2 }}>
-                                                    {opt.description}
+                                                    {opt.category} Font • {opt.familyName || 'Default'}
                                                 </Text>
                                             </View>
                                             {isSelected && (

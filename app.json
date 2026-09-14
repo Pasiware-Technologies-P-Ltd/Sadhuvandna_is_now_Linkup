@@ -2,7 +2,7 @@
   "expo": {
     "name": "Linkup",
     "slug": "sadhu-vandna",
-    "version": "1.51.0",
+    "version": "1.52.0",
     "scheme": "sadhuvandna",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,7 +21,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "versionCode": 51,
+      "versionCode": 52,
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.sadhuvandna.app",

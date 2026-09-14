@@ -4,33 +4,75 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../services/api';
+import { Picker } from '@react-native-picker/picker';
+import api, { API_BASE_URL } from '../../services/api';
 
 const CATEGORY_MAP = [
-    { name: 'ताज़ा खबर', icon: '⚡' },
-    { name: 'राष्ट्रीय', icon: '🇮🇳' },
-    { name: 'राज्य', icon: '🏛️' },
-    { name: 'जिला', icon: '📍' },
-    { name: 'राजनीति', icon: '🗳️' },
-    { name: 'धर्म', icon: '🛕' },
-    { name: 'शिक्षा', icon: '🎓' },
-    { name: 'खेल', icon: '🏆' },
-    { name: 'व्यापार', icon: '💼' },
-    { name: 'कृषि', icon: '🌾' },
-    { name: 'मनोरंजन', icon: '🎬' },
-    { name: 'सामाजिक', icon: '🤝' },
-    { name: 'दुर्घटना', icon: '⚠️' },
-    { name: 'मृत्यु/श्रद्धांजलि', icon: '🕯️' },
-    { name: 'विज्ञापन', icon: '📢' }
+    { name: 'Breaking News', icon: '⚡' },
+    { name: 'National', icon: '🇮🇳' },
+    { name: 'State', icon: '🏛️' },
+    { name: 'District', icon: '📍' },
+    { name: 'Politics', icon: '🗳️' },
+    { name: 'Religion', icon: '🛕' },
+    { name: 'Education', icon: '🎓' },
+    { name: 'Sports', icon: '🏆' },
+    { name: 'Business', icon: '💼' },
+    { name: 'Agriculture', icon: '🌾' },
+    { name: 'Entertainment', icon: '🎬' },
+    { name: 'Social', icon: '🤝' },
+    { name: 'Accident', icon: '⚠️' },
+    { name: 'Obituary/Tribute', icon: '🕯️' },
+    { name: 'Advertisement', icon: '📢' }
 ];
 
 const CreateNewsScreen = ({ navigation }: any) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [category, setCategory] = useState('ताज़ा खबर');
+    const [category, setCategory] = useState('Breaking News');
     const [mediaFiles, setMediaFiles] = useState<{ uri: string; type: 'image' | 'video' }[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    // State & District Selectors
+    const [statesList, setStatesList] = useState<any[]>([]);
+    const [districtsList, setDistrictsList] = useState<any[]>([]);
+    const [selectedState, setSelectedState] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('');
+
+    useEffect(() => {
+        fetchStates();
+    }, []);
+
+    const fetchStates = async () => {
+        try {
+            const res = await api.get('/get_states.php');
+            if (res.data && res.data.status === 'success') {
+                setStatesList(res.data.data);
+            }
+        } catch (err) {
+            console.error("Error fetching states:", err);
+        }
+    };
+
+    const fetchDistricts = async (stateId: string) => {
+        try {
+            const res = await api.get(`/get_districts.php?state_id=${stateId}`);
+            if (res.data && res.data.status === 'success') {
+                setDistrictsList(res.data.data);
+            }
+        } catch (err) {
+            console.error("Error fetching districts:", err);
+        }
+    };
+
+    const handleStateChange = (stateName: string, stateId: string) => {
+        setSelectedState(stateName);
+        setSelectedDistrict('');
+        setDistrictsList([]);
+        if (stateId) {
+            fetchDistricts(stateId);
+        }
+    };
 
     useEffect(() => {
         AsyncStorage.getItem('user').then(u => {
@@ -95,77 +137,77 @@ const CreateNewsScreen = ({ navigation }: any) => {
         }
 
         switch (cat) {
-            case 'ताज़ा खबर':
+            case 'Breaking News':
                 return {
                     title: `बड़ी खबर: ${cleanKw} को लेकर आया नया अपडेट, लोगों में बढ़ी उत्सुकता`,
                     description: `ताज़ा जानकारी के अनुसार, ${cleanKw} को लेकर एक बड़ी घोषणा हुई है। सूत्रों से मिली खबर के मुताबिक इस फैसले से क्षेत्र में काफी हलचल है। प्रशासन इस मामले पर पूरी निगरानी बनाए हुए है और जल्द ही विस्तृत ब्यौरा साझा किया जाएगा।`
                 };
-            case 'राष्ट्रीय':
+            case 'National':
                 return {
                     title: `देशहित: ${cleanKw} को लेकर केंद्र सरकार का बड़ा फैसला, राष्ट्रव्यापी प्रभाव की संभावना`,
                     description: `देश भर में ${cleanKw} को लेकर चर्चाएं तेज हो गई हैं। केंद्र सरकार द्वारा जारी आधिकारिक बयान में इस कदम को ऐतिहासिक बताया गया है। सुरक्षा और विकास के दृष्टिकोण से यह फैसला बेहद महत्वपूर्ण माना जा रहा है।`
                 };
-            case 'राज्य':
+            case 'State':
                 return {
                     title: `राज्य समाचार: ${cleanKw} पर मुख्यमंत्री ने बुलाई उच्च-स्तरीय बैठक, दिए सख्त निर्देश`,
                     description: `राज्य सरकार ने ${cleanKw} की वर्तमान स्थिति को देखते हुए नए दिशा-निर्देश जारी किए हैं। अधिकारियों को काम में तेजी लाने के निर्देश दिए गए हैं ताकि जनता को समय पर राहत मिल सके। विपक्षी दलों ने भी इस मुद्दे पर प्रतिक्रिया दी है।`
                 };
-            case 'जिला':
+            case 'District':
                 return {
                     title: `जिला अपडेट: ${cleanKw} के संबंध में जिलाधिकारी ने जारी किया नया आदेश`,
                     description: `हमारे स्थानीय प्रतिनिधि के अनुसार, जिला मुख्यालय में ${cleanKw} को लेकर प्रशासन मुस्तैद है। आम लोगों की समस्याओं को ध्यान में रखते हुए विशेष हेल्पलाइन और टीमों का गठन किया गया है। अधिकारियों ने नागरिकों से सहयोग की अपील की है।`
                 };
-            case 'राजनीति':
+            case 'Politics':
                 return {
                     title: `राजनीतिक हलचल: ${cleanKw} पर छिड़ा सियासी घमासान, नेताओं के बीच जुबानी जंग तेज`,
                     description: `विधानसभा चुनावों से पहले ${cleanKw} का मुद्दा गरमा गया है। विभिन्न राजनीतिक दलों के प्रवक्ताओं ने एक-दूसरे पर गंभीर आरोप लगाए हैं। इस बहस के बाद जनता का रुख क्या होगा, यह आने वाला समय ही बताएगा।`
                 };
-            case 'धर्म':
+            case 'Religion':
                 return {
                     title: `धार्मिक आयोजन: ${cleanKw} को लेकर श्रद्धालुओं में भारी उत्साह, भव्य तैयारियां शुरू`,
                     description: `आगामी त्योहार के अवसर पर ${cleanKw} से जुड़े धार्मिक स्थलों को सजाया जा रहा है। मंदिर ट्रस्ट और स्थानीय सेवा समितियों ने सुरक्षा और दर्शन के लिए विशेष प्रबंध किए हैं। संतों ने इस पावन अवसर पर शांति और सौहार्द का संदेश दिया है।`
                 };
-            case 'शिक्षा':
+            case 'Education':
                 return {
                     title: `शिक्षा जगत: ${cleanKw} परीक्षा परिणाम और नई गाइडलाइंस घोषित`,
                     description: `विभाग द्वारा जारी प्रेस नोट के अनुसार ${cleanKw} से जुड़े नियमों में बड़े बदलाव किए गए हैं। छात्र-छात्राओं के हित को ध्यान में रखते हुए इस बार नई शिक्षण पद्धति को लागू किया जा रहा है। शिक्षकों ने इस फैसले का स्वागत किया है।`
                 };
-            case 'खेल':
+            case 'Sports':
                 return {
                     title: `खेल समाचार: ${cleanKw} प्रतियोगिता में रोमांचक मुकाबला, खिलाड़ियों ने दिखाया दम`,
                     description: `आज आयोजित हुए फाइनल मैच में ${cleanKw} को लेकर जबरदस्त उत्साह देखने को मिला। दर्शकों की भारी भीड़ के बीच खिलाड़ियों ने उत्कृष्ट प्रदर्शन कर नया रिकॉर्ड बनाया। विजेता टीम को मुख्य अतिथि द्वारा पुरस्कृत किया गया।`
                 };
-            case 'व्यापार':
+            case 'Business':
                 return {
                     title: `कारोबार: ${cleanKw} में भारी उछाल, बाजार में व्यापारियों के चेहरे खिले`,
                     description: `आर्थिक विश्लेषकों का मानना है कि ${cleanKw} के चलते आने वाले दिनों में बाजार की स्थिति और सुधरेगी। नए निवेश और ग्राहकों की मांग बढ़ने से खुदरा और थोक व्यापारियों को अच्छा मुनाफा होने की उम्मीद है।`
                 };
-            case 'कृषि':
+            case 'Agriculture':
                 return {
                     title: `कृषि चौपाल: ${cleanKw} को लेकर वैज्ञानिकों ने जारी की नई सलाह, किसानों के लिए वरदान`,
                     description: `उन्नत खेती और पैदावार बढ़ाने के लिए ${cleanKw} पर कृषि विभाग ने जागरूकता शिविर का आयोजन किया। वैज्ञानिकों ने फसलों की सुरक्षा और जैविक खादों के उपयोग पर किसानों के सवालों के लाइव जवाब दिए।`
                 };
-            case 'मनोरंजन':
+            case 'Entertainment':
                 return {
                     title: `मनोरंजन: ${cleanKw} का धमाकेदार टीज़र रिलीज़, फैन्स ने सोशल मीडिया पर मचाया तहलका`,
                     description: `दर्शकों की उत्सुकता को बढ़ाते हुए मेकर्स ने ${cleanKw} की पहली झलक पेश कर दी है। टीज़र में बेहतरीन एक्शन और डायलॉग्स की भरमार है। फैंस सिनेमाघरों में इसके आने का बेसब्री से इंतज़ार कर रहे हैं।`
                 };
-            case 'सामाजिक':
+            case 'Social':
                 return {
                     title: `सामाजिक सरोकार: ${cleanKw} अभियान में जुटीं स्वयंसेवी संस्थाएं, लोगों की मदद की गुहार`,
                     description: `समाज कल्याण के अंतर्गत ${cleanKw} को बढ़ावा देने के लिए एक विशाल सभा का आयोजन किया गया। वक्ताओं ने समाज के सभी वर्गों से इसमें आगे आकर हिस्सा लेने का आग्रह किया ताकि ज़रूरतमंदों तक मदद पहुंचाई जा सके।`
                 };
-            case 'दुर्घटना':
+            case 'Accident':
                 return {
                     title: `सड़क हादसा: ${cleanKw} के पास भीषण टक्कर, राहत और बचाव कार्य जारी`,
                     description: `आज सुबह ${cleanKw} के समीप एक वाहन अनियंत्रित होकर पलट गया। हादसे में घायलों को तुरंत पास के अस्पताल में भर्ती कराया गया है। पुलिस ने मामला दर्ज कर जांच शुरू कर दी है और यातायात बहाल कर दिया गया है।`
                 };
-            case 'मृत्यु/श्रद्धांजलि':
+            case 'Obituary/Tribute':
                 return {
                     title: `श्रद्धांजलि: ${cleanKw} का निधन, क्षेत्र में शोक की लहर`,
                     description: `अत्यंत दुख के साथ सूचित किया जाता है कि ${cleanKw} अब हमारे बीच नहीं रहे। उनके निधन पर सामाजिक और राजनीतिक संगठनों के प्रतिनिधियों ने गहरा शोक व्यक्त किया है। ईश्वर उनकी आत्मा को शांति प्रदान करे।`
                 };
-            case 'विज्ञापन':
+            case 'Advertisement':
                 return {
                     title: `विशेष सेल: ${cleanKw} पर पाएं धमाकेदार छूट, सीमित समय के लिए ऑफर`,
                     description: `ग्राहकों के लिए सुनहरा मौका! ${cleanKw} की खरीद पर अब आपको मिल रहा है बंपर डिस्काउंट और शानदार उपहार। आज ही अपने नजदीकी स्टोर पर पधारें या ऑनलाइन ऑर्डर करें। स्टॉक सीमित है!`
@@ -221,10 +263,16 @@ const CreateNewsScreen = ({ navigation }: any) => {
             formData.append('title', title);
             formData.append('description', description);
             formData.append('category', category);
+            formData.append('state', selectedState);
+            formData.append('district', selectedDistrict);
             if (currentUserId) formData.append('user_id', currentUserId);
 
             mediaFiles.forEach((file, index) => {
-                const filename = file.uri.split('/').pop() || `news_media_${index}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
+                let fileUri = file.uri;
+                if (Platform.OS === 'android' && !fileUri.startsWith('file://') && !fileUri.startsWith('content://')) {
+                    fileUri = `file://${fileUri}`;
+                }
+                const filename = fileUri.split('/').pop()?.split('?')[0] || `news_media_${index}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
                 const match = /\.(\w+)$/.exec(filename);
                 let type = '';
                 if (file.type === 'video') {
@@ -233,26 +281,37 @@ const CreateNewsScreen = ({ navigation }: any) => {
                     type = match ? `image/${match[1]}` : `image/jpeg`;
                 }
                 formData.append('media[]', {
-                    uri: file.uri,
+                    uri: fileUri,
                     name: filename,
                     type
                 } as any);
             });
 
-            const res = await api.post('/create_news.php', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            const cleanBase = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
+            const uploadUrl = `${cleanBase}create_news.php`;
+            console.log('[CreateNews] Posting news via fetch to:', uploadUrl);
+
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                },
             });
 
-            if (res.data.status === 'success') {
+            const resData = await response.json();
+            console.log('[CreateNews] Server response:', resData);
+
+            if (resData && resData.status === 'success') {
                 Alert.alert("Success", "News posted successfully!", [
                     { text: "OK", onPress: () => navigation.goBack() }
                 ]);
             } else {
-                Alert.alert("Error", res.data.message || "Failed to post news.");
+                Alert.alert("Error", resData.message || "Failed to post news.");
             }
-        } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "Network request failed. Please try again.");
+        } catch (error: any) {
+            console.error('[CreateNews] Error posting news:', error);
+            Alert.alert("Error", "Network request failed: " + (error?.message || "Please try again."));
         } finally {
             setLoading(false);
         }
@@ -361,6 +420,51 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         ))}
                     </ScrollView>
                 </View>
+
+                {/* State & District Selectors (Conditional) */}
+                {(category === 'State' || category === 'District') && (
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>Select State</Text>
+                        <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', marginBottom: 12 }}>
+                            <Picker
+                                selectedValue={selectedState}
+                                onValueChange={(itemValue, itemIndex) => {
+                                    if (itemIndex > 0) {
+                                        const st = statesList[itemIndex - 1];
+                                        handleStateChange(st.name, st.id);
+                                    } else {
+                                        handleStateChange('', '');
+                                    }
+                                }}
+                                style={{ height: 50 }}
+                            >
+                                <Picker.Item label="Select State" value="" />
+                                {statesList.map((st, idx) => (
+                                    <Picker.Item key={idx} label={st.name} value={st.name} />
+                                ))}
+                            </Picker>
+                        </View>
+
+                        {category === 'District' && (
+                            <>
+                                <Text style={styles.label}>Select District</Text>
+                                <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb' }}>
+                                    <Picker
+                                        selectedValue={selectedDistrict}
+                                        onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
+                                        style={{ height: 50 }}
+                                        enabled={districtsList.length > 0}
+                                    >
+                                        <Picker.Item label="Select District" value="" />
+                                        {districtsList.map((dst, idx) => (
+                                            <Picker.Item key={idx} label={dst.name} value={dst.name} />
+                                        ))}
+                                    </Picker>
+                                </View>
+                            </>
+                        )}
+                    </View>
+                )}
 
                 {/* AI Assistant Button */}
                 <TouchableOpacity 

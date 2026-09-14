@@ -7,103 +7,316 @@ import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Picker } from '@react-native-picker/picker';
+import { Video, ResizeMode } from 'expo-av';
 
 const { width } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
 import { useLanguage } from '../../context/LanguageContext';
+import { useIsFocused } from '@react-navigation/native';
+
+const formatTime = (millis: number) => {
+    if (!millis || isNaN(millis)) return '0:00';
+    const totalSecs = Math.floor(millis / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
+
+const ProfessionalVideoPlayer = ({
+    uri,
+    shouldPlay,
+    style,
+    onExpand
+}: {
+    uri: string;
+    shouldPlay: boolean;
+    style?: any;
+    onExpand?: () => void;
+}) => {
+    const videoRef = useRef<Video>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [status, setStatus] = useState<any>({});
+    const [showControls, setShowControls] = useState(true);
+    const controlsTimeout = useRef<any>(null);
+
+    const resetControlsTimer = () => {
+        setShowControls(true);
+        if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        controlsTimeout.current = setTimeout(() => {
+            setShowControls(false);
+        }, 3500);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        };
+    }, []);
+
+    const togglePlay = async () => {
+        if (!videoRef.current) return;
+        if (isPlaying) {
+            await videoRef.current.pauseAsync();
+        } else {
+            await videoRef.current.playAsync();
+        }
+        resetControlsTimer();
+    };
+
+    const toggleMute = async () => {
+        if (!videoRef.current) return;
+        await videoRef.current.setIsMutedAsync(!isMuted);
+        setIsMuted(!isMuted);
+        resetControlsTimer();
+    };
+
+    const progress = (status.positionMillis && status.durationMillis)
+        ? (status.positionMillis / status.durationMillis) * 100
+        : 0;
+
+    return (
+        <TouchableOpacity
+            activeOpacity={1}
+            onPress={resetControlsTimer}
+            style={[{ position: 'relative', overflow: 'hidden', backgroundColor: 'black' }, style]}
+        >
+            <Video
+                ref={videoRef}
+                source={{ uri }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={shouldPlay}
+                isMuted={isMuted}
+                onPlaybackStatusUpdate={(s: any) => {
+                    if (s.isLoaded) {
+                        setStatus(s);
+                        setIsPlaying(s.isPlaying);
+                    }
+                }}
+            />
+
+            {/* Top Bar: Badge + Mute Button */}
+            {showControls && (
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(0,0,0,0.4)'
+                    }}
+                >
+                    <View style={{ backgroundColor: '#ea580c', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="videocam" size={11} color="white" style={{ marginRight: 4 }} />
+                        <Text style={{ color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>VIDEO NEWS</Text>
+                    </View>
+                    <TouchableOpacity onPress={toggleMute} style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: 6, borderRadius: 20 }}>
+                        <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={16} color="white" />
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Center Play/Pause Circle Control */}
+            {showControls && (
+                <View
+                    pointerEvents="box-none"
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <TouchableOpacity
+                        onPress={togglePlay}
+                        activeOpacity={0.8}
+                        style={{
+                            width: 54,
+                            height: 54,
+                            borderRadius: 27,
+                            backgroundColor: 'rgba(0,0,0,0.65)',
+                            borderWidth: 1.5,
+                            borderColor: 'rgba(255,255,255,0.4)',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 8,
+                            elevation: 5,
+                        }}
+                    >
+                        <Ionicons
+                            name={isPlaying ? "pause" : "play"}
+                            size={26}
+                            color="white"
+                            style={{ marginLeft: isPlaying ? 0 : 3 }}
+                        />
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Bottom Bar: Progress Line + Time Code */}
+            {showControls && (
+                <View
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'rgba(0,0,0,0.55)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                    }}
+                >
+                    <View style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, marginBottom: 6, overflow: 'hidden' }}>
+                        <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ea580c' }} />
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '600' }}>
+                            {formatTime(status.positionMillis)} / {formatTime(status.durationMillis)}
+                        </Text>
+                        {onExpand && (
+                            <TouchableOpacity onPress={onExpand} style={{ padding: 2 }}>
+                                <Ionicons name="expand" size={15} color="white" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+            )}
+        </TouchableOpacity>
+    );
+};
 
 const TickerItem = ({ text }: { text: string }) => {
+    const cleanText = (text || '').replace(/[\r\n]+/g, ' ');
     return (
-        <View className="flex-row items-center mr-8">
-            <Text className="text-white text-sm font-bold tracking-widest mr-2">📰</Text>
-            <Text className="text-white font-semibold text-sm">{text}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
+            <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold', marginRight: 8 }}>📰</Text>
+            <Text numberOfLines={1} style={{ color: 'white', fontWeight: '600', fontSize: 13 }}>{cleanText}</Text>
         </View>
     );
 };
 
-const NewsTicker = ({ tickerData, onClose }: { tickerData: string[]; onClose: () => void }) => {
-    const { t } = useLanguage();
+const NewsTicker = ({ tickerData }: { tickerData: string[] }) => {
     const scrollAnim = useRef(new Animated.Value(0)).current;
     const [contentWidth, setContentWidth] = useState(0);
 
     useEffect(() => {
-        let animation: Animated.CompositeAnimation | null = null;
-        if (contentWidth > 0) {
-            scrollAnim.setValue(width);
-            animation = Animated.loop(
-                Animated.timing(scrollAnim, {
-                    toValue: -contentWidth,
-                    duration: (contentWidth + width) * 15, // smooth speed
-                    easing: Easing.linear,
-                    useNativeDriver: true,
-                })
-            );
-            animation.start();
-        }
-        return () => {
-            if (animation) {
-                animation.stop();
-            }
-        };
-    }, [contentWidth]);
+        if (contentWidth <= 0) return;
+        scrollAnim.setValue(0);
+        const anim = Animated.loop(
+            Animated.timing(scrollAnim, {
+                toValue: -contentWidth / 2,
+                duration: Math.max(contentWidth * 22, 6000),
+                easing: Easing.linear,
+                useNativeDriver: true,
+            })
+        );
+        anim.start();
+        return () => anim.stop();
+    }, [contentWidth, tickerData]);
 
     if (!tickerData || tickerData.length === 0) return null;
 
+    const itemsToRender = [...tickerData, ...tickerData];
+
     return (
-        <View className="bg-red-600 flex-row items-center h-9 overflow-hidden w-full shadow-sm">
-            <View className="bg-red-700 h-full justify-center px-3 z-10" style={{ borderRightWidth: 1.5, borderRightColor: 'rgba(255,255,255,0.2)' }}>
-                <Text className="text-white font-extrabold text-[10px] uppercase tracking-wider">{t('breaking')}</Text>
+        <View style={{ backgroundColor: '#dc2626', flexDirection: 'row', alignItems: 'center', height: 36, overflow: 'hidden', width: '100%' }}>
+            <View style={{ backgroundColor: '#b91c1c', height: '100%', justifyContent: 'center', paddingHorizontal: 10, borderRightWidth: 1.5, borderRightColor: 'rgba(255,255,255,0.25)', zIndex: 10 }}>
+                <Text style={{ color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>BREAKING</Text>
             </View>
-            <View className="flex-1 overflow-hidden relative justify-center">
-                <Animated.View 
-                    style={{ 
-                        flexDirection: 'row', 
-                        alignItems: 'center', 
-                        position: 'absolute',
-                        left: 0,
-                        transform: [{ translateX: scrollAnim }] 
+            <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center' }}>
+                <Animated.View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        transform: [{ translateX: scrollAnim }]
                     }}
-                    onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}
+                    onLayout={(e) => {
+                        const w = e.nativeEvent.layout.width;
+                        if (w > 0 && Math.abs(w - contentWidth) > 5) {
+                            setContentWidth(w);
+                        }
+                    }}
                 >
-                    {tickerData.map((item, index) => (
+                    {itemsToRender.map((item, index) => (
                         <TickerItem key={index} text={item} />
-                    ))}
-                    {/* Duplicate to ensure smooth scrolling space */}
-                    {tickerData.map((item, index) => (
-                        <TickerItem key={'dup_'+index} text={item} />
                     ))}
                 </Animated.View>
             </View>
-            <TouchableOpacity onPress={onClose} className="px-3 h-full justify-center items-center z-10 bg-red-700/50">
-                <Ionicons name="close" size={14} color="white" />
-            </TouchableOpacity>
         </View>
     );
 };
 
 const CATEGORY_MAP = [
-    { name: 'All', icon: '🌐' },
-    { name: 'ताज़ा खबर', icon: '⚡' },
-    { name: 'राष्ट्रीय', icon: '🇮🇳' },
-    { name: 'राज्य', icon: '🏛️' },
-    { name: 'जिला', icon: '📍' },
-    { name: 'राजनीति', icon: '🗳️' },
-    { name: 'धर्म', icon: '🛕' },
-    { name: 'शिक्षा', icon: '🎓' },
-    { name: 'खेल', icon: '🏆' },
-    { name: 'व्यापार', icon: '💼' },
-    { name: 'कृषि', icon: '🌾' },
-    { name: 'मनोरंजन', icon: '🎬' },
-    { name: 'सामाजिक', icon: '🤝' },
-    { name: 'दुर्घटना', icon: '⚠️' },
-    { name: 'मृत्यु/श्रद्धांजलि', icon: '🕯️' },
-    { name: 'विज्ञापन', icon: '📢' }
+    { id: 'All', nameEn: 'All', nameHi: 'सभी', icon: '🌐' },
+    { id: 'ताज़ा खबर', nameEn: 'Latest News', nameHi: 'ताज़ा खबर', icon: '⚡' },
+    { id: 'राष्ट्रीय', nameEn: 'National', nameHi: 'राष्ट्रीय', icon: '🇮🇳' },
+    { id: 'राज्य', nameEn: 'State', nameHi: 'राज्य', icon: '🏛️' },
+    { id: 'जिला', nameEn: 'District', nameHi: 'जिला', icon: '📍' },
+    { id: 'राजनीति', nameEn: 'Politics', nameHi: 'राजनीति', icon: '🗳️' },
+    { id: 'धर्म', nameEn: 'Religion', nameHi: 'धर्म', icon: '🛕' },
+    { id: 'शिक्षा', nameEn: 'Education', nameHi: 'शिक्षा', icon: '🎓' },
+    { id: 'खेल', nameEn: 'Sports', nameHi: 'खेल', icon: '🏆' },
+    { id: 'व्यापार', nameEn: 'Business', nameHi: 'व्यापार', icon: '💼' },
+    { id: 'कृषि', nameEn: 'Agriculture', nameHi: 'कृषि', icon: '🌾' },
+    { id: 'मनोरंजन', nameEn: 'Entertainment', nameHi: 'मनोरंजन', icon: '🎬' },
+    { id: 'सामाजिक', nameEn: 'Social', nameHi: 'सामाजिक', icon: '🤝' },
+    { id: 'दुर्घटना', nameEn: 'Accident', nameHi: 'दुर्घटना', icon: '⚠️' },
+    { id: 'मृत्यु/श्रद्धांजलि', nameEn: 'Tribute', nameHi: 'मृत्यु/श्रद्धांजलि', icon: '🕯️' },
+    { id: 'विज्ञापन', nameEn: 'Advertisement', nameHi: 'विज्ञापन', icon: '📢' }
 ];
 
 const NewsScreen = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState<'apna' | 'ddnews' | 'aastha'>('apna');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+    // States and Districts
+    const [statesList, setStatesList] = useState<any[]>([]);
+    const [districtsList, setDistrictsList] = useState<any[]>([]);
+    const [selectedState, setSelectedState] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('');
+
+    useEffect(() => {
+        const fetchStates = async () => {
+            try {
+                const res = await api.get('/get_states.php');
+                if (res.data && res.data.status === 'success') {
+                    setStatesList(res.data.data);
+                }
+            } catch (err) {}
+        };
+        fetchStates();
+    }, []);
+
+    const fetchDistricts = async (stateId: string) => {
+        try {
+            const res = await api.get(`/get_districts.php?state_id=${stateId}`);
+            if (res.data && res.data.status === 'success') {
+                setDistrictsList(res.data.data);
+            }
+        } catch (err) {}
+    };
+
+    const handleStateChange = (stateName: string, stateId: string) => {
+        setSelectedState(stateName);
+        setSelectedDistrict('');
+        setDistrictsList([]);
+        if (stateId) fetchDistricts(stateId);
+    };
     
     // Apna News State
     const [news, setNews] = useState<any[]>([]);
@@ -129,9 +342,29 @@ const NewsScreen = ({ navigation }: any) => {
     // Premium UI States
     const [searchQuery, setSearchQuery] = useState('');
     const [bookmarks, setBookmarks] = useState<string[]>([]);
-    const [showTicker, setShowTicker] = useState(true);
     const shimmerAnim = useRef(new Animated.Value(0.4)).current;
-    const { t } = useLanguage();
+    const { language, t } = useLanguage();
+    
+    // Auto-hiding header state
+    const [headerHeight, setHeaderHeight] = useState(250);
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const scrollYClamped = Animated.diffClamp(scrollY, 0, headerHeight);
+    const headerTranslateY = scrollYClamped.interpolate({
+        inputRange: [0, headerHeight],
+        outputRange: [0, -headerHeight],
+        extrapolate: 'clamp',
+    });
+
+    // Visible item tracking for video auto-pause
+    const [visibleItemId, setVisibleItemId] = useState<string | null>(null);
+    const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+    const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+        if (viewableItems && viewableItems.length > 0) {
+            setVisibleItemId(viewableItems[0].item?.id?.toString() || null);
+        } else {
+            setVisibleItemId(null);
+        }
+    }).current;
 
     useEffect(() => {
         const loadingActive = loading || ytLoading || aasthaLoading;
@@ -157,8 +390,16 @@ const NewsScreen = ({ navigation }: any) => {
 
     const filteredNews = (selectedCategory === 'All'
         ? news
-        : news.filter((item: any) => item.category === selectedCategory)
-    ).filter((item: any) => 
+        : news.filter((item: any) => {
+            const catObj = CATEGORY_MAP.find(c => c.id === selectedCategory);
+            if (!catObj) return item.category === selectedCategory;
+            return item.category === catObj.id || item.category === catObj.nameEn || item.category === catObj.nameHi;
+        })
+    ).filter((item: any) => {
+        if (selectedCategory === 'State' || selectedCategory === 'राज्य') return !selectedState || item.state === selectedState;
+        if (selectedCategory === 'District' || selectedCategory === 'जिला') return (!selectedState || item.state === selectedState) && (!selectedDistrict || item.district === selectedDistrict);
+        return true;
+    }).filter((item: any) => 
         !searchQuery.trim() || 
         item.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         item.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -305,7 +546,7 @@ const NewsScreen = ({ navigation }: any) => {
             if (isMounted.current && res.data.status === 'success') {
                 const newsList = res.data.data;
                 setNews(newsList);
-                if (res.data.ticker) {
+                if (res.data.ticker && res.data.ticker.length > 0) {
                     setTickerData(res.data.ticker);
                 } else if (newsList && newsList.length > 0) {
                     setTickerData(newsList.slice(0, 5).map((n: any) => n.title));
@@ -376,13 +617,13 @@ const NewsScreen = ({ navigation }: any) => {
         return null;
     };
 
+    const isFocused = useIsFocused();
+
     const renderNewsItem = ({ item }: { item: any }) => {
         if (!item) return null;
         const images = item.images || [];
-        const hasMultiple = images.length > 1;
-        const readTime = Math.max(1, Math.ceil((item.description || '').split(' ').length / 150));
-        const viewsCount = 50 + ((item.id || 0) * 17) % 850;
         const isBookmarked = bookmarks.includes(item.id?.toString());
+        const isVisible = isFocused && visibleItemId === item.id?.toString();
 
         const handleShare = async () => {
             try {
@@ -392,111 +633,136 @@ const NewsScreen = ({ navigation }: any) => {
             } catch (error: any) {}
         };
 
-        const handleImageDownload = async (imageUri: string) => {
-            Alert.alert(
-                'Download Image',
-                'Do you want to download this news image?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Download',
-                        onPress: async () => {
-                            try {
-                                const filename = imageUri.split('/').pop() || 'news_image.jpg';
-                                const fileUri = FileSystem.documentDirectory + filename;
-                                const res = await FileSystem.downloadAsync(imageUri, fileUri);
-                                if (res.status === 200) {
-                                    if (await Sharing.isAvailableAsync()) {
-                                        await Sharing.shareAsync(res.uri, { dialogTitle: 'Save News Image' });
-                                    } else {
-                                        Alert.alert('Success', 'Image downloaded successfully!');
-                                    }
-                                }
-                            } catch (e) {
-                                Alert.alert('Error', 'Failed to download image.');
-                            }
+        const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename);
+
+        const THUMB_WIDTH = width * 0.72; // 72% width per item in scroll
+
+        const renderSingleMedia = (filename: string) => {
+            const uri = `${NEWS_URL}${filename}`;
+            return (
+                <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: 'black' }}>
+                    {isVideo(filename) ? (
+                        <ProfessionalVideoPlayer
+                            key={filename}
+                            uri={uri}
+                            style={{ width: '100%', height: 220 }}
+                            shouldPlay={isVisible}
+                            onExpand={() => navigation.navigate('NewsDetail', { news: item })}
+                        />
+                    ) : (
+                        <Image
+                            key={filename}
+                            source={{ uri }}
+                            style={{ width: '100%', height: 220, backgroundColor: '#f3f4f6' }}
+                            resizeMode="cover"
+                        />
+                    )}
+                </View>
+            );
+        };
+
+        const renderScrollableMedia = (files: string[]) => {
+            return (
+                <ScrollView
+                    horizontal
+                    pagingEnabled={false}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+                >
+                    {files.map((filename: string, idx: number) => {
+                        const uri = `${NEWS_URL}${filename}`;
+                        if (isVideo(filename)) {
+                            return (
+                                <ProfessionalVideoPlayer
+                                    key={idx}
+                                    uri={uri}
+                                    style={{ width: THUMB_WIDTH, height: 200, borderRadius: 12 }}
+                                    shouldPlay={isVisible}
+                                    onExpand={() => navigation.navigate('NewsDetail', { news: item })}
+                                />
+                            );
                         }
-                    }
-                ]
+                        return (
+                            <Image
+                                key={idx}
+                                source={{ uri }}
+                                style={{ width: THUMB_WIDTH, height: 200, borderRadius: 12, backgroundColor: '#f3f4f6' }}
+                                resizeMode="cover"
+                            />
+                        );
+                    })}
+                </ScrollView>
             );
         };
 
         return (
-            <View className="bg-white rounded-2xl shadow-sm border border-gray-100 mx-4 mb-4 overflow-hidden">
-                <View className="p-4">
-                    <Text className="text-base font-bold text-gray-900 leading-snug mb-1.5">{item.title}</Text>
-                    <View className="flex-row items-center mb-3">
-                        <Text className="text-xs text-orange-500">{item.created_at}</Text>
+            <View style={{ backgroundColor: 'white', marginBottom: 8, borderBottomWidth: 6, borderBottomColor: '#f3f4f6' }}>
+                <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+                    {/* Category + Location badge */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, gap: 6 }}>
                         {item.category && (
-                            <View className="bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 ml-2">
-                                <Text className="text-[9px] text-orange-600 font-extrabold">{item.category}</Text>
+                            <View style={{ backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, borderWidth: 1, borderColor: '#ffedd5' }}>
+                                <Text style={{ fontSize: 10, color: '#ea580c', fontWeight: '800', letterSpacing: 0.3 }}>{item.category}</Text>
                             </View>
                         )}
-                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>⏱️ {readTime} {t('minRead')}</Text>
-                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>👁️ {viewsCount} {t('views')}</Text>
+                        {(item.state || item.district) && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                <Ionicons name="location-outline" size={11} color="#6b7280" />
+                                <Text style={{ fontSize: 11, color: '#6b7280', fontWeight: '600' }}>
+                                    {item.state}{item.district ? ` · ${item.district}` : ''}
+                                </Text>
+                            </View>
+                        )}
+                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{item.created_at?.split(' ')[0]}</Text>
                     </View>
 
-                    <View className="flex-row">
-                        <View className="flex-1 pr-2">
-                            <Text className="text-gray-500 text-xs leading-relaxed" numberOfLines={5}>
-                                {item.description}
-                            </Text>
-                            <View className="flex-row mt-3 items-center gap-4">
-                                <TouchableOpacity onPress={() => navigation.navigate('NewsDetail', { news: item })} activeOpacity={0.7}>
-                                    <Text className="text-orange-600 font-bold text-xs tracking-wide">{t('readMore')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
-                                    <View className="flex-row items-center">
-                                        <Ionicons name="share-social-outline" size={14} color="#6b7280" />
-                                        <Text className="text-gray-500 font-bold text-xs ml-1">{t('share')}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => toggleBookmark(item.id?.toString())} activeOpacity={0.7}>
-                                    <View className="flex-row items-center">
-                                        <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={14} color={isBookmarked ? "#ea580c" : "#6b7280"} />
-                                        <Text className={`${isBookmarked ? 'text-orange-600' : 'text-gray-500'} font-bold text-xs ml-1`}>
-                                            {isBookmarked ? t('saved') : t('saveAction')}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                    {/* TITLE */}
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: '#111827', lineHeight: 25, marginBottom: 12 }}>
+                        {item.title}
+                    </Text>
+                </View>
 
-                        {images.length > 0 && (
-                            <View className="w-28 flex-col gap-1">
-                                <TouchableOpacity onPress={() => handleImageDownload(`${NEWS_URL}${images[0]}`) } activeOpacity={0.8}>
-                                    <Image
-                                        source={{ uri: `${NEWS_URL}${images[0]}` }}
-                                        className={`w-full bg-gray-100 rounded-xl ${hasMultiple ? 'h-20' : 'h-28'}`}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={{ position: 'absolute', bottom: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 12, padding: 4 }}>
-                                        <Ionicons name="download-outline" size={14} color="white" />
-                                    </View>
-                                </TouchableOpacity>
-                                {hasMultiple && (
-                                    <View className="flex-1 relative">
-                                        <TouchableOpacity onPress={() => handleImageDownload(`${NEWS_URL}${images[1]}`)} activeOpacity={0.8}>
-                                            <Image
-                                                source={{ uri: `${NEWS_URL}${images[1]}` }}
-                                                className="w-full h-10 rounded-xl bg-gray-100 opacity-80"
-                                                resizeMode="cover"
-                                            />
-                                        </TouchableOpacity>
-                                        {images.length > 2 && (
-                                            <View className="absolute inset-0 bg-black/40 rounded-xl items-center justify-center">
-                                                <Text className="text-white font-bold text-xs">+{images.length - 2}</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                )}
-                            </View>
-                        )}
+                {/* MEDIA — full bleed, horizontal scroll if multiple */}
+                {images.length > 0 && (
+                    <View style={{ marginBottom: 12 }}>
+                        {images.length === 1
+                            ? renderSingleMedia(images[0])
+                            : renderScrollableMedia(images)
+                        }
+                    </View>
+                )}
+
+                <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
+                    {/* DESCRIPTION */}
+                    <Text style={{ fontSize: 14, color: '#374151', lineHeight: 22, marginBottom: 14 }} numberOfLines={4}>
+                        {item.description}
+                    </Text>
+
+                    {/* FOOTER — Read More + actions */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('NewsDetail', { news: item })}
+                            activeOpacity={0.8}
+                            style={{ backgroundColor: '#ea580c', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        >
+                            <Ionicons name="book-outline" size={13} color="white" />
+                            <Text style={{ color: 'white', fontSize: 12, fontWeight: '700' }}>{t('readMore')}</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+                            <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
+                                <Ionicons name="share-social-outline" size={22} color="#6b7280" />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => toggleBookmark(item.id?.toString())} activeOpacity={0.7}>
+                                <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={22} color={isBookmarked ? "#ea580c" : "#6b7280"} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
         );
     };
+
 
     const renderYTNewsItem = ({ item }: { item: any }) => {
         if (!item) return null;
@@ -555,7 +821,26 @@ const NewsScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView className="flex-1 bg-[#f9fafb]" edges={['top']}>
             {/* Header & Tabs */}
-            <View className="bg-white pt-4 border-b border-gray-100 shadow-sm z-10">
+            <Animated.View 
+                onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    transform: [{ translateY: headerTranslateY }],
+                    backgroundColor: 'white',
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#f3f4f6',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 3,
+                    elevation: 3,
+                    paddingTop: 45 // safe area top padding approximation
+                }}
+            >
                 <View className="flex-row justify-between items-center px-5 mb-4">
                     <Text className="text-xl font-extrabold text-gray-900">{t('newsUpdates')}</Text>
                     {anchorStatus === 'Approved' ? (
@@ -649,32 +934,36 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 14, paddingTop: 4 }}
                         className="bg-white"
                     >
-                        {CATEGORY_MAP.map((cat) => (
-                            <TouchableOpacity
-                                key={cat.name}
-                                onPress={() => setSelectedCategory(cat.name)}
-                                className="flex-row items-center rounded-full px-3.5 py-1.5 mr-2 border"
-                                activeOpacity={0.8}
-                                style={{
-                                    backgroundColor: selectedCategory === cat.name ? '#ea580c' : '#f9fafb',
-                                    borderColor: selectedCategory === cat.name ? '#ea580c' : '#f3f4f6',
-                                    shadowColor: selectedCategory === cat.name ? '#f97316' : '#000',
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: selectedCategory === cat.name ? 0.2 : 0.02,
-                                    shadowRadius: 5,
-                                    elevation: selectedCategory === cat.name ? 3 : 1
-                                }}
-                            >
-                                <Text className="mr-1.5 text-sm">{cat.icon}</Text>
-                                <Text
-                                    className={`text-xs font-bold tracking-wide ${
-                                        selectedCategory === cat.name ? 'text-white' : 'text-gray-700'
-                                    }`}
+                        {CATEGORY_MAP.map((cat) => {
+                            const isSelected = selectedCategory === cat.id;
+                            const label = language === 'en' ? cat.nameEn : cat.nameHi;
+                            return (
+                                <TouchableOpacity
+                                    key={cat.id}
+                                    onPress={() => setSelectedCategory(cat.id)}
+                                    className="flex-row items-center rounded-full px-3.5 py-1.5 mr-2 border"
+                                    activeOpacity={0.8}
+                                    style={{
+                                        backgroundColor: isSelected ? '#ea580c' : '#f9fafb',
+                                        borderColor: isSelected ? '#ea580c' : '#f3f4f6',
+                                        shadowColor: isSelected ? '#f97316' : '#000',
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: isSelected ? 0.2 : 0.02,
+                                        shadowRadius: 5,
+                                        elevation: isSelected ? 3 : 1
+                                    }}
                                 >
-                                    {cat.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                                    <Text className="mr-1.5 text-sm">{cat.icon}</Text>
+                                    <Text
+                                        className={`text-xs font-bold tracking-wide ${
+                                            isSelected ? 'text-white' : 'text-gray-700'
+                                        }`}
+                                    >
+                                        {label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </ScrollView>
                 )}
 
@@ -697,28 +986,99 @@ const NewsScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {activeTab === 'apna' && showTicker && (
-                    <NewsTicker tickerData={tickerData} onClose={() => setShowTicker(false)} />
+                {/* State/District Pickers */}
+                {(selectedCategory === 'State' || selectedCategory === 'राज्य' || selectedCategory === 'District' || selectedCategory === 'जिला') && activeTab === 'apna' && (
+                    <View style={{ paddingHorizontal: 20, paddingBottom: 12, paddingTop: 4 }}>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 40, justifyContent: 'center' }}>
+                                <Picker
+                                    selectedValue={selectedState}
+                                    onValueChange={(itemValue, itemIndex) => {
+                                        if (itemIndex > 0) {
+                                            const st = statesList[itemIndex - 1];
+                                            handleStateChange(st.name, st.id);
+                                        } else {
+                                            handleStateChange('', '');
+                                        }
+                                    }}
+                                    style={{ height: 40 }}
+                                >
+                                    <Picker.Item label="Select State" value="" style={{ fontSize: 13 }} />
+                                    {statesList.map((st, idx) => (
+                                        <Picker.Item key={idx} label={st.name} value={st.name} style={{ fontSize: 13 }} />
+                                    ))}
+                                </Picker>
+                            </View>
+
+                            {(selectedCategory === 'District' || selectedCategory === 'जिला') && (
+                                <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 40, justifyContent: 'center' }}>
+                                    <Picker
+                                        selectedValue={selectedDistrict}
+                                        onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
+                                        style={{ height: 40 }}
+                                        enabled={districtsList.length > 0}
+                                    >
+                                        <Picker.Item label="Select District" value="" style={{ fontSize: 13 }} />
+                                        {districtsList.map((dst, idx) => (
+                                            <Picker.Item key={idx} label={dst.name} value={dst.name} style={{ fontSize: 13 }} />
+                                        ))}
+                                    </Picker>
+                                </View>
+                            )}
+                        </View>
+                    </View>
                 )}
-            </View>
+            </Animated.View>
+
+            {/* Sticky Breaking News Ticker - always visible, follows header bottom */}
+            {activeTab === 'apna' && tickerData.length > 0 && (
+                <Animated.View
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        zIndex: 9,
+                        transform: [{ translateY: headerTranslateY }],
+                        top: headerHeight,
+                    }}
+                >
+                    <NewsTicker tickerData={tickerData} />
+                </Animated.View>
+            )}
 
             {/* List Content */}
             {activeTab === 'apna' && (
                 loading ? (
-                    <FlatList
+                    <Animated.FlatList
+                        key="apna-skeleton-list"
                         data={[1, 2, 3, 4]}
-                        keyExtractor={(item) => item.toString()}
-                        contentContainerStyle={{ paddingVertical: 12 }}
+                        keyExtractor={(item: any) => item.toString()}
+                        contentContainerStyle={{ paddingTop: headerHeight + 36 + 12, paddingBottom: 12 }}
                         renderItem={renderApnaNewsSkeleton}
+                        onScroll={Animated.event(
+                            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                            { useNativeDriver: true }
+                        )}
+                        scrollEventThrottle={16}
+                        onViewableItemsChanged={onViewableItemsChanged}
+                        viewabilityConfig={viewabilityConfig}
                     />
                 ) : (
-                    <FlatList
+                    <Animated.FlatList
+                        key="apna-data-list"
                         data={Array.isArray(filteredNews) ? filteredNews : []}
-                        keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
-                        contentContainerStyle={{ paddingVertical: 12 }}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" />}
+                        keyExtractor={(item: any, index: number) => item?.id?.toString() || index.toString()}
+                        contentContainerStyle={{ paddingTop: headerHeight + 36 + 12, paddingBottom: 12 }}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" progressViewOffset={headerHeight + 36} />}
                         renderItem={renderNewsItem}
                         ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noNewsAvailable')}</Text>}
+                        onScroll={Animated.event(
+                            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                            { useNativeDriver: true }
+                        )}
+                        scrollEventThrottle={16}
+                        onViewableItemsChanged={onViewableItemsChanged}
+                        viewabilityConfig={viewabilityConfig}
                     />
                 )
             )}

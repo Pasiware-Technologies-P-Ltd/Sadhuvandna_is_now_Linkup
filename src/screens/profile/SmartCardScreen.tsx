@@ -110,7 +110,6 @@ const SmartCardScreen = ({ navigation }: any) => {
                                 <Image source={LOGO_ASSET} style={styles.logo} resizeMode="contain" />
                                 <View style={{ marginLeft: 8 }}>
                                     <Text style={styles.orgName}>LINKUP</Text>
-                                    <Text style={styles.orgSub}>SAMAJ</Text>
                                 </View>
                             </View>
                             <View style={styles.vipPill}>
