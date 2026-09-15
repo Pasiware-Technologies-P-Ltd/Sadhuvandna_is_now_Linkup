@@ -49,19 +49,10 @@ const SettingsScreen = ({ navigation }: any) => {
     };
 
     const getFontLabel = (font: string) => {
-        const isHi = language === 'hi';
-        const isGu = language === 'gu';
-        switch (font) {
-            case 'System': return isHi ? 'सिस्टम डिफ़ॉल्ट' : isGu ? 'સિસ્ટમ ડિફોલ્ટ' : 'System Default';
-            case 'Devnagari Noto': return isHi ? 'देवनागरी स्पष्ट' : isGu ? 'દેવનાગરી સ્પષ્ટ' : 'Devanagari Clean';
-            case 'Devnagari Rozha': return isHi ? 'देवनागरी कलात्मक' : isGu ? 'દેવનાગરી કલાત્મક' : 'Devanagari Stylised';
-            case 'Devnagari Yatra': return isHi ? 'देवनागरी आर्ट' : isGu ? 'દેવનાગરી આર્ટ' : 'Devanagari Art';
-            case 'Serif': return isHi ? 'सेरिफ़ क्लासिक' : isGu ? 'સેરિફ ક્લાસિક' : 'Serif Classic';
-            case 'Monospace': return isHi ? 'मोनोस्पेस कोड' : isGu ? 'મોનોસ્પેસ કોડ' : 'Monospace Code';
-            case 'Condensed': return isHi ? 'कंडेंस्ड सांस' : isGu ? 'કન્ડેન્સ્ડ સાંસ' : 'Condensed Sans';
-            case 'Light': return isHi ? 'लाइट मॉडर्न' : isGu ? 'લાઇટ મોર્ડન' : 'Light Modern';
-            default: return font;
-        }
+        const opt = FONT_CATALOG[font];
+        if (!opt) return font;
+        const langKey = language.charAt(0).toUpperCase() + language.slice(1);
+        return (opt as any)[`label${langKey}`] || opt.labelEn;
     };
 
     const openLink = (url: string) => {
@@ -81,6 +72,21 @@ const SettingsScreen = ({ navigation }: any) => {
         items: MenuItem[];
     }
 
+    const LANGUAGE_OPTIONS = [
+        { key: 'en', label: 'English', nativeLabel: 'English', desc: 'Use app in English' },
+        { key: 'hi', label: 'हिन्दी', nativeLabel: 'Hindi', desc: 'ऐप का हिंदी में उपयोग करें' },
+        { key: 'gu', label: 'ગુજરાતી', nativeLabel: 'Gujarati', desc: 'ગુજરાતીમાં એપ્લિકેશનનો ઉપયોગ કરો' },
+        { key: 'pa', label: 'ਪੰਜਾਬੀ', nativeLabel: 'Punjabi', desc: 'ਐਪ ਦੀ ਵਰਤੋਂ ਪੰਜਾਬੀ ਵਿੱਚ ਕਰੋ' },
+        { key: 'bn', label: 'বাংলা', nativeLabel: 'Bengali', desc: 'অ্যাপটি বাংলায় ব্যবহার করুন' },
+        { key: 'ta', label: 'தமிழ்', nativeLabel: 'Tamil', desc: 'செயலியை தமிழில் பயன்படுத்தவும்' },
+        { key: 'te', label: 'తెలుగు', nativeLabel: 'Telugu', desc: 'యాప్‌ను తెలుగులో ఉపయోగించండి' },
+        { key: 'kn', label: 'ಕನ್ನಡ', nativeLabel: 'Kannada', desc: 'ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು ಕನ್ನಡದಲ್ಲಿ ಬಳಸಿ' },
+        { key: 'ml', label: 'മലയാളം', nativeLabel: 'Malayalam', desc: 'ആപ്പ് മലയാളത്തിൽ ഉപയോഗിക്കുക' },
+        { key: 'or', label: 'ଓଡ଼ିଆ', nativeLabel: 'Odia', desc: 'ଆପ୍ କୁ ଓଡ଼ିଆରେ ବ୍ୟବହାର କରନ୍ତୁ' },
+        { key: 'as', label: 'অসমীয়া', nativeLabel: 'Assamese', desc: 'অসমীয়াত অ্যাপ ব্যৱহাৰ কৰক' },
+        { key: 'ur', label: 'اردو', nativeLabel: 'Urdu', desc: 'ایپ کا اردو میں استعمال کریں' },
+    ];
+
     const sections: Section[] = [
         {
             title: t('language'),
@@ -89,7 +95,7 @@ const SettingsScreen = ({ navigation }: any) => {
                     label: t('changeLanguage'),
                     icon: "language-outline",
                     action: handleChangeLanguage,
-                    value: language === 'en' ? 'English' : language === 'hi' ? 'हिन्दी' : 'ગુજરાતી'
+                    value: LANGUAGE_OPTIONS.find(o => o.key === language)?.label || 'English'
                 }
             ]
         },
@@ -189,7 +195,7 @@ const SettingsScreen = ({ navigation }: any) => {
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
-                                {language === 'hi' ? 'फ़ॉन्ट शैली चुनें' : language === 'gu' ? 'ફોન્ટ શૈલી પસંદ કરો' : 'Choose Font Style'}
+                                {t('changeFontFamily')}
                             </Text>
                             <TouchableOpacity onPress={() => setFontModalVisible(false)}>
                                 <Ionicons name="close-circle" size={24} color="#9ca3af" />
@@ -201,7 +207,8 @@ const SettingsScreen = ({ navigation }: any) => {
                                 {Object.keys(FONT_CATALOG).map((key) => {
                                     const opt = FONT_CATALOG[key];
                                     const isSelected = fontFamily === key;
-                                    const label = language === 'hi' ? opt.labelHi : language === 'gu' ? opt.labelGu : opt.labelEn;
+                                    const langKey = language.charAt(0).toUpperCase() + language.slice(1);
+                                    const label = (opt as any)[`label${langKey}`] || opt.labelEn;
                                     const fontStyle = opt.familyName || undefined;
                                     return (
                                         <TouchableOpacity
@@ -264,7 +271,7 @@ const SettingsScreen = ({ navigation }: any) => {
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
-                                {language === 'hi' ? 'भाषा चुनें' : language === 'gu' ? 'ભાષા પસંદ કરો' : 'Choose Language'}
+                                {t('changeLanguage')}
                             </Text>
                             <TouchableOpacity onPress={() => setLangModalVisible(false)}>
                                 <Ionicons name="close-circle" size={24} color="#9ca3af" />
@@ -273,17 +280,13 @@ const SettingsScreen = ({ navigation }: any) => {
 
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <View style={{ gap: 10 }}>
-                                {[
-                                    { key: 'en', label: 'English', nativeLabel: 'English', desc: 'Use app in English' },
-                                    { key: 'hi', label: 'हिन्दी', nativeLabel: 'Hindi', desc: 'ऐप का हिंदी में उपयोग करें' },
-                                    { key: 'gu', label: 'ગુજરાતી', nativeLabel: 'Gujarati', desc: 'ગુજરાતીમાં એપ્લિકેશનનો ઉપયોગ કરો' },
-                                ].map((opt) => {
+                                {LANGUAGE_OPTIONS.map((opt) => {
                                     const isSelected = language === opt.key;
                                     return (
                                         <TouchableOpacity
                                             key={opt.key}
                                             onPress={() => {
-                                                setLanguage(opt.key as 'en' | 'hi' | 'gu');
+                                                setLanguage(opt.key as any);
                                                 setLangModalVisible(false);
                                             }}
                                             style={{

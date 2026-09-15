@@ -50,6 +50,12 @@ const ProfessionalVideoPlayer = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (isPlaying) {
+            resetControlsTimer();
+        }
+    }, [isPlaying]);
+
     const togglePlay = async () => {
         if (!videoRef.current) return;
         if (isPlaying) {
@@ -64,6 +70,30 @@ const ProfessionalVideoPlayer = ({
         if (!videoRef.current) return;
         await videoRef.current.setIsMutedAsync(!isMuted);
         setIsMuted(!isMuted);
+        resetControlsTimer();
+    };
+
+    const skipForward = async () => {
+        if (!videoRef.current || !status.durationMillis) return;
+        const newPos = Math.min(status.positionMillis + 10000, status.durationMillis);
+        await videoRef.current.setPositionAsync(newPos);
+        resetControlsTimer();
+    };
+
+    const skipBackward = async () => {
+        if (!videoRef.current) return;
+        const newPos = Math.max((status.positionMillis || 0) - 10000, 0);
+        await videoRef.current.setPositionAsync(newPos);
+        resetControlsTimer();
+    };
+
+    const [progressWidth, setProgressWidth] = useState(0);
+
+    const handleSeek = async (e: any) => {
+        if (!videoRef.current || !status.durationMillis || progressWidth === 0) return;
+        const x = e.nativeEvent.locationX;
+        const seekTo = (x / progressWidth) * status.durationMillis;
+        await videoRef.current.setPositionAsync(seekTo);
         resetControlsTimer();
     };
 
@@ -103,7 +133,7 @@ const ProfessionalVideoPlayer = ({
                         paddingHorizontal: 12,
                         paddingVertical: 10,
                         flexDirection: 'row',
-                        justify: 'space-between',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         backgroundColor: 'rgba(0,0,0,0.4)'
                     }}
@@ -132,32 +162,43 @@ const ProfessionalVideoPlayer = ({
                         alignItems: 'center',
                     }}
                 >
-                    <TouchableOpacity
-                        onPress={togglePlay}
-                        activeOpacity={0.8}
-                        style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 28,
-                            backgroundColor: 'rgba(0,0,0,0.65)',
-                            borderWidth: 1.5,
-                            borderColor: 'rgba(255,255,255,0.4)',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 8,
-                            elevation: 5,
-                        }}
-                    >
-                        <Ionicons
-                            name={isPlaying ? "pause" : "play"}
-                            size={28}
-                            color="white"
-                            style={{ marginLeft: isPlaying ? 0 : 3 }}
-                        />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <TouchableOpacity onPress={skipBackward} style={{ padding: 8 }}>
+                            <Ionicons name="play-back" size={28} color="rgba(255,255,255,0.9)" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={togglePlay}
+                            activeOpacity={0.8}
+                            style={{
+                                width: 54,
+                                height: 54,
+                                borderRadius: 27,
+                                backgroundColor: 'rgba(0,0,0,0.65)',
+                                borderWidth: 1.5,
+                                borderColor: 'rgba(255,255,255,0.4)',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.3,
+                                shadowRadius: 8,
+                                elevation: 5,
+                                marginHorizontal: 24,
+                            }}
+                        >
+                            <Ionicons
+                                name={isPlaying ? "pause" : "play"}
+                                size={26}
+                                color="white"
+                                style={{ marginLeft: isPlaying ? 0 : 3 }}
+                            />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={skipForward} style={{ padding: 8 }}>
+                            <Ionicons name="play-forward" size={28} color="rgba(255,255,255,0.9)" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             )}
 
@@ -174,9 +215,16 @@ const ProfessionalVideoPlayer = ({
                         paddingVertical: 8,
                     }}
                 >
-                    <View style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, marginBottom: 6, overflow: 'hidden' }}>
-                        <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ea580c' }} />
-                    </View>
+                    <TouchableOpacity 
+                        activeOpacity={1}
+                        onLayout={(e) => setProgressWidth(e.nativeEvent.layout.width)}
+                        onPress={handleSeek}
+                        style={{ paddingVertical: 10, marginTop: -10, marginBottom: -4 }}
+                    >
+                        <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, overflow: 'hidden' }}>
+                            <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ea580c' }} />
+                        </View>
+                    </TouchableOpacity>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Text style={{ color: 'white', fontSize: 11, fontWeight: '600' }}>
@@ -225,7 +273,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
         try {
             if (!currentNews) return;
             const newsUrl = `${WEBSITE_URL}/view_news.php?id=${currentNews.id}`;
-            const message = `${currentNews.title}\n\n${currentNews.description?.substring(0, 100)}...\n\nOpen in App: ${newsUrl}`;
+            const message = `${currentNews.title}\n\n${cleanDescription?.substring(0, 100)}...\n\nOpen in App: ${newsUrl}`;
             await Share.share({ message, url: newsUrl });
         } catch (error: any) {}
     };
@@ -244,6 +292,17 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     const rawImages: string[] = currentNews.images && currentNews.images.length > 0
         ? currentNews.images
         : (currentNews.image ? currentNews.image.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+
+    let parsedAspectRatio: number | undefined = undefined;
+    let cleanDescription = currentNews.description || "";
+    
+    const aspectMatch = cleanDescription.match(/\[aspect:([^\]]+)\]/);
+    if (aspectMatch && aspectMatch[1]) {
+        parsedAspectRatio = Number(aspectMatch[1]);
+        cleanDescription = cleanDescription.replace(aspectMatch[0], "").trim();
+    }
+
+    const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
@@ -308,7 +367,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                         <ProfessionalVideoPlayer
                                             key={index}
                                             uri={uri}
-                                            style={{ width, height: 320 }}
+                                            style={{ width, height: parsedAspectRatio ? undefined : 320, aspectRatio: parsedAspectRatio || undefined }}
                                             shouldPlay={isFocused && index === activeIndex}
                                         />
                                     );
@@ -317,8 +376,8 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                     <Image
                                         key={index}
                                         source={{ uri }}
-                                        style={{ width, height: 320, backgroundColor: '#f3f4f6' }}
-                                        resizeMode="contain"
+                                        style={{ width, height: parsedAspectRatio ? undefined : 320, aspectRatio: parsedAspectRatio || undefined, backgroundColor: '#f3f4f6' }}
+                                        resizeMode={parsedAspectRatio ? "cover" : "contain"}
                                     />
                                 );
                             })}
@@ -346,7 +405,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 {/* Full Description */}
                 <View style={{ paddingHorizontal: 16 }}>
                     <Text style={{ fontSize: 16, color: '#374151', lineHeight: 28 }}>
-                        {currentNews.description}
+                        {cleanDescription}
                     </Text>
                 </View>
 

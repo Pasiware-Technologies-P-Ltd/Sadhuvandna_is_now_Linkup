@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +20,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     // Node.js server for audio streams (Agora/ytdl)
     const NODE_SERVER = __DEV__ ? 'http://192.168.31.124:3000' : 'https://www.sadhuvandna.co.in';
     const [content, setContent] = useState('');
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<{uri: string, aspect: number}[]>([]);
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [selectedMusic, setSelectedMusic] = useState<any>(null);
@@ -39,6 +40,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 
     const YOUTUBE_API_KEY = 'AIzaSyB7wJ4Dl0-ClqgDwqrTLOJJYsAweo1QX5w';
     const [isAudioLoading, setIsAudioLoading] = useState(false);
+    const [postAspectRatio, setPostAspectRatio] = useState<number | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
     const scrollRef = useRef<ScrollView>(null);
 
@@ -63,7 +65,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 
     useEffect(() => {
         if (params.videoUri) {
-            setImages([params.videoUri]);
+            setImages([{ uri: params.videoUri, aspect: 1.777 }]); // Guessing 16:9 for param video
         }
         if (params.preSelectedMusic) {
             setSelectedMusic(params.preSelectedMusic);
@@ -196,12 +198,12 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
-            allowsEditing: false,
+            allowsMultipleSelection: true,
             quality: 0.8,
         });
 
         if (!result.canceled) {
-            setImages(prev => [...prev, ...result.assets.map(a => a.uri)]);
+            setImages(prev => [...prev, ...result.assets.map(a => ({ uri: a.uri, aspect: a.width / a.height }))]);
         }
     };
 
@@ -215,20 +217,72 @@ const CreatePostScreen = ({ navigation, route }: any) => {
             const formData = new FormData();
             formData.append('user_id', user?.id);
             formData.append('status', content);
-            if (selectedMusic || params.filterId) {
-                formData.append('link', JSON.stringify({
-                    id: selectedMusic?.id || '',
-                    title: selectedMusic?.title || '',
-                    artist: selectedMusic?.artist || '',
-                    thumbnail: selectedMusic?.thumbnail || '',
-                    music_url: selectedMusic?.file_url || '',
-                    startTime: startTime,
-                    duration: musicDuration,
-                    type: selectedMusic ? 'custom_music' : 'none',
-                    filterId: params.filterId || 'none'
+            if (selectedMusic || params.filterId || postAspectRatio) {
+                const linkData: any = {};
+                if (selectedMusic) {
+                    linkData.id = selectedMusic.id || '';
+                    linkData.title = selectedMusic.title || '';
+                    linkData.artist = selectedMusic.artist || '';
+                    linkData.thumbnail = selectedMusic.thumbnail || '';
+                    linkData.music_url = selectedMusic.file_url || '';
+                    linkData.startTime = startTime;
+                    linkData.duration = musicDuration;
+                    linkData.type = 'custom_music';
+                } else {
+                    linkData.type = 'none';
+                }
+                linkData.filterId = params.filterId || 'none';
+                if (postAspectRatio) {
+                    linkData.aspectRatio = postAspectRatio;
+                }
+                
+                formData.append('link', JSON.stringify(linkData));
+            }
+            // Process images if aspect ratio is selected
+            let finalImages = [...images.map(img => typeof img === 'string' ? img : img.uri)];
+            if (postAspectRatio) {
+                finalImages = await Promise.all(images.map(async (imgObj) => {
+                    const uri = typeof imgObj === 'string' ? imgObj : imgObj.uri;
+                    if (!uri) return '';
+                    if (uri.toLowerCase().endsWith('.mp4')) return uri; // Don't crop videos
+                    
+                    return new Promise<string>((resolve) => {
+                        Image.getSize(uri, async (w, h) => {
+                            const imgAspect = w / h;
+                            let cropOriginX = 0;
+                            let cropOriginY = 0;
+                            let cropWidth = w;
+                            let cropHeight = h;
+
+                            if (imgAspect > postAspectRatio) {
+                                // Image is wider than target aspect ratio (crop sides)
+                                cropWidth = Math.round(h * postAspectRatio);
+                                cropOriginX = Math.round((w - cropWidth) / 2);
+                            } else if (imgAspect < postAspectRatio) {
+                                // Image is taller than target aspect ratio (crop top/bottom)
+                                cropHeight = Math.round(w / postAspectRatio);
+                                cropOriginY = Math.round((h - cropHeight) / 2);
+                            } else {
+                                resolve(uri);
+                                return;
+                            }
+
+                            try {
+                                const manipResult = await ImageManipulator.manipulateAsync(
+                                    uri,
+                                    [{ crop: { originX: cropOriginX, originY: cropOriginY, width: cropWidth, height: cropHeight } }],
+                                    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+                                );
+                                resolve(manipResult.uri);
+                            } catch (e) {
+                                resolve(uri); // Fallback on failure
+                            }
+                        }, () => resolve(uri)); // Fallback if size fetch fails
+                    });
                 }));
             }
-            images.forEach((uri, index) => {
+
+            finalImages.forEach((uri, index) => {
                 const filename = uri.split('/').pop();
                 const match = /\.(\w+)$/.exec(filename || '');
                 let type = match ? `image/${match[1]}` : `image/jpeg`;
@@ -236,9 +290,9 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 formData.append('media[]', { uri, name: filename, type } as any);
             });
             
-            const thumbUri = images.length > 0 ? images[0] : null;
+            const thumbUri = finalImages.length > 0 ? finalImages[0] : null;
             
-            startUpload(formData, thumbUri);
+            startUpload('create_post.php', formData, thumbUri);
             
             navigation.goBack();
         } catch (error) {
@@ -424,27 +478,55 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 )}
 
                 {images.length > 0 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 80 }}>
-                        {images.map((img, index) => (
-                            <View key={index} style={styles.imageItemContainer}>
-                                {img.toLowerCase().endsWith('.mp4') ? (
-                                    <Video
-                                        source={{ uri: img }}
-                                        style={{ width: '100%', height: '100%' }}
-                                        resizeMode={ResizeMode.COVER}
-                                        shouldPlay={false}
-                                        useNativeControls
-                                        rate={recordingSpeed}
-                                        isMuted={false}
-                                        volume={1.0}
-                                    />
-                                ) : (
-                                    <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                                )}
-                                <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(index)}><Ionicons name="close" size={20} color="white" /></TouchableOpacity>
-                            </View>
-                        ))}
-                    </ScrollView>
+                    <View style={{ marginBottom: 24 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {images.map((imgObj, index) => {
+                                const img = typeof imgObj === 'string' ? imgObj : imgObj.uri;
+                                if (!img) return null;
+                                const currentAspect = postAspectRatio || (typeof imgObj === 'string' ? 1.33 : imgObj.aspect) || 1.33;
+                                return (
+                                <View key={index} style={[styles.imageItemContainer, { height: 256 / currentAspect }]}>
+                                    {img.toLowerCase().endsWith('.mp4') ? (
+                                        <Video
+                                            source={{ uri: img }}
+                                            style={{ width: '100%', height: '100%' }}
+                                            resizeMode={ResizeMode.COVER}
+                                            shouldPlay={false}
+                                            useNativeControls
+                                            rate={recordingSpeed}
+                                            isMuted={false}
+                                            volume={1.0}
+                                        />
+                                    ) : (
+                                        <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode={postAspectRatio ? "cover" : "contain"} />
+                                    )}
+                                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(index)}><Ionicons name="close" size={20} color="white" /></TouchableOpacity>
+                                </View>
+                            )})}
+                        </ScrollView>
+
+                        <View style={{ marginTop: 16 }}>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#6b7280', marginBottom: 8 }}>FRAME & ASPECT RATIO</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.frameBtn, postAspectRatio === 1 ? styles.frameBtnActive : null]}>
+                                    <Ionicons name="square-outline" size={20} color={postAspectRatio === 1 ? 'white' : '#4b5563'} />
+                                    <Text style={[styles.frameBtnText, postAspectRatio === 1 ? {color: 'white'} : null]}>1:1</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(0.8)} style={[styles.frameBtn, postAspectRatio === 0.8 ? styles.frameBtnActive : null]}>
+                                    <Ionicons name="tablet-portrait-outline" size={20} color={postAspectRatio === 0.8 ? 'white' : '#4b5563'} />
+                                    <Text style={[styles.frameBtnText, postAspectRatio === 0.8 ? {color: 'white'} : null]}>4:5</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(1.777)} style={[styles.frameBtn, postAspectRatio === 1.777 ? styles.frameBtnActive : null]}>
+                                    <Ionicons name="tablet-landscape-outline" size={20} color={postAspectRatio === 1.777 ? 'white' : '#4b5563'} />
+                                    <Text style={[styles.frameBtnText, postAspectRatio === 1.777 ? {color: 'white'} : null]}>16:9</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.frameBtn, postAspectRatio === null ? styles.frameBtnActive : null]}>
+                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? 'white' : '#4b5563'} />
+                                    <Text style={[styles.frameBtnText, postAspectRatio === null ? {color: 'white'} : null]}>Original</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </View>
+                    </View>
                 )}
             </ScrollView>
 
@@ -541,7 +623,10 @@ const styles = StyleSheet.create({
     searchItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
     searchThumbnail: { width: 56, height: 56, borderRadius: 12, marginRight: 16, backgroundColor: '#f3f4f6' },
     previewBtn: { marginRight: 12, padding: 8, borderRadius: 24 },
-    hiddenPreview: { height: 10, width: 10, position: 'absolute', bottom: -100, right: -100, zIndex: -1, opacity: 0.1 }
+    hiddenPreview: { height: 10, width: 10, position: 'absolute', bottom: -100, right: -100, zIndex: -1, opacity: 0.1 },
+    frameBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#e5e7eb' },
+    frameBtnActive: { backgroundColor: '#ea580c', borderColor: '#c2410c' },
+    frameBtnText: { marginLeft: 6, fontWeight: 'bold', color: '#4b5563', fontSize: 13 },
 });
 
 export default CreatePostScreen;

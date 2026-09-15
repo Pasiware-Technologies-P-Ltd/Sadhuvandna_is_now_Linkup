@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, Sty
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio } from 'expo-av';
+import Slider from '@react-native-community/slider';
 import { FlatList, ViewToken } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -150,6 +151,8 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const [paused, setPaused] = useState(false);
     const [soundReady, setSoundReady] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [position, setPosition] = useState(0);
     const [followStatus, setFollowStatus] = useState<string>('loading'); // loading, none, pending, accepted
     const tapCount = useRef<number>(0);
     const timer = useRef<any>(null);
@@ -467,11 +470,14 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                             isMuted={false} // Allow original audio to mix with music
                             onPlaybackStatusUpdate={(status: any) => {
                             if (status.isLoaded) {
+                                setPosition(status.positionMillis || 0);
+                                if (status.durationMillis && duration === 0) setDuration(status.durationMillis);
                                 if (status.isBuffering !== isBuffering) {
                                     setIsBuffering(status.isBuffering);
                                 }
                             }
                         }}
+                        progressUpdateIntervalMillis={500}
                         onError={(e) => {
                             console.error("[Reels Video] Error:", e, "URI:", fullVideoUri);
                         }}
@@ -499,7 +505,25 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                 )}
             </TouchableOpacity>
 
-            <View style={styles.bottomOverlay}>
+            {/* Always visible slider at bottom edge of video */}
+            {duration > 0 && active && (
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, justifyContent: 'center', zIndex: 10, backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                    <Slider
+                        style={{ width: '100%', height: 20 }}
+                        minimumValue={0}
+                        maximumValue={duration}
+                        value={position}
+                        minimumTrackTintColor="#ea580c"
+                        maximumTrackTintColor="rgba(255,255,255,0.4)"
+                        thumbTintColor="#ea580c"
+                        onSlidingComplete={(val) => {
+                            if (videoRef?.current) videoRef.current.setPositionAsync(val);
+                        }}
+                    />
+                </View>
+            )}
+
+            <View style={[styles.bottomOverlay, { paddingBottom: 25 }]}>
                 <TouchableOpacity style={styles.userInfo} onPress={() => onUserPress(item.user_id)}>
                     <Image
                         source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}

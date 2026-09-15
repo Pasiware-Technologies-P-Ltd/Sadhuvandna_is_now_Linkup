@@ -7,7 +7,7 @@ interface UploadContextType {
     isUploading: boolean;
     progress: number;
     thumbnail: string | null;
-    startUpload: (formData: FormData, thumbUri: string | null) => Promise<void>;
+    startUpload: (endpoint: string, formData: FormData, thumbUri: string | null) => Promise<void>;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -17,16 +17,19 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     const [progress, setProgress] = useState(0);
     const [thumbnail, setThumbnail] = useState<string | null>(null);
 
-    const startUpload = async (formData: FormData, thumbUri: string | null) => {
+    const startUpload = async (endpoint: string, formData: FormData, thumbUri: string | null) => {
         setIsUploading(true);
         setProgress(0);
         setThumbnail(thumbUri);
 
         try {
-            const response = await axios.post(`${UPLOAD_BASE_URL}create_post.php`, formData, {
+            const response = await axios.post(`${UPLOAD_BASE_URL}${endpoint}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                timeout: 0, // 0 means no timeout (infinite), let it take as long as it needs on slow networks
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
                 onUploadProgress: (progressEvent) => {
                     if (progressEvent.total) {
                         let percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -47,7 +50,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
                 }, 1000);
             } else {
                 setIsUploading(false);
-                Alert.alert("Error", response.data?.message || "Failed to share post");
+                Alert.alert("Error", response.data?.message || "Failed to upload");
             }
         } catch (error) {
             console.error("Upload Error:", error);

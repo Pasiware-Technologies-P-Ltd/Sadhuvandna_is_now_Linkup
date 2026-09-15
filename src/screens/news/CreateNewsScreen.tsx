@@ -3,9 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Video, ResizeMode } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
+import axios from 'axios';
 import api, { API_BASE_URL } from '../../services/api';
+import { useUpload } from '../../context/UploadContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CATEGORY_MAP = [
     { name: 'Breaking News', icon: '⚡' },
@@ -32,6 +37,10 @@ const CreateNewsScreen = ({ navigation }: any) => {
     const [mediaFiles, setMediaFiles] = useState<{ uri: string; type: 'image' | 'video' }[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [postAspectRatio, setPostAspectRatio] = useState<number | null>(null);
+    
+    const { startUpload } = useUpload();
+    const { language } = useLanguage();
 
     // State & District Selectors
     const [statesList, setStatesList] = useState<any[]>([]);
@@ -127,114 +136,161 @@ const CreateNewsScreen = ({ navigation }: any) => {
         setMediaFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    const generateAiNews = (keywords: string, cat: string) => {
+    const generateAiNews = (keywords: string, selectedCat: string, lang: string) => {
         const cleanKw = keywords.trim();
-        if (!cleanKw) {
+        const rand = Math.floor(Math.random() * 3);
+
+        if (lang === 'en') {
             return {
-                title: "ताज़ा अपडेट: " + cat,
-                description: `आज की विशेष खबर: ${cat} से संबंधित महत्वपूर्ण जानकारी आ रही है। विस्तृत रिपोर्ट का इंतज़ार है।`
+                title: `Breaking News: New updates on ${cleanKw}`,
+                description: `Recent reports have surfaced regarding ${cleanKw}. The situation is developing rapidly and authorities are monitoring the changes closely. Stay tuned for more detailed information as the story unfolds.`
+            };
+        } else if (lang === 'bn') {
+            return {
+                title: `ব্রেকিং নিউজ: ${cleanKw} নিয়ে নতুন আপডেট`,
+                description: `${cleanKw} সম্পর্কে নতুন তথ্য সামনে এসেছে। স্থানীয় প্রশাসন বিষয়টি গুরুত্বের সাথে দেখছে। এ বিষয়ে বিস্তারিত প্রতিবেদন খুব শীঘ্রই প্রকাশিত হবে।`
             };
         }
 
-        switch (cat) {
+        const intros = [
+            `हाल ही में सामने आई जानकारी के अनुसार,`,
+            `विश्वसनीय सूत्रों के हवाले से खबर है कि`,
+            `आज की सबसे बड़ी और अहम खबर यह है कि`
+        ];
+        const intro = intros[rand];
+
+        switch (selectedCat) {
             case 'Breaking News':
                 return {
-                    title: `बड़ी खबर: ${cleanKw} को लेकर आया नया अपडेट, लोगों में बढ़ी उत्सुकता`,
-                    description: `ताज़ा जानकारी के अनुसार, ${cleanKw} को लेकर एक बड़ी घोषणा हुई है। सूत्रों से मिली खबर के मुताबिक इस फैसले से क्षेत्र में काफी हलचल है। प्रशासन इस मामले पर पूरी निगरानी बनाए हुए है और जल्द ही विस्तृत ब्यौरा साझा किया जाएगा।`
+                    title: `बड़ी खबर: ${cleanKw} को लेकर आया नया अपडेट`,
+                    description: `${intro} ${cleanKw} को लेकर एक बड़ी घोषणा हुई है। इस फैसले से क्षेत्र में काफी हलचल है और जल्द ही विस्तृत ब्यौरा साझा किया जाएगा।`
                 };
             case 'National':
                 return {
-                    title: `देशहित: ${cleanKw} को लेकर केंद्र सरकार का बड़ा फैसला, राष्ट्रव्यापी प्रभाव की संभावना`,
-                    description: `देश भर में ${cleanKw} को लेकर चर्चाएं तेज हो गई हैं। केंद्र सरकार द्वारा जारी आधिकारिक बयान में इस कदम को ऐतिहासिक बताया गया है। सुरक्षा और विकास के दृष्टिकोण से यह फैसला बेहद महत्वपूर्ण माना जा रहा है।`
+                    title: `राष्ट्रीय स्तर पर बड़ा फैसला: ${cleanKw} को लेकर आई अहम खबर`,
+                    description: `${intro} ${cleanKw} को लेकर देश भर में चर्चाओं का बाज़ार गर्म है। केंद्र सरकार और संबंधित विभागों ने इस पर कड़ा रुख अपनाया है, जिससे भविष्य में बड़े बदलाव की उम्मीद की जा रही है।`
                 };
             case 'State':
                 return {
-                    title: `राज्य समाचार: ${cleanKw} पर मुख्यमंत्री ने बुलाई उच्च-स्तरीय बैठक, दिए सख्त निर्देश`,
-                    description: `राज्य सरकार ने ${cleanKw} की वर्तमान स्थिति को देखते हुए नए दिशा-निर्देश जारी किए हैं। अधिकारियों को काम में तेजी लाने के निर्देश दिए गए हैं ताकि जनता को समय पर राहत मिल सके। विपक्षी दलों ने भी इस मुद्दे पर प्रतिक्रिया दी है।`
+                    title: `राज्य ब्रेकिंग: ${cleanKw} पर मुख्यमंत्री कार्यालय का सख्त निर्देश`,
+                    description: `${intro} राज्य सरकार ने ${cleanKw} के संबंध में नई योजना और दिशा-निर्देशों की घोषणा की है। इस कदम से राज्य की जनता को सीधा लाभ पहुंचने की संभावना जताई जा रही है।`
                 };
             case 'District':
                 return {
-                    title: `जिला अपडेट: ${cleanKw} के संबंध में जिलाधिकारी ने जारी किया नया आदेश`,
-                    description: `हमारे स्थानीय प्रतिनिधि के अनुसार, जिला मुख्यालय में ${cleanKw} को लेकर प्रशासन मुस्तैद है। आम लोगों की समस्याओं को ध्यान में रखते हुए विशेष हेल्पलाइन और टीमों का गठन किया गया है। अधिकारियों ने नागरिकों से सहयोग की अपील की है।`
+                    title: `जिला विशेष: ${cleanKw} को लेकर प्रशासन अलर्ट, जारी किए आदेश`,
+                    description: `हमारे संवाददाता के अनुसार, जिले में ${cleanKw} का मुद्दा गरमाया हुआ है। जिला अधिकारी ने मामले का संज्ञान लेते हुए संबंधित अधिकारियों को तुरंत आवश्यक कार्रवाई करने के निर्देश दिए हैं।`
                 };
             case 'Politics':
                 return {
-                    title: `राजनीतिक हलचल: ${cleanKw} पर छिड़ा सियासी घमासान, नेताओं के बीच जुबानी जंग तेज`,
-                    description: `विधानसभा चुनावों से पहले ${cleanKw} का मुद्दा गरमा गया है। विभिन्न राजनीतिक दलों के प्रवक्ताओं ने एक-दूसरे पर गंभीर आरोप लगाए हैं। इस बहस के बाद जनता का रुख क्या होगा, यह आने वाला समय ही बताएगा।`
+                    title: `राजनीतिक सरगर्मी: ${cleanKw} पर नेताओं के बीच तीखी बहस`,
+                    description: `आगामी चुनावों को देखते हुए ${cleanKw} का मुद्दा राजनीति के केंद्र में आ गया है। विपक्षी दलों ने सरकार पर जमकर निशाना साधा है, वहीं सत्ता पक्ष ने इसे जनता के हित में उठाया गया कदम बताया है।`
                 };
             case 'Religion':
                 return {
-                    title: `धार्मिक आयोजन: ${cleanKw} को लेकर श्रद्धालुओं में भारी उत्साह, भव्य तैयारियां शुरू`,
-                    description: `आगामी त्योहार के अवसर पर ${cleanKw} से जुड़े धार्मिक स्थलों को सजाया जा रहा है। मंदिर ट्रस्ट और स्थानीय सेवा समितियों ने सुरक्षा और दर्शन के लिए विशेष प्रबंध किए हैं। संतों ने इस पावन अवसर पर शांति और सौहार्द का संदेश दिया है।`
+                    title: `धार्मिक आयोजन: ${cleanKw} के पावन पर्व पर उमड़ा आस्था का जनसैलाब`,
+                    description: `धार्मिक स्थलों पर ${cleanKw} को लेकर भव्य तैयारियां की गई हैं। दूर-दराज से आए श्रद्धालुओं ने पूजा-अर्चना कर देश में शांति और समृद्धि की कामना की। प्रशासन ने सुरक्षा के पुख्ता इंतजाम किए हैं।`
                 };
             case 'Education':
                 return {
-                    title: `शिक्षा जगत: ${cleanKw} परीक्षा परिणाम और नई गाइडलाइंस घोषित`,
-                    description: `विभाग द्वारा जारी प्रेस नोट के अनुसार ${cleanKw} से जुड़े नियमों में बड़े बदलाव किए गए हैं। छात्र-छात्राओं के हित को ध्यान में रखते हुए इस बार नई शिक्षण पद्धति को लागू किया जा रहा है। शिक्षकों ने इस फैसले का स्वागत किया है।`
+                    title: `शिक्षा जगत: ${cleanKw} को लेकर नई नीति लागू, छात्रों को मिलेगी राहत`,
+                    description: `शिक्षा विभाग ने ${cleanKw} से जुड़े अहम बदलावों को मंजूरी दे दी है। इस फैसले से लाखों छात्रों के भविष्य को नई दिशा मिलेगी। शिक्षक संघ ने भी सरकार के इस कदम की सराहना की है।`
                 };
             case 'Sports':
                 return {
-                    title: `खेल समाचार: ${cleanKw} प्रतियोगिता में रोमांचक मुकाबला, खिलाड़ियों ने दिखाया दम`,
-                    description: `आज आयोजित हुए फाइनल मैच में ${cleanKw} को लेकर जबरदस्त उत्साह देखने को मिला। दर्शकों की भारी भीड़ के बीच खिलाड़ियों ने उत्कृष्ट प्रदर्शन कर नया रिकॉर्ड बनाया। विजेता टीम को मुख्य अतिथि द्वारा पुरस्कृत किया गया।`
+                    title: `खेल समाचार: ${cleanKw} के रोमांचक मैच में बना नया रिकॉर्ड`,
+                    description: `खचाखच भरे स्टेडियम में ${cleanKw} को लेकर दर्शकों में गजब का उत्साह दिखा। खिलाड़ियों ने शानदार प्रदर्शन करते हुए न सिर्फ मैच जीता, बल्कि कई पुराने रिकॉर्ड भी ध्वस्त कर दिए।`
                 };
             case 'Business':
                 return {
-                    title: `कारोबार: ${cleanKw} में भारी उछाल, बाजार में व्यापारियों के चेहरे खिले`,
-                    description: `आर्थिक विश्लेषकों का मानना है कि ${cleanKw} के चलते आने वाले दिनों में बाजार की स्थिति और सुधरेगी। नए निवेश और ग्राहकों की मांग बढ़ने से खुदरा और थोक व्यापारियों को अच्छा मुनाफा होने की उम्मीद है।`
+                    title: `व्यापार व अर्थव्यवस्था: ${cleanKw} से शेयर बाजार में हलचल`,
+                    description: `आर्थिक विशेषज्ञों के मुताबिक ${cleanKw} का असर सीधे तौर पर बाजार पर देखने को मिल रहा है। नए निवेश और योजनाओं के चलते व्यापारियों और निवेशकों के बीच उम्मीद की एक नई लहर दौड़ गई है।`
                 };
             case 'Agriculture':
                 return {
-                    title: `कृषि चौपाल: ${cleanKw} को लेकर वैज्ञानिकों ने जारी की नई सलाह, किसानों के लिए वरदान`,
-                    description: `उन्नत खेती और पैदावार बढ़ाने के लिए ${cleanKw} पर कृषि विभाग ने जागरूकता शिविर का आयोजन किया। वैज्ञानिकों ने फसलों की सुरक्षा और जैविक खादों के उपयोग पर किसानों के सवालों के लाइव जवाब दिए।`
+                    title: `कृषि अपडेट: ${cleanKw} को लेकर किसानों के लिए नई सौगात`,
+                    description: `किसानों की आय बढ़ाने और आधुनिक खेती को बढ़ावा देने के लिए ${cleanKw} पर कृषि विभाग ने नई योजना पेश की है। इससे बीज और खाद की उपलब्धता में सुधार होने की उम्मीद है।`
                 };
             case 'Entertainment':
                 return {
-                    title: `मनोरंजन: ${cleanKw} का धमाकेदार टीज़र रिलीज़, फैन्स ने सोशल मीडिया पर मचाया तहलका`,
-                    description: `दर्शकों की उत्सुकता को बढ़ाते हुए मेकर्स ने ${cleanKw} की पहली झलक पेश कर दी है। टीज़र में बेहतरीन एक्शन और डायलॉग्स की भरमार है। फैंस सिनेमाघरों में इसके आने का बेसब्री से इंतज़ार कर रहे हैं।`
+                    title: `मनोरंजन की दुनिया: ${cleanKw} को लेकर फैंस में जबरदस्त क्रेज`,
+                    description: `सोशल मीडिया पर ${cleanKw} लगातार ट्रेंड कर रहा है। मेकर्स और सितारों ने दर्शकों के लिए कुछ खास पेश किया है, जिसे देखकर फैंस सिनेमाघरों की ओर खिंचे चले आ रहे हैं।`
                 };
             case 'Social':
                 return {
-                    title: `सामाजिक सरोकार: ${cleanKw} अभियान में जुटीं स्वयंसेवी संस्थाएं, लोगों की मदद की गुहार`,
-                    description: `समाज कल्याण के अंतर्गत ${cleanKw} को बढ़ावा देने के लिए एक विशाल सभा का आयोजन किया गया। वक्ताओं ने समाज के सभी वर्गों से इसमें आगे आकर हिस्सा लेने का आग्रह किया ताकि ज़रूरतमंदों तक मदद पहुंचाई जा सके।`
+                    title: `सामाजिक जागरूकता: ${cleanKw} अभियान में लोगों ने बढ़-चढ़कर लिया हिस्सा`,
+                    description: `समाज को बेहतर बनाने के उद्देश्य से ${cleanKw} पर एक विशाल रैली का आयोजन किया गया। विभिन्न स्वयंसेवी संस्थाओं और स्थानीय लोगों ने मिलकर इसे सफल बनाने का संकल्प लिया।`
                 };
             case 'Accident':
                 return {
-                    title: `सड़क हादसा: ${cleanKw} के पास भीषण टक्कर, राहत और बचाव कार्य जारी`,
-                    description: `आज सुबह ${cleanKw} के समीप एक वाहन अनियंत्रित होकर पलट गया। हादसे में घायलों को तुरंत पास के अस्पताल में भर्ती कराया गया है। पुलिस ने मामला दर्ज कर जांच शुरू कर दी है और यातायात बहाल कर दिया गया है।`
+                    title: `दर्दनाक हादसा: ${cleanKw} के पास भीषण दुर्घटना, कई घायल`,
+                    description: `आज सुबह ${cleanKw} के समीप एक वाहन अनियंत्रित होकर हादसे का शिकार हो गया। स्थानीय लोगों और पुलिस की मदद से घायलों को अस्पताल पहुंचाया गया। हादसे के कारणों की जांच जारी है।`
                 };
             case 'Obituary/Tribute':
                 return {
-                    title: `श्रद्धांजलि: ${cleanKw} का निधन, क्षेत्र में शोक की लहर`,
-                    description: `अत्यंत दुख के साथ सूचित किया जाता है कि ${cleanKw} अब हमारे बीच नहीं रहे। उनके निधन पर सामाजिक और राजनीतिक संगठनों के प्रतिनिधियों ने गहरा शोक व्यक्त किया है। ईश्वर उनकी आत्मा को शांति प्रदान करे।`
+                    title: `शोक संदेश: ${cleanKw} का आकस्मिक निधन, क्षेत्र में मातम`,
+                    description: `समाज के एक प्रतिष्ठित चेहरे ${cleanKw} ने आज अंतिम सांस ली। उनके निधन की खबर से पूरे इलाके में शोक की लहर दौड़ गई है। उनके किए गए सामाजिक कार्यों को हमेशा याद रखा जाएगा।`
                 };
             case 'Advertisement':
                 return {
-                    title: `विशेष सेल: ${cleanKw} पर पाएं धमाकेदार छूट, सीमित समय के लिए ऑफर`,
-                    description: `ग्राहकों के लिए सुनहरा मौका! ${cleanKw} की खरीद पर अब आपको मिल रहा है बंपर डिस्काउंट और शानदार उपहार। आज ही अपने नजदीकी स्टोर पर पधारें या ऑनलाइन ऑर्डर करें। स्टॉक सीमित है!`
+                    title: `विशेष ऑफर: ${cleanKw} पर मिल रही है बंपर छूट, मौका हाथ से न जाने दें`,
+                    description: `क्या आप बेहतरीन डील की तलाश में हैं? ${cleanKw} पर अब तक का सबसे बड़ा डिस्काउंट मिल रहा है। यह सेल सिर्फ सीमित समय के लिए है, तो आज ही अपनी पसंदीदा चीजें घर लाएं।`
                 };
             default:
                 return {
-                    title: `विशेष रिपोर्ट: ${cleanKw} को लेकर नई जानकारियां सामने आईं`,
-                    description: `${cleanKw} के बारे में ताजा अपडेट सामने आया है। इस घटनाक्रम से जुड़ी अन्य महत्वपूर्ण बातें जल्द ही मुख्य समाचार बुलेटिन में दिखाई जाएंगी।`
+                    title: `विशेष रिपोर्ट: ${cleanKw} के बारे में ताजा अपडेट`,
+                    description: `${intro} ${cleanKw} को लेकर कुछ नई जानकारियां सामने आई हैं। हमारी टीम इस पूरी खबर पर पैनी नजर बनाए हुए है और जल्द ही विस्तृत रिपोर्ट पेश करेगी।`
                 };
         }
     };
 
-    const handleAiGenerate = () => {
+    const handleAiGenerate = async () => {
         if (!aiKeywords.trim()) {
             Alert.alert("Keywords Required", "Please enter a few keywords first.");
             return;
         }
         setGenerating(true);
-        setTimeout(() => {
-            const draft = generateAiNews(aiKeywords, category);
-            setGenerating(false);
+
+        const langMap: Record<string, string> = { 'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali' };
+        const targetLang = langMap[language] || 'Hindi';
+
+        // ⚠️ Replace this with your actual Gemini API Key
+        const GEMINI_API_KEY = ""; 
+
+        try {
+            if (!GEMINI_API_KEY) {
+                throw new Error("No API Key");
+            }
+
+            const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
+            
+            const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                contents: [{ parts: [{ text: prompt }] }]
+            });
+            
+            const text = response.data.candidates[0].content.parts[0].text;
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const data = JSON.parse(jsonStr);
+            
+            setTitle(data.title);
+            setDescription(data.description);
+            setAiModalVisible(false);
+            setAiKeywords('');
+            Alert.alert("Draft Applied", "News generated successfully by Gemini AI!");
+        } catch (error) {
+            console.log("Gemini generation failed, using local fallback", error);
+            const draft = generateAiNews(aiKeywords, category, language);
             setTitle(draft.title);
             setDescription(draft.description);
             setAiModalVisible(false);
             setAiKeywords('');
-            Alert.alert("Draft Applied", "AI news title and description populated successfully!");
-        }, 1500);
+            if (GEMINI_API_KEY) {
+                Alert.alert("Notice", "Gemini API failed, used local generator instead.");
+            } else {
+                Alert.alert("Notice", "API key missing. Used local generator instead. Add your Gemini API key in code!");
+            }
+        } finally {
+            setGenerating(false);
+        }
     };
 
     const handleScroll = (event: any, setScrolledState: (val: boolean) => void) => {
@@ -261,18 +317,66 @@ const CreateNewsScreen = ({ navigation }: any) => {
         try {
             const formData = new FormData();
             formData.append('title', title);
-            formData.append('description', description);
+            
+            // Append hidden tag if we have an aspect ratio
+            let finalDescription = description;
+            if (postAspectRatio) {
+                finalDescription = `${description}\n[aspect:${postAspectRatio}]`;
+            }
+            formData.append('description', finalDescription);
+            
             formData.append('category', category);
             formData.append('state', selectedState);
             formData.append('district', selectedDistrict);
             if (currentUserId) formData.append('user_id', currentUserId);
 
-            mediaFiles.forEach((file, index) => {
+            const finalImages = await Promise.all(mediaFiles.map(async (file) => {
                 let fileUri = file.uri;
                 if (Platform.OS === 'android' && !fileUri.startsWith('file://') && !fileUri.startsWith('content://')) {
                     fileUri = `file://${fileUri}`;
                 }
-                const filename = fileUri.split('/').pop()?.split('?')[0] || `news_media_${index}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
+
+                // If it's a video or we don't have an aspect ratio, just return original
+                if (file.type === 'video' || !postAspectRatio) {
+                    return { uri: fileUri, type: file.type };
+                }
+
+                // Crop image
+                return new Promise<{uri: string, type: string}>((resolve) => {
+                    Image.getSize(fileUri, async (w, h) => {
+                        const imgAspect = w / h;
+                        let cropOriginX = 0;
+                        let cropOriginY = 0;
+                        let cropWidth = w;
+                        let cropHeight = h;
+
+                        if (imgAspect > postAspectRatio) {
+                            cropWidth = Math.round(h * postAspectRatio);
+                            cropOriginX = Math.round((w - cropWidth) / 2);
+                        } else if (imgAspect < postAspectRatio) {
+                            cropHeight = Math.round(w / postAspectRatio);
+                            cropOriginY = Math.round((h - cropHeight) / 2);
+                        } else {
+                            resolve({ uri: fileUri, type: file.type });
+                            return;
+                        }
+
+                        try {
+                            const manipResult = await ImageManipulator.manipulateAsync(
+                                fileUri,
+                                [{ crop: { originX: cropOriginX, originY: cropOriginY, width: cropWidth, height: cropHeight } }],
+                                { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+                            );
+                            resolve({ uri: manipResult.uri, type: file.type });
+                        } catch (e) {
+                            resolve({ uri: fileUri, type: file.type });
+                        }
+                    }, () => resolve({ uri: fileUri, type: file.type }));
+                });
+            }));
+
+            finalImages.forEach((file, index) => {
+                const filename = file.uri.split('/').pop()?.split('?')[0] || `news_media_${index}.${file.type === 'video' ? 'mp4' : 'jpg'}`;
                 const match = /\.(\w+)$/.exec(filename);
                 let type = '';
                 if (file.type === 'video') {
@@ -281,37 +385,20 @@ const CreateNewsScreen = ({ navigation }: any) => {
                     type = match ? `image/${match[1]}` : `image/jpeg`;
                 }
                 formData.append('media[]', {
-                    uri: fileUri,
+                    uri: file.uri,
                     name: filename,
                     type
                 } as any);
             });
 
-            const cleanBase = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
-            const uploadUrl = `${cleanBase}create_news.php`;
-            console.log('[CreateNews] Posting news via fetch to:', uploadUrl);
-
-            const response = await fetch(uploadUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                },
-            });
-
-            const resData = await response.json();
-            console.log('[CreateNews] Server response:', resData);
-
-            if (resData && resData.status === 'success') {
-                Alert.alert("Success", "News posted successfully!", [
-                    { text: "OK", onPress: () => navigation.goBack() }
-                ]);
-            } else {
-                Alert.alert("Error", resData.message || "Failed to post news.");
-            }
+            const thumbUri = finalImages.length > 0 ? finalImages[0].uri : null;
+            startUpload('create_news.php', formData, thumbUri);
+            
+            Alert.alert("Success", "News is posting in the background!");
+            navigation.goBack();
         } catch (error: any) {
             console.error('[CreateNews] Error posting news:', error);
-            Alert.alert("Error", "Network request failed: " + (error?.message || "Please try again."));
+            Alert.alert("Error", "Failed to prepare news upload: " + (error?.message || "Please try again."));
         } finally {
             setLoading(false);
         }
@@ -348,19 +435,17 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 <Text style={styles.sectionTitle}>News Media (Photos & Videos)</Text>
 
                 {/* Dotted upload container */}
-                <TouchableOpacity 
-                    onPress={pickMedia} 
+                <View 
                     style={[
                         styles.uploadPlaceholder, 
                         mediaFiles.length > 0 ? styles.uploadPlaceholderWithImages : {}
                     ]}
-                    activeOpacity={0.8}
                 >
                     {mediaFiles.length === 0 ? (
-                        <View style={styles.uploadPlaceholderInner}>
+                        <TouchableOpacity onPress={pickMedia} style={styles.uploadPlaceholderInner} activeOpacity={0.8}>
                             <Ionicons name="cloud-upload-outline" size={44} color="#9ca3af" />
                             <Text style={styles.uploadText}>Tap to select news images or videos</Text>
-                        </View>
+                        </TouchableOpacity>
                     ) : (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewsScroll}>
                             {mediaFiles.map((file, index) => (
@@ -387,13 +472,41 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             ))}
                         </ScrollView>
                     )}
-                </TouchableOpacity>
+                </View>
 
                 {/* Choose Files Button */}
                 <TouchableOpacity onPress={pickMedia} style={styles.chooseFilesBtn}>
                     <Ionicons name="cloud-upload-outline" size={18} color="#4b5563" />
                     <Text style={styles.chooseFilesText}>Choose Photos & Videos</Text>
                 </TouchableOpacity>
+
+                {/* Aspect Ratio / Frame Selection */}
+                {mediaFiles.length > 0 && (
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>Select Frame</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                            <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.aspectBtn, postAspectRatio === null && styles.aspectBtnSelected]}>
+                                <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? '#ea580c' : '#6b7280'} />
+                                <Text style={[styles.aspectBtnText, postAspectRatio === null && { color: '#ea580c', fontWeight: 'bold' }]}>Original</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.aspectBtn, postAspectRatio === 1 && styles.aspectBtnSelected]}>
+                                <View style={[styles.aspectIcon, { width: 18, height: 18, borderColor: postAspectRatio === 1 ? '#ea580c' : '#6b7280' }]} />
+                                <Text style={[styles.aspectBtnText, postAspectRatio === 1 && { color: '#ea580c', fontWeight: 'bold' }]}>1:1</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setPostAspectRatio(4 / 5)} style={[styles.aspectBtn, postAspectRatio === 4 / 5 && styles.aspectBtnSelected]}>
+                                <View style={[styles.aspectIcon, { width: 16, height: 20, borderColor: postAspectRatio === 4 / 5 ? '#ea580c' : '#6b7280' }]} />
+                                <Text style={[styles.aspectBtnText, postAspectRatio === 4 / 5 && { color: '#ea580c', fontWeight: 'bold' }]}>4:5</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setPostAspectRatio(16 / 9)} style={[styles.aspectBtn, postAspectRatio === 16 / 9 && styles.aspectBtnSelected]}>
+                                <View style={[styles.aspectIcon, { width: 22, height: 12, borderColor: postAspectRatio === 16 / 9 ? '#ea580c' : '#6b7280' }]} />
+                                <Text style={[styles.aspectBtnText, postAspectRatio === 16 / 9 && { color: '#ea580c', fontWeight: 'bold' }]}>16:9</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 6, fontStyle: 'italic' }}>
+                            Frames keep your post looking consistent. Videos will automatically crop.
+                        </Text>
+                    </View>
+                )}
 
                 {/* Category Selector */}
                 <View style={styles.formGroup}>
@@ -436,7 +549,6 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                         handleStateChange('', '');
                                     }
                                 }}
-                                style={{ height: 50 }}
                             >
                                 <Picker.Item label="Select State" value="" />
                                 {statesList.map((st, idx) => (
@@ -452,7 +564,6 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                     <Picker
                                         selectedValue={selectedDistrict}
                                         onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
-                                        style={{ height: 50 }}
                                         enabled={districtsList.length > 0}
                                     >
                                         <Picker.Item label="Select District" value="" />
@@ -930,14 +1041,18 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         overflow: 'hidden',
     },
+    uploadPlaceholderInner: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        width: '100%',
+    },
     uploadPlaceholderWithImages: {
         borderStyle: 'solid',
         borderColor: '#e5e7eb',
         height: 120,
     },
-    uploadPlaceholderInner: {
-        alignItems: 'center',
-    },
+
     uploadText: {
         color: '#6b7280',
         fontSize: 13,
@@ -1066,6 +1181,30 @@ const styles = StyleSheet.create({
     },
     categoryBadgeTextSelected: {
         color: 'white',
+    },
+    aspectBtn: {
+        flex: 1,
+        height: 60,
+        borderRadius: 12,
+        backgroundColor: '#f9fafb',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6
+    },
+    aspectBtnSelected: {
+        backgroundColor: '#fff7ed',
+        borderColor: '#ea580c'
+    },
+    aspectIcon: {
+        borderWidth: 2,
+        borderRadius: 2
+    },
+    aspectBtnText: {
+        fontSize: 12,
+        color: '#6b7280',
+        fontWeight: '600'
     },
 });
 

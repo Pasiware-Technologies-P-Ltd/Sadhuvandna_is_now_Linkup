@@ -5,7 +5,7 @@ const PROD_URL = 'https://www.sadhuvandna.co.in/Api/';
 const LOCAL_URL = 'http://192.168.1.10:8000/';
 
 // Auto-toggle between Production and Local
-export const API_BASE_URL =  PROD_URL;
+export const API_BASE_URL = __DEV__ ? LOCAL_URL : PROD_URL;
 export const UPLOAD_BASE_URL = PROD_URL;
 export const WEBSITE_URL = 'https://www.sadhuvandna.co.in';
 
@@ -24,7 +24,7 @@ export const getFullPaymentUrl = (paymentUrl: string): string => {
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000, // Increased timeout to 30s for slower server responses
+    timeout: 300000, // Increased timeout to 5 minutes for slower server responses/networks
 });
 
 // Request Interceptor for logging

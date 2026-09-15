@@ -48,3 +48,5 @@
 2026-09-12 17:12:22 | User: 1391 | Token: ExponentPushToken[EmelznGe-nkpFUSXfpfq3r] | Status: 200 | Error:  | Resp: {"data":{"status":"ok","id":"01a0956c-fbdd-7798-8b05-6a2270db06cb"}}
 2026-09-12 17:25:55 | User: 1768 | Token: ExponentPushToken[BtGr2cG126B52eJCB-wCHF] | Status: 200 | Error:  | Resp: {"data":{"status":"ok","id":"01a09579-6066-7709-a90d-8d8c48f6e9b5"}}
 2026-09-12 12:06:58 | User: 1 | Token: ExponentPushToken[f5GsceDnGdCdDI-cQCcD3U] | Status: 200 | Error:  | Resp: {"data":{"status":"ok","id":"01a09583-7e78-74f7-9c12-d83c1aa9e88c"}}
+2026-09-15 11:14:40 | User: 124 | Skip Push (Invalid Token): 
+2026-09-15 17:44:38 | User: 1 | Token: ExponentPushToken[vtG0_XNh17_L6DqyjzMno6] | Status: 200 | Error:  | Resp: {"data":{"status":"ok","id":"01a0a4fd-9ada-7749-ba81-6a84f509d75b"}}

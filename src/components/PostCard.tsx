@@ -7,6 +7,8 @@ import { Picker } from '@react-native-picker/picker';
 import PostImage from './PostImage';
 import { WEBSITE_URL, API_BASE_URL } from '../services/api';
 import { Video, ResizeMode, Audio } from 'expo-av';
+import Slider from '@react-native-community/slider';
+import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
@@ -84,8 +86,9 @@ const cardWidth = width - 24;
 const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
-const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBuffering, poster }: any) => {
+const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBuffering, poster, aspectRatio }: any) => {
     const [duration, setDuration] = useState(0);
+    const [position, setPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     const formatTime = (millis: number) => {
@@ -121,7 +124,7 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
     }, []);
 
     return (
-        <View style={{ width: '100%', aspectRatio: 9 / 16, backgroundColor: 'black' }}>
+        <View style={{ width: '100%', aspectRatio: aspectRatio || 9 / 16, backgroundColor: 'black' }}>
             <Video
                 ref={forwardedRef}
                 source={{ uri }}
@@ -136,10 +139,11 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
                 posterStyle={{ resizeMode: ResizeMode.COVER }}
                 onPlaybackStatusUpdate={(status: any) => {
                     if (status.isLoaded) {
+                        setPosition(status.positionMillis || 0);
                         if (onBuffering) onBuffering(status.isBuffering);
                     }
                 }}
-                progressUpdateIntervalMillis={2000}
+                progressUpdateIntervalMillis={500}
                 onLoadStart={() => {
                     if (onBuffering) onBuffering(true);
                     setError(null);
@@ -164,8 +168,23 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
                 </View>
             )}
             {duration > 0 && (
-                <View style={styles.videoDuration}>
-                    <Text style={styles.videoDurationText}>{formatTime(duration)}</Text>
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 10, paddingBottom: 15, paddingTop: 10, backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <Slider
+                        style={{ width: '100%', height: 20 }}
+                        minimumValue={0}
+                        maximumValue={duration}
+                        value={position}
+                        minimumTrackTintColor="#ea580c"
+                        maximumTrackTintColor="rgba(255,255,255,0.5)"
+                        thumbTintColor="#ea580c"
+                        onSlidingComplete={(val) => {
+                            if (forwardedRef?.current) forwardedRef.current.setPositionAsync(val);
+                        }}
+                    />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, marginTop: -5 }}>
+                        <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(position)}</Text>
+                        <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(duration)}</Text>
+                    </View>
                 </View>
             )}
         </View>
@@ -373,6 +392,7 @@ const PostCard = ({
         return null;
     }, [post.link]);
 
+    const postAspectRatio = musicData?.aspectRatio ? Number(musicData.aspectRatio) : undefined;
     const hasMusic = !!(musicData && (musicData.type === 'youtube_music' || musicData.type === 'custom_music'));
 
     // Combine local shouldPlay with screen focus
@@ -498,17 +518,50 @@ const PostCard = ({
             }
             
             const uri = mediaList[0];
-            const filename = uri.split('/').pop() || 'download.jpg';
+            const isVid = isVideo(uri);
+            const filename = uri.split('/').pop() || (isVid ? 'download.mp4' : 'download.jpg');
             const fileUri = FileSystem.documentDirectory + filename;
 
             // Simple loading toast
-            Alert.alert("Downloading...", "Please wait...");
+            Alert.alert("Downloading...", isVid ? "Adding watermark, please wait..." : "Please wait...");
 
             const downloadedFile = await FileSystem.downloadAsync(uri, fileUri);
 
             if (downloadedFile.status === 200) {
+                let finalUri = downloadedFile.uri;
+
+                if (isVid) {
+                    try {
+                        const outUri = FileSystem.documentDirectory + 'watermarked_' + filename;
+                        const logoPath = FileSystem.documentDirectory + 'logo.png';
+                        
+                        // Ensure logo exists
+                        const logoInfo = await FileSystem.getInfoAsync(logoPath);
+                        if (!logoInfo.exists) {
+                            await FileSystem.downloadAsync(`${WEBSITE_URL}/logo.png`, logoPath);
+                        }
+                        
+                        const username = post.user?.name || 'User';
+                        const safeUsername = username.replace(/'/g, "").replace(/:/g, ""); // strip quotes and colons for ffmpeg safety
+                        
+                        // Command to overlay logo (scaled to width 80) at top-left and drawtext below it
+                        const command = `-y -i ${downloadedFile.uri} -i ${logoPath} -filter_complex "[1:v]scale=80:-1[logo];[0:v][logo]overlay=20:20,drawtext=text='@${safeUsername}':fontcolor=white:fontsize=h/30:x=20:y=110:shadowcolor=black:shadowx=2:shadowy=2" -c:a copy ${outUri}`;
+                        
+                        const session = await FFmpegKit.execute(command);
+                        const returnCode = await session.getReturnCode();
+                        
+                        if (ReturnCode.isSuccess(returnCode)) {
+                            finalUri = outUri;
+                        } else {
+                            console.warn("FFmpeg failed, falling back to original video");
+                        }
+                    } catch (err) {
+                        console.error("FFmpeg execution error", err);
+                    }
+                }
+
                 if (await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(downloadedFile.uri, {
+                    await Sharing.shareAsync(finalUri, {
                         dialogTitle: 'Save or Share Post Media',
                     });
                 } else {
@@ -791,7 +844,7 @@ const PostCard = ({
                         scrollEventThrottle={16}
                     >
                         {mediaList.map((uri, index) => (
-                            <View key={index} style={{ width: cardWidth, aspectRatio: isVideo(uri) ? 9 / 16 : undefined, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
+                            <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
                                 {isVideo(uri) ? (
                                     <TouchableOpacity
                                         activeOpacity={0.95}
@@ -806,6 +859,7 @@ const PostCard = ({
                                             onReady={() => setVideoReady(true)}
                                             onBuffering={setIsBuffering}
                                             isMuted={musicMuted}
+                                            aspectRatio={postAspectRatio}
                                         />
                                         {isBuffering && (
                                             <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -814,7 +868,7 @@ const PostCard = ({
                                         )}
                                     </TouchableOpacity>
                                 ) : (
-                                    <PostImage uri={uri} />
+                                    <PostImage uri={uri} forcedAspect={postAspectRatio} />
                                 )}
                             </View>
                         ))}
