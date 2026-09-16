@@ -8,7 +8,7 @@ import PostImage from './PostImage';
 import { WEBSITE_URL, API_BASE_URL } from '../services/api';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
-import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
+import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
@@ -168,23 +168,25 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
                 </View>
             )}
             {duration > 0 && (
-                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 10, paddingBottom: 15, paddingTop: 10, backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: !shouldPlay ? 'rgba(0,0,0,0.3)' : 'transparent', paddingTop: !shouldPlay ? 10 : 0 }}>
                     <Slider
-                        style={{ width: '100%', height: 20 }}
+                        style={{ width: '100%', height: 20, transform: [{ scaleY: !shouldPlay ? 1 : 0.5 }] }}
                         minimumValue={0}
                         maximumValue={duration}
                         value={position}
                         minimumTrackTintColor="#ea580c"
                         maximumTrackTintColor="rgba(255,255,255,0.5)"
-                        thumbTintColor="#ea580c"
+                        thumbTintColor={!shouldPlay ? "#ea580c" : "transparent"}
                         onSlidingComplete={(val) => {
                             if (forwardedRef?.current) forwardedRef.current.setPositionAsync(val);
                         }}
                     />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, marginTop: -5 }}>
-                        <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(position)}</Text>
-                        <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(duration)}</Text>
-                    </View>
+                    {!shouldPlay && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, marginTop: -5, paddingBottom: 10 }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(position)}</Text>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>{formatTime(duration)}</Text>
+                        </View>
+                    )}
                 </View>
             )}
         </View>
@@ -348,6 +350,7 @@ const PostCard = ({
     const [reportCategory, setReportCategory] = useState('Child Safety Concern');
     const [reportReason, setReportReason] = useState('');
     const [reporting, setReporting] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const submitReport = async () => {
         if (!reportReason.trim()) {
@@ -483,6 +486,10 @@ const PostCard = ({
 
     const handleShare = async () => {
         try {
+            if (mediaList && mediaList.length > 0 && isVideo(mediaList[0])) {
+                // If it's a video, process and share the video file directly
+                return handleDownloadPost();
+            }
             const postUrl = `${WEBSITE_URL}/view_post.php?id=${post.id}`;
             const message = `Check out this post by ${post.user.name} on Sadhu Vandana:\n\n"${post.content?.substring(0, 150)}${post.content && post.content.length > 150 ? '...' : ''}"\n\nOpen in App: ${postUrl}`;
             await Share.share({ message, url: postUrl });
@@ -522,8 +529,10 @@ const PostCard = ({
             const filename = uri.split('/').pop() || (isVid ? 'download.mp4' : 'download.jpg');
             const fileUri = FileSystem.documentDirectory + filename;
 
-            // Simple loading toast
-            Alert.alert("Downloading...", isVid ? "Adding watermark, please wait..." : "Please wait...");
+            // Simple non-blocking loading toast
+            if (require('react-native').Platform.OS === 'android') {
+                require('react-native').ToastAndroid.show("Preparing video...", require('react-native').ToastAndroid.SHORT);
+            }
 
             const downloadedFile = await FileSystem.downloadAsync(uri, fileUri);
 
@@ -533,19 +542,39 @@ const PostCard = ({
                 if (isVid) {
                     try {
                         const outUri = FileSystem.documentDirectory + 'watermarked_' + filename;
-                        const logoPath = FileSystem.documentDirectory + 'logo.png';
-                        
-                        // Ensure logo exists
-                        const logoInfo = await FileSystem.getInfoAsync(logoPath);
-                        if (!logoInfo.exists) {
-                            await FileSystem.downloadAsync(`${WEBSITE_URL}/logo.png`, logoPath);
-                        }
-                        
+                        const logoPath = FileSystem.documentDirectory + 'watermark_logo_v3.png';
                         const username = post.user?.name || 'User';
                         const safeUsername = username.replace(/'/g, "").replace(/:/g, ""); // strip quotes and colons for ffmpeg safety
+                        const textPath = FileSystem.documentDirectory + 'watermark_text_' + safeUsername + '.png';
                         
-                        // Command to overlay logo (scaled to width 80) at top-left and drawtext below it
-                        const command = `-y -i ${downloadedFile.uri} -i ${logoPath} -filter_complex "[1:v]scale=80:-1[logo];[0:v][logo]overlay=20:20,drawtext=text='@${safeUsername}':fontcolor=white:fontsize=h/30:x=20:y=110:shadowcolor=black:shadowx=2:shadowy=2" -c:a copy ${outUri}`;
+                        // Ensure logo exists (using new filename to bypass corrupt cached file)
+                        const logoInfo = await FileSystem.getInfoAsync(logoPath);
+                        if (!logoInfo.exists) {
+                            try {
+                                const logoAssetUrl = Image.resolveAssetSource(require('../../assets/logo.png')).uri;
+                                await FileSystem.downloadAsync(logoAssetUrl, logoPath);
+                            } catch (e) {
+                                console.error("Could not load local logo asset:", e);
+                            }
+                        }
+
+                        // Download the username text image
+                        try {
+                            const encodedText = encodeURIComponent('@' + safeUsername);
+                            const textUrl = `https://placehold.co/400x100/transparent/white.png?text=${encodedText}&font=roboto`;
+                            await FileSystem.downloadAsync(textUrl, textPath);
+                        } catch (e) {
+                            console.error("Could not load text image:", e);
+                        }
+                        
+                        let command = '';
+                        if (isVid) {
+                            // Command to overlay logo and text with Instagram-like corner swapping animation (same row, transparent logo background)
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-195)':y='if(lt(mod(t,6),3),20,H-60)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),45,W-170)':y='if(lt(mod(t,6),3),24,H-56)'" -c:a copy "${outUri}"`;
+                        } else {
+                            // Static overlay for images (bottom right)
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=W-195:H-60[v1];[v1][txt]overlay=W-170:H-56" "${outUri}"`;
+                        }
                         
                         const session = await FFmpegKit.execute(command);
                         const returnCode = await session.getReturnCode();
@@ -554,6 +583,8 @@ const PostCard = ({
                             finalUri = outUri;
                         } else {
                             console.warn("FFmpeg failed, falling back to original video");
+                            const logs = await session.getLogsAsString();
+                            console.error("FFmpeg Error Logs:", logs);
                         }
                     } catch (err) {
                         console.error("FFmpeg execution error", err);
@@ -697,7 +728,28 @@ const PostCard = ({
             {/* Content Body */}
             <View style={styles.contentBody}>
                 {post.content ? (
-                    <View>{renderContent(post.content)}</View>
+                    <View style={{ marginBottom: 8 }}>
+                        {(() => {
+                            const shouldTruncate = post.content.length > 100 || (post.content.match(/\n/g) || []).length > 2;
+                            return (
+                                <>
+                                    <Text
+                                        style={[styles.contentText, { lineHeight: 22 }]}
+                                        numberOfLines={!isExpanded && shouldTruncate ? 3 : undefined}
+                                    >
+                                        {renderContent(post.content)}
+                                    </Text>
+                                    {shouldTruncate && (
+                                        <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
+                                            <Text style={{ color: '#6b7280', marginTop: 4, fontWeight: '500' }}>
+                                                {isExpanded ? 'view less' : 'view more'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </>
+                            );
+                        })()}
+                    </View>
                 ) : null}
 
                 {/* Music Info Overlay & Audio Engine */}
@@ -1063,6 +1115,10 @@ const styles = StyleSheet.create({
     contentBody: {
         paddingHorizontal: 16,
         paddingBottom: 8,
+    },
+    contentText: {
+        fontSize: 14,
+        color: '#374151',
     },
     musicOverlay: {
         flexDirection: 'row',

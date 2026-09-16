@@ -52,6 +52,7 @@ export type RootStackParamList = {
   GroupSettings: { group: any };
   AddGroupMembers: { group: any, currentMembers: any[] };
   CreateNews: undefined;
+  PostBreakingNews: undefined;
   MyNews: undefined;
   JoinGroup: { inviteCode: string };
   SupportChat: undefined;

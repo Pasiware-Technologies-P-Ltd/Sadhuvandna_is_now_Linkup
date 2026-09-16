@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, StyleSheet, Share, Alert, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, StyleSheet, Alert, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio } from 'expo-av';
@@ -12,6 +12,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import { WebView } from 'react-native-webview';
 import { Modal, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -375,11 +378,70 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         ]).start();
     };
 
+    const handleDownloadReel = async () => {
+        try {
+            const videoUri = Array.isArray(item.media) ? item.media.find((m: string) => isVideo(m)) : item.media;
+            const uri = videoUri ? (videoUri.startsWith('http') ? videoUri : `${POST_MEDIA_PATH}${videoUri}`) : null;
+            if (!uri) return;
+            
+            if (require('react-native').Platform.OS === 'android') {
+                require('react-native').ToastAndroid.show("Preparing reel...", require('react-native').ToastAndroid.SHORT);
+            }
+
+            const filename = uri.split('/').pop() || 'download.mp4';
+            const fileUri = FileSystem.documentDirectory + filename;
+            const downloadedFile = await FileSystem.downloadAsync(uri, fileUri);
+
+            if (downloadedFile.status === 200) {
+                let finalUri = downloadedFile.uri;
+                
+                try {
+                    const outUri = FileSystem.documentDirectory + 'watermarked_reel_' + filename;
+                    const logoPath = FileSystem.documentDirectory + 'watermark_logo_v3.png';
+                    
+                    const logoInfo = await FileSystem.getInfoAsync(logoPath);
+                    if (!logoInfo.exists) {
+                        try {
+                            const logoAssetUrl = Image.resolveAssetSource(require('../../assets/logo.png')).uri;
+                            await FileSystem.downloadAsync(logoAssetUrl, logoPath);
+                        } catch (e) {}
+                    }
+                    
+                    const safeUsername = (item.name || 'User').replace(/'/g, "").replace(/:/g, "");
+                    const textPath = FileSystem.documentDirectory + 'watermark_text_' + safeUsername + '.png';
+                    
+                    try {
+                        const encodedText = encodeURIComponent('@' + safeUsername);
+                        const textUrl = `https://placehold.co/400x100/transparent/white.png?text=${encodedText}&font=roboto`;
+                        await FileSystem.downloadAsync(textUrl, textPath);
+                    } catch (e) {}
+                    
+                    const command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-195)':y='if(lt(mod(t,6),3),20,H-60)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),45,W-170)':y='if(lt(mod(t,6),3),24,H-56)'" -c:a copy "${outUri}"`;
+                    
+                    const session = await FFmpegKit.execute(command);
+                    const returnCode = await session.getReturnCode();
+                    
+                    if (ReturnCode.isSuccess(returnCode)) {
+                        finalUri = outUri;
+                    }
+                } catch (err) {}
+                
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(finalUri, {
+                        dialogTitle: 'Save Reel to Device',
+                    });
+                }
+            }
+        } catch (error: any) {
+            Alert.alert(error.message);
+        }
+    };
+
     const handleShare = async () => {
         try {
             const postUrl = `${WEBSITE_URL}/view_post.php?id=${item.id}`;
-            const message = `Check out this reel by ${item.name} on Sadhu Vandana:\n\nOpen in App: ${postUrl}`;
-            await Share.share({ message, url: postUrl });
+            const message = `Check out this reel by ${item.name || 'User'} on Sadhu Vandana:\n\nOpen in App: ${postUrl}`;
+            await require('react-native').Share.share({ message, url: postUrl });
         } catch (error: any) {
             Alert.alert(error.message);
         }
@@ -388,9 +450,15 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const handleOptions = () => {
         if (!currentUserId) return;
 
+        const downloadOption = {
+            text: "Download Reel",
+            onPress: handleDownloadReel
+        };
+
         if (String(item.user_id) === String(currentUserId)) {
             Alert.alert("Manage Reel", "What would you like to do?", [
                 { text: "Cancel", style: "cancel" },
+                downloadOption,
                 {
                     text: saved ? "Unsave Reel" : "Save Reel",
                     onPress: toggleSave
@@ -429,10 +497,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         } else {
             Alert.alert("Reel Options", "What would you like to do?", [
                 { text: "Cancel", style: "cancel" },
-                {
-                    text: saved ? "Unsave Reel" : "Save Reel",
-                    onPress: toggleSave
-                },
+                downloadOption,
                 { 
                     text: "Report Reel", 
                     style: "destructive", 

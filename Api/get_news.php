@@ -39,6 +39,17 @@ if ($check_breaking && $check_breaking->num_rows == 0) {
     $con->query("INSERT INTO tbl_settings (`key`, `value`) VALUES ('breaking_news', 'ताज़ा खबरों के लिए जुड़े रहें | Breaking News Updates | Stay connected for latest news')");
 }
 
+// Auto-create breaking news table
+$con->query("CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` text NOT NULL,
+  `posted_by` varchar(50) DEFAULT 'Admin',
+  `poster_id` int(11) DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $where = '';
 if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
     $uid = intval($_REQUEST['user_id']);
@@ -64,22 +75,17 @@ if ($result->num_rows > 0) {
     }
 }
 
-// Fetch Breaking News text from tbl_settings
+// Fetch Breaking News text from tbl_breaking_news
 $tickerData = [];
-$settingsQuery = "SELECT value FROM tbl_settings WHERE `key`='breaking_news' ORDER BY id DESC LIMIT 1";
+$settingsQuery = "SELECT title FROM tbl_breaking_news WHERE is_active = 1 ORDER BY id DESC LIMIT 10";
 $settingsResult = $con->query($settingsQuery);
 if ($settingsResult && $settingsResult->num_rows > 0) {
-    $settingsRow = $settingsResult->fetch_assoc();
-    $breakingText = trim($settingsRow['value']);
-    if (!empty($breakingText)) {
-        if (strpos($breakingText, '|') !== false) {
-            $parts = explode('|', $breakingText);
-            $tickerData = array_values(array_filter(array_map('trim', $parts)));
-        } else {
-            // Convert newlines to spaces so full breaking text flows intact on a single line
+    while($settingsRow = $settingsResult->fetch_assoc()) {
+        $breakingText = trim($settingsRow['title']);
+        if (!empty($breakingText)) {
             $cleanText = trim(preg_replace('/\s+/', ' ', $breakingText));
             if (!empty($cleanText)) {
-                $tickerData = [$cleanText];
+                $tickerData[] = $cleanText;
             }
         }
     }

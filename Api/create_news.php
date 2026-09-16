@@ -77,6 +77,23 @@ $stmt = $con->prepare("INSERT INTO tbl_news (user_id, title, description, image,
 $stmt->bind_param("isssssss", $user_id, $title, $description, $mediaString, $category, $state, $district, $date);
 
 if ($stmt->execute()) {
+    // If category is Breaking News, also insert into tbl_breaking_news
+    $cat_lower = strtolower(trim($category));
+    if ($cat_lower === 'breaking news' || trim($category) === 'ताज़ा खबर') {
+        $posted_by = 'Anchor';
+        $poster_id = $user_id;
+        if ($user_id > 0) {
+            $u_stmt = $con->query("SELECT name FROM tbl_users WHERE id = $user_id");
+            if ($u_stmt && $u_stmt->num_rows > 0) {
+                $u_row = $u_stmt->fetch_assoc();
+                $posted_by = $u_row['name'];
+            }
+        }
+        $is_active = 0; // Default for Anchor, needs Admin approval
+        $br_stmt = $con->prepare("INSERT INTO tbl_breaking_news (title, posted_by, poster_id, is_active, created_at) VALUES (?, ?, ?, ?, ?)");
+        $br_stmt->bind_param("ssiis", $title, $posted_by, $poster_id, $is_active, $date);
+        $br_stmt->execute();
+    }
     echo json_encode(["status" => "success", "message" => "News posted successfully."]);
 } else {
     echo json_encode(["status" => "error", "message" => "Database error: " . $stmt->error]);

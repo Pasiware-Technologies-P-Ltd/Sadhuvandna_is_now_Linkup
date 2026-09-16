@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, Share, Modal, RefreshControl, Animated, Easing, Alert, Linking, ScrollView, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { WebView } from 'react-native-webview';
@@ -239,13 +239,14 @@ const NewsTicker = ({ tickerData }: { tickerData: string[] }) => {
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>BREAKING</Text>
             </View>
             <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center' }}>
-                <Animated.View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        transform: [{ translateX: scrollAnim }]
-                    }}
-                    onLayout={(e) => {
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={false}>
+                    <Animated.View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            transform: [{ translateX: scrollAnim }]
+                        }}
+                        onLayout={(e) => {
                         const w = e.nativeEvent.layout.width;
                         if (w > 0 && Math.abs(w - contentWidth) > 5) {
                             setContentWidth(w);
@@ -256,6 +257,7 @@ const NewsTicker = ({ tickerData }: { tickerData: string[] }) => {
                         <TickerItem key={index} text={item} />
                     ))}
                 </Animated.View>
+                </ScrollView>
             </View>
         </View>
     );
@@ -352,6 +354,13 @@ const NewsScreen = ({ navigation }: any) => {
     const headerTranslateY = scrollYClamped.interpolate({
         inputRange: [0, headerHeight],
         outputRange: [0, -headerHeight],
+        extrapolate: 'clamp',
+    });
+    
+    const insets = useSafeAreaInsets();
+    const tickerTranslateY = scrollYClamped.interpolate({
+        inputRange: [0, Math.max(0, headerHeight - insets.top)],
+        outputRange: [0, -Math.max(0, headerHeight - insets.top)],
         extrapolate: 'clamp',
     });
 
@@ -844,14 +853,24 @@ const NewsScreen = ({ navigation }: any) => {
                 <View className="flex-row justify-between items-center px-5 mb-4">
                     <Text className="text-xl font-extrabold text-gray-900">{t('newsUpdates')}</Text>
                     {anchorStatus === 'Approved' ? (
-                        <TouchableOpacity 
-                            onPress={() => navigation.navigate('CreateNews')}
-                            className="bg-orange-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="create-outline" size={14} color="white" />
-                            <Text className="text-white font-bold text-xs ml-1">{t('postNews')}</Text>
-                        </TouchableOpacity>
+                        <View className="flex-row items-center gap-2">
+                            <TouchableOpacity 
+                                onPress={() => navigation.navigate('PostBreakingNews')}
+                                className="bg-red-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="flash-outline" size={14} color="white" />
+                                <Text className="text-white font-bold text-xs ml-1">Breaking</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={() => navigation.navigate('CreateNews')}
+                                className="bg-orange-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="create-outline" size={14} color="white" />
+                                <Text className="text-white font-bold text-xs ml-1">{t('postNews')}</Text>
+                            </TouchableOpacity>
+                        </View>
                     ) : anchorStatus === 'Pending' ? (
                         <TouchableOpacity 
                             onPress={() => Alert.alert(t('pendingApproval'), t('pendingApprovalMsg'))}
@@ -1038,7 +1057,7 @@ const NewsScreen = ({ navigation }: any) => {
                         left: 0,
                         right: 0,
                         zIndex: 9,
-                        transform: [{ translateY: headerTranslateY }],
+                        transform: [{ translateY: tickerTranslateY }],
                         top: headerHeight,
                     }}
                 >
