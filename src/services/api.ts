@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Production URL
 const PROD_URL = 'https://www.sadhuvandna.co.in/Api/';
-const LOCAL_URL = 'http://192.168.1.10:8000/';
+const LOCAL_URL = 'http://127.0.0.1:8000/';
 
 // Auto-toggle between Production and Local
 export const API_BASE_URL = PROD_URL;

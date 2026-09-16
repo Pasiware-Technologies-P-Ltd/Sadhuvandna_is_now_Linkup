@@ -9,6 +9,7 @@ import { WEBSITE_URL, API_BASE_URL } from '../services/api';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
+import { Asset } from 'expo-asset';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
@@ -90,6 +91,7 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
     const [duration, setDuration] = useState(0);
     const [position, setPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const isSliding = useRef(false);
 
     const formatTime = (millis: number) => {
         const totalSeconds = Math.round(millis / 1000);
@@ -139,7 +141,9 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
                 posterStyle={{ resizeMode: ResizeMode.COVER }}
                 onPlaybackStatusUpdate={(status: any) => {
                     if (status.isLoaded) {
-                        setPosition(status.positionMillis || 0);
+                        if (!isSliding.current) {
+                            setPosition(status.positionMillis || 0);
+                        }
                         if (onBuffering) onBuffering(status.isBuffering);
                     }
                 }}
@@ -170,14 +174,21 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
             {duration > 0 && (
                 <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: !shouldPlay ? 'rgba(0,0,0,0.3)' : 'transparent', paddingTop: !shouldPlay ? 10 : 0 }}>
                     <Slider
-                        style={{ width: '100%', height: 20, transform: [{ scaleY: !shouldPlay ? 1 : 0.5 }] }}
+                        style={{ width: '100%', height: 20 }}
                         minimumValue={0}
                         maximumValue={duration}
                         value={position}
                         minimumTrackTintColor="#ea580c"
                         maximumTrackTintColor="rgba(255,255,255,0.5)"
-                        thumbTintColor={!shouldPlay ? "#ea580c" : "transparent"}
+                        thumbTintColor="#ea580c"
+                        onSlidingStart={() => {
+                            isSliding.current = true;
+                        }}
+                        onValueChange={(val) => {
+                            setPosition(val);
+                        }}
                         onSlidingComplete={(val) => {
+                            isSliding.current = false;
                             if (forwardedRef?.current) forwardedRef.current.setPositionAsync(val);
                         }}
                     />
@@ -298,6 +309,7 @@ const PostCard = ({
     const [videoReady, setVideoReady] = useState(false);
     const [musicMuted, setMusicMuted] = useState(false);
     const [paused, setPaused] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
         setLiked(post.isLiked);
@@ -518,9 +530,12 @@ const PostCard = ({
     };
 
     const handleDownloadPost = async () => {
+        if (isDownloading) return;
+        setIsDownloading(true);
         try {
             if (!mediaList || mediaList.length === 0) {
                 Alert.alert("No Media", "This post doesn't have an image or video to download.");
+                setIsDownloading(false);
                 return;
             }
             
@@ -551,8 +566,14 @@ const PostCard = ({
                         const logoInfo = await FileSystem.getInfoAsync(logoPath);
                         if (!logoInfo.exists) {
                             try {
-                                const logoAssetUrl = Image.resolveAssetSource(require('../../assets/logo.png')).uri;
-                                await FileSystem.downloadAsync(logoAssetUrl, logoPath);
+                                const asset = Asset.fromModule(require('../../assets/logo.png'));
+                                await asset.downloadAsync();
+                                const sourceUri = asset.localUri || asset.uri;
+                                if (sourceUri.startsWith('file://')) {
+                                    await FileSystem.copyAsync({ from: sourceUri, to: logoPath });
+                                } else {
+                                    await FileSystem.downloadAsync(sourceUri, logoPath);
+                                }
                             } catch (e) {
                                 console.error("Could not load local logo asset:", e);
                             }
@@ -570,10 +591,10 @@ const PostCard = ({
                         let command = '';
                         if (isVid) {
                             // Command to overlay logo and text with Instagram-like corner swapping animation (same row, transparent logo background)
-                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-195)':y='if(lt(mod(t,6),3),20,H-60)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),45,W-170)':y='if(lt(mod(t,6),3),24,H-56)'" -c:a copy "${outUri}"`;
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=60:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=250:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-340)':y='if(lt(mod(t,6),3),20,H-80)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),85,W-275)':y='if(lt(mod(t,6),3),20,H-80)'" -c:a copy "${outUri}"`;
                         } else {
                             // Static overlay for images (bottom right)
-                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=W-195:H-60[v1];[v1][txt]overlay=W-170:H-56" "${outUri}"`;
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=60:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=250:-1[txt];[0:v][logo]overlay=W-340:H-80[v1];[v1][txt]overlay=W-275:H-80" "${outUri}"`;
                         }
                         
                         const session = await FFmpegKit.execute(command);
@@ -604,6 +625,8 @@ const PostCard = ({
         } catch (error) {
             console.error("Download Error", error);
             Alert.alert("Error", "An error occurred while downloading.");
+        } finally {
+            setIsDownloading(false);
         }
     };
 

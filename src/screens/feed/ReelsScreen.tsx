@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
+import { Asset } from 'expo-asset';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -175,6 +176,8 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const [reportCategory, setReportCategory] = useState('Child Safety Concern');
     const [reportReason, setReportReason] = useState('');
     const [reporting, setReporting] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const isSliding = useRef(false);
 
     const submitReport = async () => {
         if (!reportReason.trim()) {
@@ -379,6 +382,8 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     };
 
     const handleDownloadReel = async () => {
+        if (isDownloading) return;
+        setIsDownloading(true);
         try {
             const videoUri = Array.isArray(item.media) ? item.media.find((m: string) => isVideo(m)) : item.media;
             const uri = videoUri ? (videoUri.startsWith('http') ? videoUri : `${POST_MEDIA_PATH}${videoUri}`) : null;
@@ -402,9 +407,17 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     const logoInfo = await FileSystem.getInfoAsync(logoPath);
                     if (!logoInfo.exists) {
                         try {
-                            const logoAssetUrl = Image.resolveAssetSource(require('../../assets/logo.png')).uri;
-                            await FileSystem.downloadAsync(logoAssetUrl, logoPath);
-                        } catch (e) {}
+                            const asset = Asset.fromModule(require('../../assets/logo.png'));
+                            await asset.downloadAsync();
+                            const sourceUri = asset.localUri || asset.uri;
+                            if (sourceUri.startsWith('file://')) {
+                                await FileSystem.copyAsync({ from: sourceUri, to: logoPath });
+                            } else {
+                                await FileSystem.downloadAsync(sourceUri, logoPath);
+                            }
+                        } catch (e) {
+                            console.error("Could not load local logo asset:", e);
+                        }
                     }
                     
                     const safeUsername = (item.name || 'User').replace(/'/g, "").replace(/:/g, "");
@@ -416,7 +429,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         await FileSystem.downloadAsync(textUrl, textPath);
                     } catch (e) {}
                     
-                    const command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=150:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-195)':y='if(lt(mod(t,6),3),20,H-60)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),45,W-170)':y='if(lt(mod(t,6),3),24,H-56)'" -c:a copy "${outUri}"`;
+                    const command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=60:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=250:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-340)':y='if(lt(mod(t,6),3),20,H-80)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),85,W-275)':y='if(lt(mod(t,6),3),20,H-80)'" -c:a copy "${outUri}"`;
                     
                     const session = await FFmpegKit.execute(command);
                     const returnCode = await session.getReturnCode();
@@ -434,6 +447,8 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
             }
         } catch (error: any) {
             Alert.alert(error.message);
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -535,7 +550,9 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                             isMuted={false} // Allow original audio to mix with music
                             onPlaybackStatusUpdate={(status: any) => {
                             if (status.isLoaded) {
-                                setPosition(status.positionMillis || 0);
+                                if (!isSliding.current) {
+                                    setPosition(status.positionMillis || 0);
+                                }
                                 if (status.durationMillis && duration === 0) setDuration(status.durationMillis);
                                 if (status.isBuffering !== isBuffering) {
                                     setIsBuffering(status.isBuffering);
@@ -581,7 +598,14 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         minimumTrackTintColor="#ea580c"
                         maximumTrackTintColor="rgba(255,255,255,0.4)"
                         thumbTintColor="#ea580c"
+                        onSlidingStart={() => {
+                            isSliding.current = true;
+                        }}
+                        onValueChange={(val) => {
+                            setPosition(val);
+                        }}
                         onSlidingComplete={(val) => {
+                            isSliding.current = false;
                             if (videoRef?.current) videoRef.current.setPositionAsync(val);
                         }}
                     />

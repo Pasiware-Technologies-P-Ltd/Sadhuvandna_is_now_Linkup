@@ -205,7 +205,7 @@ const TickerItem = ({ text }: { text: string }) => {
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
             <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold', marginRight: 8 }}>📰</Text>
-            <Text numberOfLines={1} style={{ color: 'white', fontWeight: '600', fontSize: 13 }}>{cleanText}</Text>
+            <Text style={{ color: 'white', fontWeight: '600', fontSize: 13, flexShrink: 0 }}>{cleanText}</Text>
         </View>
     );
 };
@@ -1009,7 +1009,7 @@ const NewsScreen = ({ navigation }: any) => {
                 {(selectedCategory === 'State' || selectedCategory === 'राज्य' || selectedCategory === 'District' || selectedCategory === 'जिला') && activeTab === 'apna' && (
                     <View style={{ paddingHorizontal: 20, paddingBottom: 12, paddingTop: 4 }}>
                         <View style={{ flexDirection: 'row', gap: 10 }}>
-                            <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 40, justifyContent: 'center' }}>
+                            <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 50, justifyContent: 'center' }}>
                                 <Picker
                                     selectedValue={selectedState}
                                     onValueChange={(itemValue, itemIndex) => {
@@ -1020,7 +1020,7 @@ const NewsScreen = ({ navigation }: any) => {
                                             handleStateChange('', '');
                                         }
                                     }}
-                                    style={{ height: 40 }}
+                                    style={{ height: 50 }}
                                 >
                                     <Picker.Item label="Select State" value="" style={{ fontSize: 13 }} />
                                     {statesList.map((st, idx) => (
@@ -1030,11 +1030,11 @@ const NewsScreen = ({ navigation }: any) => {
                             </View>
 
                             {(selectedCategory === 'District' || selectedCategory === 'जिला') && (
-                                <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 40, justifyContent: 'center' }}>
+                                <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 50, justifyContent: 'center' }}>
                                     <Picker
                                         selectedValue={selectedDistrict}
                                         onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
-                                        style={{ height: 40 }}
+                                        style={{ height: 50 }}
                                         enabled={districtsList.length > 0}
                                     >
                                         <Picker.Item label="Select District" value="" style={{ fontSize: 13 }} />
