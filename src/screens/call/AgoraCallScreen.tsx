@@ -45,6 +45,31 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
     const [isSpeaker, setIsSpeaker] = useState(true);
     const [isCameraOn, setIsCameraOn] = useState(isVideo);
     const [token, setToken] = useState<string>('');
+    const [callDuration, setCallDuration] = useState(0);
+    const durationRef = useRef(0);
+    const isOriginalVideoCall = isVideo; // Track if the call started as a video call
+
+    // Format duration to MM:SS
+    const formatDuration = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    // Timer effect
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isJoined && remoteUid !== 0) {
+            interval = setInterval(() => {
+                setCallDuration(prev => {
+                    const newDur = prev + 1;
+                    durationRef.current = newDur;
+                    return newDur;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isJoined, remoteUid]);
 
     // Permission request
     const getPermission = async () => {
@@ -79,14 +104,17 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
 
                 console.log(`Fetching token for channel: ${channelId}, uid: ${myUid}`);
 
-                const fetchedToken = await getAgoraToken(channelId, myUid);
+                let fetchedToken = await getAgoraToken(channelId, myUid);
                 if (isCancelled) return;
 
-                if (fetchedToken === null || fetchedToken === undefined) {
-                    Alert.alert("Connection Error", "Could not fetch call token. Check server connection.");
+                if (!fetchedToken) {
+                    Alert.alert("Connection Error", "Could not fetch call token from server. Both Node and PHP token servers failed or returned empty.");
                     navigation.goBack();
                     return;
                 }
+                
+                fetchedToken = fetchedToken.trim();
+                console.log(`Token fetched successfully. Length: ${fetchedToken.length}`);
                 setToken(fetchedToken);
 
                 // 2. Init Engine
@@ -204,6 +232,42 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     } else if (data.call_status === 'ended') {
                         Alert.alert("Call Ended", "Call ended by user.");
                         leave();
+                    } else if (data.call_status === 'video_request') {
+                        // If I didn't initiate the request (I am just receiving it)
+                        if (!isCameraOn) {
+                            Alert.alert(
+                                "Video Call Request",
+                                "The other user wants to switch to a Video Call.",
+                                [
+                                    { 
+                                        text: "Decline", 
+                                        style: "cancel",
+                                        onPress: () => {
+                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_rejected' }).catch(()=>{});
+                                        }
+                                    },
+                                    {
+                                        text: "Accept",
+                                        onPress: () => {
+                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_accepted' }).catch(()=>{});
+                                            agoraEngineRef.current?.enableVideo();
+                                            setIsCameraOn(true);
+                                        }
+                                    }
+                                ]
+                            );
+                        }
+                    } else if (data.call_status === 'video_accepted') {
+                        if (!isCameraOn) {
+                            agoraEngineRef.current?.enableVideo();
+                            setIsCameraOn(true);
+                            // Reset back to accepted so we don't loop
+                            api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(()=>{});
+                        }
+                    } else if (data.call_status === 'video_rejected') {
+                        Alert.alert("Declined", "User declined the video request.");
+                        // Reset back to accepted
+                        api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(()=>{});
                     }
                 }
             } catch (e) { }
@@ -217,7 +281,8 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
             if (channelId) {
                 api.post('update_call_status.php', {
                     channel_id: channelId,
-                    status: 'ended'
+                    status: 'ended',
+                    duration: durationRef.current
                 }).catch(e => { });
             }
 
@@ -239,6 +304,14 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
         agoraEngineRef.current?.leaveChannel();
         setRemoteUid(0);
         setIsJoined(false);
+        // Mark as ended on the server when we leave, sending duration
+        if (channelId) {
+            api.post('update_call_status.php', {
+                channel_id: channelId,
+                status: 'ended',
+                duration: callDuration
+            }).catch(e => { });
+        }
         navigation.goBack();
     };
 
@@ -251,13 +324,17 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
         agoraEngineRef.current?.switchCamera();
     };
 
+    const toggleSpeaker = () => {
+        agoraEngineRef.current?.setEnableSpeakerphone(!isSpeaker);
+        setIsSpeaker(!isSpeaker);
+    };
+
     const toggleVideo = () => {
-        if (isCameraOn) {
-            agoraEngineRef.current?.disableVideo();
-        } else {
-            agoraEngineRef.current?.enableVideo();
+        if (isOriginalVideoCall) {
+            // In a video call, just mute/unmute the camera
+            agoraEngineRef.current?.muteLocalVideoStream(isCameraOn);
+            setIsCameraOn(!isCameraOn);
         }
-        setIsCameraOn(!isCameraOn);
     };
 
     if (!isJoined) {
@@ -271,6 +348,13 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
 
     return (
         <View style={styles.container}>
+            {/* Top Bar with Timer */}
+            {(isJoined && remoteUid !== 0) && (
+                <View style={styles.timerContainer}>
+                    <Text style={styles.timerText}>{formatDuration(callDuration)}</Text>
+                </View>
+            )}
+
             {/* Remote Video (Full Screen) */}
             {remoteUid !== 0 ? (
                 <RtcSurfaceView
@@ -299,19 +383,25 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
 
             {/* Controls */}
             <View style={styles.controls}>
+                <TouchableOpacity onPress={toggleSpeaker} style={[styles.btn, !isSpeaker && styles.btnActive]}>
+                    <Ionicons name={isSpeaker ? "volume-high" : "volume-mute"} size={28} color={isSpeaker ? "white" : "black"} />
+                </TouchableOpacity>
+
                 <TouchableOpacity onPress={toggleMute} style={[styles.btn, isMuted && styles.btnActive]}>
-                    <Ionicons name={isMuted ? "mic-off" : "mic"} size={28} color="white" />
+                    <Ionicons name={isMuted ? "mic-off" : "mic"} size={28} color={isMuted ? "black" : "white"} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={leave} style={[styles.btn, styles.btnEnd]}>
                     <Ionicons name="call" size={32} color="white" />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={toggleVideo} style={[styles.btn, !isCameraOn && styles.btnActive]}>
-                    <Ionicons name={isCameraOn ? "videocam" : "videocam-off"} size={28} color="white" />
-                </TouchableOpacity>
+                {isOriginalVideoCall && (
+                    <TouchableOpacity onPress={toggleVideo} style={[styles.btn, !isCameraOn && styles.btnActive]}>
+                        <Ionicons name={isCameraOn ? "videocam" : "videocam-off"} size={28} color={isCameraOn ? "white" : "black"} />
+                    </TouchableOpacity>
+                )}
 
-                {isCameraOn && (
+                {isOriginalVideoCall && isCameraOn && (
                     <TouchableOpacity onPress={switchCamera} style={styles.btn}>
                         <Ionicons name="camera-reverse" size={28} color="white" />
                     </TouchableOpacity>
@@ -361,6 +451,20 @@ const styles = StyleSheet.create({
         backgroundColor: '#ef4444',
         padding: 18,
         transform: [{ scale: 1.1 }]
+    },
+    timerContainer: {
+        position: 'absolute',
+        top: 50,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 20,
+        zIndex: 30,
+    },
+    timerText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold'
     }
 });
 

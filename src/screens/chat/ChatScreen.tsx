@@ -1054,7 +1054,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         </View>
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            {/* !route.params?.isGroup && (
+                            {!route.params?.isGroup && platform === 'marriage' && (
                                 <>
                                     <TouchableOpacity onPress={() => initiateCall('audio')} style={{ padding: 6 }} activeOpacity={0.7}>
                                         <Ionicons name="call-outline" size={22} color="#ea580c" />
@@ -1064,7 +1064,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                         <Ionicons name="videocam-outline" size={22} color="#ea580c" />
                                     </TouchableOpacity>
                                 </>
-                            ) */}
+                            )}
 
                             <TouchableOpacity onPress={() => setIsSearchActive(true)} style={{ padding: 6 }} activeOpacity={0.7}>
                                 <Ionicons name="search" size={22} color="#374151" />
@@ -1080,7 +1080,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     {/* Dropdown Menu */}
                     {showMenu && (
                         <View className="absolute top-16 right-4 bg-white rounded-xl shadow-xl z-50 overflow-hidden w-48 border border-gray-100" style={{ elevation: 5 }}>
-                            {/* !route.params?.isGroup && (
+                            {!route.params?.isGroup && platform === 'marriage' && (
                                 <>
                                     <TouchableOpacity
                                         onPress={() => { setShowMenu(false); initiateCall('audio'); }}
@@ -1098,7 +1098,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                         <Text className="ml-3 font-medium text-gray-700">Video Call</Text>
                                     </TouchableOpacity>
                                 </>
-                            ) */}
+                            )}
 
                             <TouchableOpacity
                                 onPress={toggleBlockUser}
