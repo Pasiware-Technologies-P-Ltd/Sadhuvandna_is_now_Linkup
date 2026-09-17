@@ -55,27 +55,40 @@ const MyPostsScreen = ({ navigation }: any) => {
     };
 
     const handleDelete = async (postId: string) => {
-        try {
-            const u = await AsyncStorage.getItem('user');
-            if (!u) return;
-            const user = JSON.parse(u);
+        Alert.alert(
+            "Delete Post",
+            "Are you sure you want to delete this post?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const u = await AsyncStorage.getItem('user');
+                            if (!u) return;
+                            const user = JSON.parse(u);
 
-            const formData = new FormData();
-            formData.append('post_id', postId);
-            formData.append('user_id', user.id);
+                            const formData = new FormData();
+                            formData.append('post_id', postId);
+                            formData.append('user_id', user.id);
 
-            const res = await api.post('remove_post.php', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            if (res.data.status === 'success') {
-                setPosts(prev => prev.filter(p => p.id !== postId));
-                Alert.alert("Success", "Post deleted");
-            } else {
-                Alert.alert("Error", res.data.message || "Failed to delete");
-            }
-        } catch (error) {
-            Alert.alert("Error", "Network request failed");
-        }
+                            const res = await api.post('remove_post.php', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (res.data.status === 'success') {
+                                setPosts(prev => prev.filter(p => p.id !== postId));
+                                Alert.alert("Success", "Post deleted");
+                            } else {
+                                Alert.alert("Error", res.data.message || "Failed to delete");
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "Network request failed");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const renderPostItem = ({ item }: { item: any }) => (

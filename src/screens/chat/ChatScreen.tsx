@@ -1219,7 +1219,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 >
                                 <View
                                     className={`
-                                        max-w-[75%] shadow-sm overflow-hidden
+                                        max-w-[75%] shadow-sm overflow-hidden flex-shrink
                                         ${isDeleted 
                                             ? 'bg-gray-100 rounded-2xl border border-gray-200' 
                                             : (isMe ? 'bg-orange-600 rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100')
@@ -1323,7 +1323,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                             {!!item.message && (
                                                 <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 2 }}>
                                                     <Text 
-                                                        style={{ fontSize }}
+                                                        style={{ fontSize, flexShrink: 1 }}
                                                         className={`leading-5 ${isMe ? 'text-white' : 'text-gray-800'} ${hasFile ? 'pb-1' : 'pb-1'}`}
                                                         numberOfLines={expandedMessageIds.includes(item.id) ? undefined : 10}
                                                     >

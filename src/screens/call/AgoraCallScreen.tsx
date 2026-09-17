@@ -1,5 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
+import { useKeepAwake } from 'expo-keep-awake';
+import notifee, { AndroidImportance, AndroidForegroundServiceType } from '@notifee/react-native';
 import {
     View,
     Text,
@@ -36,13 +38,14 @@ const AGORA_APP_ID = '42eb51e0bc30431cba75efefb9ea15ea'; // User needs to set th
 interface Props extends NativeStackScreenProps<RootStackParamList, 'AgoraCall'> { }
 
 const AgoraCallScreen = ({ navigation, route }: any) => {
+    useKeepAwake();
     const { channelId, isVideo, isCaller, otherUserId } = route.params;
 
     const agoraEngineRef = useRef<IRtcEngine | null>(null);
     const [isJoined, setIsJoined] = useState(false);
     const [remoteUid, setRemoteUid] = useState<number>(0);
     const [isMuted, setIsMuted] = useState(false);
-    const [isSpeaker, setIsSpeaker] = useState(true);
+    const [isSpeaker, setIsSpeaker] = useState(isVideo);
     const [isCameraOn, setIsCameraOn] = useState(isVideo);
     const [token, setToken] = useState<string>('');
     const [callDuration, setCallDuration] = useState(0);
@@ -70,6 +73,38 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
         }
         return () => clearInterval(interval);
     }, [isJoined, remoteUid]);
+
+    const startForegroundService = async () => {
+        if (Platform.OS !== 'android') return;
+        try {
+            const channelId = await notifee.createChannel({
+                id: 'ongoing_call',
+                name: 'Ongoing Call',
+                importance: AndroidImportance.HIGH,
+            });
+
+            await notifee.displayNotification({
+                title: 'Call in progress',
+                body: 'Ongoing audio/video call',
+                android: {
+                    channelId,
+                    asForegroundService: true,
+                    ongoing: true,
+                    color: '#ea580c',
+                    foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE, AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_CAMERA]
+                },
+            });
+            console.log("Foreground service started");
+        } catch (e) {
+            console.error("Foreground service error:", e);
+        }
+    };
+
+    const stopForegroundService = async () => {
+        if (Platform.OS === 'android') {
+            await notifee.stopForegroundService();
+        }
+    };
 
     // Permission request
     const getPermission = async () => {
@@ -112,7 +147,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     navigation.goBack();
                     return;
                 }
-                
+
                 fetchedToken = fetchedToken.trim();
                 console.log(`Token fetched successfully. Length: ${fetchedToken.length}`);
                 setToken(fetchedToken);
@@ -150,6 +185,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     onJoinChannelSuccess: (_connection: RtcConnection, uid: number) => {
                         console.log('Successfully joined channel: ' + channelId);
                         if (!isCancelled) setIsJoined(true);
+                        startForegroundService();
                         // Explicitly mute/unmute to ensure state
                         agoraEngine.muteLocalAudioStream(false);
                         agoraEngine.muteLocalVideoStream(false);
@@ -239,17 +275,17 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                                 "Video Call Request",
                                 "The other user wants to switch to a Video Call.",
                                 [
-                                    { 
-                                        text: "Decline", 
+                                    {
+                                        text: "Decline",
                                         style: "cancel",
                                         onPress: () => {
-                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_rejected' }).catch(()=>{});
+                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_rejected' }).catch(() => { });
                                         }
                                     },
                                     {
                                         text: "Accept",
                                         onPress: () => {
-                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_accepted' }).catch(()=>{});
+                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_accepted' }).catch(() => { });
                                             agoraEngineRef.current?.enableVideo();
                                             setIsCameraOn(true);
                                         }
@@ -262,12 +298,12 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                             agoraEngineRef.current?.enableVideo();
                             setIsCameraOn(true);
                             // Reset back to accepted so we don't loop
-                            api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(()=>{});
+                            api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
                         }
                     } else if (data.call_status === 'video_rejected') {
                         Alert.alert("Declined", "User declined the video request.");
                         // Reset back to accepted
-                        api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(()=>{});
+                        api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
                     }
                 }
             } catch (e) { }
@@ -276,7 +312,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
         return () => {
             clearInterval(statusInterval);
             isCancelled = true;
-            
+
             // Mark as ended on the server when we leave
             if (channelId) {
                 api.post('update_call_status.php', {
@@ -292,6 +328,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                 agoraEngineRef.current.release();
                 agoraEngineRef.current = null;
             }
+            stopForegroundService();
         };
     }, []);
 
@@ -312,6 +349,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                 duration: callDuration
             }).catch(e => { });
         }
+        stopForegroundService();
         navigation.goBack();
     };
 

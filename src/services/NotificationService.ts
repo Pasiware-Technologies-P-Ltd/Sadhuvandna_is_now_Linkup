@@ -73,12 +73,10 @@ Notifications.addNotificationResponseReceivedListener(response => {
     console.log("Notification Clicked:", JSON.stringify(data));
     
     if (data && (data.is_call || data.type === 'incoming_call')) {
-        navigateWithRetry('AgoraCall', {
-            channelId: data.peer_id || data.channelId || data.channel_id,
-            isVideo: (data.call_type === 'video' || data.type === 'video'),
-            isCaller: false,
-            otherUserId: String(data.caller_id),
-        });
+        // We do not navigate to AgoraCall directly here anymore.
+        // Tapping the notification will simply open the app, and the GlobalCallListener
+        // will show the Incoming Call Modal with Accept/Decline buttons.
+        console.log("Incoming call notification tapped. Letting GlobalCallListener handle it.");
     }
 
     // New: Social Post/Like Deep-linking

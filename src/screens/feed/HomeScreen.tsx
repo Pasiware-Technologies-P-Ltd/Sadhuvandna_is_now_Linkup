@@ -640,24 +640,37 @@ const HomeScreen = () => {
                     }}
                     currentUserId={user?.id}
                     onUserPress={() => navigation.navigate('PublicProfile', { userId: item.user_id })}
-                    onDeletePress={async () => {
-                        try {
-                            const formData = new FormData();
-                            formData.append('post_id', item.id);
-                            formData.append('user_id', user?.id || '');
-                            const res = await api.post('remove_post.php', formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            });
-                            if (res.data.status === 'success') {
-                                setPosts(prev => prev.filter(p => p.id !== item.id));
-                                Alert.alert(t('success'), "Post deleted");
-                            } else {
-                                Alert.alert(t('error'), res.data.message || "Failed to delete");
-                            }
-                        } catch (error) {
-                            console.error(error);
-                            Alert.alert(t('error'), "Something went wrong");
-                        }
+                    onDeletePress={() => {
+                        Alert.alert(
+                            "Delete Post",
+                            "Are you sure you want to delete this post?",
+                            [
+                                { text: "Cancel", style: "cancel" },
+                                { 
+                                    text: "Delete", 
+                                    style: "destructive", 
+                                    onPress: async () => {
+                                        try {
+                                            const formData = new FormData();
+                                            formData.append('post_id', item.id);
+                                            formData.append('user_id', user?.id || '');
+                                            const res = await api.post('remove_post.php', formData, {
+                                                headers: { 'Content-Type': 'multipart/form-data' }
+                                            });
+                                            if (res.data.status === 'success') {
+                                                setPosts(prev => prev.filter(p => p.id !== item.id));
+                                                Alert.alert(t('success'), "Post deleted");
+                                            } else {
+                                                Alert.alert(t('error'), res.data.message || "Failed to delete");
+                                            }
+                                        } catch (error) {
+                                            console.error(error);
+                                            Alert.alert(t('error'), "Something went wrong");
+                                        }
+                                    }
+                                }
+                            ]
+                        );
                     }}
                     shouldPlay={String(activePostId) === String(item.id)}
                 />

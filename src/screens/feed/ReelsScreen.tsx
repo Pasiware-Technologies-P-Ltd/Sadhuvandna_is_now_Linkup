@@ -14,6 +14,7 @@ import { Modal, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { logoBase64 } from '../../constants/logoBase64';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 import { Asset } from 'expo-asset';
 
@@ -407,16 +408,9 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     const logoInfo = await FileSystem.getInfoAsync(logoPath);
                     if (!logoInfo.exists) {
                         try {
-                            const asset = Asset.fromModule(require('../../assets/logo.png'));
-                            await asset.downloadAsync();
-                            const sourceUri = asset.localUri || asset.uri;
-                            if (sourceUri.startsWith('file://')) {
-                                await FileSystem.copyAsync({ from: sourceUri, to: logoPath });
-                            } else {
-                                await FileSystem.downloadAsync(sourceUri, logoPath);
-                            }
+                            await FileSystem.writeAsStringAsync(logoPath, logoBase64, { encoding: FileSystem.EncodingType.Base64 });
                         } catch (e) {
-                            console.error("Could not load local logo asset:", e);
+                            console.error("Could not write local logo asset:", e);
                         }
                     }
                     
@@ -492,8 +486,14 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                                     style: "destructive", 
                                     onPress: async () => {
                                         try {
-                                            const res = await api.post('delete_post.php', { post_id: item.id, id: item.id, user_id: currentUserId });
-                                            if (res.data.ok || res.data.status === 'success') {
+                                            const formData = new FormData();
+                                            formData.append('post_id', item.id);
+                                            formData.append('user_id', currentUserId);
+                                            
+                                            const res = await api.post('remove_post.php', formData, {
+                                                headers: { 'Content-Type': 'multipart/form-data' }
+                                            });
+                                            if (res.data.status === 'success' || res.data.ok) {
                                                 if (onDelete) onDelete(item.id);
                                                 Alert.alert("Deleted", "Reel deleted successfully.");
                                             } else {
@@ -1052,7 +1052,11 @@ const ReelsScreen = ({ navigation, route }: any) => {
             onUserPress={(uid: string) => navigation.navigate('PublicProfile', { userId: uid })}
             onCommentPress={(pid: string) => navigation.navigate('Comments', { postId: pid })}
             onDelete={(deletedId: string) => {
-                setReels((prev: any[]) => prev.filter((r: any) => r.id !== deletedId));
+                setReels((prev: any[]) => {
+                    const filtered = prev.filter((r: any) => r.id !== deletedId);
+                    reelsRef.current = filtered;
+                    return filtered;
+                });
             }}
         />
     ), [activeIndex, isFocused, currentUserId, layoutHeight]);

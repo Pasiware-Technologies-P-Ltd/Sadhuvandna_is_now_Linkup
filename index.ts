@@ -55,9 +55,16 @@ Object.defineProperty(ReactNative, 'Text', {
   enumerable: true
 });
 
+import notifee from '@notifee/react-native';
+
+notifee.registerForegroundService((notification) => {
+  return new Promise(() => {
+    // Keep the service alive until stopped manually
+    console.log("Notifee foreground service running...");
+  });
+});
+
 import App from './App';
-
-
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
 // the environment is set up appropriately

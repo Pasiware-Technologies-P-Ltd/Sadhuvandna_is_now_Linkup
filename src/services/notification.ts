@@ -71,12 +71,9 @@ export async function registerForPushNotificationsAsync(userId?: string) {
 Notifications.addNotificationResponseReceivedListener(response => {
     const data = response.notification.request.content.data as any;
     if (data && data.is_call) {
-        navigationRef.navigate('AgoraCall', {
-            channelId: data.channelId || data.peer_id,
-            isVideo: (data.type === 'video'),
-            isCaller: false,
-            otherUserId: String(data.caller_id),
-        });
+        // Tapping the notification will simply open the app.
+        // GlobalCallListener will handle showing the Incoming Call Modal.
+        console.log("Incoming call notification tapped. Letting GlobalCallListener handle it.");
     }
 });
 

@@ -216,22 +216,35 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     };
 
     const handleDelete = async (postId: string) => {
-        try {
-            const formData = new FormData();
-            formData.append('post_id', postId);
-            formData.append('user_id', profile?.user?.id || '');
-            const res = await api.post('remove_post.php', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            if (res.data.status === 'success') {
-                setPosts(prev => prev.filter(p => p.id !== postId));
-                Alert.alert("Success", "Post deleted");
-            } else {
-                Alert.alert("Error", res.data.message || "Failed to delete");
-            }
-        } catch (error) {
-            Alert.alert("Error", "Network request failed");
-        }
+        Alert.alert(
+            "Delete Post",
+            "Are you sure you want to delete this post?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const formData = new FormData();
+                            formData.append('post_id', postId);
+                            formData.append('user_id', profile?.user?.id || '');
+                            const res = await api.post('remove_post.php', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (res.data.status === 'success') {
+                                setPosts(prev => prev.filter(p => p.id !== postId));
+                                Alert.alert("Success", "Post deleted");
+                            } else {
+                                Alert.alert("Error", res.data.message || "Failed to delete");
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "Network request failed");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const pickFamilyImage = async () => {
@@ -983,6 +996,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="play-outline" size={12} color="white" />
                                     <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold', marginLeft: 2 }}>{item.likes || 0}</Text>
                                 </View>
+                                {String(currentUserId) === String(item.user_id) && (
+                                    <TouchableOpacity 
+                                        style={{ position: 'absolute', top: 4, right: 4, padding: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12 }}
+                                        onPress={() => handleDelete(item.id)}
+                                    >
+                                        <Ionicons name="trash-outline" size={16} color="white" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </TouchableOpacity>
                     );
@@ -992,7 +1013,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 ))}
             </View>
         );
-    }, [navigation, width]);
+    }, [navigation, width, currentUserId, handleDelete]);
 
     const renderItem = useCallback(({ item, index }: any) => {
         if (activeTab === 'reels') return renderReelRow({ item, index });

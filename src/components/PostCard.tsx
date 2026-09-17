@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { logoBase64 } from '../constants/logoBase64';
 
 const FILTERS: any = {
     'none': { color: 'transparent' },
@@ -574,16 +575,9 @@ const PostCard = ({
                         const logoInfo = await FileSystem.getInfoAsync(logoPath);
                         if (!logoInfo.exists) {
                             try {
-                                const asset = Asset.fromModule(require('../../assets/logo.png'));
-                                await asset.downloadAsync();
-                                const sourceUri = asset.localUri || asset.uri;
-                                if (sourceUri.startsWith('file://')) {
-                                    await FileSystem.copyAsync({ from: sourceUri, to: logoPath });
-                                } else {
-                                    await FileSystem.downloadAsync(sourceUri, logoPath);
-                                }
+                                await FileSystem.writeAsStringAsync(logoPath, logoBase64, { encoding: FileSystem.EncodingType.Base64 });
                             } catch (e) {
-                                console.error("Could not load local logo asset:", e);
+                                console.error("Could not write local logo asset:", e);
                             }
                         }
 

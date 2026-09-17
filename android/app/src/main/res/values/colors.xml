@@ -3,11 +3,4 @@
   <color name="iconBackground">#ffffff</color>
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#ffffff</color>
-  
-  <!-- Expo Image Picker Crop UI Colors -->
-  <color name="expoCropToolbarColor">#000000</color>
-  <color name="expoCropToolbarIconColor">#ffffff</color>
-  <color name="expoCropToolbarActionTextColor">#ffffff</color>
-  <color name="expoCropBackButtonIconColor">#ffffff</color>
-  <color name="expoCropBackgroundColor">#000000</color>
 </resources>
