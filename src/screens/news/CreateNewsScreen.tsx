@@ -38,7 +38,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [postAspectRatio, setPostAspectRatio] = useState<number | null>(null);
-    
+
     const { startUpload } = useUpload();
     const { language } = useLanguage();
 
@@ -97,7 +97,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
     // Terms and Policies States
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [policyAccepted, setPolicyAccepted] = useState(false);
-    
+
     const [termsModalVisible, setTermsModalVisible] = useState(false);
     const [policyModalVisible, setPolicyModalVisible] = useState(false);
 
@@ -254,7 +254,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
         const targetLang = langMap[language] || 'Hindi';
 
         // ⚠️ Replace this with your actual Gemini API Key
-        const GEMINI_API_KEY = ""; 
+        const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY; 
 
         try {
             if (!GEMINI_API_KEY) {
@@ -262,15 +262,15 @@ const CreateNewsScreen = ({ navigation }: any) => {
             }
 
             const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
-            
-            const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+
+            const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 contents: [{ parts: [{ text: prompt }] }]
             });
-            
+
             const text = response.data.candidates[0].content.parts[0].text;
             const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
             const data = JSON.parse(jsonStr);
-            
+
             setTitle(data.title);
             setDescription(data.description);
             setAiModalVisible(false);
@@ -317,14 +317,14 @@ const CreateNewsScreen = ({ navigation }: any) => {
         try {
             const formData = new FormData();
             formData.append('title', title);
-            
+
             // Append hidden tag if we have an aspect ratio
             let finalDescription = description;
             if (postAspectRatio) {
                 finalDescription = `${description}\n[aspect:${postAspectRatio}]`;
             }
             formData.append('description', finalDescription);
-            
+
             formData.append('category', category);
             formData.append('state', selectedState);
             formData.append('district', selectedDistrict);
@@ -342,7 +342,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 }
 
                 // Crop image
-                return new Promise<{uri: string, type: string}>((resolve) => {
+                return new Promise<{ uri: string, type: string }>((resolve) => {
                     Image.getSize(fileUri, async (w, h) => {
                         const imgAspect = w / h;
                         let cropOriginX = 0;
@@ -393,7 +393,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
             const thumbUri = finalImages.length > 0 ? finalImages[0].uri : null;
             startUpload('create_news.php', formData, thumbUri);
-            
+
             Alert.alert("Success", "News is posting in the background!");
             navigation.goBack();
         } catch (error: any) {
@@ -411,302 +411,302 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={24} color="black" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Add New News</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('MyNews')}
-                    style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
-                        borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
-                    }}
-                    activeOpacity={0.8}
-                >
-                    <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
-                </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-                <Text style={styles.sectionTitle}>News Media (Photos & Videos)</Text>
-
-                {/* Dotted upload container */}
-                <View 
-                    style={[
-                        styles.uploadPlaceholder, 
-                        mediaFiles.length > 0 ? styles.uploadPlaceholderWithImages : {}
-                    ]}
-                >
-                    {mediaFiles.length === 0 ? (
-                        <TouchableOpacity onPress={pickMedia} style={styles.uploadPlaceholderInner} activeOpacity={0.8}>
-                            <Ionicons name="cloud-upload-outline" size={44} color="#9ca3af" />
-                            <Text style={styles.uploadText}>Tap to select news images or videos</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewsScroll}>
-                            {mediaFiles.map((file, index) => (
-                                <View key={index} style={styles.imageItemContainer}>
-                                    <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-                                    {file.type === 'video' && (
-                                        <View style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            backgroundColor: 'rgba(0,0,0,0.35)',
-                                            justifyContent: 'center',
-                                            alignItems: 'center'
-                                        }}>
-                                            <Ionicons name="play-circle" size={32} color="white" />
-                                        </View>
-                                    )}
-                                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeMedia(index)}>
-                                        <Ionicons name="close" size={16} color="white" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
-                    )}
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={24} color="black" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Add New News</Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('MyNews')}
+                        style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
+                            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
+                        }}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Choose Files Button */}
-                <TouchableOpacity onPress={pickMedia} style={styles.chooseFilesBtn}>
-                    <Ionicons name="cloud-upload-outline" size={18} color="#4b5563" />
-                    <Text style={styles.chooseFilesText}>Choose Photos & Videos</Text>
-                </TouchableOpacity>
+                <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+                    <Text style={styles.sectionTitle}>News Media (Photos & Videos)</Text>
 
-                {/* Aspect Ratio / Frame Selection */}
-                {mediaFiles.length > 0 && (
-                    <View style={styles.formGroup}>
-                        <Text style={styles.label}>Select Frame</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                            <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.aspectBtn, postAspectRatio === null && styles.aspectBtnSelected]}>
-                                <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? '#ea580c' : '#6b7280'} />
-                                <Text style={[styles.aspectBtnText, postAspectRatio === null && { color: '#ea580c', fontWeight: 'bold' }]}>Original</Text>
+                    {/* Dotted upload container */}
+                    <View
+                        style={[
+                            styles.uploadPlaceholder,
+                            mediaFiles.length > 0 ? styles.uploadPlaceholderWithImages : {}
+                        ]}
+                    >
+                        {mediaFiles.length === 0 ? (
+                            <TouchableOpacity onPress={pickMedia} style={styles.uploadPlaceholderInner} activeOpacity={0.8}>
+                                <Ionicons name="cloud-upload-outline" size={44} color="#9ca3af" />
+                                <Text style={styles.uploadText}>Tap to select news images or videos</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.aspectBtn, postAspectRatio === 1 && styles.aspectBtnSelected]}>
-                                <View style={[styles.aspectIcon, { width: 18, height: 18, borderColor: postAspectRatio === 1 ? '#ea580c' : '#6b7280' }]} />
-                                <Text style={[styles.aspectBtnText, postAspectRatio === 1 && { color: '#ea580c', fontWeight: 'bold' }]}>1:1</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setPostAspectRatio(4 / 5)} style={[styles.aspectBtn, postAspectRatio === 4 / 5 && styles.aspectBtnSelected]}>
-                                <View style={[styles.aspectIcon, { width: 16, height: 20, borderColor: postAspectRatio === 4 / 5 ? '#ea580c' : '#6b7280' }]} />
-                                <Text style={[styles.aspectBtnText, postAspectRatio === 4 / 5 && { color: '#ea580c', fontWeight: 'bold' }]}>4:5</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setPostAspectRatio(16 / 9)} style={[styles.aspectBtn, postAspectRatio === 16 / 9 && styles.aspectBtnSelected]}>
-                                <View style={[styles.aspectIcon, { width: 22, height: 12, borderColor: postAspectRatio === 16 / 9 ? '#ea580c' : '#6b7280' }]} />
-                                <Text style={[styles.aspectBtnText, postAspectRatio === 16 / 9 && { color: '#ea580c', fontWeight: 'bold' }]}>16:9</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 6, fontStyle: 'italic' }}>
-                            Frames keep your post looking consistent. Videos will automatically crop.
-                        </Text>
-                    </View>
-                )}
-
-                {/* Category Selector */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>Select Category</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                        {CATEGORY_MAP.map((cat) => (
-                            <TouchableOpacity
-                                key={cat.name}
-                                onPress={() => setCategory(cat.name)}
-                                style={[
-                                    styles.categoryBadge,
-                                    category === cat.name ? styles.categoryBadgeSelected : {}
-                                ]}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                                <Text style={[
-                                    styles.categoryBadgeText,
-                                    category === cat.name ? styles.categoryBadgeTextSelected : {}
-                                ]}>
-                                    {cat.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* State & District Selectors (Conditional) */}
-                {(category === 'State' || category === 'District') && (
-                    <View style={styles.formGroup}>
-                        <Text style={styles.label}>Select State</Text>
-                        <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', marginBottom: 12 }}>
-                            <Picker
-                                selectedValue={selectedState}
-                                onValueChange={(itemValue, itemIndex) => {
-                                    if (itemIndex > 0) {
-                                        const st = statesList[itemIndex - 1];
-                                        handleStateChange(st.name, st.id);
-                                    } else {
-                                        handleStateChange('', '');
-                                    }
-                                }}
-                            >
-                                <Picker.Item label="Select State" value="" />
-                                {statesList.map((st, idx) => (
-                                    <Picker.Item key={idx} label={st.name} value={st.name} />
+                        ) : (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewsScroll}>
+                                {mediaFiles.map((file, index) => (
+                                    <View key={index} style={styles.imageItemContainer}>
+                                        <Image source={{ uri: file.uri }} style={styles.imagePreview} />
+                                        {file.type === 'video' && (
+                                            <View style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                backgroundColor: 'rgba(0,0,0,0.35)',
+                                                justifyContent: 'center',
+                                                alignItems: 'center'
+                                            }}>
+                                                <Ionicons name="play-circle" size={32} color="white" />
+                                            </View>
+                                        )}
+                                        <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeMedia(index)}>
+                                            <Ionicons name="close" size={16} color="white" />
+                                        </TouchableOpacity>
+                                    </View>
                                 ))}
-                            </Picker>
-                        </View>
-
-                        {category === 'District' && (
-                            <>
-                                <Text style={styles.label}>Select District</Text>
-                                <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb' }}>
-                                    <Picker
-                                        selectedValue={selectedDistrict}
-                                        onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
-                                        enabled={districtsList.length > 0}
-                                    >
-                                        <Picker.Item label="Select District" value="" />
-                                        {districtsList.map((dst, idx) => (
-                                            <Picker.Item key={idx} label={dst.name} value={dst.name} />
-                                        ))}
-                                    </Picker>
-                                </View>
-                            </>
+                            </ScrollView>
                         )}
                     </View>
-                )}
 
-                {/* AI Assistant Button */}
-                <TouchableOpacity 
-                    onPress={() => setAiModalVisible(true)}
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#ea580c12',
-                        borderWidth: 1.5,
-                        borderColor: '#ea580c',
-                        borderRadius: 24,
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
-                        marginBottom: 20,
-                        gap: 8,
-                        shadowColor: '#ea580c',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 4,
-                        elevation: 1
-                    }}
-                    activeOpacity={0.8}
-                >
-                    <Ionicons name="sparkles" size={18} color="#ea580c" />
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c' }}>🤖 Generate Title & Description by AI</Text>
-                </TouchableOpacity>
-
-                {/* Form Fields */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>News Title</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter news title"
-                        placeholderTextColor="#9ca3af"
-                        value={title}
-                        onChangeText={setTitle}
-                    />
-                </View>
-
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>News Description</Text>
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Enter news description"
-                        placeholderTextColor="#9ca3af"
-                        multiline
-                        numberOfLines={6}
-                        value={description}
-                        onChangeText={setDescription}
-                        textAlignVertical="top"
-                    />
-                </View>
-
-                {/* Consent Checkboxes */}
-                <View style={{ marginVertical: 15, gap: 12 }}>
-                    {/* Checkbox 1: Terms */}
-                    <TouchableOpacity 
-                        onPress={() => {
-                            if (!termsAccepted) {
-                                setTermsScrolledToBottom(false);
-                                setTermsModalVisible(true);
-                            } else {
-                                setTermsAccepted(false);
-                            }
-                        }}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                        activeOpacity={0.8}
-                    >
-                        <View style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 4,
-                            borderWidth: 1.5,
-                            borderColor: '#ea580c',
-                            backgroundColor: termsAccepted ? '#ea580c' : 'transparent',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                            {termsAccepted && <Ionicons name="checkmark" size={14} color="white" />}
-                        </View>
-                        <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
-                        </Text>
+                    {/* Choose Files Button */}
+                    <TouchableOpacity onPress={pickMedia} style={styles.chooseFilesBtn}>
+                        <Ionicons name="cloud-upload-outline" size={18} color="#4b5563" />
+                        <Text style={styles.chooseFilesText}>Choose Photos & Videos</Text>
                     </TouchableOpacity>
 
-                    {/* Checkbox 2: Policy */}
-                    <TouchableOpacity 
-                        onPress={() => {
-                            if (!policyAccepted) {
-                                setPolicyScrolledToBottom(false);
-                                setPolicyModalVisible(true);
-                            } else {
-                                setPolicyAccepted(false);
-                            }
-                        }}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-                        activeOpacity={0.8}
-                    >
-                        <View style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 4,
-                            borderWidth: 1.5,
-                            borderColor: '#ea580c',
-                            backgroundColor: policyAccepted ? '#ea580c' : 'transparent',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                            {policyAccepted && <Ionicons name="checkmark" size={14} color="white" />}
+                    {/* Aspect Ratio / Frame Selection */}
+                    {mediaFiles.length > 0 && (
+                        <View style={styles.formGroup}>
+                            <Text style={styles.label}>Select Frame</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.aspectBtn, postAspectRatio === null && styles.aspectBtnSelected]}>
+                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? '#ea580c' : '#6b7280'} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === null && { color: '#ea580c', fontWeight: 'bold' }]}>Original</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.aspectBtn, postAspectRatio === 1 && styles.aspectBtnSelected]}>
+                                    <View style={[styles.aspectIcon, { width: 18, height: 18, borderColor: postAspectRatio === 1 ? '#ea580c' : '#6b7280' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 1 && { color: '#ea580c', fontWeight: 'bold' }]}>1:1</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(4 / 5)} style={[styles.aspectBtn, postAspectRatio === 4 / 5 && styles.aspectBtnSelected]}>
+                                    <View style={[styles.aspectIcon, { width: 16, height: 20, borderColor: postAspectRatio === 4 / 5 ? '#ea580c' : '#6b7280' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 4 / 5 && { color: '#ea580c', fontWeight: 'bold' }]}>4:5</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setPostAspectRatio(16 / 9)} style={[styles.aspectBtn, postAspectRatio === 16 / 9 && styles.aspectBtnSelected]}>
+                                    <View style={[styles.aspectIcon, { width: 22, height: 12, borderColor: postAspectRatio === 16 / 9 ? '#ea580c' : '#6b7280' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 16 / 9 && { color: '#ea580c', fontWeight: 'bold' }]}>16:9</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 6, fontStyle: 'italic' }}>
+                                Frames keep your post looking consistent. Videos will automatically crop.
+                            </Text>
                         </View>
-                        <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                            I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Privacy Policy</Text>
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Submit Button */}
-                <TouchableOpacity 
-                    onPress={handleSubmit} 
-                    disabled={loading} 
-                    style={[styles.submitBtn, loading ? styles.submitBtnDisabled : {}]}
-                    activeOpacity={0.8}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.submitBtnText}>Submit News</Text>
                     )}
-                </TouchableOpacity>
-            </ScrollView>
+
+                    {/* Category Selector */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>Select Category</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+                            {CATEGORY_MAP.map((cat) => (
+                                <TouchableOpacity
+                                    key={cat.name}
+                                    onPress={() => setCategory(cat.name)}
+                                    style={[
+                                        styles.categoryBadge,
+                                        category === cat.name ? styles.categoryBadgeSelected : {}
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                                    <Text style={[
+                                        styles.categoryBadgeText,
+                                        category === cat.name ? styles.categoryBadgeTextSelected : {}
+                                    ]}>
+                                        {cat.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    {/* State & District Selectors (Conditional) */}
+                    {(category === 'State' || category === 'District') && (
+                        <View style={styles.formGroup}>
+                            <Text style={styles.label}>Select State</Text>
+                            <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', marginBottom: 12 }}>
+                                <Picker
+                                    selectedValue={selectedState}
+                                    onValueChange={(itemValue, itemIndex) => {
+                                        if (itemIndex > 0) {
+                                            const st = statesList[itemIndex - 1];
+                                            handleStateChange(st.name, st.id);
+                                        } else {
+                                            handleStateChange('', '');
+                                        }
+                                    }}
+                                >
+                                    <Picker.Item label="Select State" value="" />
+                                    {statesList.map((st, idx) => (
+                                        <Picker.Item key={idx} label={st.name} value={st.name} />
+                                    ))}
+                                </Picker>
+                            </View>
+
+                            {category === 'District' && (
+                                <>
+                                    <Text style={styles.label}>Select District</Text>
+                                    <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb' }}>
+                                        <Picker
+                                            selectedValue={selectedDistrict}
+                                            onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
+                                            enabled={districtsList.length > 0}
+                                        >
+                                            <Picker.Item label="Select District" value="" />
+                                            {districtsList.map((dst, idx) => (
+                                                <Picker.Item key={idx} label={dst.name} value={dst.name} />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                </>
+                            )}
+                        </View>
+                    )}
+
+                    {/* AI Assistant Button */}
+                    <TouchableOpacity
+                        onPress={() => setAiModalVisible(true)}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#ea580c12',
+                            borderWidth: 1.5,
+                            borderColor: '#ea580c',
+                            borderRadius: 24,
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            marginBottom: 20,
+                            gap: 8,
+                            shadowColor: '#ea580c',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 1
+                        }}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="sparkles" size={18} color="#ea580c" />
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c' }}>🤖 Generate Title & Description by AI</Text>
+                    </TouchableOpacity>
+
+                    {/* Form Fields */}
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>News Title</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter news title"
+                            placeholderTextColor="#9ca3af"
+                            value={title}
+                            onChangeText={setTitle}
+                        />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>News Description</Text>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            placeholder="Enter news description"
+                            placeholderTextColor="#9ca3af"
+                            multiline
+                            numberOfLines={6}
+                            value={description}
+                            onChangeText={setDescription}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
+                    {/* Consent Checkboxes */}
+                    <View style={{ marginVertical: 15, gap: 12 }}>
+                        {/* Checkbox 1: Terms */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (!termsAccepted) {
+                                    setTermsScrolledToBottom(false);
+                                    setTermsModalVisible(true);
+                                } else {
+                                    setTermsAccepted(false);
+                                }
+                            }}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 4,
+                                borderWidth: 1.5,
+                                borderColor: '#ea580c',
+                                backgroundColor: termsAccepted ? '#ea580c' : 'transparent',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                {termsAccepted && <Ionicons name="checkmark" size={14} color="white" />}
+                            </View>
+                            <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
+                                I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Checkbox 2: Policy */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (!policyAccepted) {
+                                    setPolicyScrolledToBottom(false);
+                                    setPolicyModalVisible(true);
+                                } else {
+                                    setPolicyAccepted(false);
+                                }
+                            }}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                            activeOpacity={0.8}
+                        >
+                            <View style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 4,
+                                borderWidth: 1.5,
+                                borderColor: '#ea580c',
+                                backgroundColor: policyAccepted ? '#ea580c' : 'transparent',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                {policyAccepted && <Ionicons name="checkmark" size={14} color="white" />}
+                            </View>
+                            <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
+                                I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Privacy Policy</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Submit Button */}
+                    <TouchableOpacity
+                        onPress={handleSubmit}
+                        disabled={loading}
+                        style={[styles.submitBtn, loading ? styles.submitBtnDisabled : {}]}
+                        activeOpacity={0.8}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.submitBtnText}>Submit News</Text>
+                        )}
+                    </TouchableOpacity>
+                </ScrollView>
             </KeyboardAvoidingView>
 
             {/* AI Assistant Modal */}
@@ -716,14 +716,14 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 transparent={true}
                 onRequestClose={() => setAiModalVisible(false)}
             >
-                <Pressable 
+                <Pressable
                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
                     onPress={() => setAiModalVisible(false)}
                 >
                     <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
                         {/* Handle bar */}
                         <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
-                        
+
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -739,7 +739,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
                                 Enter topic keywords / मुख्य शब्द दर्ज करें:
                             </Text>
-                            
+
                             <TextInput
                                 style={{
                                     borderWidth: 1,
@@ -765,7 +765,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 Selected Category / चयनित श्रेणी: <Text style={{ fontWeight: 'bold', color: '#ea580c' }}>{category}</Text>
                             </Text>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={handleAiGenerate}
                                 disabled={generating}
                                 style={{
@@ -815,8 +815,8 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 <Ionicons name="close" size={24} color="#6b7280" />
                             </TouchableOpacity>
                         </View>
-                        
-                        <ScrollView 
+
+                        <ScrollView
                             style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', marginBottom: 15 }}
                             onScroll={(e) => handleScroll(e, setTermsScrolledToBottom)}
                             scrollEventThrottle={16}
@@ -920,8 +920,8 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 <Ionicons name="close" size={24} color="#6b7280" />
                             </TouchableOpacity>
                         </View>
-                        
-                        <ScrollView 
+
+                        <ScrollView
                             style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', marginBottom: 15 }}
                             onScroll={(e) => handleScroll(e, setPolicyScrolledToBottom)}
                             scrollEventThrottle={16}

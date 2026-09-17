@@ -566,7 +566,10 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     />
                 ) : (
                     <View style={[styles.backgroundVideo, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
-                        <ActivityIndicator color="white" />
+                        <Image 
+                            source={{ uri: item.media.find((m: string) => !isVideo(m)) ? (item.media.find((m: string) => !isVideo(m)).startsWith('http') ? item.media.find((m: string) => !isVideo(m)) : `${POST_MEDIA_PATH}${item.media.find((m: string) => !isVideo(m))}`) : (fullVideoUri || 'https://via.placeholder.com/640x360.png?text=Loading...') }} 
+                            style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                        />
                     </View>
                 )}
 

@@ -87,7 +87,7 @@ const cardWidth = width - 24;
 const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
-const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBuffering, poster, aspectRatio }: any) => {
+const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, onReady, isMuted, onBuffering, poster, aspectRatio }: any) => {
     const [duration, setDuration] = useState(0);
     const [position, setPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -101,6 +101,7 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
     };
 
     const isMounted = useRef(true);
+    const showVideo = isActive !== undefined ? isActive : shouldPlay;
 
     useEffect(() => {
         isMounted.current = true;
@@ -127,44 +128,51 @@ const VideoItem = ({ uri, shouldPlay, forwardedRef, onReady, isMuted, onBufferin
 
     return (
         <View style={{ width: '100%', aspectRatio: aspectRatio || 9 / 16, backgroundColor: 'black' }}>
-            <Video
-                ref={forwardedRef}
-                source={{ uri }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode={ResizeMode.COVER}
-                isLooping
-                useNativeControls={false}
-                shouldPlay={shouldPlay}
-                isMuted={isMuted}
-                usePoster={!!poster}
-                posterSource={poster ? { uri: poster } : undefined}
-                posterStyle={{ resizeMode: ResizeMode.COVER }}
-                onPlaybackStatusUpdate={(status: any) => {
-                    if (status.isLoaded) {
-                        if (!isSliding.current) {
-                            setPosition(status.positionMillis || 0);
+            {showVideo ? (
+                <Video
+                    ref={forwardedRef}
+                    source={{ uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode={ResizeMode.COVER}
+                    isLooping
+                    useNativeControls={false}
+                    shouldPlay={shouldPlay}
+                    isMuted={isMuted}
+                    usePoster={!!poster}
+                    posterSource={poster ? { uri: poster } : undefined}
+                    posterStyle={{ resizeMode: ResizeMode.COVER }}
+                    onPlaybackStatusUpdate={(status: any) => {
+                        if (status.isLoaded) {
+                            if (!isSliding.current) {
+                                setPosition(status.positionMillis || 0);
+                            }
+                            if (onBuffering) onBuffering(status.isBuffering);
                         }
-                        if (onBuffering) onBuffering(status.isBuffering);
-                    }
-                }}
-                progressUpdateIntervalMillis={500}
-                onLoadStart={() => {
-                    if (onBuffering) onBuffering(true);
-                    setError(null);
-                }}
-                onLoad={(status: any) => {
-                    if (status.isLoaded) {
-                        if (status.durationMillis) setDuration(status.durationMillis);
-                        if (onReady) onReady();
+                    }}
+                    progressUpdateIntervalMillis={500}
+                    onLoadStart={() => {
+                        if (onBuffering) onBuffering(true);
+                        setError(null);
+                    }}
+                    onLoad={(status: any) => {
+                        if (status.isLoaded) {
+                            if (status.durationMillis) setDuration(status.durationMillis);
+                            if (onReady) onReady();
+                            if (onBuffering) onBuffering(false);
+                        }
+                    }}
+                    onError={(e) => {
+                        console.error("[PostCard Video] Error:", e, "URI:", uri);
+                        setError("Failed to play video");
                         if (onBuffering) onBuffering(false);
-                    }
-                }}
-                onError={(e) => {
-                    console.error("[PostCard Video] Error:", e, "URI:", uri);
-                    setError("Failed to play video");
-                    if (onBuffering) onBuffering(false);
-                }}
-            />
+                    }}
+                />
+            ) : (
+                <Image 
+                    source={{ uri: poster || 'https://via.placeholder.com/640x360.png?text=Loading...' }} 
+                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                />
+            )}
             {error && (
                 <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                     <Ionicons name="alert-circle" size={40} color="white" />
@@ -929,6 +937,7 @@ const PostCard = ({
                                         <VideoItem
                                             uri={uri}
                                             poster={mediaList.find(m => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
+                                            isActive={shouldPlay && isFocused && index === activeMediaIndex}
                                             shouldPlay={index === activeMediaIndex && actualShouldPlay}
                                             forwardedRef={index === activeMediaIndex ? videoRef : null}
                                             onReady={() => setVideoReady(true)}
