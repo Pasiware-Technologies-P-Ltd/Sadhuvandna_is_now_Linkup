@@ -10,7 +10,9 @@ import {
     ActivityIndicator,
     PermissionsAndroid,
     Platform,
-    Alert
+    Alert,
+    AppState,
+    AppStateStatus
 } from 'react-native';
 import {
     createAgoraRtcEngine,
@@ -74,6 +76,27 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
         return () => clearInterval(interval);
     }, [isJoined, remoteUid]);
 
+    // Handle background/foreground state for camera
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            if (nextAppState === 'background' || nextAppState === 'inactive') {
+                if (isVideo && agoraEngineRef.current) {
+                    agoraEngineRef.current.enableLocalVideo(false);
+                    console.log("App moved to background: Disabled local camera");
+                }
+            } else if (nextAppState === 'active') {
+                if (isVideo && isCameraOn && agoraEngineRef.current) {
+                    agoraEngineRef.current.enableLocalVideo(true);
+                    console.log("App moved to foreground: Enabled local camera");
+                }
+            }
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, [isVideo, isCameraOn]);
+
     const startForegroundService = async () => {
         if (Platform.OS !== 'android') return;
         try {
@@ -91,7 +114,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     asForegroundService: true,
                     ongoing: true,
                     color: '#ea580c',
-                    foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE, AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_CAMERA]
+                    foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE]
                 },
             });
             console.log("Foreground service started");

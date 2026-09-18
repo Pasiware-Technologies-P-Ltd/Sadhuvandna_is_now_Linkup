@@ -593,10 +593,11 @@ const PostCard = ({
                         let command = '';
                         if (isVid) {
                             // Command to overlay logo and text with Instagram-like corner swapping animation (same row, transparent logo background)
-                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=60:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=250:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),20,W-340)':y='if(lt(mod(t,6),3),20,H-80)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),85,W-275)':y='if(lt(mod(t,6),3),20,H-80)'" -c:a copy "${outUri}"`;
+                            // Reduced size for PostCards: logo 30px, text 125px
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=125:-1[txt];[0:v][logo]overlay=x='if(lt(mod(t,6),3),15,W-175)':y='if(lt(mod(t,6),3),15,H-40)'[v1];[v1][txt]overlay=x='if(lt(mod(t,6),3),50,W-140)':y='if(lt(mod(t,6),3),15,H-40)'" -c:a copy "${outUri}"`;
                         } else {
                             // Static overlay for images (bottom right)
-                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=60:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=250:-1[txt];[0:v][logo]overlay=W-340:H-80[v1];[v1][txt]overlay=W-275:H-80" "${outUri}"`;
+                            command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=125:-1[txt];[0:v][logo]overlay=W-175:H-40[v1];[v1][txt]overlay=W-140:H-40" "${outUri}"`;
                         }
                         
                         const session = await FFmpegKit.execute(command);
