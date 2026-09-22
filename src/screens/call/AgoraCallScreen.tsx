@@ -114,7 +114,10 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     asForegroundService: true,
                     ongoing: true,
                     color: '#ea580c',
-                    foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE]
+                    foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE],
+                    showChronometer: true,
+                    chronometerDirection: 'up',
+                    timestamp: Date.now()
                 },
             });
             console.log("Foreground service started");

@@ -54,6 +54,7 @@ export type RootStackParamList = {
   CreateNews: undefined;
   PostBreakingNews: undefined;
   MyNews: undefined;
+  AnchorIdCard: undefined;
   JoinGroup: { inviteCode: string };
   SupportChat: undefined;
   CreateBusinessPage: undefined;

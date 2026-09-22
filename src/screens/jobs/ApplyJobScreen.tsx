@@ -13,6 +13,8 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [education, setEducation] = useState('');
+    const [district, setDistrict] = useState('');
+    const [stateName, setStateName] = useState('');
 
     const [photo, setPhoto] = useState<any>(null);
     const [aadhaar, setAadhaar] = useState<any>(null);
@@ -39,7 +41,7 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
     };
 
     const handleSubmit = async () => {
-        if (!name || !phone || !email || !education || !photo || !aadhaar || !resume) {
+        if (!name || !phone || !email || !education || !district || !stateName || !photo || !aadhaar || !resume) {
             Alert.alert("Missing Fields", "Please fill all fields and upload all documents.");
             return;
         }
@@ -60,6 +62,8 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
             formData.append('phone', phone);
             formData.append('email', email);
             formData.append('education', education);
+            formData.append('district', district);
+            formData.append('state', stateName);
 
             const appendFile = (key: string, file: any) => {
                 formData.append(key, {
@@ -79,6 +83,15 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
             });
 
             if (res.data.status === 'success') {
+                // Save the uploaded photo specifically for the Anchor ID Card locally
+                if (isAnchorApplication && photo) {
+                    try {
+                        await AsyncStorage.setItem('anchor_local_photo', photo.uri);
+                    } catch (e) {
+                        console.error('Failed to save local anchor photo', e);
+                    }
+                }
+
                 Alert.alert("Success", "Application Submitted Successfully!", [
                     { text: "OK", onPress: () => navigation.goBack() }
                 ]);
@@ -142,6 +155,24 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                             style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
                             placeholder="e.g. B.Tech, MBA"
                             value={education} onChangeText={setEducation}
+                        />
+                    </View>
+
+                    <View>
+                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>District</Text>
+                        <TextInput
+                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            placeholder="Enter district"
+                            value={district} onChangeText={setDistrict}
+                        />
+                    </View>
+
+                    <View>
+                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>State</Text>
+                        <TextInput
+                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            placeholder="Enter state"
+                            value={stateName} onChangeText={setStateName}
                         />
                     </View>
 

@@ -417,18 +417,31 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Add New News</Text>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('MyNews')}
-                        style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
-                            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
-                        }}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('AnchorIdCard')}
+                            style={{
+                                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+                                borderRadius: 20, width: 34, height: 34
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="id-card-outline" size={18} color="#2563eb" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('MyNews')}
+                            style={{
+                                flexDirection: 'row', alignItems: 'center',
+                                backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
+                                borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
+                            }}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">

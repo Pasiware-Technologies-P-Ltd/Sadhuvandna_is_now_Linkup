@@ -8,6 +8,9 @@ $phone = $_POST['phone'] ?? '';
 $email = $_POST['email'] ?? '';
 $education = $_POST['education'] ?? '';
 
+$state = $_POST['state'] ?? '';
+$district = $_POST['district'] ?? '';
+
 if (!$user_id || !$name || !$phone || !$email || !$education) {
     echo json_encode(["status" => "error", "message" => "All fields are required."]);
     exit;
@@ -38,14 +41,14 @@ $date = date("Y-m-d H:i:s");
 
 // Insert or update into tbl_anchor_applications
 $stmt = $con->prepare("
-    INSERT INTO tbl_anchor_applications (user_id, name, phone, email, education, photo, aadhaar, resume, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO tbl_anchor_applications (user_id, name, phone, email, education, state, district, photo, aadhaar, resume, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
-    name=?, phone=?, email=?, education=?, photo=?, aadhaar=?, resume=?, status='Pending', created_at=?
+    name=?, phone=?, email=?, education=?, state=?, district=?, photo=?, aadhaar=?, resume=?, status='Pending', created_at=?
 ");
-$stmt->bind_param("isssssssssssssssss", 
-    $user_id, $name, $phone, $email, $education, $photoName, $aadhaarName, $resumeName, $status, $date,
-    $name, $phone, $email, $education, $photoName, $aadhaarName, $resumeName, $date
+$stmt->bind_param("isssssssssssssssssssss", 
+    $user_id, $name, $phone, $email, $education, $state, $district, $photoName, $aadhaarName, $resumeName, $status, $date,
+    $name, $phone, $email, $education, $state, $district, $photoName, $aadhaarName, $resumeName, $date
 );
 
 if ($stmt->execute()) {

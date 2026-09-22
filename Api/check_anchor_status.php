@@ -28,13 +28,16 @@ $checkPaid = $con->query("
 $paid = ($checkPaid && $checkPaid->num_rows > 0);
 
 // 3. Check application status
-$query = $con->query("SELECT status FROM tbl_anchor_applications WHERE user_id = '$user_id' LIMIT 1");
+$query = $con->query("SELECT status, photo, state, district FROM tbl_anchor_applications WHERE user_id = '$user_id' LIMIT 1");
 if ($query && $query->num_rows > 0) {
     $row = $query->fetch_assoc();
     echo json_encode([
         "status" => "success",
         "applied" => true,
         "anchor_status" => $row['status'], // Pending, Approved, Rejected
+        "application_photo" => $row['photo'],
+        "state" => $row['state'],
+        "district" => $row['district'],
         "paid" => $paid,
         "fee" => $fee,
         "payment_url" => "payment_anchor.php?user_id=" . $user_id

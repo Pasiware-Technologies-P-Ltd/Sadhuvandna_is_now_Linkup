@@ -23,6 +23,7 @@ import NewsScreen from '../screens/news/NewsScreen';
 import CreateNewsScreen from '../screens/news/CreateNewsScreen';
 import PostBreakingNewsScreen from '../screens/news/PostBreakingNewsScreen';
 import MyNewsScreen from '../screens/news/MyNewsScreen';
+import AnchorIdCardScreen from '../screens/news/AnchorIdCardScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import CreatePostScreen from '../screens/post/CreatePostScreen';
 import CreateReelScreen from '../screens/post/CreateReelScreen';
@@ -209,6 +210,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="CreateNews" component={CreateNewsScreen} />
       <Stack.Screen name="PostBreakingNews" component={PostBreakingNewsScreen} />
       <Stack.Screen name="MyNews" component={MyNewsScreen} />
+     <Stack.Screen name="AnchorIdCard" component={AnchorIdCardScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="Comments" component={CommentsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />

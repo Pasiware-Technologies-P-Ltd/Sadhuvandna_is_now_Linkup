@@ -343,6 +343,7 @@ const NewsScreen = ({ navigation }: any) => {
 
     // Premium UI States
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchActive, setIsSearchActive] = useState(false);
     const [bookmarks, setBookmarks] = useState<string[]>([]);
     const shimmerAnim = useRef(new Animated.Value(0.4)).current;
     const { language, t } = useLanguage();
@@ -358,10 +359,15 @@ const NewsScreen = ({ navigation }: any) => {
     });
     
     const insets = useSafeAreaInsets();
-    const tickerTranslateY = scrollYClamped.interpolate({
-        inputRange: [0, Math.max(0, headerHeight - insets.top)],
-        outputRange: [0, -Math.max(0, headerHeight - insets.top)],
-        extrapolate: 'clamp',
+    const [tickerY, setTickerY] = useState(150); // Fallback until onLayout fires
+    const safeTop = insets.top || 0; // Use exact inset to avoid white gap
+    const stickyThreshold = Math.max(0, tickerY - safeTop);
+    
+    // We use the raw scrollY (not clamped) to calculate absolute position
+    const tickerAbsoluteTranslateY = scrollY.interpolate({
+        inputRange: [-1, 0, stickyThreshold],
+        outputRange: [tickerY + 1, tickerY, safeTop],
+        extrapolateRight: 'clamp',
     });
 
     // Visible item tracking for video auto-pause
@@ -628,7 +634,7 @@ const NewsScreen = ({ navigation }: any) => {
 
     const isFocused = useIsFocused();
 
-    const renderNewsItem = ({ item }: { item: any }) => {
+    const renderNewsItem = ({ item, index }: { item: any, index?: number }) => {
         if (!item) return null;
         const images = item.images || [];
         const isBookmarked = bookmarks.includes(item.id?.toString());
@@ -646,129 +652,84 @@ const NewsScreen = ({ navigation }: any) => {
 
         const THUMB_WIDTH = width * 0.72; // 72% width per item in scroll
 
-        const renderSingleMedia = (filename: string) => {
-            const uri = `${NEWS_URL}${filename}`;
+        if (index === 0) {
+            const displayImage = images.length > 0 ? `${NEWS_URL}${images[0]}` : 'https://via.placeholder.com/400x250?text=News';
             return (
-                <View style={{ marginHorizontal: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: 'black' }}>
-                    {isVideo(filename) ? (
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate('NewsDetail', { news: item })}
+                    style={{ marginHorizontal: 16, marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', height: 260 }}
+                >
+                    {images.length > 0 && isVideo(images[0]) ? (
                         <ProfessionalVideoPlayer
-                            key={filename}
-                            uri={uri}
-                            style={{ width: '100%', height: 220 }}
+                            uri={displayImage}
+                            style={{ width: '100%', height: '100%' }}
                             shouldPlay={isVisible}
                             onExpand={() => navigation.navigate('NewsDetail', { news: item })}
                         />
                     ) : (
                         <Image
-                            key={filename}
-                            source={{ uri }}
-                            style={{ width: '100%', height: 220, backgroundColor: '#f3f4f6' }}
+                            source={{ uri: displayImage }}
+                            style={{ width: '100%', height: '100%', opacity: 0.9 }}
                             resizeMode="cover"
                         />
                     )}
-                </View>
-            );
-        };
-
-        const renderScrollableMedia = (files: string[]) => {
-            return (
-                <ScrollView
-                    horizontal
-                    pagingEnabled={false}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-                >
-                    {files.map((filename: string, idx: number) => {
-                        const uri = `${NEWS_URL}${filename}`;
-                        if (isVideo(filename)) {
-                            return (
-                                <ProfessionalVideoPlayer
-                                    key={idx}
-                                    uri={uri}
-                                    style={{ width: THUMB_WIDTH, height: 200, borderRadius: 12 }}
-                                    shouldPlay={isVisible}
-                                    onExpand={() => navigation.navigate('NewsDetail', { news: item })}
-                                />
-                            );
-                        }
-                        return (
-                            <Image
-                                key={idx}
-                                source={{ uri }}
-                                style={{ width: THUMB_WIDTH, height: 200, borderRadius: 12, backgroundColor: '#f3f4f6' }}
-                                resizeMode="cover"
-                            />
-                        );
-                    })}
-                </ScrollView>
-            );
-        };
-
-        return (
-            <View style={{ backgroundColor: 'white', marginBottom: 8, borderBottomWidth: 6, borderBottomColor: '#f3f4f6' }}>
-                <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-                    {/* Category + Location badge */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6, gap: 6 }}>
-                        {item.category && (
-                            <View style={{ backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, borderWidth: 1, borderColor: '#ffedd5' }}>
-                                <Text style={{ fontSize: 10, color: '#ea580c', fontWeight: '800', letterSpacing: 0.3 }}>{item.category}</Text>
-                            </View>
-                        )}
-                        {(item.state || item.district) && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                <Ionicons name="location-outline" size={11} color="#6b7280" />
-                                <Text style={{ fontSize: 11, color: '#6b7280', fontWeight: '600' }}>
-                                    {item.state}{item.district ? ` · ${item.district}` : ''}
-                                </Text>
-                            </View>
-                        )}
-                        <Text style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto' }}>{item.created_at?.split(' ')[0]}</Text>
-                    </View>
-
-                    {/* TITLE */}
-                    <Text style={{ fontSize: 17, fontWeight: '800', color: '#111827', lineHeight: 25, marginBottom: 12 }}>
-                        {item.title}
-                    </Text>
-                </View>
-
-                {/* MEDIA — full bleed, horizontal scroll if multiple */}
-                {images.length > 0 && (
-                    <View style={{ marginBottom: 12 }}>
-                        {images.length === 1
-                            ? renderSingleMedia(images[0])
-                            : renderScrollableMedia(images)
-                        }
-                    </View>
-                )}
-
-                <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
-                    {/* DESCRIPTION */}
-                    <Text style={{ fontSize: 14, color: '#374151', lineHeight: 22, marginBottom: 14 }} numberOfLines={4}>
-                        {item.description}
-                    </Text>
-
-                    {/* FOOTER — Read More + actions */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('NewsDetail', { news: item })}
-                            activeOpacity={0.8}
-                            style={{ backgroundColor: '#ea580c', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                        >
-                            <Ionicons name="book-outline" size={13} color="white" />
-                            <Text style={{ color: 'white', fontSize: 12, fontWeight: '700' }}>{t('readMore')}</Text>
-                        </TouchableOpacity>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-                            <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
-                                <Ionicons name="share-social-outline" size={22} color="#6b7280" />
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => toggleBookmark(item.id?.toString())} activeOpacity={0.7}>
-                                <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={22} color={isBookmarked ? "#ea580c" : "#6b7280"} />
-                            </TouchableOpacity>
+                    
+                    {/* Dark overlay for text readability */}
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end', padding: 16 }}>
+                        <Text style={{ color: 'white', fontSize: 20, fontWeight: '800', lineHeight: 28, marginBottom: 8, textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 }}>
+                            {item.title}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#e5e7eb', fontSize: 13, fontWeight: '600' }}>
+                                {item.created_at?.split(' ')[0] || 'Recently'} | {item.district || item.state || 'न्यूज़'}
+                            </Text>
                         </View>
                     </View>
+                    
+                    {item.category && (
+                        <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: '#dc2626', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 }}>
+                            <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>{item.category}</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            );
+        }
+
+        // For index > 0, show compact row layout
+        const displayImage = images.length > 0 ? `${NEWS_URL}${images[0]}` : 'https://via.placeholder.com/150?text=News';
+        
+        return (
+            <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('NewsDetail', { news: item })}
+                style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+            >
+                {/* Left side: Image */}
+                <View style={{ width: 130, height: 85, borderRadius: 8, overflow: 'hidden', backgroundColor: '#f3f4f6', marginRight: 14 }}>
+                    {images.length > 0 && isVideo(images[0]) ? (
+                        <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+                            <Ionicons name="play-circle" size={32} color="white" />
+                        </View>
+                    ) : (
+                        <Image source={{ uri: displayImage }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    )}
                 </View>
-            </View>
+                
+                {/* Right side: Content */}
+                <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', lineHeight: 22 }} numberOfLines={3}>
+                        {item.title}
+                    </Text>
+                    
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                        <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '500' }}>
+                            {item.created_at?.split(' ')[0] || 'Recently'}
+                            {item.district || item.state ? `  |  ${item.district || item.state}` : ''}
+                        </Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
         );
     };
 
@@ -914,37 +875,75 @@ const NewsScreen = ({ navigation }: any) => {
                     )}
                 </View>
                 
-                <View className="flex-row bg-gray-100 p-1 rounded-2xl mx-5 mb-4 border border-gray-200">
-                    <TouchableOpacity 
-                        onPress={() => setActiveTab('apna')}
-                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
-                        style={activeTab === 'apna' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="newspaper-outline" size={15} color={activeTab === 'apna' ? '#ea580c' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-gray-900' : 'text-gray-500'}`}>{t('apnaNews')}</Text>
-                    </TouchableOpacity>
+                {isSearchActive ? (
+                    <View className="flex-row items-center bg-white p-1 rounded-2xl mx-5 mb-4 border border-gray-200" style={{ height: 44 }}>
+                        <Ionicons name="search" size={18} color="#9ca3af" style={{ marginHorizontal: 10 }} />
+                        <TextInput 
+                            style={{ flex: 1, fontSize: 13, color: '#1f2937', padding: 0 }}
+                            placeholder={t('searchNewsUpdates')}
+                            placeholderTextColor="#9ca3af"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoFocus
+                        />
+                        <TouchableOpacity 
+                            onPress={() => { setIsSearchActive(false); setSearchQuery(''); }} 
+                            style={{ padding: 8 }}
+                        >
+                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View className="flex-row bg-gray-100 p-1 rounded-2xl mx-5 mb-4 border border-gray-200">
+                        <TouchableOpacity 
+                            onPress={() => setActiveTab('apna')}
+                            className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                            style={activeTab === 'apna' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="newspaper-outline" size={15} color={activeTab === 'apna' ? '#ea580c' : '#6b7280'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-gray-900' : 'text-gray-500'}`}>{t('apnaNews')}</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        onPress={() => setActiveTab('ddnews')}
-                        className="flex-1 flex-row items-center justify-center py-2.5 mx-1 rounded-xl"
-                        style={activeTab === 'ddnews' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="logo-youtube" size={15} color={activeTab === 'ddnews' ? '#dc2626' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-gray-900' : 'text-gray-500'}`}>{t('ddNews')}</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => setActiveTab('ddnews')}
+                            className="flex-1 flex-row items-center justify-center py-2.5 mx-1 rounded-xl"
+                            style={activeTab === 'ddnews' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="logo-youtube" size={15} color={activeTab === 'ddnews' ? '#dc2626' : '#6b7280'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-gray-900' : 'text-gray-500'}`}>{t('ddNews')}</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        onPress={() => setActiveTab('aastha')}
-                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
-                        style={activeTab === 'aastha' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="flower-outline" size={15} color={activeTab === 'aastha' ? '#d97706' : '#6b7280'} />
-                        <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-gray-900' : 'text-gray-500'}`}>{t('aastha')}</Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity 
+                            onPress={() => setActiveTab('aastha')}
+                            className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                            style={activeTab === 'aastha' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="flower-outline" size={15} color={activeTab === 'aastha' ? '#d97706' : '#6b7280'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-gray-900' : 'text-gray-500'}`}>{t('aastha')}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            onPress={() => setIsSearchActive(true)}
+                            className="flex-row items-center justify-center px-3 rounded-xl ml-1"
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="search" size={18} color="#6b7280" />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {activeTab === 'apna' && tickerData.length > 0 && (
+                    <View 
+                        onLayout={(e) => setTickerY(e.nativeEvent.layout.y)}
+                        style={{ 
+                            marginBottom: 12,
+                            height: 36 // Placeholder height to take up space where ticker normally is
+                        }}
+                    />
+                )}
 
                 {activeTab === 'apna' && (
                     <ScrollView 
@@ -985,25 +984,6 @@ const NewsScreen = ({ navigation }: any) => {
                         })}
                     </ScrollView>
                 )}
-
-                {/* Search Bar */}
-                <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#e5e7eb' }}>
-                        <Ionicons name="search" size={18} color="#9ca3af" style={{ marginRight: 6 }} />
-                        <TextInput
-                            style={{ flex: 1, fontSize: 13, color: '#1f2937', padding: 0 }}
-                            placeholder={t('searchNewsUpdates')}
-                            placeholderTextColor="#9ca3af"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                        {searchQuery.length > 0 && (
-                            <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
 
                 {/* State/District Pickers */}
                 {(selectedCategory === 'State' || selectedCategory === 'राज्य' || selectedCategory === 'District' || selectedCategory === 'जिला') && activeTab === 'apna' && (
@@ -1049,16 +1029,15 @@ const NewsScreen = ({ navigation }: any) => {
                 )}
             </Animated.View>
 
-            {/* Sticky Breaking News Ticker - always visible, follows header bottom */}
+            {/* Sibling Sticky Ticker (to bypass Android culling when header goes off-screen) */}
             {activeTab === 'apna' && tickerData.length > 0 && (
                 <Animated.View
                     style={{
                         position: 'absolute',
                         left: 0,
                         right: 0,
-                        zIndex: 9,
-                        transform: [{ translateY: tickerTranslateY }],
-                        top: headerHeight,
+                        zIndex: 30,
+                        transform: [{ translateY: tickerAbsoluteTranslateY }],
                     }}
                 >
                     <NewsTicker tickerData={tickerData} />
@@ -1072,7 +1051,7 @@ const NewsScreen = ({ navigation }: any) => {
                         key="apna-skeleton-list"
                         data={[1, 2, 3, 4]}
                         keyExtractor={(item: any) => item.toString()}
-                        contentContainerStyle={{ paddingTop: headerHeight + 36 + 12, paddingBottom: 12 }}
+                        contentContainerStyle={{ paddingTop: headerHeight + 12, paddingBottom: 12 }}
                         renderItem={renderApnaNewsSkeleton}
                         onScroll={Animated.event(
                             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -1087,8 +1066,8 @@ const NewsScreen = ({ navigation }: any) => {
                         key="apna-data-list"
                         data={Array.isArray(filteredNews) ? filteredNews : []}
                         keyExtractor={(item: any, index: number) => item?.id?.toString() || index.toString()}
-                        contentContainerStyle={{ paddingTop: headerHeight + 36 + 12, paddingBottom: 12 }}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" progressViewOffset={headerHeight + 36} />}
+                        contentContainerStyle={{ paddingTop: headerHeight + 12, paddingBottom: 12 }}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" progressViewOffset={headerHeight} />}
                         renderItem={renderNewsItem}
                         ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noNewsAvailable')}</Text>}
                         onScroll={Animated.event(
