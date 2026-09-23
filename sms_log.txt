@@ -49,3 +49,5 @@
 2026-06-11 13:41:16 - PROD WARNING: Auth Failed but PROCEEDING. Msg: SSL certificate problem: unable to get local issuer certificate
 2026-07-07 09:49:19 - PROD WARNING: Auth Failed but PROCEEDING. Msg: SSL certificate problem: unable to get local issuer certificate
 2026-08-07 14:31:44 - PROD WARNING: Auth Failed but PROCEEDING. Msg: SSL certificate problem: unable to get local issuer certificate
+2026-09-16 13:28:14 - PROD WARNING: Auth Failed but PROCEEDING. Msg: SSL certificate problem: unable to get local issuer certificate
+2026-09-17 12:43:27 - PROD WARNING: Auth Failed but PROCEEDING. Msg: SSL certificate problem: unable to get local issuer certificate

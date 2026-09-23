@@ -69,6 +69,19 @@ body {
         <marquee behavior="scroll" direction="left" scrollamount="5"
                  onmouseover="this.stop();" onmouseout="this.start();">
 
+            <?php 
+            $breaking_news_q = mysqli_query($con, "SELECT `title` FROM tbl_breaking_news WHERE is_active=1 ORDER BY id DESC");
+            if($breaking_news_q && mysqli_num_rows($breaking_news_q) > 0) {
+                while($bn = mysqli_fetch_assoc($breaking_news_q)) {
+            ?>
+                <span class="ticker-text" style="color: #ffe812; font-weight: bold; margin-right: 20px;">
+                    🚨 <?= htmlspecialchars($bn['title']) ?>
+                </span>
+            <?php 
+                }
+            } 
+            ?>
+
             <!-- First Loop -->
             <?php 
             mysqli_data_seek($ticker, 0); 
