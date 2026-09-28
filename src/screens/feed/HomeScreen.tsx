@@ -5,6 +5,8 @@ import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
+import { useQueryClient } from '@tanstack/react-query';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
@@ -28,6 +30,7 @@ const isVideo = (uri: string) => {
 
 const HomeScreen = () => {
     const { t } = useLanguage();
+    const queryClient = useQueryClient();
     const [posts, setPosts] = useState<any[]>([]);
     const [stories, setStories] = useState<any[]>([]);
     const [reels, setReels] = useState<any[]>([]);
@@ -103,27 +106,25 @@ const HomeScreen = () => {
         return () => subscription.remove();
     }, []);
 
-    useFocusEffect(
-        useCallback(() => {
-            const initUser = async () => {
-                try {
-                    const uStr = await AsyncStorage.getItem('user');
-                    let u = null;
-                    if (uStr) {
-                        u = JSON.parse(uStr);
-                        setUser(u);
-                    }
-                    fetchData(u?.id);
-                    fetchNotificationCount(u?.id);
-                } catch (err) {
-                    console.error("Init Error:", err);
-                    fetchData();
-                    fetchNotificationCount();
+    useEffect(() => {
+        const initUser = async () => {
+            try {
+                const uStr = await AsyncStorage.getItem('user');
+                let u = null;
+                if (uStr) {
+                    u = JSON.parse(uStr);
+                    setUser(u);
                 }
-            };
-            initUser();
-        }, [])
-    );
+                fetchData(u?.id);
+                fetchNotificationCount(u?.id);
+            } catch (err) {
+                console.error("Init Error:", err);
+                fetchData();
+                fetchNotificationCount();
+            }
+        };
+        initUser();
+    }, []);
 
     const fetchNotificationCount = async (userId?: string) => {
         const uid = userId || user?.id;
@@ -165,7 +166,17 @@ const HomeScreen = () => {
                 const cached = JSON.parse(cachedStr);
                 if (cached.posts) setPosts(cached.posts);
                 if (cached.stories) setStories(cached.stories);
-                if (cached.reels) setReels(cached.reels);
+                if (cached.reels) {
+                    setReels(cached.reels);
+                    if (cached.reels.length > 0) {
+                        const pageData = {
+                            pages: [cached.reels],
+                            pageParams: [0]
+                        };
+                        queryClient.setQueryData(['reels', undefined, uid, 0], pageData);
+                        queryClient.setQueryData(['reels', undefined, null, 0], pageData);
+                    }
+                }
                 if (cached.suggestedUsers) setSuggestedUsers(cached.suggestedUsers);
                 setLoading(false); // Disable loading immediately since we have cached data
             }
@@ -200,7 +211,7 @@ const HomeScreen = () => {
 
     const fetchData = async (userId?: string, isLoadMore = false) => {
         const uid = userId || user?.id || 0;
-        
+
         if (isLoadMore) {
             if (isFetchingMore || !hasMore) return;
             setIsFetchingMore(true);
@@ -209,7 +220,7 @@ const HomeScreen = () => {
             if (posts.length === 0) setLoading(true);
             setPage(0);
             setHasMore(true);
-            
+
             // Load cache before fetching to ensure instant UI
             if (uid) await loadCachedData(uid.toString());
         }
@@ -221,7 +232,7 @@ const HomeScreen = () => {
             const [postsRes, storiesRes, reelsRes, suggestRes] = await Promise.all([
                 api.get(`get_posts.php?user_id=${uid}&limit=20&offset=${offset}&lazy=true`),
                 isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('fetch_stories.php?user_id=' + uid),
-                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('get_posts.php?filter_reels=1&limit=6&user_id=' + uid),
+                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('get_posts.php?filter_reels=1&limit=4&user_id=' + uid),
                 isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get(`api_follow.php?action=fetch_suggestions&current_user_id=${uid}&limit=10`)
             ]);
 
@@ -237,13 +248,21 @@ const HomeScreen = () => {
                     p.media && p.media.some((m: string) => isVideo(m))
                 );
                 setReels(finalReels);
+                if (finalReels.length > 0) {
+                    const pageData = {
+                        pages: [finalReels],
+                        pageParams: [0]
+                    };
+                    queryClient.setQueryData(['reels', undefined, uid.toString(), 0], pageData);
+                    queryClient.setQueryData(['reels', undefined, null, 0], pageData);
+                }
             }
 
             // Handle Posts
             if (postsRes.data.status === 'success') {
                 const newPosts = postsRes.data.data;
                 if (newPosts.length < 20) setHasMore(false);
-                
+
                 // Collect real post IDs for background stats fetch
                 idsToFetchStats = newPosts.map((p: any) => p.id);
 
@@ -258,10 +277,10 @@ const HomeScreen = () => {
                         finalPosts.splice(1, 0, { id: 'suggest_users_shelf', type: 'suggest_users_shelf' });
                     }
 
-                    // 2. Insert Reels Shelf after 4 posts (around index 5)
+                    // 2. Insert Reels Shelf after 8 posts (around index 9)
                     const shelfReelsLocal = reelsRes.data.status === 'success' ? (reelsRes.data.data?.filter((p: any) => p.media && p.media.some((m: string) => isVideo(m))) || []) : [];
                     if (shelfReelsLocal.length > 0 && finalPosts.length > 0) {
-                        const targetIndex = finalPosts.length > 5 ? 5 : finalPosts.length;
+                        const targetIndex = finalPosts.length > 9 ? 9 : finalPosts.length;
                         finalPosts.splice(targetIndex, 0, { id: 'reels_shelf', type: 'reels_shelf' });
                     }
                     setPosts(finalPosts);
@@ -300,7 +319,7 @@ const HomeScreen = () => {
                 finalSuggestedUsers = suggestRes.data.data;
                 setSuggestedUsers(finalSuggestedUsers);
             }
-            
+
             // Trigger background stats fetch
             if (idsToFetchStats.length > 0) {
                 fetchPostStats(idsToFetchStats);
@@ -432,12 +451,12 @@ const HomeScreen = () => {
     const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
         if (viewableItems && viewableItems.length > 0) {
             // Find the item currently at the top of the viewport
-            const firstPost = viewableItems.find((vi: any) => 
-                vi.item && 
-                vi.item.type !== 'reels_shelf' && 
+            const firstPost = viewableItems.find((vi: any) =>
+                vi.item &&
+                vi.item.type !== 'reels_shelf' &&
                 vi.item.type !== 'suggest_users_shelf'
             );
-            
+
             if (firstPost) {
                 const activeId = firstPost.key ? firstPost.key.toString() : null;
                 setActivePostId(activeId);
@@ -448,8 +467,8 @@ const HomeScreen = () => {
     }).current;
 
     const viewabilityConfig = React.useRef({
-        itemVisiblePercentThreshold: 60,
-        minimumViewTime: 200,
+        itemVisiblePercentThreshold: 50,
+        minimumViewTime: 250,
     }).current;
 
     const renderHeader = () => (
@@ -578,12 +597,10 @@ const HomeScreen = () => {
                             className="mr-3 w-32 h-52 rounded-2xl overflow-hidden bg-gray-900 relative shadow-md"
                             activeOpacity={0.8}
                         >
-                            <Video
-                                source={{ uri: getImageUrl(item.image || item.media?.[0], 'post') }}
+                            <Image
+                                source={{ uri: getImageUrl(item.media?.find((m: string) => !isVideo(m)) || item.image, 'post') }}
                                 style={{ width: '100%', height: '100%', opacity: 0.9 }}
-                                resizeMode={ResizeMode.COVER}
-                                shouldPlay={false}
-                                useNativeControls={false}
+                                resizeMode="cover"
                             />
                             {/* Play Icon Overlay for Reels */}
                             <View style={StyleSheet.absoluteFill} className="items-center justify-center">
@@ -646,9 +663,9 @@ const HomeScreen = () => {
                             "Are you sure you want to delete this post?",
                             [
                                 { text: "Cancel", style: "cancel" },
-                                { 
-                                    text: "Delete", 
-                                    style: "destructive", 
+                                {
+                                    text: "Delete",
+                                    style: "destructive",
                                     onPress: async () => {
                                         try {
                                             const formData = new FormData();
@@ -704,22 +721,22 @@ const HomeScreen = () => {
                     </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <TouchableOpacity 
-                        onPress={() => navigation.navigate('Search')} 
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Search')}
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
                     >
                         <Ionicons name="search-outline" size={18} color="#374151" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={handlePlusPress} 
+                    <TouchableOpacity
+                        onPress={handlePlusPress}
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#ea580c12', alignItems: 'center', justifyContent: 'center' }}
                     >
                         <Ionicons name="add" size={20} color="#ea580c" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => navigation.navigate('Notifications')} 
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Notifications')}
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                     >
@@ -732,8 +749,8 @@ const HomeScreen = () => {
                             </View>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => navigation.navigate('Chats')} 
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Chats')}
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
                     >
@@ -742,20 +759,23 @@ const HomeScreen = () => {
                 </View>
             </View>
 
-            <FlatList
-                ref={flatListRef}
+            <FlashList
+                ref={flatListRef as any}
                 data={posts}
                 renderItem={renderPostItem}
                 keyExtractor={(item) => item.id.toString()}
+                getItemType={(item) => {
+                    if (item.type === 'reels_shelf') return 'reels';
+                    if (item.type === 'suggest_users_shelf') return 'suggest';
+                    return 'post';
+                }}
                 extraData={activePostId}
                 ListHeaderComponent={renderHeader}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
-                windowSize={3}
-                initialNumToRender={3}
-                maxToRenderPerBatch={2}
-                removeClippedSubviews={true}
+                // @ts-ignore
+                estimatedItemSize={600}
                 contentContainerStyle={{ paddingBottom: 100, backgroundColor: '#f9fafb' }}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20">
@@ -771,27 +791,27 @@ const HomeScreen = () => {
                     </View>
                 ) : null}
             />
-            
+
             {/* Professional Floating Action Button */}
-            <TouchableOpacity 
+            <TouchableOpacity
                 onPress={() => navigation.navigate('SupportChat')}
                 activeOpacity={0.85}
-                style={{ 
-                    position: 'absolute', 
-                    bottom: 24, 
-                    right: 20, 
-                    backgroundColor: '#ea580c', 
-                    width: 50, 
-                    height: 50, 
-                    borderRadius: 25, 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    shadowColor: '#ea580c', 
-                    shadowOffset: { width: 0, height: 4 }, 
-                    shadowOpacity: 0.3, 
-                    shadowRadius: 8, 
-                    elevation: 6, 
-                    zIndex: 999 
+                style={{
+                    position: 'absolute',
+                    bottom: 24,
+                    right: 20,
+                    backgroundColor: '#ea580c',
+                    width: 50,
+                    height: 50,
+                    borderRadius: 25,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    shadowColor: '#ea580c',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                    zIndex: 999
                 }}
             >
                 <Ionicons name="chatbubble-ellipses" size={22} color="white" />

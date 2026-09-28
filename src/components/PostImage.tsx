@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Image, View, ActivityIndicator, Text } from 'react-native';
+import { Image as RNImage, View, ActivityIndicator, Text } from 'react-native';
+import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
 
 interface PostImageProps {
@@ -18,7 +19,7 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
             return;
         }
         if (uri) {
-            Image.getSize(uri, (w, h) => {
+            RNImage.getSize(uri, (w, h) => {
                 setAspect(w / h);
             }, () => {
                 setAspect(4 / 3);
@@ -60,9 +61,10 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
             <Image
                 source={{ uri }}
                 style={{ width: '100%', aspectRatio: aspect }}
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="memory-disk"
                 onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
+                onLoad={() => setLoading(false)}
                 onError={() => {
                     setLoading(false);
                     setError(true);

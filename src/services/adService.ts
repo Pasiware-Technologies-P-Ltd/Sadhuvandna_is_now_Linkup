@@ -8,7 +8,7 @@ class AdService {
 
     constructor() {
         this.interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID, {
-            requestNonPersonalizedAdsOnly: true,
+            requestNonPersonalizedAdsOnly: false,
         });
 
         this.interstitial.addAdEventListener(AdEventType.LOADED, () => {

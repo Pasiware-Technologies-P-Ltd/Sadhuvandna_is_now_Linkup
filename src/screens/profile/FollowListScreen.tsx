@@ -22,12 +22,25 @@ const FollowListScreen = ({ route, navigation }: any) => {
     const [isSearching, setIsSearching] = useState(false);
     const isFetchingRef = useRef(false);
 
+    const loadCachedFollowList = async (uid: string, listAction: string) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_follow_list_${uid}_${listAction}`);
+            if (cached) {
+                setUsers(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
         const loadCurrentUser = async () => {
             const uStr = await AsyncStorage.getItem('user');
             if (uStr) {
                 const u = JSON.parse(uStr);
                 setCurrentUserId(u.id);
+                if (!searchQuery) {
+                    await loadCachedFollowList(u.id, action);
+                }
             }
         };
         loadCurrentUser();
@@ -69,6 +82,9 @@ const FollowListScreen = ({ route, navigation }: any) => {
                     setPage(prev => prev + 1);
                 } else {
                     setUsers(newList);
+                    if (!searchQuery) {
+                        AsyncStorage.setItem(`cached_follow_list_${currentUserId}_${action}`, JSON.stringify(newList));
+                    }
                 }
 
                 if (newList.length < 20) {
@@ -274,7 +290,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
             ) : (
                 <FlatList
                     data={users}
-                    keyExtractor={(item) => item.id.toString()}
+                    keyExtractor={(item, index) => item.id ? item.id.toString() + '_' + index : index.toString()}
                     renderItem={renderItem}
                     initialNumToRender={10}
                     maxToRenderPerBatch={10}

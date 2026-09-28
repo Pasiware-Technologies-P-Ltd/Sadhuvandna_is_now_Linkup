@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
 import { FlatList, ViewToken } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { useIsFocused } from '@react-navigation/native';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -141,7 +143,7 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
 
 const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHeight, onUserPress, onCommentPress, onDelete }: any) => {
     const active = index === activeIndex;
-    const isNearby = active; // Aggressive optimization: Only load the active video to prevent crashes
+    const isNearby = (index - activeIndex) >= -1 && (index - activeIndex) <= 1; // Preload 1 ahead silently
     const videoRef = useRef<Video>(null);
     useEffect(() => {
         return () => {
@@ -210,12 +212,15 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         }
     };
 
-    // Sync state when item changes (e.g. on refresh)
+    // Sync state when item changes (e.g. on FlashList recycle)
     useEffect(() => {
         setLiked(item.user_liked);
         setLikeCount(parseInt(item.likes) || 0);
         setSaved(Boolean(item.is_saved || item.user_saved));
-    }, [item.user_liked, item.likes, item.is_saved, item.user_saved]);
+        setDuration(0);
+        setPosition(0);
+        setIsBuffering(false);
+    }, [item.id, item.user_liked, item.likes, item.is_saved, item.user_saved]);
 
     const toggleSave = async () => {
         const nextSaved = !saved;
@@ -255,16 +260,13 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     useEffect(() => {
         const hasMusic = !!item.link;
         if (active && focused && !paused) {
-            if (!hasMusic || soundReady) {
-                // Video plays logic is handled by its 'shouldPlay' prop directly for better sync
-                // but we might need to nudge it if it's stuck
-            }
+            // Slight delay allows the Android surface to be fully ready before playing, preventing black screens
+            setTimeout(() => {
+                videoRef.current?.playAsync();
+            }, 150);
             fetchFollowStatus();
         } else {
             videoRef.current?.pauseAsync();
-            if (!focused) {
-                videoRef.current?.unloadAsync(); // Force unload when leaving screen
-            }
         }
     }, [active, focused, paused, soundReady]);
 
@@ -536,7 +538,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                 onPress={handlePress}
                 style={[styles.backgroundVideo, { height: layoutHeight }]}
             >
-                {isNearby ? (
+                {isNearby && focused ? (
                         <Video
                             ref={videoRef}
                             source={{ uri: fullVideoUri }}
@@ -544,6 +546,11 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                             resizeMode={ResizeMode.COVER}
                             isLooping
                             shouldPlay={active && focused && !paused}
+                            onLoad={() => {
+                                if (position > 0 && videoRef.current) {
+                                    videoRef.current.setPositionAsync(position);
+                                }
+                            }}
                             usePoster={true}
                             posterSource={{ uri: item.media.find((m: string) => !isVideo(m)) ? (item.media.find((m: string) => !isVideo(m)).startsWith('http') ? item.media.find((m: string) => !isVideo(m)) : `${POST_MEDIA_PATH}${item.media.find((m: string) => !isVideo(m))}`) : (fullVideoUri || '') }}
                             posterStyle={{ resizeMode: ResizeMode.COVER }}
@@ -553,7 +560,9 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                                 if (!isSliding.current) {
                                     setPosition(status.positionMillis || 0);
                                 }
-                                if (status.durationMillis && duration === 0) setDuration(status.durationMillis);
+                                if (status.durationMillis && status.durationMillis !== duration) {
+                                    setDuration(status.durationMillis);
+                                }
                                 if (status.isBuffering !== isBuffering) {
                                     setIsBuffering(status.isBuffering);
                                 }
@@ -736,7 +745,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                                                                 }
 }
                                                             };
-                                                            setInterval(loopLogic, 40);
+                                                            setInterval(loopLogic, 250);
                                                         })();
                                                     `}
                                                     allowsInlineMediaPlayback={true}
@@ -878,168 +887,81 @@ const ReelsScreen = ({ navigation, route }: any) => {
     const initialReelId = route.params?.initialReelId || route.params?.startPostId;
     const filterUserId = route.params?.filter_user_id;
     const showBack = route.params?.showBack || !!filterUserId;
-    const [reels, setReels] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    
     const [activeIndex, setActiveIndex] = useState(0);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-    const [initialPage, setInitialPage] = useState(0);
     const [layoutHeight, setLayoutHeight] = useState(height);
-    const flatListRef = useRef<FlatList>(null);
+    const flashListRef = useRef<any>(null);
     const REELS_BATCH_SIZE = 4;
-    const reelsRef = useRef<any[]>([]);
-    const isFetchingMoreRef = useRef(false);
-    const hasMoreReelsRef = useRef(true);
-    const activeIndexRef = useRef(0);
-    const viewabilityConfig = useRef({
-        itemVisiblePercentThreshold: 80,
-    }).current;
+    const [refreshKey, setRefreshKey] = useState(0);
+    
+    useEffect(() => {
+        AsyncStorage.getItem('user').then(u => {
+            if (u) setCurrentUserId(JSON.parse(u).id);
+        });
+    }, []);
+
+    const fetchReels = async ({ pageParam = 0 }) => {
+        let url = `get_posts.php?filter_reels=1&user_id=${currentUserId || ''}&limit=${REELS_BATCH_SIZE}&offset=${pageParam}`;
+        if (filterUserId) {
+            url += `&filter_user_id=${filterUserId}`;
+        }
+        if (pageParam === 0 && initialReelId) {
+            url += `&start_post_id=${initialReelId}`;
+        }
+        const res = await api.get(url);
+        if (res.data.status === 'success' && Array.isArray(res.data.data)) {
+            return res.data.data.filter((post: any) =>
+                post.media && post.media.some((m: string) => isVideo(m))
+            );
+        }
+        return [];
+    };
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isFetching,
+        refetch
+    } = useInfiniteQuery({
+        queryKey: ['reels', filterUserId, currentUserId, refreshKey],
+        queryFn: fetchReels,
+        initialPageParam: 0,
+        placeholderData: keepPreviousData,
+        staleTime: Infinity,
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.length < REELS_BATCH_SIZE) return undefined;
+            return allPages.length * REELS_BATCH_SIZE;
+        },
+        enabled: !!currentUserId || true,
+    });
+
+    const reels = data ? data.pages.flat() : [];
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('tabPress', () => {
+            if (isFocused) {
+                setRefreshKey(prev => prev + 1);
+                setActiveIndex(0);
+                if (reels.length > 0 && flashListRef.current) {
+                    flashListRef.current.scrollToIndex({ index: 0, animated: true });
+                }
+            }
+        });
+        return unsubscribe;
+    }, [navigation, isFocused, reels.length]);
 
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0) {
             const index = viewableItems[0].index;
             if (index !== null && index !== undefined) {
                 setActiveIndex(index);
-                activeIndexRef.current = index;
-                // Preload next batch of 4 reels when 1-2 items away from end
-                if (!isFetchingMoreRef.current && hasMoreReelsRef.current && index >= reelsRef.current.length - 2) {
-                    loadMoreReels();
-                }
             }
         }
     }).current;
-
-    useEffect(() => {
-        loadReels();
-        AsyncStorage.getItem('user').then(u => {
-            if (u) setCurrentUserId(JSON.parse(u).id);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (initialReelId && reels.length > 0) {
-            const idx = reels.findIndex((r: any) => r.id.toString() === initialReelId.toString());
-            if (idx !== -1) {
-                setInitialPage(idx);
-                setActiveIndex(idx);
-                // Programmatically jump if already mounted
-                setTimeout(() => {
-                    flatListRef.current?.scrollToIndex({ index: idx, animated: false });
-                }, 100);
-            }
-        }
-    }, [initialReelId, reels.length]);
-
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('tabPress', (e: any) => {
-            if (isFocused) {
-                loadReels();
-                setActiveIndex(0);
-                setInitialPage(0);
-            }
-        });
-        const blurUnsubscribe = navigation.addListener('blur', () => {
-            // Aggressively unload all videos when leaving the screen
-            // The active video ref will handle its own cleanup in ReelsItem
-        });
-        return () => {
-            unsubscribe();
-            blurUnsubscribe();
-        };
-    }, [navigation, isFocused]);
-
-    const loadMoreReels = async () => {
-        if (isFetchingMoreRef.current || !hasMoreReelsRef.current) return;
-        isFetchingMoreRef.current = true;
-        setIsFetchingMore(true);
-        try {
-            const uStr = await AsyncStorage.getItem('user');
-            let uid = '';
-            if (uStr) {
-                const u = JSON.parse(uStr);
-                uid = u.id;
-            }
-            const currentReels = reelsRef.current;
-            const offset = currentReels.length;
-            let url = `get_posts.php?filter_reels=1&user_id=${uid}&limit=${REELS_BATCH_SIZE}&offset=${offset}`;
-            if (filterUserId) {
-                url += `&filter_user_id=${filterUserId}`;
-            }
-            const res = await api.get(url);
-            if (res.data.status === 'success' && Array.isArray(res.data.data)) {
-                const videoPosts = res.data.data.filter((post: any) =>
-                    post.media && post.media.some((m: string) => isVideo(m))
-                );
-                if (videoPosts.length === 0 || videoPosts.length < REELS_BATCH_SIZE) {
-                    hasMoreReelsRef.current = false;
-                }
-                if (videoPosts.length > 0) {
-                    setReels((prev: any[]) => {
-                        const existingIds = new Set(prev.map((p: any) => p.id));
-                        const uniqueNew = videoPosts.filter((p: any) => !existingIds.has(p.id));
-                        const merged = [...prev, ...uniqueNew];
-                        reelsRef.current = merged;
-                        return merged;
-                    });
-                }
-            } else {
-                hasMoreReelsRef.current = false;
-            }
-        } catch (error) {
-            console.error('[Reels] Load more error:', error);
-        } finally {
-            isFetchingMoreRef.current = false;
-            setIsFetchingMore(false);
-        }
-    };
-
-    const loadReels = async (isLoadMore = false) => {
-        if (isLoadMore) {
-            loadMoreReels();
-            return;
-        }
-        setLoading(true);
-        hasMoreReelsRef.current = true;
-        try {
-            const uStr = await AsyncStorage.getItem('user');
-            let uid = '';
-            if (uStr) {
-                const u = JSON.parse(uStr);
-                uid = u.id;
-                setCurrentUserId(uid);
-            }
-
-            let url = `get_posts.php?filter_reels=1&user_id=${uid}&limit=${REELS_BATCH_SIZE}&offset=0`;
-            if (filterUserId) {
-                url += `&filter_user_id=${filterUserId}`;
-            }
-            const res = await api.get(url);
-
-            if (res.data.status === 'success' && Array.isArray(res.data.data)) {
-                const videoPosts = res.data.data.filter((post: any) =>
-                    post.media && post.media.some((m: string) => isVideo(m))
-                );
-                setReels(videoPosts);
-                reelsRef.current = videoPosts;
-                if (videoPosts.length < REELS_BATCH_SIZE) {
-                    hasMoreReelsRef.current = false;
-                }
-                // If initialReelId is provided, find its index
-                if (initialReelId) {
-                    const idx = videoPosts.findIndex((r: any) => r.id.toString() === initialReelId.toString());
-                    if (idx !== -1) {
-                        setInitialPage(idx);
-                        setActiveIndex(idx);
-                        activeIndexRef.current = idx;
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const renderItem = useCallback(({ item, index }: any) => (
         <ReelsItem
@@ -1051,17 +973,10 @@ const ReelsScreen = ({ navigation, route }: any) => {
             layoutHeight={layoutHeight}
             onUserPress={(uid: string) => navigation.navigate('PublicProfile', { userId: uid })}
             onCommentPress={(pid: string) => navigation.navigate('Comments', { postId: pid })}
-            onDelete={(deletedId: string) => {
-                setReels((prev: any[]) => {
-                    const filtered = prev.filter((r: any) => r.id !== deletedId);
-                    reelsRef.current = filtered;
-                    return filtered;
-                });
-            }}
         />
     ), [activeIndex, isFocused, currentUserId, layoutHeight]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#ea580c" />
@@ -1094,28 +1009,29 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 </View>
             </SafeAreaView>
 
-            <FlatList
-                ref={flatListRef}
+            {isFetching && !isFetchingNextPage && (
+                <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 100 }}>
+                    <ActivityIndicator size="small" color="white" />
+                </View>
+            )}
+
+            <FlashList
+                ref={flashListRef}
                 data={reels}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
                 pagingEnabled
+                // @ts-ignore
+                estimatedItemSize={height}
                 showsVerticalScrollIndicator={false}
                 onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                initialScrollIndex={initialPage > 0 ? initialPage : undefined}
-                getItemLayout={(_, index) => ({
-                    length: layoutHeight,
-                    offset: layoutHeight * index,
-                    index,
-                })}
-                onEndReached={() => loadMoreReels()}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
+                onEndReached={() => {
+                    if (hasNextPage && !isFetchingNextPage) {
+                        fetchNextPage();
+                    }
+                }}
                 onEndReachedThreshold={0.5}
-                removeClippedSubviews={true}
-                initialNumToRender={2}
-                maxToRenderPerBatch={2}
-                windowSize={3}
-                decelerationRate="fast"
             />
         </View>
     );

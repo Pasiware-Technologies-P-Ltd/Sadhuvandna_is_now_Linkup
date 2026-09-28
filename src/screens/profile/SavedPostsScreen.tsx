@@ -38,12 +38,23 @@ const SavedPostsScreen = ({ navigation }: any) => {
         loadUserAndPosts();
     }, []);
 
+    const loadCachedSavedPosts = async (uid: string) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_saved_posts_${uid}`);
+            if (cached) {
+                setPosts(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     const loadUserAndPosts = async () => {
         try {
             const u = await AsyncStorage.getItem('user');
             if (u) {
                 const user = JSON.parse(u);
                 setCurrentUserId(String(user.id));
+                await loadCachedSavedPosts(String(user.id));
                 fetchSavedPosts(String(user.id));
             } else {
                 setLoading(false);
@@ -61,6 +72,7 @@ const SavedPostsScreen = ({ navigation }: any) => {
             const res = await api.get(`get_posts.php?filter_saved=1&user_id=${id}&t=${Date.now()}`);
             if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
                 setPosts(res.data.data);
+                AsyncStorage.setItem(`cached_saved_posts_${id}`, JSON.stringify(res.data.data));
             } else {
                 setPosts([]);
             }

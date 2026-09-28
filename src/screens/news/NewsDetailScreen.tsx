@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
 import { useIsFocused } from '@react-navigation/native';
 import api, { WEBSITE_URL } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -243,12 +244,18 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     const [currentNews, setCurrentNews] = React.useState<any>(news || null);
     const [loading, setLoading] = React.useState(!news && !!newsId);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [toastMsg, setToastMsg] = useState<string | null>(null);
 
     React.useEffect(() => {
         if (!currentNews && newsId) {
             fetchSingleNews(newsId);
         }
     }, [newsId]);
+
+    const showToast = (msg: string) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(null), 3000);
+    };
 
     const fetchSingleNews = async (id: string) => {
         try {
@@ -303,9 +310,22 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     }
 
     const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename);
+    
+    const isAdmin = !currentNews.user_id || 
+                    String(currentNews.user_id) === '0' || 
+                    currentNews.user_name?.toLowerCase() === 'admin' || 
+                    currentNews.posted_by?.toLowerCase() === 'admin';
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+            {/* Custom Toast */}
+            {toastMsg && (
+                <View style={{ position: 'absolute', top: 60, left: 20, right: 20, backgroundColor: '#10b981', padding: 12, borderRadius: 8, zIndex: 1000, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 5 }}>
+                    <Ionicons name="checkmark-circle" size={24} color="white" style={{ marginRight: 10 }} />
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>{toastMsg}</Text>
+                </View>
+            )}
+
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
@@ -403,10 +423,94 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 )}
 
                 {/* Full Description */}
-                <View style={{ paddingHorizontal: 16 }}>
+                <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
                     <Text style={{ fontSize: 16, color: '#374151', lineHeight: 28 }}>
                         {cleanDescription}
                     </Text>
+                </View>
+
+                {/* Reporter Details Section */}
+                <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+                    <View style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                        
+                        {/* Avatar & Info */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.6, paddingRight: 4 }}>
+                            <Image 
+                                source={isAdmin ? require('../../../assets/logo.png') : { uri: currentNews.user_image ? `${BASE_URL_ROOT}/uploads/users/${currentNews.user_image}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
+                                style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', marginRight: 10, borderWidth: 1, borderColor: '#f3f4f6' }} 
+                            />
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                                    <View style={{ backgroundColor: '#2563eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold', marginRight: 2 }}>रिपोर्टर</Text>
+                                        <Ionicons name="checkmark-circle" size={10} color="white" />
+                                    </View>
+                                </View>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 }} numberOfLines={1}>
+                                    {currentNews.user_name || currentNews.posted_by || 'Admin'}
+                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Ionicons name="location-outline" size={12} color="#6b7280" />
+                                    <Text style={{ fontSize: 11, color: '#6b7280', marginLeft: 2 }} numberOfLines={1}>
+                                        {currentNews.user_city || currentNews.district || currentNews.state || 'India'}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Stats */}
+                        <View style={{ flex: 1, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#f3f4f6', paddingLeft: 10 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                <Ionicons name="camera-outline" size={16} color="#4b5563" style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '500' }}>{currentNews.news_count || '0'} न्यूज़</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="people-outline" size={16} color="#4b5563" style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '500' }}>{currentNews.followers_count || '0'} फॉलोअर्स</Text>
+                            </View>
+                        </View>
+                        
+                        {/* Buttons */}
+                        {!isAdmin && (
+                        <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center', paddingLeft: 6 }}>
+                            <TouchableOpacity 
+                                onPress={async () => {
+                                    try {
+                                        const uStr = await AsyncStorage.getItem('user');
+                                        if (uStr) {
+                                            const user = JSON.parse(uStr);
+                                            const res = await api.post('api_follow.php', {
+                                                action: 'follow',
+                                                current_user_id: user.id,
+                                                user_id: currentNews.user_id
+                                            });
+                                            if (res.data.ok) {
+                                                let toastText = 'सफलतापूर्वक फॉलो किया गया';
+                                                if (res.data.status === 'requested') toastText = 'फॉलो रिक्वेस्ट भेजी गई';
+                                                if (res.data.status === 'unfollowed') toastText = 'अनफॉलो किया गया';
+                                                showToast(toastText);
+                                            } else {
+                                                Alert.alert('Error', res.data.message || 'Could not follow user');
+                                            }
+                                        } else {
+                                            Alert.alert('Login Required', 'Please login to follow users');
+                                        }
+                                    } catch (e) {
+                                        Alert.alert('Error', 'Something went wrong');
+                                    }
+                                }}
+                                style={{ borderWidth: 1, borderColor: '#2563eb', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6, marginBottom: 8, width: '100%', alignItems: 'center' }}>
+                                <Text style={{ color: '#2563eb', fontSize: 11, fontWeight: '600' }}>फॉलो करें</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={() => navigation.navigate('PublicProfile', { user: { id: currentNews.user_id, name: currentNews.user_name, profile_photo: currentNews.user_image } })}
+                                style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6, width: '100%', alignItems: 'center' }}>
+                                <Text style={{ color: '#4b5563', fontSize: 11, fontWeight: '600' }}>प्रोफाइल देखें</Text>
+                            </TouchableOpacity>
+                        </View>
+                        )}
+
+                    </View>
                 </View>
 
             </ScrollView>

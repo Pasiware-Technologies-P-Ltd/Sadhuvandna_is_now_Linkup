@@ -15,7 +15,8 @@ import {
     Pressable,
     Linking,
     Keyboard,
-    ScrollView
+    ScrollView,
+    AppState
 } from 'react-native';
 
 // Enable LayoutAnimation for Android
@@ -151,38 +152,73 @@ const ChatScreen = ({ navigation, route }: any) => {
     useEffect(() => {
         if (paymentStatus !== 'paid' || !myProfileId) return;
 
+        let interval: NodeJS.Timeout;
         let lastOnlineCheck = 0;
         let lastBlockCheck = 0;
+        let isActive = true;
 
-        const interval = setInterval(async () => {
-            if (isFetchingRef.current || !isMountedRef.current) return;
-            isFetchingRef.current = true;
-            try {
-                const now = Date.now();
-                await fetchMessages();
-                if (!isMountedRef.current) return;
-                await fetchUserStatus();
+        const startPolling = () => {
+            if (interval) clearInterval(interval);
+            interval = setInterval(async () => {
+                if (isFetchingRef.current || !isMountedRef.current || !isActive) return;
+                isFetchingRef.current = true;
+                try {
+                    const now = Date.now();
+                    await fetchMessages();
+                    if (!isMountedRef.current) return;
+                    await fetchUserStatus();
 
-                if (now - lastOnlineCheck > 15000 && isMountedRef.current) {
-                    lastOnlineCheck = now;
-                    updateMyOnlineStatus();
+                    if (now - lastOnlineCheck > 15000 && isMountedRef.current) {
+                        lastOnlineCheck = now;
+                        updateMyOnlineStatus();
+                    }
+
+                    if (now - lastBlockCheck > 30000 && isMountedRef.current) {
+                        lastBlockCheck = now;
+                        checkBlockStatus();
+                    }
+                } catch (e) {
+                } finally {
+                    isFetchingRef.current = false;
                 }
+            }, 3000);
+        };
 
-                if (now - lastBlockCheck > 30000 && isMountedRef.current) {
-                    lastBlockCheck = now;
-                    checkBlockStatus();
-                }
-            } catch (e) {
-            } finally {
-                isFetchingRef.current = false;
+        const stopPolling = () => {
+            if (interval) clearInterval(interval);
+        };
+
+        startPolling();
+
+        const unsubscribeFocus = navigation.addListener('focus', () => {
+            isActive = true;
+            startPolling();
+        });
+
+        const unsubscribeBlur = navigation.addListener('blur', () => {
+            isActive = false;
+            stopPolling();
+        });
+
+        // AppState listener
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (nextAppState === 'active' && navigation.isFocused()) {
+                isActive = true;
+                startPolling();
+            } else {
+                isActive = false;
+                stopPolling();
             }
-        }, 3000);
+        });
 
         return () => {
-            clearInterval(interval);
+            stopPolling();
+            unsubscribeFocus();
+            unsubscribeBlur();
+            subscription.remove();
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         };
-    }, [paymentStatus, myProfileId]);
+    }, [paymentStatus, myProfileId, navigation]);
 
     const init = async () => {
         try {
@@ -258,7 +294,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             const id = uid || userId;
             if (id) {
-                await api.post('update_app_online.php', { user_id: id }).catch(() => {});
+                await api.post('update_app_online.php', { user_id: id }).catch(() => { });
             }
         } catch { }
     };
@@ -366,7 +402,7 @@ const ChatScreen = ({ navigation, route }: any) => {
 
         try {
             const isGroup = route.params?.isGroup;
-            const endpoint = isGroup 
+            const endpoint = isGroup
                 ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}&t=${Date.now()}`
                 : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}&t=${Date.now()}`;
             const res = await api.get(endpoint);
@@ -378,8 +414,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                     const fileField = att.trim() === '' ? null : att;
                     // Use ref for immediate comparison - fixes race condition where state userId is null
                     const currentUserId = userIdRef.current || userId;
-                    const isSeen = isGroup 
-                        ? (m.seen_by && m.seen_by !== '[]' && m.seen_by !== '') 
+                    const isSeen = isGroup
+                        ? (m.seen_by && m.seen_by !== '[]' && m.seen_by !== '')
                         : m.seen == 1;
 
                     return {
@@ -389,8 +425,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                         file: fileField,
                         file_type: m.file_type || (
                             fileField && (fileField.toLowerCase().endsWith('.mp4') ||
-                            fileField.toLowerCase().endsWith('.mov') ||
-                            fileField.toLowerCase().endsWith('.3gp'))
+                                fileField.toLowerCase().endsWith('.mov') ||
+                                fileField.toLowerCase().endsWith('.3gp'))
                                 ? 'video' : (fileField ? 'image' : null)
                         )
                     };
@@ -399,8 +435,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                     if (prev.length === mappedData.length) {
                         let changed = false;
                         for (let i = 0; i < prev.length; i++) {
-                            if (prev[i].id !== mappedData[i].id || 
-                                prev[i].seen !== mappedData[i].seen || 
+                            if (prev[i].id !== mappedData[i].id ||
+                                prev[i].seen !== mappedData[i].seen ||
                                 prev[i].is_deleted !== mappedData[i].is_deleted ||
                                 prev[i].message !== mappedData[i].message) {
                                 changed = true;
@@ -411,7 +447,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     }
                     return mappedData;
                 });
-                
+
                 if (isGroup) {
                     setGroupAdminsOnly(res.data.admins_only == 1);
                     // Check if I am admin in this group
@@ -506,7 +542,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All, // Images and Videos
-                allowsEditing: false, 
+                allowsEditing: false,
                 quality: 0.8,
             });
 
@@ -771,12 +807,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                         });
                         if (res.data.status === 'success') {
                             // Update locally to show placeholder immediately
-                            setMessages(prev => prev.map(m => m.id === msgId ? { 
-                                ...m, 
-                                is_deleted: 1, 
+                            setMessages(prev => prev.map(m => m.id === msgId ? {
+                                ...m,
+                                is_deleted: 1,
                                 message: '🚫 This message was deleted',
                                 attachment: '',
-                                file: '' 
+                                file: ''
                             } : m));
                             setShowMessageOptions(false);
                             // Also fetch from server to sync
@@ -844,7 +880,7 @@ const ChatScreen = ({ navigation, route }: any) => {
             const msgsToForward = messages
                 .filter(m => selectedMessageIds.includes(m.id))
                 .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            
+
             for (const target of selectedTargets) {
                 for (const msg of msgsToForward) {
                     const isTargetGroup = target.isGroup;
@@ -860,7 +896,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         payload.my_profile_id = myProfileId || '';
                         payload.receiver_id = target.partner_id;
                     }
-                    
+
                     if (msg.file) {
                         payload.forward_file = msg.file;
                         payload.file_type = msg.file_type || '';
@@ -961,17 +997,17 @@ const ChatScreen = ({ navigation, route }: any) => {
             {/* Header */}
             {isSelectionMode ? (
                 <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#ea580c', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity 
-                        onPress={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }} 
+                    <TouchableOpacity
+                        onPress={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }}
                         style={{ marginRight: 16, padding: 4 }}
                     >
                         <Ionicons name="close" size={26} color="white" />
                     </TouchableOpacity>
                     <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, flex: 1 }}>{selectedMessageIds.length}</Text>
-                    
+
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         {selectedMessageIds.length === 1 && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => {
                                     const msg = messages.find(m => m.id === selectedMessageIds[0]);
                                     setSelectedMessage(msg);
@@ -982,7 +1018,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 <Ionicons name="ellipsis-vertical" size={22} color="white" />
                             </TouchableOpacity>
                         )}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => {
                                 fetchForwardingTargets();
                                 setShowForwardModal(true);
@@ -998,7 +1034,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8, padding: 6 }} activeOpacity={0.7}>
                         <Ionicons name="arrow-back" size={24} color="#1f2937" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
                         activeOpacity={route.params?.isGroup ? 0.7 : 1}
                         onPress={() => {
@@ -1136,14 +1172,14 @@ const ChatScreen = ({ navigation, route }: any) => {
                         </TouchableOpacity>
                     </View>
                     <View className="flex-row items-center justify-between bg-gray-50 p-2 rounded-xl">
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => saveFontSize(Math.max(12, fontSize - 1))}
                             className="bg-white p-3 rounded-lg shadow-sm"
                         >
                             <Ionicons name="remove" size={20} color="#ea580c" />
                         </TouchableOpacity>
                         <Text className="text-xl font-bold text-orange-600">{fontSize}</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => saveFontSize(Math.min(30, fontSize + 1))}
                             className="bg-white p-3 rounded-lg shadow-sm"
                         >
@@ -1217,154 +1253,154 @@ const ChatScreen = ({ navigation, route }: any) => {
                                     onLongPress={() => !isDeleted && handleLongPress(item)}
                                     className={`mb-3 w-full flex-row ${isMe ? 'justify-end' : 'justify-start'} ${isSelected ? 'bg-orange-100/50 rounded-xl' : ''}`}
                                 >
-                                <View
-                                    className={`
+                                    <View
+                                        className={`
                                         max-w-[75%] shadow-sm overflow-hidden flex-shrink
-                                        ${isDeleted 
-                                            ? 'bg-gray-100 rounded-2xl border border-gray-200' 
-                                            : (isMe ? 'bg-orange-600 rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100')
-                                        }
+                                        ${isDeleted
+                                                ? 'bg-gray-100 rounded-2xl border border-gray-200'
+                                                : (isMe ? 'bg-orange-600 rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100')
+                                            }
                                     `}
-                                    style={{ elevation: 1 }}
-                                >
-                                    {hasFile && fileUrl && !isDeleted && (
-                                        <View className="mb-1">
-                                            {isVideo ? (
-                                                <Video
-                                                    source={{ uri: fileUrl }}
-                                                    style={{ width: 200, height: 150, backgroundColor: 'black' }}
-                                                    useNativeControls
-                                                    resizeMode={ResizeMode.CONTAIN}
-                                                    isLooping
-                                                />
-                                            ) : item.file_type === 'document' ? (
-                                                <TouchableOpacity 
-                                                    onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : Linking.openURL(fileUrl as string)}
-                                                    onLongPress={() => !isDeleted && handleLongPress(item)}
-                                                    className={`p-3 flex-row items-center space-x-3 w-[200px] ${isMe ? 'bg-orange-700' : 'bg-gray-50'}`}
-                                                >
-                                                    <Ionicons name="document-text" size={32} color={isMe ? "white" : "#ea580c"} />
-                                                    <View className="flex-1 ml-2">
-                                                        <Text className={`text-xs font-bold ${isMe ? 'text-white' : 'text-gray-800'}`} numberOfLines={1}>
-                                                            {item.file?.split('/').pop()}
-                                                        </Text>
-                                                        <Text className={`text-[10px] ${isMe ? 'text-orange-200' : 'text-gray-500'}`}>Document</Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            ) : (
-                                                <TouchableOpacity 
-                                                    onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : setFullScreenImage(fileUrl)}
-                                                    onLongPress={() => !isDeleted && handleLongPress(item)}
-                                                >
-                                                    <Image
-                                                        source={{ uri: fileUrl as string }}
-                                                        style={{ width: 200, height: 200, backgroundColor: 'transparent' }}
-                                                        resizeMode="cover"
+                                        style={{ elevation: 1 }}
+                                    >
+                                        {hasFile && fileUrl && !isDeleted && (
+                                            <View className="mb-1">
+                                                {isVideo ? (
+                                                    <Video
+                                                        source={{ uri: fileUrl }}
+                                                        style={{ width: 200, height: 150, backgroundColor: 'black' }}
+                                                        useNativeControls
+                                                        resizeMode={ResizeMode.CONTAIN}
+                                                        isLooping
                                                     />
-                                                </TouchableOpacity>
-                                            )}
-                                        </View>
-                                    )}
-
-                                    {/* Sender Name & Photo for Group Chats */}
-                                    {route.params?.isGroup && !isMe && item.sender_name && (
-                                        <TouchableOpacity 
-                                            activeOpacity={0.7}
-                                            onPress={() => {
-                                                navigation.push('Chat', {
-                                                    receiver: {
-                                                        id: item.sender_id,
-                                                        full_name: item.sender_name,
-                                                        photo: item.sender_photo,
-                                                    },
-                                                    platform: platform,
-                                                    isGroup: false
-                                                });
-                                            }}
-                                            className="flex-row items-center px-4 pt-2"
-                                        >
-                                            {(() => {
-                                                const photo = item.sender_photo;
-                                                let source = null;
-                                                if (photo) {
-                                                    if (photo.startsWith('http')) source = { uri: photo };
-                                                    else source = { uri: `${PHOTO_URL}${encodeURIComponent(photo)}` };
-                                                }
-                                                
-                                                if (source) {
-                                                    return (
-                                                        <Image 
-                                                            source={source} 
-                                                            className="w-6 h-6 rounded-full bg-gray-200 mr-2"
-                                                        />
-                                                    );
-                                                }
-                                                return (
-                                                    <View className="w-6 h-6 rounded-full bg-orange-100 items-center justify-center mr-2">
-                                                        <Text className="text-[10px] text-orange-600 font-bold">
-                                                            {(item.sender_name || 'U').charAt(0).toUpperCase()}
-                                                        </Text>
-                                                    </View>
-                                                );
-                                            })()}
-                                            <Text className="text-xs text-orange-600 font-bold">
-                                                {item.sender_name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
-
-                                    {isDeleted ? (
-                                        <View className="flex-row items-center px-4 py-3 space-x-2">
-                                            <Ionicons name="ban" size={14} color="#9ca3af" />
-                                            <Text className="text-gray-400 italic text-sm ml-1">This message was deleted</Text>
-                                        </View>
-                                    ) : (
-                                        <>
-                                            {!!item.message && (
-                                                <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 2 }}>
-                                                    <Text 
-                                                        style={{ fontSize, flexShrink: 1 }}
-                                                        className={`leading-5 ${isMe ? 'text-white' : 'text-gray-800'} ${hasFile ? 'pb-1' : 'pb-1'}`}
-                                                        numberOfLines={expandedMessageIds.includes(item.id) ? undefined : 10}
+                                                ) : item.file_type === 'document' ? (
+                                                    <TouchableOpacity
+                                                        onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : Linking.openURL(fileUrl as string)}
+                                                        onLongPress={() => !isDeleted && handleLongPress(item)}
+                                                        className={`p-3 flex-row items-center space-x-3 w-[200px] ${isMe ? 'bg-orange-700' : 'bg-gray-50'}`}
                                                     >
-                                                        {item.message}
-                                                    </Text>
-                                                    {item.message.length > 250 || item.message.split('\n').length > 10 ? (
-                                                        <TouchableOpacity 
-                                                            onPress={() => {
-                                                                const id = item.id;
-                                                                setExpandedMessageIds(prev => 
-                                                                    prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
-                                                                );
-                                                            }}
-                                                            className="py-1"
-                                                        >
-                                                            <Text className={`text-xs font-bold ${isMe ? 'text-orange-200' : 'text-orange-600'}`}>
-                                                                {expandedMessageIds.includes(item.id) ? 'Read Less' : '...Read More'}
+                                                        <Ionicons name="document-text" size={32} color={isMe ? "white" : "#ea580c"} />
+                                                        <View className="flex-1 ml-2">
+                                                            <Text className={`text-xs font-bold ${isMe ? 'text-white' : 'text-gray-800'}`} numberOfLines={1}>
+                                                                {item.file?.split('/').pop()}
                                                             </Text>
-                                                        </TouchableOpacity>
-                                                    ) : null}
-                                                </View>
-                                            )}
-
-                                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 4 }}>
-                                                <Text style={{ fontSize: 10, fontWeight: '500', color: isMe ? 'rgba(255,255,255,0.7)' : '#9ca3af' }}>
-                                                    {timeStr}
-                                                </Text>
-                                                {isMe && (
-                                                    <Ionicons
-                                                        name={item.seen == 1 ? "checkmark-done-outline" : "checkmark-outline"}
-                                                        size={14}
-                                                        color={item.seen == 1 ? "#dbeafe" : "rgba(255,255,255,0.7)"}
-                                                    />
+                                                            <Text className={`text-[10px] ${isMe ? 'text-orange-200' : 'text-gray-500'}`}>Document</Text>
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                ) : (
+                                                    <TouchableOpacity
+                                                        onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : setFullScreenImage(fileUrl)}
+                                                        onLongPress={() => !isDeleted && handleLongPress(item)}
+                                                    >
+                                                        <Image
+                                                            source={{ uri: fileUrl as string }}
+                                                            style={{ width: 200, height: 200, backgroundColor: 'transparent' }}
+                                                            resizeMode="cover"
+                                                        />
+                                                    </TouchableOpacity>
                                                 )}
                                             </View>
-                                        </>
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    );
+                                        )}
+
+                                        {/* Sender Name & Photo for Group Chats */}
+                                        {route.params?.isGroup && !isMe && item.sender_name && (
+                                            <TouchableOpacity
+                                                activeOpacity={0.7}
+                                                onPress={() => {
+                                                    navigation.push('Chat', {
+                                                        receiver: {
+                                                            id: item.sender_id,
+                                                            full_name: item.sender_name,
+                                                            photo: item.sender_photo,
+                                                        },
+                                                        platform: platform,
+                                                        isGroup: false
+                                                    });
+                                                }}
+                                                className="flex-row items-center px-4 pt-2"
+                                            >
+                                                {(() => {
+                                                    const photo = item.sender_photo;
+                                                    let source = null;
+                                                    if (photo) {
+                                                        if (photo.startsWith('http')) source = { uri: photo };
+                                                        else source = { uri: `${PHOTO_URL}${encodeURIComponent(photo)}` };
+                                                    }
+
+                                                    if (source) {
+                                                        return (
+                                                            <Image
+                                                                source={source}
+                                                                className="w-6 h-6 rounded-full bg-gray-200 mr-2"
+                                                            />
+                                                        );
+                                                    }
+                                                    return (
+                                                        <View className="w-6 h-6 rounded-full bg-orange-100 items-center justify-center mr-2">
+                                                            <Text className="text-[10px] text-orange-600 font-bold">
+                                                                {(item.sender_name || 'U').charAt(0).toUpperCase()}
+                                                            </Text>
+                                                        </View>
+                                                    );
+                                                })()}
+                                                <Text className="text-xs text-orange-600 font-bold">
+                                                    {item.sender_name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+
+                                        {isDeleted ? (
+                                            <View className="flex-row items-center px-4 py-3 space-x-2">
+                                                <Ionicons name="ban" size={14} color="#9ca3af" />
+                                                <Text className="text-gray-400 italic text-sm ml-1">This message was deleted</Text>
+                                            </View>
+                                        ) : (
+                                            <>
+                                                {!!item.message && (
+                                                    <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 2 }}>
+                                                        <Text
+                                                            style={{ fontSize, flexShrink: 1 }}
+                                                            className={`leading-5 ${isMe ? 'text-white' : 'text-gray-800'} ${hasFile ? 'pb-1' : 'pb-1'}`}
+                                                            numberOfLines={expandedMessageIds.includes(item.id) ? undefined : 10}
+                                                        >
+                                                            {item.message}
+                                                        </Text>
+                                                        {item.message.length > 250 || item.message.split('\n').length > 10 ? (
+                                                            <TouchableOpacity
+                                                                onPress={() => {
+                                                                    const id = item.id;
+                                                                    setExpandedMessageIds(prev =>
+                                                                        prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+                                                                    );
+                                                                }}
+                                                                className="py-1"
+                                                            >
+                                                                <Text className={`text-xs font-bold ${isMe ? 'text-orange-200' : 'text-orange-600'}`}>
+                                                                    {expandedMessageIds.includes(item.id) ? 'Read Less' : '...Read More'}
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        ) : null}
+                                                    </View>
+                                                )}
+
+                                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 4 }}>
+                                                    <Text style={{ fontSize: 10, fontWeight: '500', color: isMe ? 'rgba(255,255,255,0.7)' : '#9ca3af' }}>
+                                                        {timeStr}
+                                                    </Text>
+                                                    {isMe && (
+                                                        <Ionicons
+                                                            name={item.seen == 1 ? "checkmark-done-outline" : "checkmark-outline"}
+                                                            size={14}
+                                                            color={item.seen == 1 ? "#dbeafe" : "rgba(255,255,255,0.7)"}
+                                                        />
+                                                    )}
+                                                </View>
+                                            </>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        );
                     }}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                     showsVerticalScrollIndicator={false}
@@ -1443,7 +1479,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         alignItems: 'center',
                         gap: 8
                     }}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => {
                                 Keyboard.dismiss();
                                 setShowAttachmentMenu(!showAttachmentMenu);
@@ -1483,23 +1519,23 @@ const ChatScreen = ({ navigation, route }: any) => {
                         <TouchableOpacity
                             onPress={sendMessage}
                             disabled={(!text.trim() && !selectedMedia) || uploading}
-                            style={{ 
-                                width: 38, 
-                                height: 38, 
-                                borderRadius: 19, 
-                                backgroundColor: (text.trim() || selectedMedia) && !uploading ? '#ea580c' : '#f3f4f6', 
-                                alignItems: 'center', 
-                                justifyContent: 'center' 
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 19,
+                                backgroundColor: (text.trim() || selectedMedia) && !uploading ? '#ea580c' : '#f3f4f6',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             }}
                             activeOpacity={0.7}
                         >
                             {uploading ? (
                                 <ActivityIndicator size="small" color="white" />
                             ) : (
-                                <Ionicons 
-                                    name="send" 
-                                    size={16} 
-                                    color={(text.trim() || selectedMedia) ? "white" : "#9ca3af"} 
+                                <Ionicons
+                                    name="send"
+                                    size={16}
+                                    color={(text.trim() || selectedMedia) ? "white" : "#9ca3af"}
                                     style={{ marginLeft: 2 }}
                                 />
                             )}
@@ -1510,16 +1546,16 @@ const ChatScreen = ({ navigation, route }: any) => {
                 {/* Custom Emoji Picker */}
                 {showEmojiPicker && (() => {
                     const emojiRows = [
-                        ['😀','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳','😜','😝','🤑','🤗','😇'],
-                        ['😢','😭','😤','😠','🤪','😱','😨','😰','😥','😓','🙄','😬','🤥','😶','😐'],
-                        ['👍','👎','👏','🙌','🤝','✊','👊','🤲','🙏','💪','👌','✌️','🤞','🖐️','👋'],
-                        ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','💕','💞','💓','💗','💖'],
-                        ['🔥','💯','⭐','🌟','✨','💫','🎉','🎊','🎈','🎁','🏆','🥇','🎯','💎','🚨'],
-                        ['😴','🤔','🤗','😏','😒','😞','😑','🥺','😔','😟','🤒','🤕','🤧','😷','🥴'],
-                        ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐧'],
-                        ['🍕','🍔','🍟','🌮','🌯','🍜','🍱','🍣','🍩','🍪','🍰','🎂','🍫','🍬','🍭'],
-                        ['⚽','🏀','🏈','⚾','🎾','🏐','🎱','🏓','🏸','🥊','🏋️','🤸','⛹️','🏊','🚴'],
-                        ['🚀','🛸','🌈','🌊','🌋','🌸','🌺','🌻','🌹','🌿','🍀','🌴','🌵','🍁','🍄'],
+                        ['😀', '😂', '🤣', '😊', '😍', '🥰', '😘', '😎', '🤩', '🥳', '😜', '😝', '🤑', '🤗', '😇'],
+                        ['😢', '😭', '😤', '😠', '🤪', '😱', '😨', '😰', '😥', '😓', '🙄', '😬', '🤥', '😶', '😐'],
+                        ['👍', '👎', '👏', '🙌', '🤝', '✊', '👊', '🤲', '🙏', '💪', '👌', '✌️', '🤞', '🖐️', '👋'],
+                        ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '💕', '💞', '💓', '💗', '💖'],
+                        ['🔥', '💯', '⭐', '🌟', '✨', '💫', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🎯', '💎', '🚨'],
+                        ['😴', '🤔', '🤗', '😏', '😒', '😞', '😑', '🥺', '😔', '😟', '🤒', '🤕', '🤧', '😷', '🥴'],
+                        ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐧'],
+                        ['🍕', '🍔', '🍟', '🌮', '🌯', '🍜', '🍱', '🍣', '🍩', '🍪', '🍰', '🎂', '🍫', '🍬', '🍭'],
+                        ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓', '🏸', '🥊', '🏋️', '🤸', '⛹️', '🏊', '🚴'],
+                        ['🚀', '🛸', '🌈', '🌊', '🌋', '🌸', '🌺', '🌻', '🌹', '🌿', '🍀', '🌴', '🌵', '🍁', '🍄'],
                     ];
                     return (
                         <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
@@ -1547,17 +1583,17 @@ const ChatScreen = ({ navigation, route }: any) => {
             {/* Full Screen Image Modal */}
             <Modal visible={!!fullScreenImage} transparent={true} animationType="fade">
                 <View className="flex-1 bg-black justify-center items-center">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         className="absolute top-12 right-6 z-50 p-2 bg-black/50 rounded-full"
                         onPress={() => setFullScreenImage(null)}
                     >
                         <Ionicons name="close" size={28} color="white" />
                     </TouchableOpacity>
                     {fullScreenImage && (
-                        <Image 
-                            source={{ uri: fullScreenImage }} 
-                            className="w-full h-full" 
-                            resizeMode="contain" 
+                        <Image
+                            source={{ uri: fullScreenImage }}
+                            className="w-full h-full"
+                            resizeMode="contain"
                         />
                     )}
                 </View>
@@ -1565,18 +1601,18 @@ const ChatScreen = ({ navigation, route }: any) => {
 
             {/* Message Options Modal */}
             <Modal visible={showMessageOptions} transparent={true} animationType="fade" onRequestClose={() => setShowMessageOptions(false)}>
-                <TouchableOpacity 
-                    className="flex-1 bg-black/40 justify-center items-center p-6" 
-                    activeOpacity={1} 
+                <TouchableOpacity
+                    className="flex-1 bg-black/40 justify-center items-center p-6"
+                    activeOpacity={1}
                     onPress={() => setShowMessageOptions(false)}
                 >
                     <View className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
                         <View className="p-4 border-b border-gray-100 bg-gray-50">
                             <Text className="text-center font-bold text-gray-800">Message Options</Text>
                         </View>
-                        
+
                         {route.params?.isGroup && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="flex-row items-center px-6 py-4 active:bg-gray-50 border-b border-gray-50"
                                 onPress={() => fetchMessageInfo(selectedMessage?.id)}
                             >
@@ -1588,7 +1624,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         )}
 
                         {selectedMessage?.is_mine && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 className="flex-row items-center px-6 py-4 active:bg-gray-50"
                                 onPress={() => handleDeleteMessage(selectedMessage?.id)}
                             >
@@ -1599,7 +1635,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                             </TouchableOpacity>
                         )}
 
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             className="px-6 py-4 active:bg-gray-50 items-center border-t border-gray-100"
                             onPress={() => setShowMessageOptions(false)}
                         >
@@ -1640,8 +1676,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                                     const seenAt = new Date(item.seen_at.replace(' ', 'T'));
                                     const timeStr = seenAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                     const dateStr = seenAt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                                    
-                                    const photoSource = item.photo 
+
+                                    const photoSource = item.photo
                                         ? (item.photo.startsWith('http') ? { uri: item.photo } : { uri: `${PHOTO_URL}${encodeURIComponent(item.photo)}` })
                                         : null;
 
@@ -1681,7 +1717,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                             </View>
                             <View className="bg-gray-100 rounded-full px-4 py-2 flex-row items-center">
                                 <Ionicons name="search" size={20} color="#9ca3af" />
-                                <TextInput 
+                                <TextInput
                                     className="flex-1 ml-2 text-gray-800"
                                     placeholder="Search chats..."
                                     value={forwardSearch}
@@ -1696,12 +1732,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                             contentContainerStyle={{ padding: 16 }}
                             renderItem={({ item }) => {
                                 const isSelected = selectedTargets.some(t => t.partner_id === item.partner_id);
-                                const photoSource = item.profile_photo 
+                                const photoSource = item.profile_photo
                                     ? { uri: `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` }
                                     : null;
 
                                 return (
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => {
                                             setSelectedTargets(prev => {
                                                 if (isSelected) return prev.filter(t => t.partner_id !== item.partner_id);
@@ -1730,10 +1766,10 @@ const ChatScreen = ({ navigation, route }: any) => {
                                             <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>{item.full_name}</Text>
                                             <Text style={{ fontSize: 12, color: '#6b7280' }}>{item.isGroup ? 'Group' : 'Contact'}</Text>
                                         </View>
-                                        <Ionicons 
-                                            name={isSelected ? "checkbox" : "square-outline"} 
-                                            size={24} 
-                                            color={isSelected ? "#ea580c" : "#cbd5e1"} 
+                                        <Ionicons
+                                            name={isSelected ? "checkbox" : "square-outline"}
+                                            size={24}
+                                            color={isSelected ? "#ea580c" : "#cbd5e1"}
                                         />
                                     </TouchableOpacity>
                                 );
@@ -1741,7 +1777,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         />
 
                         <View style={{ padding: 24, borderTopWidth: 1, borderTopColor: '#f3f4f6', marginBottom: 24 }}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={handleForwardMessages}
                                 disabled={selectedTargets.length === 0 || isForwarding}
                                 style={{

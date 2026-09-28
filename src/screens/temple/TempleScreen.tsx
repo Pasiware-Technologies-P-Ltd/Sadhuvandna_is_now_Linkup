@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -13,8 +14,20 @@ const TempleScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(true);
     const { t } = useLanguage();
 
+    const loadCachedTemples = async () => {
+        try {
+            const cached = await AsyncStorage.getItem('cached_temples_v1');
+            if (cached) {
+                setTemples(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
-        fetchTemples();
+        loadCachedTemples().then(() => {
+            fetchTemples();
+        });
     }, []);
 
     const fetchTemples = async () => {
@@ -22,6 +35,7 @@ const TempleScreen = ({ navigation }: any) => {
             const res = await api.get('/get_temples.php');
             if (res.data.status === 'success') {
                 setTemples(res.data.data);
+                AsyncStorage.setItem('cached_temples_v1', JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error(error);

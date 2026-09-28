@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Linking, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -12,8 +13,20 @@ const JobScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(true);
     const { t } = useLanguage();
 
+    const loadCachedJobs = async () => {
+        try {
+            const cached = await AsyncStorage.getItem('cached_jobs_v1');
+            if (cached) {
+                setJobs(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
-        fetchJobs();
+        loadCachedJobs().then(() => {
+            fetchJobs();
+        });
     }, []);
 
     const fetchJobs = async () => {
@@ -21,6 +34,7 @@ const JobScreen = ({ navigation }: any) => {
             const res = await api.get('/get_jobs.php');
             if (res.data.status === 'success') {
                 setJobs(res.data.data);
+                AsyncStorage.setItem('cached_jobs_v1', JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error(error);

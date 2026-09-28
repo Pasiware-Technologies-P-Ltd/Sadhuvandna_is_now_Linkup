@@ -94,10 +94,32 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
         loadCurrentUser();
     }, []);
 
+    const loadCachedPublicProfile = async (uid: string) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_public_profile_${uid}`);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed.profile) setProfile(parsed.profile);
+                if (parsed.posts) setPosts(parsed.posts);
+                if (parsed.photoPosts) setPhotoPosts(parsed.photoPosts);
+                if (parsed.reelPosts) setReelPosts(parsed.reelPosts);
+                if (parsed.savedPosts) setSavedPosts(parsed.savedPosts);
+                if (parsed.followStats) setFollowStats(parsed.followStats);
+                setLoading(false);
+                setStatsLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
         // Only fire once currentUserId is confirmed loaded (not null)
         if (currentUserId !== null) {
-            fetchProfileData();
+            const uid = userId || currentUserId;
+            if (uid) {
+                loadCachedPublicProfile(uid.toString()).then(() => {
+                    fetchProfileData();
+                });
+            }
         }
     }, [userId, currentUserId]);
 
@@ -159,6 +181,21 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             if (followRes.data.ok) {
                 setFollowStats(followRes.data);
             }
+
+            const allPosts = postsRes.data.status === 'success' ? (postsRes.data.data || []) : posts;
+            const photos = postsRes.data.status === 'success' ? allPosts.filter((p: any) => !['mp4', 'mov', 'avi', 'mkv', '3gp'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)))) : photoPosts;
+            const reels = postsRes.data.status === 'success' ? allPosts.filter((p: any) => ['mp4', 'mov', 'avi', 'mkv', '3gp'].some(ext => p.media?.some((m: string) => m.toLowerCase().endsWith(ext)))) : reelPosts;
+            const savedList = (savedRes && savedRes.data?.status === 'success') ? (savedRes.data.data || []) : savedPosts;
+
+            AsyncStorage.setItem(`cached_public_profile_${uid}`, JSON.stringify({
+                profile: profileRes.data.status === 'success' ? profileRes.data : profile,
+                posts: allPosts,
+                photoPosts: photos,
+                reelPosts: reels,
+                savedPosts: savedList,
+                followStats: followRes.data.ok ? followRes.data : followStats
+            }));
+
         } catch (error) {
             console.error(error);
         } finally {

@@ -39,6 +39,17 @@ mobileAds()
 
 import { UploadProvider } from './src/context/UploadContext';
 import UploadProgressBanner from './src/components/UploadProgressBanner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
+      retry: 2,
+    },
+  },
+});
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
@@ -133,7 +144,8 @@ export default function App() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <FontProvider>
           <LanguageProvider>
@@ -149,5 +161,6 @@ export default function App() {
         </FontProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }

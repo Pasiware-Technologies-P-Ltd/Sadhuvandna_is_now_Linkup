@@ -50,13 +50,17 @@ $con->query("CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-$where = '';
+$whereClause = '';
 if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
     $uid = intval($_REQUEST['user_id']);
-    $where = "WHERE user_id = $uid";
+    $whereClause = "WHERE n.user_id = $uid";
 }
 
-$query = "SELECT * FROM tbl_news $where ORDER BY id DESC";
+$query = "SELECT n.*, m.name as user_name, m.profile_photo as user_image, m.city as user_city 
+          FROM tbl_news n 
+          LEFT JOIN tbl_members m ON n.user_id = m.id 
+          $whereClause 
+          ORDER BY n.id DESC";
 $result = $con->query($query);
 
 $news = [];

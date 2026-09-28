@@ -535,13 +535,39 @@ const NewsScreen = ({ navigation }: any) => {
         );
     };
 
+    const loadCachedData = async () => {
+        try {
+            const cachedNews = await AsyncStorage.getItem('cached_news_v1');
+            if (cachedNews) {
+                const parsed = JSON.parse(cachedNews);
+                setNews(parsed);
+                setTickerData(parsed.slice(0, 5).map((n: any) => n.title));
+                setLoading(false);
+            }
+            const cachedYT = await AsyncStorage.getItem('cached_yt_news_v1');
+            if (cachedYT) {
+                setYtNews(JSON.parse(cachedYT));
+                setYtLoading(false);
+            }
+            const cachedAastha = await AsyncStorage.getItem('cached_aastha_news_v1');
+            if (cachedAastha) {
+                setAasthaNews(JSON.parse(cachedAastha));
+                setAasthaLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
         isMounted.current = true;
         loadBookmarks();
-        fetchNews();
-        fetchYTNews();
-        fetchAasthaNews();
         fetchAnchorStatus();
+        
+        // Load cache first for zero-loading time, then silently update
+        loadCachedData().then(() => {
+            fetchNews();
+            fetchYTNews();
+            fetchAasthaNews();
+        });
 
         const unsubscribe = navigation.addListener('focus', () => {
             loadBookmarks();
@@ -561,6 +587,7 @@ const NewsScreen = ({ navigation }: any) => {
             if (isMounted.current && res.data.status === 'success') {
                 const newsList = res.data.data;
                 setNews(newsList);
+                AsyncStorage.setItem('cached_news_v1', JSON.stringify(newsList));
                 if (res.data.ticker && res.data.ticker.length > 0) {
                     setTickerData(res.data.ticker);
                 } else if (newsList && newsList.length > 0) {
@@ -581,11 +608,12 @@ const NewsScreen = ({ navigation }: any) => {
     };
 
     const fetchYTNews = async (isRefresh = false) => {
-        if (!isRefresh) setYtLoading(true);
+        if (!isRefresh && ytNews.length === 0) setYtLoading(true);
         try {
             const res = await api.get('/get_video_news.php');
             if (isMounted.current && res.data.status === 'success') {
                 setYtNews(res.data.data);
+                AsyncStorage.setItem('cached_yt_news_v1', JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error("Failed to fetch DD news", error);
@@ -601,11 +629,12 @@ const NewsScreen = ({ navigation }: any) => {
     };
 
     const fetchAasthaNews = async (isRefresh = false) => {
-        if (!isRefresh) setAasthaLoading(true);
+        if (!isRefresh && aasthaNews.length === 0) setAasthaLoading(true);
         try {
             const res = await api.get('/get_aastha.php');
             if (isMounted.current && res.data.status === 'success') {
                 setAasthaNews(res.data.data);
+                AsyncStorage.setItem('cached_aastha_news_v1', JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error("Failed to fetch Aastha news", error);

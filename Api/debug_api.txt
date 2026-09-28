@@ -87,3 +87,27 @@ Found 5 Matches
 2026-09-17 07:20:46 - Action: fetch_my_requests, User: 1
 My Profile ID: 4
 Found 5 Matches
+2026-09-28 09:24:30 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 09:24:31 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 09:30:30 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 09:40:49 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 09:40:49 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 09:41:54 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 11:49:48 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches
+2026-09-28 11:49:50 - Action: fetch_my_requests, User: 1732
+My Profile ID: 342
+Found 1 Matches

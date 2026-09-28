@@ -134,11 +134,28 @@ if (isset($_REQUEST['post_id']) && intval($_REQUEST['post_id']) > 0) {
 
 $finalWhere = "WHERE " . implode(" AND ", $conditions);
 
+$order_clause = "ORDER BY p.id DESC";
+if (isset($_REQUEST['filter_reels']) && $_REQUEST['filter_reels'] == '1') {
+    $order_clause = "ORDER BY RAND()"; // Make reels random by default
+} else if ($filter_user_id == 0 && !isset($_REQUEST['filter_saved']) && !isset($_REQUEST['post_id'])) {
+    // Make home feed random too
+    $order_clause = "ORDER BY RAND()";
+}
+
+if (isset($_REQUEST['start_post_id']) && intval($_REQUEST['start_post_id']) > 0) {
+    $start_post_id = intval($_REQUEST['start_post_id']);
+    if (isset($_REQUEST['filter_reels']) && $_REQUEST['filter_reels'] == '1') {
+        $order_clause = "ORDER BY (p.id = $start_post_id) DESC, RAND()";
+    } else {
+        $order_clause = "ORDER BY (p.id = $start_post_id) DESC, p.id DESC";
+    }
+}
+
 $query = "SELECT p.*, m.name, m.profile_photo 
           FROM tbl_posts p
           JOIN tbl_members m ON p.user_id = m.id 
           $finalWhere
-          ORDER BY p.id DESC
+          $order_clause
           LIMIT $limit OFFSET $offset";
 
 $result = $con->query($query);
@@ -195,6 +212,19 @@ while ($p = $result->fetch_assoc()) {
         $media[] = $p['image'];
     }
 
+    $image_width = null;
+    $image_height = null;
+    if (count($media) > 0) {
+        $image_path = '../uploads/posts/' . $media[0];
+        if (file_exists($image_path)) {
+            $dims = @getimagesize($image_path);
+            if ($dims) {
+                $image_width = $dims[0];
+                $image_height = $dims[1];
+            }
+        }
+    }
+
     $posts[] = [
         'id' => $pid,
         'user_id' => $p['user_id'],
@@ -208,6 +238,8 @@ while ($p = $result->fetch_assoc()) {
         'is_saved' => $user_saved,
         'comments' => $comments,
         'media' => $media, // Array of strings
+        'image_width' => $image_width,
+        'image_height' => $image_height,
         'date' => $p['created_at'] ?? $p['date']
     ];
 }

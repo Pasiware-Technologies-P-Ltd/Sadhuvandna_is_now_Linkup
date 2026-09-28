@@ -30,11 +30,30 @@ const ChatListScreen = ({ navigation }: any) => {
     const [showMenu, setShowMenu] = useState(false);
     const searchTimeoutRef = React.useRef<any>(null);
 
+    const loadCachedChats = async (uid: number) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}`);
+            if (cached) {
+                setFriends(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
+        AsyncStorage.getItem('user').then(async (u) => {
+            if (u) {
+                const user = JSON.parse(u);
+                setUserId(user.id);
+                await loadCachedChats(user.id);
+                fetchFriends(user.id);
+            } else {
+                setLoading(false);
+            }
+        });
         const unsubscribe = navigation.addListener('focus', () => {
             fetchFriends();
         });
-        fetchFriends(); // Initial fetch
         return unsubscribe;
     }, [navigation, activePlatform]);
 
@@ -81,17 +100,14 @@ const ChatListScreen = ({ navigation }: any) => {
         }
     };
 
-    const fetchFriends = async () => {
-        setLoading(true);
+    const fetchFriends = async (uidToFetch?: number) => {
         try {
-            const u = await AsyncStorage.getItem('user');
-            if (u) {
-                const user = JSON.parse(u);
-                setUserId(user.id);
-                const res = await api.get(`/get_active_chats.php?user_id=${user.id}&platform=${activePlatform}`);
-                if (res.data.status === 'success') {
-                    setFriends(res.data.data);
-                }
+            const currentUid = uidToFetch || userId;
+            if (!currentUid) return;
+            const res = await api.get(`/get_active_chats.php?user_id=${currentUid}&platform=${activePlatform}`);
+            if (res.data.status === 'success') {
+                setFriends(res.data.data);
+                AsyncStorage.setItem(`cached_chats_v1_${currentUid}`, JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error(error);

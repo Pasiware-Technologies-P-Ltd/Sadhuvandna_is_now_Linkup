@@ -97,24 +97,39 @@ const MarriageScreen = ({ navigation }: any) => {
     }, []);
 
     useEffect(() => {
-        if (userId && profiles.length === 0) {
+        if (userId) {
             fetchProfiles();
         }
     }, [userId]);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            if (userId && profiles.length === 0) {
+            if (userId) {
                 fetchProfiles();
             }
         });
         return unsubscribe;
     }, [navigation, userId]);
 
+    const loadCachedProfiles = async (uid: string) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_matrimony_${uid}`);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setProfiles(parsed.profiles);
+                if (parsed.myProfileId) setMyProfileId(parsed.myProfileId);
+                if (parsed.requestCount) setRequestCount(parsed.requestCount);
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     const loadUser = async () => {
         const u = await AsyncStorage.getItem('user');
         if (u) {
-            setUserId(JSON.parse(u).id);
+            const parsedId = JSON.parse(u).id;
+            setUserId(parsedId);
+            await loadCachedProfiles(parsedId);
         }
     };
 
@@ -122,7 +137,7 @@ const MarriageScreen = ({ navigation }: any) => {
         if (isMore && (isLoadMoreLoading || !hasMore)) return;
 
         if (isMore) setIsLoadMoreLoading(true);
-        else setLoading(true);
+        else if (profiles.length === 0) setLoading(true);
 
         const activeGender = overrideFilters?.gender !== undefined ? overrideFilters.gender : gender;
         const activeCity = overrideFilters?.city !== undefined ? overrideFilters.city : city;
@@ -157,6 +172,14 @@ const MarriageScreen = ({ navigation }: any) => {
                 } else {
                     setProfiles(newData);
                     setPage(0);
+                    // Save to cache for offline-first experience
+                    if (!search && !activeGender && !activeCity && !activeEducation) {
+                        AsyncStorage.setItem(`cached_matrimony_${userId || '0'}`, JSON.stringify({
+                            profiles: newData,
+                            myProfileId: res.data.my_profile_id,
+                            requestCount: res.data.request_count
+                        }));
+                    }
                 }
 
                 setMyProfileId(res.data.my_profile_id);
@@ -491,7 +514,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         <FlatList
                             data={profiles}
                             renderItem={renderProfile}
-                            keyExtractor={item => item.id?.toString()}
+                            keyExtractor={(item, index) => item.id ? item.id.toString() + '_' + index : index.toString()}
                             numColumns={2}
                             onEndReached={() => fetchProfiles(true)}
                             onEndReachedThreshold={0.5}

@@ -13,6 +13,7 @@ import { Asset } from 'expo-asset';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WebView } from 'react-native-webview';
+import YoutubeIframe from 'react-native-youtube-iframe';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { logoBase64 } from '../constants/logoBase64';
@@ -80,6 +81,8 @@ export interface PostType {
     user_saved?: boolean;
     is_saved?: boolean;
     link?: string;
+    image_width?: number;
+    image_height?: number;
 }
 
 const { width } = Dimensions.get('window');
@@ -169,9 +172,9 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, onReady, isMuted, 
                     }}
                 />
             ) : (
-                <Image 
-                    source={{ uri: poster || 'https://via.placeholder.com/640x360.png?text=Loading...' }} 
-                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                <Image
+                    source={{ uri: poster || 'https://via.placeholder.com/640x360.png?text=Loading...' }}
+                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
                 />
             )}
             {error && (
@@ -298,6 +301,20 @@ const REPORT_CATEGORIES = [
     'Other'
 ];
 
+export const MuteManager = {
+    isGlobalMuted: true,
+    listeners: new Set<Function>(),
+    toggle: () => {
+        MuteManager.isGlobalMuted = !MuteManager.isGlobalMuted;
+        MuteManager.listeners.forEach(l => l(MuteManager.isGlobalMuted));
+    },
+    subscribe: (listener: Function) => {
+        MuteManager.listeners.add(listener);
+        return () => MuteManager.listeners.delete(listener);
+    }
+};
+
+
 const PostCard = ({
     post,
     onUserPress,
@@ -316,7 +333,14 @@ const PostCard = ({
     const [likeCount, setLikeCount] = useState(post.likes);
     const [saved, setSaved] = useState(Boolean(post.isSaved || (post as any).user_saved || (post as any).is_saved));
     const [videoReady, setVideoReady] = useState(false);
-    const [musicMuted, setMusicMuted] = useState(false);
+    const [musicMuted, setMusicMuted] = useState(MuteManager.isGlobalMuted);
+
+    useEffect(() => {
+        const unsubscribe = MuteManager.subscribe(setMusicMuted);
+        return () => {
+            unsubscribe();
+        };
+    }, []);
     const [paused, setPaused] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -416,7 +440,7 @@ const PostCard = ({
         return null;
     }, [post.link]);
 
-    const postAspectRatio = musicData?.aspectRatio ? Number(musicData.aspectRatio) : undefined;
+    const postAspectRatio = musicData?.aspectRatio ? Number(musicData.aspectRatio) : (post.image_width && post.image_height ? post.image_width / post.image_height : undefined);
     const hasMusic = !!(musicData && (musicData.type === 'youtube_music' || musicData.type === 'custom_music'));
 
     // Combine local shouldPlay with screen focus
@@ -547,7 +571,7 @@ const PostCard = ({
                 setIsDownloading(false);
                 return;
             }
-            
+
             const uri = mediaList[0];
             const isVid = isVideo(uri);
             const filename = uri.split('/').pop() || (isVid ? 'download.mp4' : 'download.jpg');
@@ -570,7 +594,7 @@ const PostCard = ({
                         const username = post.user?.name || 'User';
                         const safeUsername = username.replace(/'/g, "").replace(/:/g, ""); // strip quotes and colons for ffmpeg safety
                         const textPath = FileSystem.documentDirectory + 'watermark_text_' + safeUsername + '.png';
-                        
+
                         // Ensure logo exists (using new filename to bypass corrupt cached file)
                         const logoInfo = await FileSystem.getInfoAsync(logoPath);
                         if (!logoInfo.exists) {
@@ -589,7 +613,7 @@ const PostCard = ({
                         } catch (e) {
                             console.error("Could not load text image:", e);
                         }
-                        
+
                         let command = '';
                         if (isVid) {
                             // Command to overlay logo and text with Instagram-like corner swapping animation (same row, transparent logo background)
@@ -599,10 +623,10 @@ const PostCard = ({
                             // Static overlay for images (bottom right)
                             command = `-y -i "${downloadedFile.uri}" -i "${logoPath}" -i "${textPath}" -filter_complex "[1:v]format=rgba,colorkey=white:0.05:0.1,colorchannelmixer=aa=0.85,scale=30:-1[logo];[2:v]format=rgba,colorchannelmixer=aa=0.85,scale=125:-1[txt];[0:v][logo]overlay=W-175:H-40[v1];[v1][txt]overlay=W-140:H-40" "${outUri}"`;
                         }
-                        
+
                         const session = await FFmpegKit.execute(command);
                         const returnCode = await session.getReturnCode();
-                        
+
                         if (ReturnCode.isSuccess(returnCode)) {
                             finalUri = outUri;
                         } else {
@@ -813,88 +837,23 @@ const PostCard = ({
                                 )}
                                 {shouldMountAudio && music.type === 'youtube_music' && (
                                     <View key={`yt-${post.id}-${isFocused}`} style={styles.hiddenAudio} pointerEvents="none">
-                                        <WebView
-                                            style={{ flex: 1 }}
-                                            ref={webViewRef}
-                                            source={{ uri: `https://www.youtube.com/embed/${music.youtubeId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&mute=0&iv_load_policy=3&disablekb=1` }}
-                                            onMessage={(event) => {
-                                                if (event.nativeEvent.data === 'yt-ready') setSoundReady(true);
-                                            }}
-                                            injectedJavaScript={`
-                                                (function() {
-                                                    const css = '#header-bar, #footer-bar, .player-control-container, #related, #comments, .video-player-control-overlay, .ad-container, .ad-display, .ytp-ad-overlay-container { display: none !important; }';
-                                                    const style = document.createElement('style');
-                                                    style.innerHTML = css;
-                                                    document.head.appendChild(style);
-                                                                                                                let jumped = false;
-                                                    let sentReady = false;
-
-                                                    window.setPlaybackStatus = (status) => {
-                                                        window.remoteShouldPlay = status;
-                                                    };
-
-                                                    const loopLogic = () => {
-                                                        const video = document.querySelector("video");
-                                                        if (!video) return;
-
-                                                        if (!sentReady && video.readyState >= 3) {
-                                                            window.ReactNativeWebView.postMessage('yt-ready');
-                                                            sentReady = true;
-                                                        }
-
-                                                        const sTime = Number(${music.startTime || 0});
-                                                        const duration = Number(${music.duration || 30});
-                                                        const eTime = sTime + duration;
-
-                                                        const adShowing = document.querySelector(".ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-overlay-container");
-                                                        if (adShowing) {
-                                                            video.muted = true;
-                                                            if (video.duration > 0) video.currentTime = video.duration - 0.1;
-                                                            const skipBtn = document.querySelector(".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot, .ytp-ad-skip-button-text, .ytp-ad-preview-container");
-                                                            if (skipBtn) skipBtn.click();
-                                                         } else {
-                                                            const shouldPlay = window.remoteShouldPlay !== undefined ? window.remoteShouldPlay : ${audioShouldPlay};
-                                                            video.muted = ${musicMuted ? 'true' : 'false'};
-                                                            video.volume = 1.0;
-                                                            
-                                                            if(shouldPlay) {
-                                                                if(video.paused) video.play().catch(e => {});
-                                                            } else {
-                                                                if(!video.paused) video.pause();
-                                                            }
-
-                                                             // Handle Start Time Jump & Loop
-                                                             if (!jumped && sTime > 0 && video.currentTime < sTime) {
-                                                                 video.currentTime = sTime;
-                                                                 jumped = true;
-                                                             }
-                                                             
-                                                             // Loop Logic (40ms precision)
-                                                             if (video.ended || video.currentTime >= eTime || (video.currentTime < sTime - 1.5 && !video.seeking)) {
-                                                                 video.currentTime = sTime;
-                                                                 video.play().catch(e => {});
-                                                             }
-
-                                                            const unmuteSelectors = [".ytp-unmute", ".ytp-mute-button", ".ytp-unmute-button", "button[aria-label*='unmute']"];
-                                                            unmuteSelectors.forEach(sel => {
-                                                                const btn = document.querySelector(sel);
-                                                                if (btn) btn.click();
-                                                            });
-                                                        }
-                                                    };
-                                                    setInterval(loopLogic, 40);
-                                                })();
-                                            `}
-                                            allowsInlineMediaPlayback={true}
-                                            mediaPlaybackRequiresUserAction={false}
-                                            javaScriptEnabled={true}
-                                            domStorageEnabled={true}
-                                            sharedCookiesEnabled={true}
-                                            androidLayerType="hardware"
-                                            originWhitelist={['*']}
-                                            mixedContentMode="always"
-                                            userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-                                        />
+                                        <View style={{ flex: 1, pointerEvents: 'none' }}>
+                                            <YoutubeIframe
+                                                height={'100%'}
+                                                width={'100%'}
+                                                videoId={music.youtubeId}
+                                                play={actualShouldPlay}
+                                                mute={musicMuted}
+                                                forceAndroidAutoplay={true}
+                                                initialPlayerParams={{
+                                                    controls: false,
+                                                    rel: false,
+                                                    modestbranding: true,
+                                                    iv_load_policy: 3
+                                                }}
+                                                onReady={() => setSoundReady(true)}
+                                            />
+                                        </View>
                                     </View>
                                 )}
                             </>
@@ -997,10 +956,10 @@ const PostCard = ({
                         <Ionicons name="paper-plane-outline" size={23} color="#374151" />
                     </TouchableOpacity>
 
-                    {post.link && (
+                    {(post.link || (mediaList.length > 0 && isVideo(mediaList[0]))) && (
                         <TouchableOpacity
                             style={[styles.actionButton, { marginLeft: 4 }]}
-                            onPress={() => setMusicMuted(!musicMuted)}
+                            onPress={() => MuteManager.toggle()}
                             activeOpacity={0.7}
                         >
                             <Ionicons
@@ -1064,16 +1023,16 @@ const PostCard = ({
                         />
 
                         <View style={styles.modalActions}>
-                            <TouchableOpacity 
-                                style={[styles.modalButton, styles.cancelButton]} 
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
                                 onPress={() => setReportModalVisible(false)}
                                 disabled={reporting}
                             >
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
-                                style={[styles.modalButton, styles.submitButton]} 
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.submitButton]}
                                 onPress={submitReport}
                                 disabled={reporting}
                             >
@@ -1378,4 +1337,17 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PostCard;
+export default React.memo(PostCard, (prevProps, nextProps) => {
+    const prevPost = prevProps.post as any;
+    const nextPost = nextProps.post as any;
+    
+    return (
+        prevPost.id === nextPost.id &&
+        prevPost.likes === nextPost.likes &&
+        prevPost.comments === nextPost.comments &&
+        prevPost.isLiked === nextPost.isLiked &&
+        (prevPost.isSaved || prevPost.user_saved || prevPost.is_saved) === (nextPost.isSaved || nextPost.user_saved || nextPost.is_saved) &&
+        prevProps.shouldPlay === nextProps.shouldPlay &&
+        prevProps.currentUserId === nextProps.currentUserId
+    );
+});

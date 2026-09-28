@@ -39,11 +39,22 @@ const FamilyScreen = ({ navigation }: any) => {
     const [pickerMonth, setPickerMonth] = useState(1);
     const [pickerYear, setPickerYear] = useState(2000);
 
+    const loadCachedFamily = async (uid: string) => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_family_${uid}`);
+            if (cached) {
+                setMembers(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
     useEffect(() => {
-        AsyncStorage.getItem('user').then(u => {
+        AsyncStorage.getItem('user').then(async (u) => {
             if (u) {
                 const user = JSON.parse(u);
                 setUserId(user.id);
+                await loadCachedFamily(user.id);
                 fetchMembers(user.id);
             }
         });
@@ -54,6 +65,7 @@ const FamilyScreen = ({ navigation }: any) => {
             const res = await api.get(`/manage_family.php?action=fetch&user_id=${uid}`);
             if (res.data.status === 'success') {
                 setMembers(res.data.data);
+                AsyncStorage.setItem(`cached_family_${uid}`, JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error(error);

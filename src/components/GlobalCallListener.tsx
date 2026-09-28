@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform, AppState } from 'react-native';
 import { navigationRef, navigateWithRetry } from '../navigation/navigationRef';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
@@ -25,7 +25,7 @@ const GlobalCallListener = () => {
 
         const checkStatus = async () => {
             if (isProcessing.current || isPollingRef.current) return;
-            
+
             // If already in a call, don't show another popup
             if (navigationRef.isReady()) {
                 const currentRoute = navigationRef.getCurrentRoute()?.name;
@@ -34,7 +34,7 @@ const GlobalCallListener = () => {
                     return;
                 }
             }
-            
+
             isPollingRef.current = true;
             try {
                 const payload = { user_id: myUserId };
@@ -53,14 +53,42 @@ const GlobalCallListener = () => {
                         setIncomingCall((prev: any) => prev ? null : prev);
                     }
                 }
-            } catch (e) { 
+            } catch (e) {
             } finally {
                 isPollingRef.current = false;
             }
         };
 
-        const interval = setInterval(checkStatus, 8000); // Check every 8 seconds
-        return () => clearInterval(interval);
+        let interval: NodeJS.Timeout;
+        let isActive = true;
+
+        const startPolling = () => {
+            if (interval) clearInterval(interval);
+            interval = setInterval(() => {
+                if (isActive) checkStatus();
+            }, 8000);
+        };
+
+        const stopPolling = () => {
+            if (interval) clearInterval(interval);
+        };
+
+        startPolling();
+
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (nextAppState === 'active') {
+                isActive = true;
+                startPolling();
+            } else {
+                isActive = false;
+                stopPolling();
+            }
+        });
+
+        return () => {
+            stopPolling();
+            subscription.remove();
+        };
     }, [myUserId]);
 
     // Handle Ringtone
@@ -71,7 +99,7 @@ const GlobalCallListener = () => {
         } else {
             stopRingtone();
         }
-        
+
         return () => {
             stopRingtone();
         };
@@ -101,7 +129,7 @@ const GlobalCallListener = () => {
     const handleAccept = async () => {
         if (!incomingCall || isProcessing.current) return;
         isProcessing.current = true;
-        
+
         const currentCall = incomingCall;
         setIncomingCall(null);
         await stopRingtone();
@@ -118,7 +146,7 @@ const GlobalCallListener = () => {
         let channelId = currentCall.peer_id;
 
         navigateWithRetry('AgoraCall', {
-            channelId: channelId, 
+            channelId: channelId,
             isVideo: (currentCall.type === 'video'),
             isCaller: false,
             otherUserId: currentCall.caller_id,

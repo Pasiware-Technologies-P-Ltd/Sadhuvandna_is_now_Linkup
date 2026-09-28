@@ -33,19 +33,35 @@ const MyPostsScreen = ({ navigation }: any) => {
         itemVisiblePercentThreshold: 70,
     }).current;
 
-    useEffect(() => {
-        fetchMyPosts();
-    }, []);
-
-    const fetchMyPosts = async () => {
+    const loadCachedMyPosts = async (uid: string) => {
         try {
-            const u = await AsyncStorage.getItem('user');
+            const cached = await AsyncStorage.getItem(`cached_my_posts_${uid}`);
+            if (cached) {
+                setPosts(JSON.parse(cached));
+                setLoading(false);
+            }
+        } catch (e) {}
+    };
+
+    useEffect(() => {
+        AsyncStorage.getItem('user').then(async (u) => {
             if (u) {
                 const user = JSON.parse(u);
-                const res = await api.get(`get_posts.php?filter_user_id=${user.id}&user_id=${user.id}`);
-                if (res.data.status === 'success') {
-                    setPosts(res.data.data);
-                }
+                await loadCachedMyPosts(String(user.id));
+                fetchMyPosts(String(user.id));
+            } else {
+                setLoading(false);
+            }
+        });
+    }, []);
+
+    const fetchMyPosts = async (uid?: string) => {
+        try {
+            if (!uid) return;
+            const res = await api.get(`get_posts.php?filter_user_id=${uid}&user_id=${uid}`);
+            if (res.data.status === 'success') {
+                setPosts(res.data.data);
+                AsyncStorage.setItem(`cached_my_posts_${uid}`, JSON.stringify(res.data.data));
             }
         } catch (error) {
             console.error(error);
