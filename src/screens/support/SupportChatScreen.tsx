@@ -1,5 +1,6 @@
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
@@ -30,7 +31,7 @@ const SupportChatScreen = ({ navigation }: any) => {
     ]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<FlashList>(null);
 
     // Auto scroll to bottom
     const scrollToBottom = () => {
@@ -148,7 +149,7 @@ const SupportChatScreen = ({ navigation }: any) => {
                 className="flex-1"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
-                <FlatList
+                <FlashList
                     ref={flatListRef}
                     data={messages}
                     renderItem={renderMessageItem}

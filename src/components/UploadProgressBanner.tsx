@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useUpload } from '../context/UploadContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

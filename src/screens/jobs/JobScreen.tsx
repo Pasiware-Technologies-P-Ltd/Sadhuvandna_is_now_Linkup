@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Linking, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,7 +62,7 @@ const JobScreen = ({ navigation }: any) => {
                 <Text className="text-xl font-bold text-gray-800">{t('jobsEducation')}</Text>
             </View>
 
-            <FlatList
+            <FlashList
                 data={jobs}
                 renderItem={renderItem}
                 keyExtractor={item => item.id?.toString()}
@@ -150,7 +152,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
 
             {imageUrl && (
                 <View className="mb-4 w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                    <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 </View>
             )}
 

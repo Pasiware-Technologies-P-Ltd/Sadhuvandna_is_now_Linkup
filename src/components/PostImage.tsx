@@ -1,12 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Image as RNImage, View, ActivityIndicator, Text } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { ImageService } from '../services/ImageService';
 
 interface PostImageProps {
     uri: string;
     forcedAspect?: number;
 }
+
+const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
+    const player = useVideoPlayer(uri, player => {
+        player.loop = false;
+    });
+
+    return (
+        <View className="w-full bg-black rounded-xl overflow-hidden relative" style={{ aspectRatio: 4 / 3 }}>
+            <VideoView
+                player={player}
+                allowsFullscreen
+                allowsPictureInPicture
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+                nativeControls={false}
+            />
+        </View>
+    );
+};
 
 const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
     const [loading, setLoading] = useState(false);
@@ -14,18 +34,22 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
     const [aspect, setAspect] = useState<number>(forcedAspect || 4 / 3);
 
     useEffect(() => {
+        let isMounted = true;
         if (forcedAspect) {
             setAspect(forcedAspect);
             return;
         }
         if (uri) {
-            RNImage.getSize(uri, (w, h) => {
-                setAspect(w / h);
-            }, () => {
-                setAspect(4 / 3);
-            });
+            ImageService.getImageDimensions(uri)
+                .then(({ aspectRatio }) => {
+                    if (isMounted) setAspect(aspectRatio);
+                })
+                .catch(() => {
+                    if (isMounted) setAspect(4 / 3);
+                });
         }
-    }, [uri]);
+        return () => { isMounted = false; };
+    }, [uri, forcedAspect]);
 
     if (!uri || error) {
         return (
@@ -38,28 +62,16 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
     const isVideo = uri.toLowerCase().match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
 
     if (isVideo) {
-        return (
-            <View className="w-full bg-black rounded-xl overflow-hidden relative" style={{ aspectRatio: 4 / 3 }}>
-                <Video
-                    source={{ uri }}
-                    rate={1.0}
-                    volume={1.0}
-                    isMuted={false}
-                    resizeMode={ResizeMode.CONTAIN}
-                    shouldPlay={false}
-                    useNativeControls
-                    style={{ width: '100%', height: '100%' }}
-                    posterSource={{ uri: 'https://via.placeholder.com/300x200?text=Video' }}
-                    usePoster
-                />
-            </View>
-        );
+        return <PostVideo uri={uri} />;
     }
+
+    // Use the abstraction for feed-optimized URLs (ready for CDN integration)
+    const optimizedUri = ImageService.getFeedImageUrl(uri);
 
     return (
         <View className="w-full bg-gray-50 rounded-xl overflow-hidden relative">
             <Image
-                source={{ uri }}
+                source={{ uri: optimizedUri }}
                 style={{ width: '100%', aspectRatio: aspect }}
                 contentFit="cover"
                 cachePolicy="memory-disk"

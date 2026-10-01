@@ -30,8 +30,27 @@ if ($user_id <= 0) {
 // Get action from JSON or REQUEST
 $action = $data['action'] ?? $_REQUEST['action'] ?? '';
 
+// WebSocket helper
+function triggerWebSocket($room, $type, $payload) {
+    $url = 'http://localhost:3000/api/trigger';
+    $postData = array(
+        'room' => $room,
+        'type' => $type,
+        'payload' => $payload
+    );
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($postData)
+        )
+    );
+    $context  = stream_context_create($options);
+    @file_get_contents($url, false, $context);
+}
+
 /* ============================
-   ❤️ LIKE TOGGLE
+   ❤️ LIKE TOGGLE (REDIS + QUEUE)
 ============================ */
 if ($action === 'like') {
     $pid = intval($data['id'] ?? $_POST['id'] ?? 0);
@@ -40,43 +59,63 @@ if ($action === 'like') {
         exit;
     }
     
-    $check = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
-
-    if ($check->num_rows == 0) {
-        $stmt = $con->prepare("INSERT INTO tbl_likes (post_id, user_id, date) VALUES (?, ?, NOW())");
-        $stmt->bind_param("ii", $pid, $user_id);
-        if ($stmt->execute()) {
+    require_once 'RedisConfig.php';
+    require_once 'QueueManager.php';
+    
+    $redis = RedisConfig::getConnection();
+    if (!$redis) {
+        // Fallback to MySQL directly if Redis is down
+        $check = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
+        if ($check->num_rows == 0) {
+            $con->query("INSERT INTO tbl_likes (post_id, user_id, date) VALUES ($pid, $user_id, NOW())");
             echo json_encode(["ok" => true, "status" => "liked"]);
-            
-            // 🔥 Send Push Notification to Post Owner
-            try {
-                include_once 'push_helper.php';
-                // Find owner and your name
-                $ownQ = $con->query("SELECT p.user_id, m.name as liker_name 
-                                     FROM tbl_posts p, tbl_members m 
-                                     WHERE p.id = $pid AND m.id = $user_id LIMIT 1");
-                if ($row = $ownQ->fetch_assoc()) {
-                    $owner_id = $row['user_id'];
-                    $liker_name = $row['liker_name'];
-                    
-                    if ($owner_id != $user_id) { // Don't notify yourself
-                        sendExpoPushNotification(
-                            $con, 
-                            $owner_id, 
-                            "New Like", 
-                            "$liker_name liked your post.", 
-                            ["type" => "like", "postId" => strval($pid)]
-                        );
-                    }
-                }
-            } catch (Exception $e) {}
         } else {
-            echo json_encode(["ok" => false, "message" => "Db error"]);
+            $con->query("DELETE FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
+            echo json_encode(["ok" => true, "status" => "unliked"]);
         }
-    } else {
-        $con->query("DELETE FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
-        echo json_encode(["ok" => true, "status" => "unliked"]);
+        exit;
     }
+    
+    $redisKey = "post:{$pid}:likes";
+    $cacheLoadedKey = "post:{$pid}:likes_loaded";
+    
+    // 1. Warm up cache if not loaded
+    if (!$redis->exists($cacheLoadedKey)) {
+        $likesQ = $con->query("SELECT user_id FROM tbl_likes WHERE post_id=$pid");
+        if ($likesQ && $likesQ->num_rows > 0) {
+            $userIds = [];
+            while ($row = $likesQ->fetch_assoc()) {
+                $userIds[] = $row['user_id'];
+            }
+            if (!empty($userIds)) {
+                // Check if sAddArray method exists, otherwise use multiple sAdd or call_user_func_array
+                call_user_func_array([$redis, 'sAdd'], array_merge([$redisKey], $userIds));
+            }
+        }
+        $redis->set($cacheLoadedKey, 1, ['ex' => 86400]);
+        $redis->expire($redisKey, 86400); 
+    }
+    
+    // 2. Toggle in Redis (extremely fast)
+    $isLiked = $redis->sIsMember($redisKey, $user_id);
+    if ($isLiked) {
+        $redis->sRem($redisKey, $user_id);
+        $status = "unliked";
+    } else {
+        $redis->sAdd($redisKey, $user_id);
+        $status = "liked";
+    }
+    
+    // 3. Queue for async persistence (Worker will clear lock when done)
+    QueueManager::pushJob('sync_like_state', [
+        'post_id' => $pid,
+        'user_id' => $user_id
+    ], "sync_like_{$pid}_{$user_id}", 600);
+    
+    // 4. WebSocket Broadcast
+    triggerWebSocket("post_{$pid}", "post_like_updated", ["post_id" => $pid, "user_id" => $user_id, "status" => $status]);
+
+    echo json_encode(["ok" => true, "status" => $status]);
     exit;
 }
 
@@ -116,19 +155,219 @@ if ($action === 'save' || $action === 'toggle_save') {
 }
 
 /* ============================
-   💬 COMMENT INSERT
+   💬 COMMENT INSERT (REDIS + QUEUE)
 ============================ */
 if ($action === 'comment') {
     $pid = intval($data['id'] ?? $_POST['id'] ?? 0);
     $comment = trim($data['comment'] ?? $_POST['comment'] ?? '');
     
     if ($pid > 0 && $comment != "") {
-        $stmt = $con->prepare("INSERT INTO tbl_comments (post_id, user_id, comment, date) VALUES (?, ?, ?, NOW())");
-        $stmt->bind_param("iis", $pid, $user_id, $comment);
-        if ($stmt->execute()) {
-            echo json_encode(["ok" => true]);
+        require_once 'RedisConfig.php';
+        require_once 'QueueManager.php';
+        $redis = RedisConfig::getConnection();
+        
+        if (!$redis) {
+            $stmt = $con->prepare("INSERT INTO tbl_comments (post_id, user_id, comment, date) VALUES (?, ?, ?, NOW())");
+            $stmt->bind_param("iis", $pid, $user_id, $comment);
+            if ($stmt->execute()) {
+                $inserted_id = $con->insert_id;
+                echo json_encode(["ok" => true, "comment_id" => $inserted_id]);
+            } else {
+                echo json_encode(["ok" => false, "message" => "Db error"]);
+            }
+            exit;
+        }
+
+        $userQ = $con->query("SELECT name, profile_photo FROM tbl_members WHERE id=$user_id LIMIT 1");
+        if ($userQ && $userRow = $userQ->fetch_assoc()) {
+            $name = $userRow['name'];
+            $profile_photo = $userRow['profile_photo'];
+            $date = date("Y-m-d H:i:s");
+            
+            $comment_id = "temp_" . uniqid();
+            $commentObj = [
+                'comment_id' => $comment_id,
+                'user_id' => $user_id,
+                'name' => htmlspecialchars($name),
+                'profile_photo' => htmlspecialchars($profile_photo),
+                'comment' => htmlspecialchars($comment),
+                'date' => date("d M Y, h:i A", strtotime($date))
+            ];
+            
+            $cacheLoadedKey = "post:{$pid}:comments_loaded";
+            $redisKey = "post:{$pid}:comments";
+            
+            // Ensure cache is loaded before pushing to maintain consistency
+            if (!$redis->exists($cacheLoadedKey)) {
+                $cres = $con->query("SELECT c.id, c.comment, c.date, m.name, m.profile_photo FROM tbl_comments c JOIN tbl_members m ON c.user_id=m.id WHERE c.post_id=$pid ORDER BY c.date DESC");
+                if ($cres) {
+                    $cacheComments = [];
+                    while ($c = $cres->fetch_assoc()) {
+                        $cacheComments[] = json_encode([
+                            'comment_id' => $c['id'],
+                            'user_id' => $c['user_id'],
+                            'name' => htmlspecialchars($c['name']),
+                            'profile_photo' => htmlspecialchars($c['profile_photo']), 
+                            'comment' => htmlspecialchars($c['comment']),
+                            'date' => date("d M Y, h:i A", strtotime($c['date']))
+                        ]);
+                    }
+                    if (!empty($cacheComments)) {
+                        call_user_func_array([$redis, 'rPush'], array_merge([$redisKey], $cacheComments));
+                    }
+                }
+                $redis->set($cacheLoadedKey, 1, ['ex' => 86400]);
+                $redis->expire($redisKey, 86400);
+            }
+            
+            // Hash the comment to prevent duplicate spamming
+            $commentHash = md5($comment);
+            $jobId = QueueManager::pushJob('sync_comment', [
+                'post_id' => $pid,
+                'user_id' => $user_id,
+                'comment' => $comment,
+                'date' => $date,
+                'temp_id' => $comment_id
+            ], "sync_comment_{$pid}_{$user_id}_{$commentHash}", 600);
+            
+            if ($jobId) {
+                $redis->lPush($redisKey, json_encode($commentObj));
+                triggerWebSocket("post_{$pid}", "post_comment_added", ["post_id" => $pid, "comment" => $commentObj]);
+                echo json_encode(["ok" => true, "status" => "commented", "comment_id" => $comment_id]);
+            } else {
+                // It's a duplicate rapid tap, just return ok to gracefully ignore
+                echo json_encode(["ok" => true, "status" => "commented", "comment_id" => $comment_id]);
+            }
         } else {
-            echo json_encode(["ok" => false, "message" => "Db error"]);
+            echo json_encode(["ok" => false, "message" => "User not found"]);
+        }
+    } else {
+        echo json_encode(["ok" => false, "message" => "Invalid input"]);
+    }
+    exit;
+}
+
+/* ============================
+   🗑️ COMMENT DELETE (REDIS + QUEUE)
+============================ */
+if ($action === 'delete_comment') {
+    $pid = intval($data['post_id'] ?? $_POST['post_id'] ?? 0);
+    $comment_id = $data['comment_id'] ?? $_POST['comment_id'] ?? '';
+    $comment_text = trim($data['comment'] ?? $_POST['comment'] ?? '');
+
+    if ($pid > 0 && $comment_id !== '') {
+        require_once 'RedisConfig.php';
+        require_once 'QueueManager.php';
+        $redis = RedisConfig::getConnection();
+        
+        if ($redis) {
+            $redisKey = "post:{$pid}:comments";
+            $cacheLoadedKey = "post:{$pid}:comments_loaded";
+            
+            if ($redis->exists($cacheLoadedKey)) {
+                $commentsRaw = $redis->lRange($redisKey, 0, -1);
+                foreach ($commentsRaw as $cr) {
+                    $cObj = json_decode($cr, true);
+                    if ($cObj && isset($cObj['comment_id']) && (string)$cObj['comment_id'] === (string)$comment_id) {
+                        // Secure verify ownership before deleting from Redis
+                        if (isset($cObj['user_id']) && (int)$cObj['user_id'] === (int)$user_id) {
+                            $redis->lRem($redisKey, $cr, 1);
+                        } else {
+                            echo json_encode(["ok" => false, "message" => "Unauthorized delete"]);
+                            exit;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            QueueManager::pushJob('sync_delete_comment', [
+                'post_id' => $pid,
+                'user_id' => $user_id,
+                'comment_id' => $comment_id,
+                'comment' => $comment_text
+            ], "sync_del_comment_{$comment_id}", 600);
+            
+            triggerWebSocket("post_{$pid}", "post_comment_deleted", ["post_id" => $pid, "comment_id" => $comment_id]);
+            echo json_encode(["ok" => true, "status" => "deleted"]);
+        } else {
+            if (strpos($comment_id, 'temp_') === 0) {
+                $stmt = $con->prepare("DELETE FROM tbl_comments WHERE post_id=? AND user_id=? AND comment=?");
+                $stmt->bind_param("iis", $pid, $user_id, $comment_text);
+                $stmt->execute();
+            } else {
+                $stmt = $con->prepare("DELETE FROM tbl_comments WHERE id=? AND user_id=?");
+                $stmt->bind_param("ii", $comment_id, $user_id);
+                $stmt->execute();
+            }
+            triggerWebSocket("post_{$pid}", "post_comment_deleted", ["post_id" => $pid, "comment_id" => $comment_id]);
+            echo json_encode(["ok" => true, "status" => "deleted"]);
+        }
+    } else {
+        echo json_encode(["ok" => false, "message" => "Invalid input"]);
+    }
+    exit;
+}
+
+/* ============================
+   ✏️ COMMENT EDIT (REDIS + QUEUE)
+============================ */
+if ($action === 'edit_comment') {
+    $pid = intval($data['post_id'] ?? $_POST['post_id'] ?? 0);
+    $comment_id = $data['comment_id'] ?? $_POST['comment_id'] ?? '';
+    $new_comment = trim($data['comment'] ?? $_POST['comment'] ?? '');
+
+    if ($pid > 0 && $comment_id !== '' && $new_comment !== '') {
+        require_once 'RedisConfig.php';
+        require_once 'QueueManager.php';
+        $redis = RedisConfig::getConnection();
+        
+        if ($redis) {
+            $redisKey = "post:{$pid}:comments";
+            $cacheLoadedKey = "post:{$pid}:comments_loaded";
+            
+            $authorized = false;
+            if ($redis->exists($cacheLoadedKey)) {
+                $len = $redis->lLen($redisKey);
+                for ($i=0; $i<$len; $i++) {
+                    $cr = $redis->lIndex($redisKey, $i);
+                    $cObj = json_decode($cr, true);
+                    if ($cObj && isset($cObj['comment_id']) && (string)$cObj['comment_id'] === (string)$comment_id) {
+                        // Check ownership
+                        if (isset($cObj['user_id']) && (int)$cObj['user_id'] === (int)$user_id) {
+                            $authorized = true;
+                            // Immediately update the comment in Redis by replacing the JSON
+                            $cObj['comment'] = htmlspecialchars($new_comment);
+                            $redis->lSet($redisKey, $i, json_encode($cObj));
+                        } else {
+                            echo json_encode(["ok" => false, "message" => "Unauthorized edit"]);
+                            exit;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            if ($authorized) {
+                QueueManager::pushJob('sync_edit_comment', [
+                    'post_id' => $pid,
+                    'user_id' => $user_id,
+                    'comment_id' => $comment_id,
+                    'comment' => $new_comment
+                ], "sync_edit_comment_{$comment_id}", 600);
+                
+                triggerWebSocket("post_{$pid}", "post_comment_updated", ["post_id" => $pid, "comment_id" => $comment_id, "comment" => $new_comment]);
+                echo json_encode(["ok" => true, "status" => "edited"]);
+            } else {
+                echo json_encode(["ok" => false, "message" => "Comment not found or unauthorized"]);
+            }
+        } else {
+            // DB Fallback
+            $stmt = $con->prepare("UPDATE tbl_comments SET comment=? WHERE id=? AND user_id=?");
+            $stmt->bind_param("sii", $new_comment, $comment_id, $user_id);
+            $stmt->execute();
+            triggerWebSocket("post_{$pid}", "post_comment_updated", ["post_id" => $pid, "comment_id" => $comment_id, "comment" => $new_comment]);
+            echo json_encode(["ok" => true, "status" => "edited"]);
         }
     } else {
         echo json_encode(["ok" => false, "message" => "Invalid input"]);
@@ -181,27 +420,91 @@ if ($action === 'fetch_all') {
     while ($p = $res->fetch_assoc()) {
         $pid = $p['id'];
 
-        // ✅ Likes count + check if current user liked
-        $likes = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$pid")->fetch_row()[0];
-        $user_liked = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id")->num_rows > 0;
+        // ✅ Likes count + check if current user liked via Redis
+        $likes = 0;
+        $user_liked = false;
+        
+        require_once 'RedisConfig.php';
+        $redis = RedisConfig::getConnection();
+        
+        if ($redis) {
+            $redisKey = "post:{$pid}:likes";
+            $cacheLoadedKey = "post:{$pid}:likes_loaded";
+            
+            if (!$redis->exists($cacheLoadedKey)) {
+                $likesQ = $con->query("SELECT user_id FROM tbl_likes WHERE post_id=$pid");
+                if ($likesQ && $likesQ->num_rows > 0) {
+                    $userIds = [];
+                    while ($row = $likesQ->fetch_assoc()) $userIds[] = $row['user_id'];
+                    if (!empty($userIds)) {
+                        call_user_func_array([$redis, 'sAdd'], array_merge([$redisKey], $userIds));
+                    }
+                }
+                $redis->set($cacheLoadedKey, 1, ['ex' => 86400]);
+                $redis->expire($redisKey, 86400);
+            }
+            $likes = $redis->sCard($redisKey);
+            $user_liked = $redis->sIsMember($redisKey, $user_id);
+        } else {
+            // Fallback
+            $likes = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$pid")->fetch_row()[0];
+            $user_liked = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id")->num_rows > 0;
+        }
 
-        // ✅ Fetch comments
+        // ✅ Fetch comments via Redis
         $comments = [];
-        $cres = $con->query("
-          SELECT c.comment, c.date, m.name, m.profile_photo
-          FROM tbl_comments c 
-          JOIN tbl_members m ON c.user_id=m.id 
-          WHERE c.post_id=$pid 
-          ORDER BY c.date DESC
-        ");
-
-        while ($c = $cres->fetch_assoc()) {
-            $comments[] = [
-                'name' => htmlspecialchars($c['name']),
-                'profile_photo' => htmlspecialchars($c['profile_photo']), 
-                'comment' => htmlspecialchars($c['comment']),
-                'date' => date("d M Y, h:i A", strtotime($c['date']))
-            ];
+        if (isset($redis) && $redis) {
+            $redisKey = "post:{$pid}:comments";
+            $cacheLoadedKey = "post:{$pid}:comments_loaded";
+            
+            if (!$redis->exists($cacheLoadedKey)) {
+                $cres = $con->query("SELECT c.id, c.comment, c.date, m.name, m.profile_photo FROM tbl_comments c JOIN tbl_members m ON c.user_id=m.id WHERE c.post_id=$pid ORDER BY c.date DESC");
+                if ($cres) {
+                    $cacheComments = [];
+                    while ($c = $cres->fetch_assoc()) {
+                        $cacheComments[] = json_encode([
+                            'comment_id' => $c['id'],
+                            'name' => htmlspecialchars($c['name']),
+                            'profile_photo' => htmlspecialchars($c['profile_photo']), 
+                            'comment' => htmlspecialchars($c['comment']),
+                            'date' => date("d M Y, h:i A", strtotime($c['date']))
+                        ]);
+                    }
+                    if (!empty($cacheComments)) {
+                        call_user_func_array([$redis, 'rPush'], array_merge([$redisKey], $cacheComments));
+                    }
+                }
+                $redis->set($cacheLoadedKey, 1, ['ex' => 86400]);
+                $redis->expire($redisKey, 86400);
+            }
+            
+            $commentsRaw = $redis->lRange($redisKey, 0, -1);
+            if ($commentsRaw) {
+                foreach ($commentsRaw as $cr) {
+                    $cObj = json_decode($cr, true);
+                    if ($cObj) $comments[] = $cObj;
+                }
+            }
+        } else {
+            // Fallback to MySQL
+            $cres = $con->query("
+              SELECT c.id, c.comment, c.date, m.name, m.profile_photo
+              FROM tbl_comments c 
+              JOIN tbl_members m ON c.user_id=m.id 
+              WHERE c.post_id=$pid 
+              ORDER BY c.date DESC
+            ");
+            if ($cres) {
+                while ($c = $cres->fetch_assoc()) {
+                    $comments[] = [
+                        'comment_id' => $c['id'],
+                        'name' => htmlspecialchars($c['name']),
+                        'profile_photo' => htmlspecialchars($c['profile_photo']), 
+                        'comment' => htmlspecialchars($c['comment']),
+                        'date' => date("d M Y, h:i A", strtotime($c['date']))
+                    ];
+                }
+            }
         }
 
         // ✅ Media split fix

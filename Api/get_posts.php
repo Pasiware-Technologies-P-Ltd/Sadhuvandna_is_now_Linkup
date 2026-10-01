@@ -74,7 +74,7 @@ if ($action === 'fetch_comments') {
     $pid = intval($_REQUEST['id']);
     $comments = [];
     $cres = $con->query("
-        SELECT c.comment, c.date, m.name, m.profile_photo
+        SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo
         FROM tbl_comments c 
         JOIN tbl_members m ON c.user_id=m.id 
         WHERE c.post_id=$pid 
@@ -82,6 +82,8 @@ if ($action === 'fetch_comments') {
     ");
     while ($c = $cres->fetch_assoc()) {
         $comments[] = [
+            'comment_id' => $c['id'],
+            'user_id' => $c['user_id'],
             'name' => htmlspecialchars($c['name']),
             'profile_photo' => htmlspecialchars($c['profile_photo']),
             'comment' => htmlspecialchars($c['comment']),
@@ -113,6 +115,9 @@ if (isset($_REQUEST['filter_user_id']) && intval($_REQUEST['filter_user_id']) > 
 // PAGINATION PARAMETERS
 $limit = intval($_REQUEST['limit'] ?? 20);
 $offset = intval($_REQUEST['offset'] ?? 0);
+$seed = intval($_REQUEST['seed'] ?? 0);
+$cursor_score = isset($_REQUEST['cursor_score']) ? $_REQUEST['cursor_score'] : '0';
+$cursor_id = intval($_REQUEST['cursor_id'] ?? 0);
 
 $conditions = [];
 $conditions[] = "m.status != 'Blocked'";
@@ -132,15 +137,23 @@ if (isset($_REQUEST['post_id']) && intval($_REQUEST['post_id']) > 0) {
     $conditions[] = "p.id = '$pid_filter'";
 }
 
-$finalWhere = "WHERE " . implode(" AND ", $conditions);
-
 $order_clause = "ORDER BY p.id DESC";
 if (isset($_REQUEST['filter_reels']) && $_REQUEST['filter_reels'] == '1') {
     $order_clause = "ORDER BY RAND()"; // Make reels random by default
 } else if ($filter_user_id == 0 && !isset($_REQUEST['filter_saved']) && !isset($_REQUEST['post_id'])) {
     // Make home feed random too
-    $order_clause = "ORDER BY RAND()";
+    if ($seed > 0) {
+        $conditions[] = "p.id > (SELECT GREATEST(CAST(IFNULL(MAX(id), 0) AS SIGNED) - 5000, 0) FROM tbl_posts)";
+        if (is_numeric($cursor_score) && $cursor_score > 0 && $cursor_id > 0) {
+            $conditions[] = "(CRC32(CONCAT(p.id, $seed)) < $cursor_score OR (CRC32(CONCAT(p.id, $seed)) = $cursor_score AND p.id < $cursor_id))";
+        }
+        $order_clause = "ORDER BY CRC32(CONCAT(p.id, $seed)) DESC, p.id DESC";
+    } else {
+        $order_clause = "ORDER BY RAND()";
+    }
 }
+
+$finalWhere = "WHERE " . implode(" AND ", $conditions);
 
 if (isset($_REQUEST['start_post_id']) && intval($_REQUEST['start_post_id']) > 0) {
     $start_post_id = intval($_REQUEST['start_post_id']);
@@ -151,13 +164,18 @@ if (isset($_REQUEST['start_post_id']) && intval($_REQUEST['start_post_id']) > 0)
     }
 }
 
-$query = "SELECT p.*, m.name, m.profile_photo 
+$select_fields = "p.*, m.name, m.profile_photo";
+if ($seed > 0 && $filter_user_id == 0 && !isset($_REQUEST['filter_saved']) && !isset($_REQUEST['post_id'])) {
+    $select_fields .= ", CRC32(CONCAT(p.id, $seed)) as rand_score";
+}
+
+$query = "SELECT $select_fields 
           FROM tbl_posts p
           JOIN tbl_members m ON p.user_id = m.id 
           $finalWhere
           $order_clause
           LIMIT $limit OFFSET $offset";
-
+          
 $result = $con->query($query);
 $posts = [];
 
@@ -225,7 +243,7 @@ while ($p = $result->fetch_assoc()) {
         }
     }
 
-    $posts[] = [
+    $post_item = [
         'id' => $pid,
         'user_id' => $p['user_id'],
         'name' => $p['name'] ?? 'Unknown User',
@@ -242,7 +260,11 @@ while ($p = $result->fetch_assoc()) {
         'image_height' => $image_height,
         'date' => $p['created_at'] ?? $p['date']
     ];
+    if (isset($p['rand_score'])) {
+        $post_item['rand_score'] = $p['rand_score'];
+    }
+    $posts[] = $post_item;
 }
 
-echo json_encode(["status" => "success", "data" => $posts]);
+echo json_encode(["status" => "success", "data" => $posts, "seed" => $seed]);
 ?>

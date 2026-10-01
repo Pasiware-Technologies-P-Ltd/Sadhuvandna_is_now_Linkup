@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -17,6 +19,9 @@ const PostDetailScreen = ({ route, navigation }: any) => {
     const [loadingPost, setLoadingPost] = useState(!post && !!postId);
     const [user, setUser] = useState<any>(null);
     const [currentPost, setCurrentPost] = useState<PostType | null>(post || null);
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+    const [selectedComment, setSelectedComment] = useState<any>(null);
 
     useEffect(() => {
         loadUserAndInit();
@@ -98,43 +103,109 @@ const PostDetailScreen = ({ route, navigation }: any) => {
         }
     };
 
+    const handleDeleteCommentPrompt = () => {
+        setOptionsModalVisible(false);
+        if (!selectedComment || !currentPost) return;
+        
+        Alert.alert(
+            "Delete Comment",
+            "Are you sure you want to delete this comment?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const payload = { action: 'delete_comment', post_id: currentPost.id, comment_id: selectedComment.comment_id, comment: selectedComment.comment };
+                            setComments(prev => prev.filter(c => String(c.comment_id) !== String(selectedComment.comment_id)));
+                            setCurrentPost(prev => prev ? ({ ...prev, comments: Math.max(0, prev.comments - 1) }) : null);
+                            await api.post('like_comment_action.php', payload);
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleEditCommentInit = () => {
+        if (selectedComment) {
+            setEditingCommentId(selectedComment.comment_id);
+            setNewComment(selectedComment.comment);
+        }
+        setOptionsModalVisible(false);
+    };
+
+    const handleCommentOptions = (item: any) => {
+        if (!user || !item.user_id || String(user.id) !== String(item.user_id)) return;
+        setSelectedComment(item);
+        setOptionsModalVisible(true);
+    };
+
     const handleSendComment = async () => {
         if (!newComment.trim() || !currentPost) return;
         if (!user) { Alert.alert("Login Required"); return; }
 
         try {
-            const payload = {
-                id: currentPost.id,
-                user_id: user.id,
-                action: 'comment',
-                comment: newComment
-            };
-            await api.post('like_comment_action.php', payload);
-            setNewComment('');
-            fetchComments(currentPost.id);
-
-            // Optimistically update comment count on post
-            setCurrentPost(prev => prev ? ({ ...prev, comments: prev.comments + 1 }) : null);
+            if (editingCommentId) {
+                const payload = {
+                    action: 'edit_comment',
+                    post_id: currentPost.id,
+                    user_id: user.id,
+                    comment_id: editingCommentId,
+                    comment: newComment
+                };
+                
+                setComments(prev => prev.map(c => String(c.comment_id) === String(editingCommentId) ? { ...c, comment: newComment } : c));
+                setNewComment('');
+                setEditingCommentId(null);
+                
+                await api.post('like_comment_action.php', payload);
+            } else {
+                const payload = {
+                    id: currentPost.id,
+                    user_id: user.id,
+                    action: 'comment',
+                    comment: newComment
+                };
+                await api.post('like_comment_action.php', payload);
+                setNewComment('');
+                fetchComments(currentPost.id);
+                setCurrentPost(prev => prev ? ({ ...prev, comments: prev.comments + 1 }) : null);
+            }
         } catch (e) {
             Alert.alert("Error", "Failed to post comment");
         }
     };
 
-    const renderComment = ({ item }: { item: any }) => (
-        <View className="flex-row p-3 border-b border-gray-100 bg-white">
-            <Image
-                source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
-                className="w-8 h-8 rounded-full bg-gray-200 mt-1"
-            />
-            <View className="ml-3 flex-1">
-                <View className="bg-gray-100 rounded-2xl px-3 py-2 self-start">
-                    <Text className="font-bold text-gray-900 text-xs">{item.name}</Text>
-                    <Text className="text-gray-800 text-sm mt-0.5">{item.comment}</Text>
+    const renderComment = ({ item }: { item: any }) => {
+        const isOwner = user && item.user_id && String(user.id) === String(item.user_id);
+        
+        return (
+            <View className="flex-row p-3 border-b border-gray-100 bg-white">
+                <Image
+                    source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
+                    className="w-8 h-8 rounded-full bg-gray-200 mt-1"
+                />
+                <View className="ml-3 flex-1 pr-2">
+                    <View className="flex-row items-center">
+                        <View className="bg-gray-100 rounded-2xl px-3 py-2 self-start flex-shrink">
+                            <Text className="font-bold text-gray-900 text-xs">{item.name}</Text>
+                            <Text className="text-gray-800 text-sm mt-0.5">{item.comment}</Text>
+                        </View>
+                        {isOwner && (
+                            <TouchableOpacity onPress={() => handleCommentOptions(item)} className="p-2 ml-1">
+                                <Ionicons name="ellipsis-vertical" size={16} color="#6b7280" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                    <Text className="text-gray-400 text-[10px] ml-2 mt-1">{item.date}</Text>
                 </View>
-                <Text className="text-gray-400 text-[10px] ml-2 mt-1">{item.date}</Text>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
@@ -156,7 +227,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                             <ActivityIndicator size="large" color="#ea580c" />
                         </View>
                     ) : currentPost ? (
-                        <FlatList
+                        <FlashList
                             data={comments}
                             keyExtractor={(item, index) => index.toString()}
                             renderItem={renderComment}
@@ -198,6 +269,34 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
             </KeyboardAvoidingView>
+
+            {/* Instagram style Bottom Sheet Modal for Comment Options */}
+            <Modal
+                visible={optionsModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setOptionsModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} 
+                    activeOpacity={1} 
+                    onPress={() => setOptionsModalVisible(false)}
+                >
+                    <View className="bg-white rounded-t-3xl pt-2 pb-8 px-4" onStartShouldSetResponder={() => true}>
+                        <View className="w-12 h-1.5 bg-gray-300 rounded-full self-center mb-6" />
+                        
+                        <TouchableOpacity onPress={handleEditCommentInit} className="flex-row items-center py-4 px-2 border-b border-gray-100">
+                            <Ionicons name="pencil-outline" size={24} color="#374151" />
+                            <Text className="text-gray-800 text-base font-semibold ml-4">Edit Comment</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={handleDeleteCommentPrompt} className="flex-row items-center py-4 px-2">
+                            <Ionicons name="trash-outline" size={24} color="#ef4444" />
+                            <Text className="text-red-500 text-base font-semibold ml-4">Delete Comment</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 };

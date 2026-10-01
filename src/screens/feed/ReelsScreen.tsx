@@ -1,8 +1,10 @@
+import { Image } from 'expo-image';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, StyleSheet, Alert, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, StyleSheet, Alert, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import Slider from '@react-native-community/slider';
 import { FlatList, ViewToken } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
@@ -144,7 +146,7 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
 const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHeight, onUserPress, onCommentPress, onDelete }: any) => {
     const active = index === activeIndex;
     const isNearby = (index - activeIndex) >= -1 && (index - activeIndex) <= 1; // Preload 1 ahead silently
-    const videoRef = useRef<Video>(null);
+    const videoRef = useRef<any>(null);
     useEffect(() => {
         return () => {
             if (videoRef.current) {
@@ -569,7 +571,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                             }
                         }}
                         progressUpdateIntervalMillis={500}
-                        onError={(e) => {
+                        onError={(e: any) => {
                             console.error("[Reels Video] Error:", e, "URI:", fullVideoUri);
                         }}
                     />
@@ -1021,8 +1023,6 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
                 pagingEnabled
-                // @ts-ignore
-                estimatedItemSize={height}
                 showsVerticalScrollIndicator={false}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}

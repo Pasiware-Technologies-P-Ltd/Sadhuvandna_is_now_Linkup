@@ -1,11 +1,13 @@
+import { Image } from 'expo-image';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpload } from '../../context/UploadContext';

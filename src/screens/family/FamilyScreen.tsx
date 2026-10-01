@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, Modal, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -276,7 +278,7 @@ const FamilyScreen = ({ navigation }: any) => {
             {loading ? (
                 <View className="flex-1 justify-center items-center"><ActivityIndicator color="#ea580c" /></View>
             ) : (
-                <FlatList
+                <FlashList
                     data={members}
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}

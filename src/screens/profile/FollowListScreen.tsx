@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -288,7 +290,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
                     <ActivityIndicator size="large" color="#ea580c" />
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={users}
                     keyExtractor={(item, index) => item.id ? item.id.toString() + '_' + index : index.toString()}
                     renderItem={renderItem}

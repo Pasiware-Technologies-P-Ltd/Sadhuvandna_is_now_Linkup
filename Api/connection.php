@@ -1,6 +1,9 @@
 <?php
 $host = "e4skgkwwk0s0gkso48oc40kg"; // Internal host for production
-if ((isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1') || (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] == '0.0.0.0') || php_sapi_name() == 'cli-server') {
+if ((isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] == '127.0.0.1') || 
+    (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] == '0.0.0.0') || 
+    php_sapi_name() == 'cli-server' || 
+    (php_sapi_name() == 'cli' && strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')) {
     $host = "178.16.137.167"; // Remote connection from local PC
 }
 

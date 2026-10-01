@@ -1,9 +1,12 @@
+import { Image } from 'expo-image';
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, Dimensions, Modal, Animated, StyleSheet, StatusBar, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, Modal, Animated, StyleSheet, StatusBar, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode, Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
+import { MediaCacheService } from '../../services/MediaCacheService';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -27,7 +30,7 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
     const soundRef = useRef<Audio.Sound | null>(null);
     const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
-    const videoRef = useRef<Video>(null);
+    const videoRef = useRef<any>(null);
     const animRef = useRef<Animated.CompositeAnimation | null>(null);
     const currentProgressRef = useRef(0);
     const pressStartTimeRef = useRef(0);
@@ -36,6 +39,49 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
     // State for viewers
     const [viewers, setViewers] = useState<any[]>([]);
     const [showViewers, setShowViewers] = useState(false);
+    
+    // State for caching
+    const [localMediaUrl, setLocalMediaUrl] = useState<string | null>(null);
+    const [isMediaLoading, setIsMediaLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchMedia = async () => {
+            const currentStory = stories[currentIndex];
+            if (!currentStory) return;
+            
+            const url = `${BASE_URL_ROOT}/${currentStory.media}`;
+            const isVideo = currentStory.type === 'video';
+            
+            try {
+                // 1. Quick check: Is it already cached?
+                const quickCacheHit = await MediaCacheService.checkCacheOnly(url);
+                if (quickCacheHit) {
+                    // Instant load without showing loader
+                    setIsMediaLoading(false);
+                    setLocalMediaUrl(quickCacheHit);
+                } else {
+                    // 2. Not cached: show loader and download
+                    setIsMediaLoading(true);
+                    const downloadedUri = await MediaCacheService.getCachedMedia(url, isVideo ? 'video' : 'image');
+                    setLocalMediaUrl(downloadedUri);
+                    setIsMediaLoading(false);
+                }
+            } catch (e) {
+                console.error("Cache error", e);
+                setLocalMediaUrl(url); // fallback
+                setIsMediaLoading(false);
+            }
+            
+            // Prefetch next story silently
+            const nextStory = stories[currentIndex + 1];
+            if (nextStory) {
+                const nextUrl = `${BASE_URL_ROOT}/${nextStory.media}`;
+                const nextIsVideo = nextStory.type === 'video';
+                MediaCacheService.getCachedMedia(nextUrl, nextIsVideo ? 'video' : 'image').catch(() => {});
+            }
+        };
+        fetchMedia();
+    }, [currentIndex, stories]);
 
     useEffect(() => {
         const listenerId = progress.addListener(({ value }) => {
@@ -452,17 +498,21 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                 onPressOut={handlePressOut}
                 style={styles.mediaContainer}
             >
-                {isVideo ? (
+                {isMediaLoading || !localMediaUrl ? (
+                    <View style={[styles.media, { justifyContent: 'center', alignItems: 'center' }]}>
+                        <ActivityIndicator size="large" color="#ffffff" />
+                    </View>
+                ) : isVideo ? (
                     <Video
                         ref={videoRef}
-                        source={{ uri: mediaUrl }}
+                        source={{ uri: localMediaUrl }}
                         rate={1.0}
                         volume={1.0}
                         isMuted={false}
                         resizeMode={ResizeMode.CONTAIN}
                         shouldPlay={!paused && !showViewers && isFocused}
                         style={styles.media}
-                        onPlaybackStatusUpdate={status => {
+                        onPlaybackStatusUpdate={(status: any) => {
                             if (status.isLoaded) {
                                 if (status.durationMillis && status.positionMillis) {
                                     progress.setValue(status.positionMillis / status.durationMillis);
@@ -470,12 +520,12 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
                                 if (status.didJustFinish && isFocusedRef.current) nextStory();
                             }
                         }}
-                        onError={(e) => {
-                            console.error("[StoryViewer Video] Error:", e, "URI:", mediaUrl);
+                        onError={(e: any) => {
+                            console.error("[StoryViewer Video] Error:", e, "URI:", localMediaUrl);
                         }}
                     />
                 ) : (
-                    <Image source={{ uri: mediaUrl }} style={styles.media} resizeMode="contain" />
+                    <Image source={{ uri: localMediaUrl }} style={styles.media} contentFit="contain" />
                 )}
             </TouchableOpacity>
 

@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -149,7 +151,7 @@ const ConnectedScreen = ({ navigation }: any) => {
                     <Text className="text-gray-400 text-xs mt-3">Loading conversations...</Text>
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={profiles}
                     renderItem={renderProfile}
                     keyExtractor={item => item.proposal_id?.toString() || item.id?.toString()}

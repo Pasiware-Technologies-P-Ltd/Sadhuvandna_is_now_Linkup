@@ -1,15 +1,18 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Dimensions, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import api from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import ViewShot, { captureRef } from 'react-native-view-shot';
-import { FlatList, Modal, TextInput } from 'react-native';
+import { Modal, TextInput } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -333,7 +336,7 @@ const CreateStoryScreen = ({ navigation }: any) => {
                         </View>
 
                         {musicLoading ? <ActivityIndicator style={{ marginTop: 20 }} color="#ea580c" /> : (
-                            <FlatList
+                            <FlashList
                                 data={musicList}
                                 keyExtractor={(item) => item.id.toString()}
                                 renderItem={({ item }) => (

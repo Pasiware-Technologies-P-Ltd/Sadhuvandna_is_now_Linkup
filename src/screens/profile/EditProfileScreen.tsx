@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -268,7 +269,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                     <View className="relative">
                         <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
                             {displayCover && (
-                                <Image source={{ uri: displayCover }} className="w-full h-full" resizeMode="cover" />
+                                <Image source={{ uri: displayCover }} className="w-full h-full" contentFit="cover" />
                             )}
                             <View className="absolute inset-0 items-center justify-center bg-black/20">
                                 <View className="bg-black/50 p-2 rounded-full">

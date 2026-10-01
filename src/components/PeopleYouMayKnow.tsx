@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../services/api';
 
@@ -146,7 +148,7 @@ const PeopleYouMayKnow = ({ profiles, userId, navigation, onStatusChange }: Prop
                 </TouchableOpacity>
             </View>
 
-            <FlatList
+            <FlashList
                 data={localProfiles}
                 renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}

@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,9 +24,17 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
 
     React.useEffect(() => {
         if (currentUserId && profile.id) {
+            loadCachedStatus();
             checkStatus();
         }
     }, [currentUserId, profile]);
+
+    const loadCachedStatus = async () => {
+        try {
+            const cached = await AsyncStorage.getItem(`cached_proposal_${currentUserId}_${profile.id}`);
+            if (cached) setProposalStatus(cached);
+        } catch (e) {}
+    };
 
     const loadUser = async () => {
         try {
@@ -50,6 +59,7 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
             const res = await api.get(`get_proposal_status.php?sender_user_id=${currentUserId}&receiver_profile_id=${profile.id}`);
             if (res.data.status === 'success') {
                 setProposalStatus(res.data.proposal_status);
+                AsyncStorage.setItem(`cached_proposal_${currentUserId}_${profile.id}`, res.data.proposal_status);
             }
         } catch (error) {
             console.error(error);
@@ -150,7 +160,7 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                     <Image
                         source={{ uri: profile.photo ? `${PHOTO_URL}${profile.photo}` : 'https://via.placeholder.com/300' }}
                         className="w-full h-96 bg-gray-200"
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}

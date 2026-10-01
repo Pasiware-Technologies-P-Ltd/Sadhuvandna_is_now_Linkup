@@ -4,6 +4,7 @@ import { navigationRef, navigateWithRetry } from '../navigation/navigationRef';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import api, { WEBSITE_URL } from '../services/api';
+import socketService from '../services/socket';
 
 const GlobalCallListener = () => {
     const [incomingCall, setIncomingCall] = useState<any>(null);
@@ -18,78 +19,44 @@ const GlobalCallListener = () => {
         });
     }, []);
 
-    const isPollingRef = useRef(false);
-
     useEffect(() => {
         if (!myUserId) return;
 
-        const checkStatus = async () => {
-            if (isProcessing.current || isPollingRef.current) return;
+        // Connect to Socket.io server
+        socketService.connect(myUserId);
+
+        const handleNewNotification = (data: any) => {
+            if (isProcessing.current) return;
 
             // If already in a call, don't show another popup
             if (navigationRef.isReady()) {
                 const currentRoute = navigationRef.getCurrentRoute()?.name;
                 if (currentRoute === 'AgoraCall') {
-                    setIncomingCall((prev: any) => prev ? null : prev);
                     return;
                 }
             }
 
-            isPollingRef.current = true;
-            try {
-                const payload = { user_id: myUserId };
-                const res = await api.post('get_global_status.php', payload);
-
-                if (res.data.status && res.data.incoming_call) {
-                    const call = res.data.incoming_call;
-                    call.my_profile_id_ref = res.data.my_profile_id;
-
-                    setIncomingCall((prev: any) => {
-                        if (prev && prev.call_id === call.call_id) return prev;
-                        return call;
-                    });
-                } else {
-                    if (!isProcessing.current) {
-                        setIncomingCall((prev: any) => prev ? null : prev);
-                    }
-                }
-            } catch (e) {
-            } finally {
-                isPollingRef.current = false;
+            if (data && data.type === 'new_notification' && data.payload && data.payload.type === 'call') {
+                const call = data.payload;
+                
+                setIncomingCall((prev: any) => {
+                    if (prev && prev.call_id === call.call_id) return prev;
+                    return call;
+                });
             }
         };
 
-        let interval: NodeJS.Timeout;
-        let isActive = true;
-
-        const startPolling = () => {
-            if (interval) clearInterval(interval);
-            interval = setInterval(() => {
-                if (isActive) checkStatus();
-            }, 8000);
-        };
-
-        const stopPolling = () => {
-            if (interval) clearInterval(interval);
-        };
-
-        startPolling();
-
-        const subscription = AppState.addEventListener('change', nextAppState => {
-            if (nextAppState === 'active') {
-                isActive = true;
-                startPolling();
-            } else {
-                isActive = false;
-                stopPolling();
-            }
-        });
+        if (socketService.socket) {
+            socketService.socket.on('new_notification', handleNewNotification);
+        }
 
         return () => {
-            stopPolling();
-            subscription.remove();
+            if (socketService.socket) {
+                socketService.socket.off('new_notification', handleNewNotification);
+            }
         };
     }, [myUserId]);
+
 
     // Handle Ringtone
     useEffect(() => {

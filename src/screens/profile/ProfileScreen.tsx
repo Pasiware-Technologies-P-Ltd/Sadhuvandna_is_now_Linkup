@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -37,6 +38,14 @@ const ProfileScreen = ({ navigation }: any) => {
         if (u) {
             const userData = JSON.parse(u);
             setUser(userData);
+            
+            // Load cached secondary data
+            const cachedMarriage = await AsyncStorage.getItem(`cached_marriage_${userData.id}`);
+            if (cachedMarriage) setMarriageProfile(JSON.parse(cachedMarriage));
+            
+            const cachedStats = await AsyncStorage.getItem(`cached_stats_${userData.id}`);
+            if (cachedStats) setFollowStats(JSON.parse(cachedStats));
+
             checkMarriageProfile(userData.id);
             fetchFollowStats(userData.id);
 
@@ -65,6 +74,7 @@ const ProfileScreen = ({ navigation }: any) => {
             const res = await api.post(`/api_follow.php?action=get_counts`, { current_user_id: userId, user_id: userId });
             if (res.data.ok) {
                 setFollowStats(res.data);
+                AsyncStorage.setItem(`cached_stats_${userId}`, JSON.stringify(res.data));
             }
         } catch (e) {
             console.error("Failed to fetch follow stats", e);
@@ -76,8 +86,10 @@ const ProfileScreen = ({ navigation }: any) => {
             const res = await api.get(`/get_my_profile.php?user_id=${userId}`);
             if (res.data.status === 'success') {
                 setMarriageProfile(res.data.data);
+                AsyncStorage.setItem(`cached_marriage_${userId}`, JSON.stringify(res.data.data));
             } else {
                 setMarriageProfile(null);
+                AsyncStorage.removeItem(`cached_marriage_${userId}`);
             }
         } catch (e) {
             setMarriageProfile(null);
@@ -116,7 +128,7 @@ const ProfileScreen = ({ navigation }: any) => {
                         <Image
                             source={{ uri: `${PHOTO_URL}${user.cover_photo}` }}
                             style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
+                            contentFit="cover"
                         />
                     ) : (
                         <>

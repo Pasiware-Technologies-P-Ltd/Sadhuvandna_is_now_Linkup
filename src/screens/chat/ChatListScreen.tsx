@@ -1,10 +1,14 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import socketService from '../../services/socket';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { ChatDBService } from '../../services/ChatDBService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL_COMMUNITY = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -30,12 +34,31 @@ const ChatListScreen = ({ navigation }: any) => {
     const [showMenu, setShowMenu] = useState(false);
     const searchTimeoutRef = React.useRef<any>(null);
 
+
+
     const loadCachedChats = async (uid: number) => {
         try {
-            const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}`);
-            if (cached) {
-                setFriends(JSON.parse(cached));
+            const cachedChats = await ChatDBService.getConversations(String(uid));
+            if (cachedChats && cachedChats.length > 0) {
+                // Map sqlite format to UI format
+                const mapped = cachedChats.map((c: any) => ({
+                    partner_id: c.partner_id,
+                    isGroup: c.is_group === 1,
+                    full_name: c.full_name,
+                    profile_photo: c.profile_photo,
+                    last_message: c.last_message,
+                    unread: c.unread_count,
+                    time: c.time
+                }));
+                setFriends(mapped);
                 setLoading(false);
+            } else {
+                // Fallback to asyncstorage if sqlite is empty
+                const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}`);
+                if (cached) {
+                    setFriends(JSON.parse(cached));
+                    setLoading(false);
+                }
             }
         } catch (e) {}
     };
@@ -56,6 +79,23 @@ const ChatListScreen = ({ navigation }: any) => {
         });
         return unsubscribe;
     }, [navigation, activePlatform]);
+
+    useEffect(() => {
+        if (socketService.socket) {
+            const handleUserStatus = (data: any) => {
+                setFriends(prev => prev.map(f => {
+                    if (f.user_id == data.userId || f.partner_id == data.userId) {
+                        return { ...f, is_online: data.status === 'online' };
+                    }
+                    return f;
+                }));
+            };
+            socketService.socket.on('user_status', handleUserStatus);
+            return () => {
+                socketService.socket?.off('user_status', handleUserStatus);
+            };
+        }
+    }, []);
 
     // Debounced search for connected contacts (even those with no messages)
     useEffect(() => {
@@ -100,7 +140,10 @@ const ChatListScreen = ({ navigation }: any) => {
         }
     };
 
+    const isFetchingRef = React.useRef(false);
     const fetchFriends = async (uidToFetch?: number) => {
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
         try {
             const currentUid = uidToFetch || userId;
             if (!currentUid) return;
@@ -108,11 +151,17 @@ const ChatListScreen = ({ navigation }: any) => {
             if (res.data.status === 'success') {
                 setFriends(res.data.data);
                 AsyncStorage.setItem(`cached_chats_v1_${currentUid}`, JSON.stringify(res.data.data));
+                
+                // Save to SQLite asynchronously
+                res.data.data.forEach((conv: any) => {
+                    ChatDBService.saveConversation(conv, String(currentUid)).catch(() => {});
+                });
             }
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
         }
     };
 
@@ -281,15 +330,11 @@ const ChatListScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            <FlatList
+            <FlashList
                 data={filteredFriends}
                 renderItem={renderItem}
                 keyExtractor={(item, index) => item.partner_id ? `${item.isGroup ? 'group_' : 'user_'}${item.partner_id}` : index.toString()}
                 contentContainerStyle={{ paddingVertical: 4 }}
-                initialNumToRender={12}
-                maxToRenderPerBatch={10}
-                windowSize={7}
-                removeClippedSubviews={true}
                 ListFooterComponent={
                     searchingContacts ? (
                         <View style={{ paddingVertical: 12, alignItems: 'center' }}>

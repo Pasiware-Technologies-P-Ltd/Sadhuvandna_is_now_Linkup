@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Alert, Dimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -107,7 +108,7 @@ const SmartCardScreen = ({ navigation }: any) => {
                         {/* TOP ROW: Logo + VIP badge */}
                         <View style={styles.topRow}>
                             <View style={styles.logoBox}>
-                                <Image source={LOGO_ASSET} style={styles.logo} resizeMode="contain" />
+                                <Image source={LOGO_ASSET} style={styles.logo} contentFit="contain" />
                                 <View style={{ marginLeft: 8 }}>
                                     <Text style={styles.orgName}>LINKUP</Text>
                                 </View>

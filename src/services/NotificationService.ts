@@ -7,13 +7,31 @@ import api from './api';
 
 Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
-        const data = notification.request.content.data;
+        const data = notification.request.content.data as any;
         const isCall = data && (data.is_call || data.type === 'incoming_call');
         
+        // Suppress banner if chat screen is open for this specific user
+        let isCurrentChatActive = false;
+        if (data && data.type === 'chat' && data.sender_profile_id) {
+            if (navigationRef.isReady()) {
+                const currentRoute = navigationRef.getCurrentRoute();
+                if (currentRoute && currentRoute.name === 'Chat') {
+                    const params = currentRoute.params as any;
+                    // Usually receiver is passed as an object
+                    if (params && params.receiver && String(params.receiver.id) === String(data.sender_profile_id)) {
+                        isCurrentChatActive = true;
+                    }
+                }
+            }
+        }
+        
+        const showNotification = !isCall && !isCurrentChatActive;
+
         return {
-            shouldShowBanner: !isCall, // Don't show banner for calls (App UI handles it)
-            shouldShowList: true,
-            shouldPlaySound: !isCall,  // Don't play system sound for calls (App UI handles it)
+            shouldShowAlert: showNotification,
+            shouldShowBanner: showNotification, 
+            shouldShowList: showNotification,
+            shouldPlaySound: showNotification,
             shouldSetBadge: false,
         };
     },
@@ -96,7 +114,7 @@ export const updateServerToken = async (userId: string) => {
             await api.post('/update_fcm_token.php', payload);
             console.log("Token updated on server");
         } catch (e) {
-            console.error("Token update failed", e);
+            console.error("Failed to update token on server", e);
         }
     }
 };

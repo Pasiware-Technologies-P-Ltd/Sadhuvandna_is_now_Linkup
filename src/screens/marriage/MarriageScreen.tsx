@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, TextInput, Alert, ScrollView, LayoutAnimation, Platform, UIManager, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, Alert, ScrollView, LayoutAnimation, Platform, UIManager, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -310,7 +312,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     <Image
                         source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/150' }}
                         style={{ width: '100%', height: 160, backgroundColor: '#f9fafb' }}
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                     {/* Flame compatibility score badge */}
                     <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255, 255, 255, 0.85)', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -411,7 +413,7 @@ const MarriageScreen = ({ navigation }: any) => {
 
             {loading && myProfileId === 0 ? (
                 <View style={{ flex: 1, backgroundColor: '#f9fafb', paddingTop: 16 }}>
-                    <FlatList
+                    <FlashList
                         data={[1, 2, 3, 4, 5, 6]}
                         renderItem={renderSkeletonCard}
                         keyExtractor={(item) => item.toString()}
@@ -503,7 +505,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     </View>
 
                     {loading ? (
-                        <FlatList
+                        <FlashList
                             data={[1, 2, 3, 4, 5, 6]}
                             renderItem={renderSkeletonCard}
                             keyExtractor={(item) => item.toString()}
@@ -511,7 +513,7 @@ const MarriageScreen = ({ navigation }: any) => {
                             contentContainerStyle={{ paddingHorizontal: 6, paddingVertical: 6 }}
                         />
                     ) : (
-                        <FlatList
+                        <FlashList
                             data={profiles}
                             renderItem={renderProfile}
                             keyExtractor={(item, index) => item.id ? item.id.toString() + '_' + index : index.toString()}

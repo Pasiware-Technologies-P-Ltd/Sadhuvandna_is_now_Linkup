@@ -1,8 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import {
-    View, Text, FlatList, Image, TouchableOpacity,
-    ActivityIndicator, Alert, RefreshControl
-} from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -86,7 +85,7 @@ const MyNewsScreen = ({ navigation }: any) => {
                 }}
             >
                 {thumbnail && (
-                    <Image source={{ uri: thumbnail }} style={{ width: '100%', height: 170 }} resizeMode="cover" />
+                    <Image source={{ uri: thumbnail }} style={{ width: '100%', height: 170 }} contentFit="cover" />
                 )}
                 <View style={{ padding: 14 }}>
                     {item.category && (
@@ -168,7 +167,7 @@ const MyNewsScreen = ({ navigation }: any) => {
                     <Text style={{ marginTop: 12, color: '#9ca3af', fontWeight: '500' }}>Loading your news...</Text>
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={myNews}
                     keyExtractor={(item, index) => item.id?.toString() ?? index.toString()}
                     renderItem={renderNewsItem}

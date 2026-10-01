@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, Share, Modal, RefreshControl, Animated, Easing, Alert, Linking, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, Share, Modal, RefreshControl, Animated, Easing, Alert, Linking, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -8,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Picker } from '@react-native-picker/picker';
-import { Video, ResizeMode } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 
 const { width } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -35,7 +37,7 @@ const ProfessionalVideoPlayer = ({
     style?: any;
     onExpand?: () => void;
 }) => {
-    const videoRef = useRef<Video>(null);
+    const videoRef = useRef<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<any>({});
@@ -700,7 +702,7 @@ const NewsScreen = ({ navigation }: any) => {
                         <Image
                             source={{ uri: displayImage }}
                             style={{ width: '100%', height: '100%', opacity: 0.9 }}
-                            resizeMode="cover"
+                            contentFit="cover"
                         />
                     )}
                     
@@ -741,7 +743,7 @@ const NewsScreen = ({ navigation }: any) => {
                             <Ionicons name="play-circle" size={32} color="white" />
                         </View>
                     ) : (
-                        <Image source={{ uri: displayImage }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        <Image source={{ uri: displayImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     )}
                 </View>
                 
@@ -785,7 +787,7 @@ const NewsScreen = ({ navigation }: any) => {
                     <Image
                         source={{ uri: thumbnailUrl }}
                         style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 }}>
@@ -1112,14 +1114,14 @@ const NewsScreen = ({ navigation }: any) => {
             
             {activeTab === 'ddnews' && (
                 ytLoading ? (
-                    <FlatList
+                    <FlashList
                         data={[1, 2]}
                         keyExtractor={(item) => item.toString()}
                         contentContainerStyle={{ paddingVertical: 12 }}
                         renderItem={renderVideoNewsSkeleton}
                     />
                 ) : (
-                    <FlatList
+                    <FlashList
                         data={Array.isArray(ytNews) ? ytNews.filter((item: any) => !searchQuery.trim() || item.title?.toLowerCase().includes(searchQuery.toLowerCase())) : []}
                         keyExtractor={(item, index) => item?.videoId || item?.link || index.toString()}
                         contentContainerStyle={{ paddingVertical: 12 }}
@@ -1132,14 +1134,14 @@ const NewsScreen = ({ navigation }: any) => {
 
             {activeTab === 'aastha' && (
                 aasthaLoading ? (
-                    <FlatList
+                    <FlashList
                         data={[1, 2]}
                         keyExtractor={(item) => item.toString()}
                         contentContainerStyle={{ paddingVertical: 12 }}
                         renderItem={renderVideoNewsSkeleton}
                     />
                 ) : (
-                    <FlatList
+                    <FlashList
                         data={Array.isArray(aasthaNews) ? aasthaNews.filter((item: any) => !searchQuery.trim() || item.title?.toLowerCase().includes(searchQuery.toLowerCase())) : []}
                         keyExtractor={(item, index) => item?.videoId || item?.link || index.toString()}
                         contentContainerStyle={{ paddingVertical: 12 }}

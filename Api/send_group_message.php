@@ -71,59 +71,83 @@ if ($group && $group['admins_only'] == 1) {
     }
 }
 
-$sql = "INSERT INTO tbl_group_messages (group_id, sender_id, message, attachment, file_type) VALUES ($group_id, $sender_id, '$message', '$attachment', '$file_type')";
+$client_message_id = $_POST['client_message_id'] ?? uniqid('gmsg_', true);
 
-if ($con->query($sql)) {
-    // Notifications logic
-    try {
-        // 1. Get Group Info
-        $gQ = $con->query("SELECT name, platform FROM tbl_groups WHERE id = $group_id LIMIT 1");
-        $gRow = ($gQ) ? $gQ->fetch_assoc() : null;
-        $group_name = $gRow ? $gRow['name'] : "Group";
-        $group_platform = $gRow ? $gRow['platform'] : "community";
+require_once 'RedisConfig.php';
+require_once 'QueueManager.php';
+$redis = RedisConfig::getConnection();
 
-        // 2. Get Sender Info
-        $sender_name = "Member";
-        if ($group_platform === 'marriage') {
-            $sQ = $con->query("SELECT full_name FROM tbl_marriage_profiles WHERE id = $sender_id LIMIT 1");
-            if ($sQ && $sRow = $sQ->fetch_assoc()) $sender_name = $sRow['full_name'];
-        } else {
-            $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
-            if ($sQ && $sRow = $sQ->fetch_assoc()) $sender_name = $sRow['name'];
-        }
+if ($redis) {
+    // 1. Build message object
+    $chatObj = [
+        "client_message_id" => $client_message_id,
+        "group_id" => $group_id,
+        "sender_id" => $sender_id,
+        "message" => $message,
+        "attachment" => $attachment,
+        "file_type" => $file_type,
+        "created_at" => date('Y-m-d H:i:s')
+    ];
 
-        // 3. Get All Members to notify
-        $mQ = $con->query("SELECT user_id FROM tbl_group_members WHERE group_id = $group_id AND user_id != $sender_id");
-        
-        $notif_title = $group_name;
-        $notif_body = "$sender_name: " . ($attachment ? "📷 Sent an attachment" : $message);
+    // 2. Add to Redis (TTL 7 days)
+    $redisKey = "group_chat:{$group_id}";
+    $redis->zAdd($redisKey, microtime(true), json_encode($chatObj));
+    $redis->expire($redisKey, 7 * 86400);
 
-        while($mRow = $mQ->fetch_assoc()){
-            $target_profile_id = $mRow['user_id'];
-            $real_user_id = 0;
+    // 3. Push to Queue
+    QueueManager::pushJob('sync_group_chat', $chatObj, "gchat_{$client_message_id}", 600);
 
-            if ($group_platform === 'marriage') {
-                $rQ = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = $target_profile_id LIMIT 1");
-                if ($rQ && $rRow = $rQ->fetch_assoc()) $real_user_id = $rRow['user_id'];
-            } else {
-                $real_user_id = $target_profile_id; // Community uses member_id directly
-            }
+    // 4. WebSocket Broadcast
+    $url = 'http://localhost:3000/api/trigger';
+    $postData = array(
+        'room' => "group_{$group_id}",
+        'type' => 'new_group_notification',
+        'payload' => [
+            'type' => 'group_chat',
+            'group_id' => $group_id,
+            'message' => $chatObj
+        ]
+    );
+    $options = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($postData)
+        )
+    );
+    $context = stream_context_create($options);
+    @file_get_contents($url, false, $context);
 
-            if ($real_user_id > 0) {
-                sendExpoPushNotification($con, $real_user_id, $notif_title, $notif_body, [
-                    "type" => "group_chat",
-                    "group_id" => $group_id,
-                    "platform" => $group_platform
-                ]);
-            }
-        }
-    } catch (Exception $e) {
-        // Log error but don't fail the message send
-        file_put_contents("push_log.txt", date('Y-m-d H:i:s') . " | Group Notif Error: " . $e->getMessage() . "\n", FILE_APPEND);
-    }
+    // 5. Push Notification Job
+    $redis->lPush(QueueManager::QUEUE_NOTIFICATIONS, json_encode([
+        'type' => 'group_chat',
+        'sender_id' => $sender_id,
+        'group_id' => $group_id,
+        'message' => $message,
+        'attachment' => $attachment
+    ]));
 
-    echo json_encode(["status" => "success", "message" => "Message sent successfully"]);
+    echo json_encode(["status" => "success", "message" => "Message sent successfully", "client_message_id" => $client_message_id]);
+    exit;
 } else {
-    echo json_encode(["status" => "error", "message" => "Failed to send message: " . $con->error]);
+    // MySQL Fallback
+    $sql = "INSERT IGNORE INTO tbl_group_messages (client_message_id, group_id, sender_id, message, attachment, file_type) VALUES ('$client_message_id', $group_id, $sender_id, '$message', '$attachment', '$file_type')";
+
+    if ($con->query($sql)) {
+        // Fallback Notifications
+        $redis = RedisConfig::getConnection();
+        if ($redis) {
+            $redis->lPush(QueueManager::QUEUE_NOTIFICATIONS, json_encode([
+                'type' => 'group_chat',
+                'sender_id' => $sender_id,
+                'group_id' => $group_id,
+                'message' => $message,
+                'attachment' => $attachment
+            ]));
+        }
+        echo json_encode(["status" => "success", "message" => "Message sent successfully", "client_message_id" => $client_message_id]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Failed to send message: " . $con->error]);
+    }
 }
 ?>

@@ -1,9 +1,11 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, FlatList, RefreshControl, Animated, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, RefreshControl, Animated, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
-import { Video, ResizeMode } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard'; // IMPORTED POSTCARD
@@ -12,6 +14,7 @@ import ImageViewer from 'react-native-image-zoom-viewer';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLanguage } from '../../context/LanguageContext';
+import { ImageService } from '../../services/ImageService';
 
 // Fix: Point to Root uploads, not Api/uploads
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -33,7 +36,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'photos' | 'reels' | 'saved'>('photos');
     const [loading, setLoading] = useState(true);
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<FlashList>(null);
 
     const [followStats, setFollowStats] = useState<any>({
         followers: 0,
@@ -409,7 +412,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     };
 
     const openImageViewer = (url: string) => {
-        setViewerImages([{ url }]);
+        setViewerImages([{ url: ImageService.getDetailImageUrl(url) }]);
         setImageModalVisible(true);
     };
 
@@ -445,7 +448,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         <Image
                             source={{ uri: getImageUrl(user.cover_photo, PHOTO_URL) }}
                             style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
+                            contentFit="cover"
                         />
                     </TouchableOpacity>
                 ) : (
@@ -1096,7 +1099,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </TouchableOpacity>
 
             <Animated.View style={{ flex: 1, opacity: tabFadeAnim }}>
-                <FlatList
+                <FlashList
                     ref={flatListRef}
                     data={activeTab === 'photos' ? photoPosts : activeTab === 'reels' ? reelRows : savedPosts}
                     renderItem={renderItem}

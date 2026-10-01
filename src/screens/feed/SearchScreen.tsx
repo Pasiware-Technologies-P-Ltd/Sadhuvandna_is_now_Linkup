@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -146,7 +148,7 @@ const SearchScreen = ({ navigation }: any) => {
                     <ActivityIndicator size="large" color="#ea580c" />
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={filteredData()}
                     keyExtractor={(item, index) => item.type === 'header' ? `header-${item.title}` : (item.id?.toString() || index.toString())}
                     renderItem={({ item }) => {

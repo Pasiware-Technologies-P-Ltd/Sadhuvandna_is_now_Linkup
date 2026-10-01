@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -100,6 +102,8 @@ const NotificationScreen = ({ navigation }: any) => {
                         }
                 }
                 style={styles.avatar}
+                contentFit="cover"
+                cachePolicy="memory-disk"
             />
             <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -126,7 +130,7 @@ const NotificationScreen = ({ navigation }: any) => {
                     <ActivityIndicator color="#ea580c" size="large" />
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={notifications}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}

@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, Share, Linking, Animated, Easing, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, Share, Linking, Animated, Easing, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { Image } from 'expo-image';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { navigationRef } from '../navigation/navigationRef';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import PostImage from './PostImage';
 import { WEBSITE_URL, API_BASE_URL } from '../services/api';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import Slider from '@react-native-community/slider';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 import { Asset } from 'expo-asset';
@@ -91,10 +93,11 @@ const cardWidth = width - 24;
 const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
-const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, onReady, isMuted, onBuffering, poster, aspectRatio }: any) => {
+const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, aspectRatio }: any) => {
     const [duration, setDuration] = useState(0);
     const [position, setPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [isBuffering, setIsBuffering] = useState(false);
     const isSliding = useRef(false);
 
     const formatTime = (millis: number) => {
@@ -107,11 +110,28 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, onReady, isMuted, 
     const isMounted = useRef(true);
     const showVideo = isActive !== undefined ? isActive : shouldPlay;
 
+    const player = useVideoPlayer(uri, player => {
+        player.loop = true;
+        player.muted = isMuted;
+    });
+
+    React.useImperativeHandle(forwardedRef, () => ({
+        playAsync: async () => player.play(),
+        pauseAsync: async () => player.pause(),
+        unloadAsync: async () => { },
+        setPositionAsync: async (ms: number) => { player.currentTime = ms / 1000; }
+    }));
+
+    useEffect(() => {
+        player.muted = isMuted;
+    }, [isMuted]);
+
     useEffect(() => {
         isMounted.current = true;
-        // Playback Nudge: If shouldPlay becomes true, ensure the video starts
-        if (shouldPlay && forwardedRef?.current) {
-            forwardedRef.current.playAsync().catch(() => { });
+        if (shouldPlay) {
+            player.play();
+        } else {
+            player.pause();
         }
         return () => {
             isMounted.current = false;
@@ -119,63 +139,51 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, onReady, isMuted, 
     }, [shouldPlay]);
 
     useEffect(() => {
-        return () => {
-            isMounted.current = false;
-            // Immediate synchronous flag set
-            if (forwardedRef?.current) {
-                const ref = forwardedRef.current;
-                // Direct unload call is safer during unmount than .then() chains
-                ref.unloadAsync().catch(() => { });
+        const sub = player.addListener('statusChange', (status) => {
+            if (status.status === 'readyToPlay') {
+                setIsBuffering(false);
+                setDuration(player.duration * 1000);
+            } else if (status.status === 'error') {
+                setError("Failed to play video");
+                setIsBuffering(false);
             }
+        });
+        const sub2 = player.addListener('playingChange', (isPlaying) => {
+            setIsBuffering(false);
+        });
+        
+        const interval = setInterval(() => {
+            if (isMounted.current && !isSliding.current) {
+                setPosition(player.currentTime * 1000);
+            }
+        }, 500);
+
+        return () => {
+            sub.remove();
+            sub2.remove();
+            clearInterval(interval);
         };
-    }, []);
+    }, [player]);
 
     return (
         <View style={{ width: '100%', aspectRatio: aspectRatio || 9 / 16, backgroundColor: 'black' }}>
             {showVideo ? (
-                <Video
-                    ref={forwardedRef}
-                    source={{ uri }}
+                <VideoView
+                    player={player}
                     style={{ width: '100%', height: '100%' }}
-                    resizeMode={ResizeMode.COVER}
-                    isLooping
-                    useNativeControls={false}
-                    shouldPlay={shouldPlay}
-                    isMuted={isMuted}
-                    usePoster={!!poster}
-                    posterSource={poster ? { uri: poster } : undefined}
-                    posterStyle={{ resizeMode: ResizeMode.COVER }}
-                    onPlaybackStatusUpdate={(status: any) => {
-                        if (status.isLoaded) {
-                            if (!isSliding.current) {
-                                setPosition(status.positionMillis || 0);
-                            }
-                            if (onBuffering) onBuffering(status.isBuffering);
-                        }
-                    }}
-                    progressUpdateIntervalMillis={500}
-                    onLoadStart={() => {
-                        if (onBuffering) onBuffering(true);
-                        setError(null);
-                    }}
-                    onLoad={(status: any) => {
-                        if (status.isLoaded) {
-                            if (status.durationMillis) setDuration(status.durationMillis);
-                            if (onReady) onReady();
-                            if (onBuffering) onBuffering(false);
-                        }
-                    }}
-                    onError={(e) => {
-                        console.error("[PostCard Video] Error:", e, "URI:", uri);
-                        setError("Failed to play video");
-                        if (onBuffering) onBuffering(false);
-                    }}
+                    contentFit="cover"
+                    nativeControls={false}
                 />
             ) : (
                 <Image
                     source={{ uri: poster || 'https://via.placeholder.com/640x360.png?text=Loading...' }}
                     style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
                 />
+            )}
+            {isBuffering && (
+                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <ActivityIndicator color="white" size="large" />
+                </View>
             )}
             {error && (
                 <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }]}>
@@ -315,18 +323,20 @@ export const MuteManager = {
 };
 
 
-const PostCard = ({
+const BasePostCard = ({
     post,
     onUserPress,
     currentUserId,
     onDeletePress,
-    shouldPlay = false
+    shouldPlay = false,
+    renderMedia
 }: {
     post: PostType,
     onUserPress?: () => void,
     currentUserId?: string,
     onDeletePress?: () => void,
-    shouldPlay?: boolean
+    shouldPlay?: boolean,
+    renderMedia?: (props: any) => React.ReactNode
 }) => {
     const isFocused = useIsFocused();
     const [liked, setLiked] = useState(post.isLiked);
@@ -389,8 +399,6 @@ const PostCard = ({
         }
     };
     const [soundReady, setSoundReady] = useState(false);
-    const [isBuffering, setIsBuffering] = useState(false);
-    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
     const [reportModalVisible, setReportModalVisible] = useState(false);
     const [reportCategory, setReportCategory] = useState('Child Safety Concern');
     const [reportReason, setReportReason] = useState('');
@@ -428,7 +436,7 @@ const PostCard = ({
     };
 
     const likeScale = useRef(new Animated.Value(1)).current;
-    const videoRef = useRef<Video>(null);
+    const videoRef = useRef<any>(null);
     const webViewRef = useRef<WebView>(null);
     const musicData = React.useMemo(() => {
         try {
@@ -739,7 +747,8 @@ const PostCard = ({
                     <Image
                         source={{ uri: post.user.avatar }}
                         style={styles.avatar}
-                        resizeMethod="resize"
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
                     />
                 ) : (
                     <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#ffedd5' }]}>
@@ -764,7 +773,7 @@ const PostCard = ({
                         {post.user.location ? (
                             <>
                                 <Text style={styles.timeAgo} numberOfLines={1}>{post.user.location}</Text>
-                                <Text style={styles.dotSeparator}>•</Text>
+                                <Text style={styles.dotSeparator}>â€¢</Text>
                             </>
                         ) : null}
                         <Text style={styles.timeAgo}>{post.timeAgo}</Text>
@@ -815,7 +824,7 @@ const PostCard = ({
                                     <View style={styles.musicTextContainer}>
                                         <Text style={styles.playingFromText}>{music.type === 'custom_music' ? 'Audio Original' : 'Official Audio'}</Text>
                                         <Text style={styles.musicTitleText} numberOfLines={1}>
-                                            {music.title} • {music.artist}
+                                            {music.title} â€¢ {music.artist}
                                         </Text>
                                     </View>
                                     <View style={styles.liveBadge}>
@@ -864,72 +873,12 @@ const PostCard = ({
             </View>
 
             {/* Media Carousel */}
-            {mediaList.length > 0 && (
-                <View style={{ width: cardWidth, borderRadius: 12, overflow: 'hidden', alignSelf: 'center' }}>
-                    <ScrollView
-                        horizontal
-                        pagingEnabled
-                        nestedScrollEnabled={true}
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ alignItems: 'center' }}
-                        onScroll={(event) => {
-                            const slide = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
-                            if (slide !== activeMediaIndex) {
-                                setActiveMediaIndex(slide);
-                            }
-                        }}
-                        scrollEventThrottle={16}
-                    >
-                        {mediaList.map((uri, index) => (
-                            <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
-                                {isVideo(uri) ? (
-                                    <TouchableOpacity
-                                        activeOpacity={0.95}
-                                        onPress={() => setPaused(!paused)}
-                                        style={{ width: '100%', height: '100%' }}
-                                    >
-                                        <VideoItem
-                                            uri={uri}
-                                            poster={mediaList.find(m => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
-                                            isActive={shouldPlay && isFocused && index === activeMediaIndex}
-                                            shouldPlay={index === activeMediaIndex && actualShouldPlay}
-                                            forwardedRef={index === activeMediaIndex ? videoRef : null}
-                                            onReady={() => setVideoReady(true)}
-                                            onBuffering={setIsBuffering}
-                                            isMuted={musicMuted}
-                                            aspectRatio={postAspectRatio}
-                                        />
-                                        {isBuffering && (
-                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                                <ActivityIndicator color="white" size="large" />
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
-                                ) : (
-                                    <PostImage uri={uri} forcedAspect={postAspectRatio} />
-                                )}
-                            </View>
-                        ))}
-                    </ScrollView>
-                    {mediaList.length > 1 && (
-                        <View style={styles.mediaBadge}>
-                            <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
-                        </View>
-                    )}
-                    {/* Apply Filter Overlay if meta contains filterId */}
-                    {(() => {
-                        try {
-                            if (post.link) {
-                                const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
-                                if (meta.filterId && meta.filterId !== 'none') {
-                                    return <FilterOverlay filterId={meta.filterId} />;
-                                }
-                            }
-                        } catch (e) { }
-                        return null;
-                    })()}
-                </View>
-            )}
+            {renderMedia && renderMedia({
+                mediaList, cardWidth,
+                postAspectRatio, isVideo, paused, setPaused, shouldPlay,
+                isFocused, actualShouldPlay, videoRef,
+                musicMuted, post, styles
+            })}
 
             {/* Actions */}
             <View style={styles.actions}>
@@ -1337,17 +1286,136 @@ const styles = StyleSheet.create({
     },
 });
 
-export default React.memo(PostCard, (prevProps, nextProps) => {
-    const prevPost = prevProps.post as any;
-    const nextPost = nextProps.post as any;
+export const areEqual = (prevProps: any, nextProps: any) => {
+    const prevPost = prevProps.post || {};
+    const nextPost = nextProps.post || {};
     
     return (
-        prevPost.id === nextPost.id &&
-        prevPost.likes === nextPost.likes &&
-        prevPost.comments === nextPost.comments &&
-        prevPost.isLiked === nextPost.isLiked &&
-        (prevPost.isSaved || prevPost.user_saved || prevPost.is_saved) === (nextPost.isSaved || nextPost.user_saved || nextPost.is_saved) &&
-        prevProps.shouldPlay === nextProps.shouldPlay &&
-        prevProps.currentUserId === nextProps.currentUserId
+        String(prevPost.id) === String(nextPost.id) &&
+        Number(prevPost.likes || 0) === Number(nextPost.likes || 0) &&
+        Number(prevPost.comments || 0) === Number(nextPost.comments || 0) &&
+        Boolean(prevPost.isLiked) === Boolean(nextPost.isLiked) &&
+        Boolean(prevPost.isSaved || prevPost.user_saved || prevPost.is_saved) === Boolean(nextPost.isSaved || nextPost.user_saved || nextPost.is_saved) &&
+        Boolean(prevProps.shouldPlay) === Boolean(nextProps.shouldPlay) &&
+        String(prevProps.currentUserId) === String(nextProps.currentUserId)
+    );
+};
+
+export const PostMediaCarousel = React.memo((props: any) => {
+    const {
+        mediaList, cardWidth,
+        postAspectRatio, isVideo, paused, setPaused, shouldPlay,
+        isFocused, actualShouldPlay, videoRef,
+        musicMuted, post, styles
+    } = props;
+    
+    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+
+    if (!mediaList || mediaList.length === 0) return null;
+
+    return (
+        <View style={{ width: cardWidth, borderRadius: 12, overflow: 'hidden', alignSelf: 'center' }}>
+            <ScrollView
+                horizontal
+                pagingEnabled
+                nestedScrollEnabled={true}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ alignItems: 'center' }}
+                onScroll={(event) => {
+                    const slide = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
+                    if (slide !== activeMediaIndex) {
+                        setActiveMediaIndex(slide);
+                    }
+                }}
+                scrollEventThrottle={16}
+            >
+                {mediaList.map((uri: string, index: number) => (
+                    <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
+                        {isVideo(uri) ? (
+                            <TouchableOpacity
+                                activeOpacity={0.95}
+                                onPress={() => setPaused(!paused)}
+                                style={{ width: '100%', height: '100%' }}
+                            >
+                                <VideoItem
+                                    uri={uri}
+                                    poster={mediaList.find((m: string) => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
+                                    isActive={shouldPlay && isFocused && index === activeMediaIndex}
+                                    shouldPlay={index === activeMediaIndex && actualShouldPlay}
+                                    forwardedRef={index === activeMediaIndex ? videoRef : null}
+                                    isMuted={musicMuted}
+                                    aspectRatio={postAspectRatio}
+                                />
+                            </TouchableOpacity>
+                        ) : (
+                            <PostImage uri={uri} forcedAspect={postAspectRatio} />
+                        )}
+                    </View>
+                ))}
+            </ScrollView>
+            {mediaList.length > 1 && (
+                <View style={styles.mediaBadge}>
+                    <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
+                </View>
+            )}
+            {/* Apply Filter Overlay if meta contains filterId */}
+            {(() => {
+                try {
+                    if (post.link) {
+                        const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
+                        if (meta.filterId && meta.filterId !== 'none') {
+                            return <FilterOverlay filterId={meta.filterId} />;
+                        }
+                    }
+                } catch (e) { }
+                return null;
+            })()}
+        </View>
     );
 });
+
+export const ImagePost = React.memo((props: any) => {
+    const renderMedia = React.useCallback((mediaProps: any) => <PostMediaCarousel {...mediaProps} />, []);
+    return <BasePostCard {...props} renderMedia={renderMedia} />;
+}, areEqual);
+
+export const VideoPost = React.memo((props: any) => {
+    const renderMedia = React.useCallback((mediaProps: any) => <PostMediaCarousel {...mediaProps} />, []);
+    return <BasePostCard {...props} renderMedia={renderMedia} />;
+}, areEqual);
+
+export const MultiMediaPost = React.memo((props: any) => {
+    const renderMedia = React.useCallback((mediaProps: any) => <PostMediaCarousel {...mediaProps} />, []);
+    return <BasePostCard {...props} renderMedia={renderMedia} />;
+}, areEqual);
+
+export const TextPost = React.memo((props: any) => {
+    return <BasePostCard {...props} />;
+}, areEqual);
+
+const PostCardRouter = (props: any) => {
+    const { media, image } = props.post;
+    const isVid = (uri: string) => uri && (uri.toLowerCase().endsWith('.mp4') || uri.toLowerCase().endsWith('.mov') || uri.toLowerCase().endsWith('.m4v') || uri.toLowerCase().endsWith('.3gp') || uri.toLowerCase().endsWith('.mkv') || uri.toLowerCase().endsWith('.webm'));
+    
+    let mediaList: string[] = [];
+    if (media && media.length > 0) {
+        mediaList = media.map((file: string) => file.startsWith('http') ? file : `${POST_MEDIA_PATH}${file}`);
+    } else if (image) {
+        mediaList = [image.startsWith('http') ? image : `${POST_MEDIA_PATH}${image}`];
+    }
+
+    if (mediaList.length > 1) {
+        return <MultiMediaPost {...props} />;
+    } else if (mediaList.length === 1) {
+        if (isVid(mediaList[0])) {
+            return <VideoPost {...props} />;
+        } else {
+            return <ImagePost {...props} />;
+        }
+    } else {
+        return <TextPost {...props} />;
+    }
+};
+
+export default React.memo(PostCardRouter, areEqual);
+

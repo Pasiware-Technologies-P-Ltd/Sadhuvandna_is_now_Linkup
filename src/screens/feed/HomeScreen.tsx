@@ -10,7 +10,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
-import { Video, ResizeMode, Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
+import { ImageService } from '../../services/ImageService';
 
 const { width } = Dimensions.get('window');
 
@@ -40,9 +42,14 @@ const HomeScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [page, setPage] = useState(0);
+    const cursorScoreRef = useRef<string | null>(null);
+    const cursorIdRef = useRef<number | null>(null);
+    const statsFetchedRef = useRef<Set<string>>(new Set());
+    const isFetchingRef = useRef(false);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+    const [feedSeed, setFeedSeed] = useState(Math.floor(Math.random() * 100000) + 1);
     const [notificationCount, setNotificationCount] = useState(0);
     const navigation = useNavigation<any>();
 
@@ -58,7 +65,7 @@ const HomeScreen = () => {
                 // Double tap detected
                 flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
                 setRefreshing(true);
-                fetchData();
+                fetchInitialFeed();
                 fetchNotificationCount();
             }
             lastTabPress.current = time;
@@ -96,7 +103,7 @@ const HomeScreen = () => {
                     setPosts([]); // Clear visually to show refresh
                     setStories([]);
                     setReels([]);
-                    fetchData(u.id);
+                    fetchInitialFeed(u.id);
                     fetchNotificationCount(u.id);
                 }
             } catch (err) {
@@ -115,11 +122,11 @@ const HomeScreen = () => {
                     u = JSON.parse(uStr);
                     setUser(u);
                 }
-                fetchData(u?.id);
+                fetchInitialFeed(u?.id);
                 fetchNotificationCount(u?.id);
             } catch (err) {
                 console.error("Init Error:", err);
-                fetchData();
+                fetchInitialFeed();
                 fetchNotificationCount();
             }
         };
@@ -143,7 +150,7 @@ const HomeScreen = () => {
         if (!photo) return 'https://via.placeholder.com/100';
         if (photo.startsWith('http')) return photo;
         const baseUrl = type === 'photo' ? PHOTO_URL : POST_IMAGE_URL;
-        return `${baseUrl}${photo}`;
+        return ImageService.getFeedImageUrl(`${baseUrl}${photo}`);
     };
 
     const handleLinkPress = async (url: string) => {
@@ -209,144 +216,155 @@ const HomeScreen = () => {
         }
     };
 
-    const fetchData = async (userId?: string, isLoadMore = false) => {
-        const uid = userId || user?.id || 0;
+    const fetchInitialFeed = async (userId?: string) => {
+        if (!navigation.isFocused() && posts.length > 0) return;
+        if (isFetchingRef.current) return;
+        
+        const uid = userId || user?.id;
+        if (!uid && loading && !userId) return; 
+        const finalUid = uid || 0;
 
-        if (isLoadMore) {
-            if (isFetchingMore || !hasMore) return;
-            setIsFetchingMore(true);
-        } else {
-            // Only show loader if we have NO posts currently (first open without cache)
-            if (posts.length === 0) setLoading(true);
-            setPage(0);
-            setHasMore(true);
+        isFetchingRef.current = true;
+        if (posts.length === 0) setLoading(true);
+        cursorScoreRef.current = null;
+        cursorIdRef.current = null;
+        statsFetchedRef.current.clear();
+        setHasMore(true);
 
-            // Load cache before fetching to ensure instant UI
-            if (uid) await loadCachedData(uid.toString());
-        }
+        if (uid) await loadCachedData(uid.toString());
 
         try {
-            const currentPage = isLoadMore ? page + 1 : 0;
-            const offset = currentPage * 20;
-
+            console.log(`[HomeScreen API] Fetching INITIAL get_posts.php?seed=${feedSeed}`);
             const [postsRes, storiesRes, reelsRes, suggestRes] = await Promise.all([
-                api.get(`get_posts.php?user_id=${uid}&limit=20&offset=${offset}&lazy=true`),
-                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('fetch_stories.php?user_id=' + uid),
-                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get('get_posts.php?filter_reels=1&limit=4&user_id=' + uid),
-                isLoadMore ? Promise.resolve({ data: { status: 'skip' } }) : api.get(`api_follow.php?action=fetch_suggestions&current_user_id=${uid}&limit=10`)
+                api.get(`get_posts.php?user_id=${finalUid}&limit=20&seed=${feedSeed}&lazy=true`),
+                api.get('fetch_stories.php?user_id=' + finalUid),
+                api.get('get_posts.php?filter_reels=1&limit=4&user_id=' + finalUid),
+                api.get(`api_follow.php?action=fetch_suggestions&current_user_id=${finalUid}&limit=10`)
             ]);
 
             let finalReels = reels;
-            let finalPosts = posts;
-            let finalStories = stories;
-            let finalSuggestedUsers = suggestedUsers;
+            let finalPosts: any[] = [];
+            let finalStories: any[] = [];
+            let finalSuggestedUsers: any[] = [];
             let idsToFetchStats: string[] = [];
 
-            // Handle Reels (only on first load)
-            if (!isLoadMore && reelsRes.data.status === 'success' && Array.isArray(reelsRes.data.data)) {
-                finalReels = reelsRes.data.data.filter((p: any) =>
-                    p.media && p.media.some((m: string) => isVideo(m))
-                );
+            if (reelsRes.data.status === 'success' && Array.isArray(reelsRes.data.data)) {
+                finalReels = reelsRes.data.data.filter((p: any) => p.media && p.media.some((m: string) => isVideo(m)));
                 setReels(finalReels);
-                if (finalReels.length > 0) {
-                    const pageData = {
-                        pages: [finalReels],
-                        pageParams: [0]
-                    };
-                    queryClient.setQueryData(['reels', undefined, uid.toString(), 0], pageData);
-                    queryClient.setQueryData(['reels', undefined, null, 0], pageData);
-                }
             }
 
-            // Handle Posts
             if (postsRes.data.status === 'success') {
                 const newPosts = postsRes.data.data;
                 if (newPosts.length < 20) setHasMore(false);
-
-                // Collect real post IDs for background stats fetch
                 idsToFetchStats = newPosts.map((p: any) => p.id);
 
-                if (isLoadMore) {
-                    setPosts(prev => [...prev, ...newPosts]);
-                    setPage(currentPage);
-                } else {
-                    finalPosts = [...newPosts];
+                if (newPosts.length > 0) {
+                    const lastPost = newPosts[newPosts.length - 1];
+                    if (lastPost.rand_score !== undefined) {
+                        cursorScoreRef.current = lastPost.rand_score;
+                        cursorIdRef.current = lastPost.id;
+                    }
+                }
 
-                    // 1. Insert Suggestions Shelf after the first post (index 1)
-                    if (suggestRes.data.status === 'success' && suggestRes.data.data?.length > 0) {
-                        finalPosts.splice(1, 0, { id: 'suggest_users_shelf', type: 'suggest_users_shelf' });
-                    }
-
-                    // 2. Insert Reels Shelf after 8 posts (around index 9)
-                    const shelfReelsLocal = reelsRes.data.status === 'success' ? (reelsRes.data.data?.filter((p: any) => p.media && p.media.some((m: string) => isVideo(m))) || []) : [];
-                    if (shelfReelsLocal.length > 0 && finalPosts.length > 0) {
-                        const targetIndex = finalPosts.length > 9 ? 9 : finalPosts.length;
-                        finalPosts.splice(targetIndex, 0, { id: 'reels_shelf', type: 'reels_shelf' });
-                    }
-                    setPosts(finalPosts);
-                    // Ensure first actual post is active for autoplay
-                    if (finalPosts.length > 0) {
-                        const firstRealPost = finalPosts.find(p => p.type !== 'reels_shelf' && p.type !== 'suggest_users_shelf');
-                        if (firstRealPost) {
-                            setActivePostId(firstRealPost.id?.toString());
-                        } else {
-                            setActivePostId(finalPosts[0].id?.toString());
-                        }
-                    }
+                finalPosts = [...newPosts];
+                if (suggestRes.data.status === 'success' && suggestRes.data.data?.length > 0) {
+                    finalPosts.splice(1, 0, { id: 'suggest_users_shelf', type: 'suggest_users_shelf' });
+                }
+                if (finalReels.length > 0 && finalPosts.length > 0) {
+                    const targetIndex = finalPosts.length > 9 ? 9 : finalPosts.length;
+                    finalPosts.splice(targetIndex, 0, { id: 'reels_shelf', type: 'reels_shelf' });
+                }
+                setPosts(finalPosts);
+                if (finalPosts.length > 0) {
+                    const firstRealPost = finalPosts.find(p => p.type !== 'reels_shelf' && p.type !== 'suggest_users_shelf');
+                    setActivePostId(firstRealPost ? firstRealPost.id?.toString() : finalPosts[0].id?.toString());
                 }
             }
 
-            // Handle Stories (only on first load)
-            if (!isLoadMore && storiesRes.data.status === 'success') {
+            if (storiesRes.data.status === 'success') {
                 const myStories = storiesRes.data.my_stories || [];
                 const others = storiesRes.data.others || [];
                 const list = [];
                 if (myStories.length > 0) {
-                    list.push({
-                        id: 'mine',
-                        name: 'You',
-                        profile_photo: user?.profile_photo,
-                        stories: myStories,
-                        isMine: true
-                    });
+                    list.push({ id: 'mine', name: 'You', profile_photo: user?.profile_photo, stories: myStories, isMine: true });
                 }
                 finalStories = [...list, ...others];
                 setStories(finalStories);
             }
 
-            // Handle Suggested Users (only on first load)
-            if (!isLoadMore && suggestRes.data.status === 'success' && Array.isArray(suggestRes.data.data)) {
+            if (suggestRes.data.status === 'success' && Array.isArray(suggestRes.data.data)) {
                 finalSuggestedUsers = suggestRes.data.data;
                 setSuggestedUsers(finalSuggestedUsers);
             }
 
-            // Trigger background stats fetch
             if (idsToFetchStats.length > 0) {
-                fetchPostStats(idsToFetchStats);
+                const newStatsIds = idsToFetchStats.filter(id => !statsFetchedRef.current.has(id));
+                if (newStatsIds.length > 0) {
+                    newStatsIds.forEach(id => statsFetchedRef.current.add(id));
+                    fetchPostStats(newStatsIds);
+                }
             }
 
-            // Save cache (only on initial load)
-            if (!isLoadMore && uid) {
-                const cacheData = {
-                    posts: finalPosts,
-                    stories: finalStories,
-                    reels: finalReels,
-                    suggestedUsers: finalSuggestedUsers
-                };
-                AsyncStorage.setItem(`home_cache_${uid}`, JSON.stringify(cacheData)).catch(e => console.log('Cache save err', e));
+            if (finalUid) {
+                const cacheData = { posts: finalPosts, stories: finalStories, reels: finalReels, suggestedUsers: finalSuggestedUsers };
+                AsyncStorage.setItem(`home_cache_${finalUid}`, JSON.stringify(cacheData)).catch(e => console.log('Cache save err', e));
             }
         } catch (error: any) {
             console.error("Fetch Data Error:", error);
         } finally {
             setLoading(false);
             setRefreshing(false);
-            setIsFetchingMore(false);
+            isFetchingRef.current = false;
         }
     };
 
+    const fetchNextPage = async () => {
+        if (!hasMore || loading || isFetchingRef.current || cursorScoreRef.current === null || cursorIdRef.current === null) return;
+        
+        const finalUid = user?.id || 0;
+        isFetchingRef.current = true;
+        setIsFetchingMore(true);
+
+        try {
+            console.log(`[HomeScreen API] Fetching NEXT PAGE get_posts.php?seed=${feedSeed}&cursor_score=${cursorScoreRef.current}&cursor_id=${cursorIdRef.current}`);
+            const postsRes = await api.get(`get_posts.php?user_id=${finalUid}&limit=20&seed=${feedSeed}&cursor_score=${cursorScoreRef.current}&cursor_id=${cursorIdRef.current}&lazy=true`);
+
+            if (postsRes.data.status === 'success') {
+                const newPosts = postsRes.data.data;
+                if (newPosts.length < 20) setHasMore(false);
+
+                if (newPosts.length > 0) {
+                    const lastPost = newPosts[newPosts.length - 1];
+                    if (lastPost.rand_score !== undefined) {
+                        cursorScoreRef.current = lastPost.rand_score;
+                        cursorIdRef.current = lastPost.id;
+                    }
+                    
+                    const idsToFetchStats = newPosts.map((p: any) => p.id);
+                    const newStatsIds = idsToFetchStats.filter((id: string) => !statsFetchedRef.current.has(id));
+                    if (newStatsIds.length > 0) {
+                        newStatsIds.forEach((id: string) => statsFetchedRef.current.add(id));
+                        fetchPostStats(newStatsIds);
+                    }
+
+                    setPosts(prev => {
+                        const existingIds = new Set(prev.map(p => p.id));
+                        const uniqueNew = newPosts.filter((p: any) => !existingIds.has(p.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                }
+            }
+        } catch (error: any) {
+            console.error("Fetch Next Page Error:", error);
+        } finally {
+            setIsFetchingMore(false);
+            isFetchingRef.current = false;
+        }
+    };
     const onRefresh = () => {
         setRefreshing(true);
-        fetchData();
+        setFeedSeed(Math.floor(Math.random() * 100000) + 1);
+        fetchInitialFeed();
         fetchNotificationCount();
     };
 
@@ -783,7 +801,7 @@ const HomeScreen = () => {
                         <Text className="text-gray-500 mt-4">{t('noPosts')}</Text>
                     </View>
                 }
-                onEndReached={() => fetchData(undefined, true)}
+                onEndReached={() => fetchNextPage()}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={isFetchingMore ? (
                     <View style={{ paddingVertical: 20 }}>

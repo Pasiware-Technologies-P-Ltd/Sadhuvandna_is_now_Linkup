@@ -1,8 +1,9 @@
+import { Image } from 'expo-image';
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, Share, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Share, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
 import api, { WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,7 +31,7 @@ const ProfessionalVideoPlayer = ({
     shouldPlay: boolean;
     style?: any;
 }) => {
-    const videoRef = useRef<Video>(null);
+    const videoRef = useRef<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [status, setStatus] = useState<any>({});

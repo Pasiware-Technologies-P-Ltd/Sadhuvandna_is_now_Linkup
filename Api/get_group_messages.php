@@ -5,6 +5,11 @@ include 'connection.php';
 
 $group_id = intval($_GET['group_id'] ?? 0);
 $user_id = intval($_GET['user_id'] ?? 0); // To track who is requesting and maybe mark as seen
+$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 30;
+$before_time = isset($_GET['before_time']) ? $con->real_escape_string($_GET['before_time']) : '';
+$before_id = isset($_GET['before_id']) ? intval($_GET['before_id']) : 0;
+$since_time = isset($_GET['since_time']) ? $con->real_escape_string($_GET['since_time']) : '';
+$since_id = isset($_GET['since_id']) ? intval($_GET['since_id']) : 0;
 
 if (!$group_id) {
     echo json_encode(["status" => "error", "message" => "Group ID is required"]);
@@ -17,15 +22,29 @@ if ($check_del->num_rows == 0) {
     $con->query("ALTER TABLE `tbl_group_messages` ADD COLUMN `is_deleted` TINYINT(1) DEFAULT 0");
 }
 
+$cursor_condition = "";
+if ($before_time && $before_id) {
+    $cursor_condition = " AND (gm.created_at < '{$before_time}' OR (gm.created_at = '{$before_time}' AND gm.id < {$before_id})) ";
+} elseif ($before_time) {
+    $cursor_condition = " AND gm.created_at < '{$before_time}' ";
+} elseif ($since_time && $since_id) {
+    $cursor_condition = " AND (gm.created_at > '{$since_time}' OR (gm.created_at = '{$since_time}' AND gm.id > {$since_id})) ";
+} elseif ($since_time) {
+    $cursor_condition = " AND gm.created_at > '{$since_time}' ";
+}
+
 $sql = "
     SELECT 
         gm.*, 
+        gm.client_message_id,
         m.name as sender_name, 
         m.profile_photo as sender_photo 
     FROM tbl_group_messages gm
     LEFT JOIN tbl_members m ON gm.sender_id = m.id
     WHERE gm.group_id = $group_id
-    ORDER BY gm.created_at ASC
+    {$cursor_condition}
+    ORDER BY gm.created_at DESC, gm.id DESC
+    LIMIT $limit
 ";
 
 $res = $con->query($sql);
@@ -60,9 +79,14 @@ if ($user_id > 0) {
 
 $res = $con->query($sql);
 
+$seenMsgIds = [];
 while ($row = $res->fetch_assoc()) {
+    $client_id = $row['client_message_id'] ?? $row['id'];
+    $seenMsgIds[$client_id] = true;
+    
     $messages[] = [
         "id" => $row['id'],
+        "client_message_id" => $client_id,
         "group_id" => $row['group_id'],
         "sender_id" => $row['sender_id'],
         "sender_name" => $row['sender_name'],
@@ -75,6 +99,45 @@ while ($row = $res->fetch_assoc()) {
         "created_at" => $row['created_at']
     ];
 }
+
+// 3. FETCH PENDING FROM REDIS
+require_once 'RedisConfig.php';
+$redis = RedisConfig::getConnection();
+if ($redis && empty($before_time)) {
+    $redisKey = "group_chat:{$group_id}";
+    $redisMessages = $redis->zRange($redisKey, 0, -1);
+    
+    foreach ($redisMessages as $rm) {
+        $msgObj = json_decode($rm, true);
+        if (!$msgObj) continue;
+        
+        $cid = $msgObj['client_message_id'] ?? null;
+        if ($cid && !isset($seenMsgIds[$cid])) {
+            $seenMsgIds[$cid] = true;
+            
+            // Get sender name/photo for pending (approximate or just empty until DB resolves)
+            $messages[] = [
+                "id" => "pending_" . $cid,
+                "client_message_id" => $cid,
+                "group_id" => $group_id,
+                "sender_id" => (int)$msgObj['sender_id'],
+                "sender_name" => "Pending", // UI can resolve locally or wait for sync
+                "sender_photo" => "",
+                "message" => $msgObj['message'],
+                "attachment" => $msgObj['attachment'],
+                "file_type" => $msgObj['file_type'],
+                "is_deleted" => 0,
+                "seen_by" => "[]",
+                "created_at" => $msgObj['created_at']
+            ];
+        }
+    }
+}
+
+// Sort combined messages by created_at
+usort($messages, function($a, $b) {
+    return strtotime($a['created_at']) - strtotime($b['created_at']);
+});
 
 // 4. Get Group Settings
 $gQ = $con->query("SELECT admins_only FROM tbl_groups WHERE id = $group_id");

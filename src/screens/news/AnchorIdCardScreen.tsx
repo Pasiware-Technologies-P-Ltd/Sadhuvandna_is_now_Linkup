@@ -1,5 +1,6 @@
+import { Image } from 'expo-image';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Image, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';

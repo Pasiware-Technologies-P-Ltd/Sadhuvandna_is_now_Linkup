@@ -12,7 +12,7 @@ if (!$group_id) {
 
 // Assume platform is community for now as groups are built for it
 $sql = "
-    SELECT gm.id as membership_id, gm.role, gm.joined_at, m.id as user_id, m.name, m.profile_photo, (m.last_active >= NOW() - INTERVAL 5 MINUTE) as is_online 
+    SELECT gm.id as membership_id, gm.role, gm.joined_at, m.id as user_id, m.name, m.profile_photo, (m.last_active >= NOW() - INTERVAL 2 MINUTE) as is_online 
     FROM tbl_group_members gm
     INNER JOIN tbl_members m ON gm.user_id = m.id
     WHERE gm.group_id = $group_id

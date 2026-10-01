@@ -1,23 +1,8 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
 import { Animated, LayoutAnimation, UIManager } from 'react-native';
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    ActivityIndicator,
-    Image,
-    Alert,
-    Modal,
-    Pressable,
-    Linking,
-    Keyboard,
-    ScrollView,
-    AppState
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal, Pressable, Linking, Keyboard, ScrollView, AppState } from 'react-native';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -31,10 +16,13 @@ import { useLanguage } from '../../context/LanguageContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import WebCallModal from '../../components/WebCallModal';
+import socketService from '../../services/socket';
 
-import { Video, ResizeMode } from 'expo-av';
+import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Notifications from 'expo-notifications';
+import { ChatDBService } from '../../services/ChatDBService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
@@ -56,6 +44,11 @@ const ChatScreen = ({ navigation, route }: any) => {
         : null;
 
     const [messages, setMessages] = useState<any[]>([]);
+    const messagesRef = useRef<any[]>([]);
+    
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
     const [text, setText] = useState('');
     const [myProfileId, setMyProfileId] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
@@ -123,10 +116,15 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [isForwarding, setIsForwarding] = useState(false);
     const [forwardSearch, setForwardSearch] = useState('');
 
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<any>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
     const isFetchingRef = useRef(false);
+    const isFetchingMoreRef = useRef(false);
+    const lastFetchTimeRef = useRef(0);
+    const hasSufficientCacheRef = useRef(false);
+    const hasScrolledToBottomRef = useRef(false);
+    const isAtBottomRef = useRef(true);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     useEffect(() => {
@@ -152,46 +150,213 @@ const ChatScreen = ({ navigation, route }: any) => {
     useEffect(() => {
         if (paymentStatus !== 'paid' || !myProfileId) return;
 
-        let interval: NodeJS.Timeout;
+        let notificationSubscription: any;
         let lastOnlineCheck = 0;
         let lastBlockCheck = 0;
         let isActive = true;
 
         const startPolling = () => {
-            if (interval) clearInterval(interval);
-            interval = setInterval(async () => {
-                if (isFetchingRef.current || !isMountedRef.current || !isActive) return;
-                isFetchingRef.current = true;
-                try {
-                    const now = Date.now();
-                    await fetchMessages();
-                    if (!isMountedRef.current) return;
-                    await fetchUserStatus();
+            // Always clean up old listeners before re-registering
+            // to prevent stacking (multiple focus/AppState events would
+            // add multiple listeners → N API calls per socket event)
+            stopPolling();
 
-                    if (now - lastOnlineCheck > 15000 && isMountedRef.current) {
-                        lastOnlineCheck = now;
-                        updateMyOnlineStatus();
+            // Listen for instant socket updates to refresh messages without polling
+            if (socketService.socket) {
+                socketService.socket.on('new_notification', (data: any) => {
+                    let actualPayload = null;
+                    if (data && data.type === 'new_notification' && data.payload) {
+                        actualPayload = data.payload;
+                    } else if (data && (data.type === 'chat' || data.type === 'message')) {
+                        actualPayload = data;
                     }
 
-                    if (now - lastBlockCheck > 30000 && isMountedRef.current) {
-                        lastBlockCheck = now;
-                        checkBlockStatus();
+                    if (actualPayload && actualPayload.message) {
+                        const isFromReceiver = String(actualPayload.message.sender_id) === String(receiver?.id);
+                        const isFromMeToReceiver = String(actualPayload.message.sender_id) === String(myProfileId) && String(actualPayload.message.receiver_id) === String(receiver?.id);
+                        
+                        if (isFromReceiver || isFromMeToReceiver) {
+                            const newMsg = actualPayload.message;
+                            const isMine = isFromMeToReceiver;
+                            
+                            setMessages(prev => {
+                                // Deduplicate by client_message_id to avoid echoing back our own optimistic message
+                                if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (newMsg.client_message_id && m.client_message_id === newMsg.client_message_id))) return prev;
+                                console.log('[WS] NEW MESSAGE → appended');
+                                return [...prev, { ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }];
+                            });
+
+                            if (isAtBottomRef.current) {
+                                setTimeout(() => {
+                                    flatListRef.current?.scrollToEnd({ animated: true });
+                                }, 150);
+                            }
+                            
+                            // Save to SQLite
+                            const isGroup = route.params?.isGroup;
+                            const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+                            ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => {});
+                            
+                            // Mark message as seen on server without a full re-fetch
+                            // (avoids an unnecessary GET just to update seen status)
+                            try {
+                                api.post('mark_seen.php', {
+                                    message_id: newMsg.id,
+                                    my_profile_id: myProfileId,
+                                    receiver_id: receiver?.id,
+                                    platform: platform,
+                                });
+                            } catch { }
+                        }
+                        // If notification is from someone else, just ignore —
+                        // socket already handled message delivery for this chat.
                     }
-                } catch (e) {
-                } finally {
-                    isFetchingRef.current = false;
+                });
+
+                socketService.socket.on('new_group_notification', (data: any) => {
+                    let actualPayload = null;
+                    if (data && data.type === 'new_group_notification' && data.payload) {
+                        actualPayload = data.payload;
+                    } else if (data && data.type === 'group_chat') {
+                        actualPayload = data;
+                    }
+
+                    if (actualPayload && actualPayload.message && route.params?.isGroup && String(actualPayload.group_id) === String(receiver?.id)) {
+                        const newMsg = actualPayload.message;
+                        const isMine = String(newMsg.sender_id) === String(myProfileId);
+                        
+                        setMessages(prev => {
+                            if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (newMsg.client_message_id && m.client_message_id === newMsg.client_message_id))) return prev;
+                            console.log('[WS] NEW GROUP MESSAGE → appended');
+                            return [...prev, { ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }];
+                        });
+
+                        if (isAtBottomRef.current) {
+                            setTimeout(() => {
+                                flatListRef.current?.scrollToEnd({ animated: true });
+                            }, 150);
+                        }
+                        
+                        const chatId = `group_${receiver?.id}`;
+                        ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => {});
+                    }
+                });
+
+                // Handle Send ACKs
+                socketService.socket.on('chat:ack', (data: any) => {
+                    if (data && data.client_message_id) {
+                        setMessages(prev => prev.map(m => 
+                            m.client_message_id === data.client_message_id 
+                                ? { ...m, isOptimistic: false, id: data.server_id, server_id: data.server_id } 
+                                : m
+                        ));
+                        ChatDBService.updateMessageStatus(data.client_message_id, { status: 'sent', server_id: data.server_id }).catch(() => {});
+                    }
+                });
+
+                // Handle Send Errors
+                socketService.socket.on('chat:error', (data: any) => {
+                    if (data && data.client_message_id) {
+                        setMessages(prev => prev.filter(m => m.client_message_id !== data.client_message_id));
+                        Alert.alert('Send Error', data.message || 'Message could not be sent.');
+                    }
+                });
+
+                socketService.socket.on('typing', (data: any) => {
+                    if (data.senderId == receiver?.id || data.senderId == receiver?.user_id) {
+                        setIsReceiverTyping(true);
+                    }
+                });
+
+                socketService.socket.on('stop_typing', (data: any) => {
+                    if (data.senderId == receiver?.id) {
+                        setIsReceiverTyping(false);
+                    }
+                });
+
+                socketService.socket.on('user_status', (data: any) => {
+                    if (data.userId == receiver?.id || data.userId == receiver?.user_id) {
+                        setReceiverOnline(data.status === 'online');
+                        if (data.status === 'offline') {
+                            setReceiverLastSeen('Just now');
+                        }
+                    }
+                });
+
+                // Receiver ne messages dekhe — sender ke tick update karo
+                // PHP get_chat_messages.php marks seen=1 then fires this event
+                socketService.socket.on('messages_seen', (data: any) => {
+                    if (String(data.viewer_id) === String(receiver?.id)) {
+                        // Mark all sent messages (is_mine: true) as seen instantly in UI
+                        setMessages(prev => prev.map(m =>
+                            m.is_mine && m.seen === 0 ? { ...m, seen: 1 } : m
+                        ));
+                        
+                        // Mark in SQLite locally
+                        const isGrp = route.params?.isGroup;
+                        const chatId = isGrp ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+                        ChatDBService.markAllAsSeen(chatId).catch(() => {});
+                    }
+                });
+            }
+
+            // Listen to foreground push notifications directly for instant message delivery
+            if (!notificationSubscription) {
+                notificationSubscription = Notifications.addNotificationReceivedListener(notification => {
+                    // Handled exclusively by WebSocket to avoid API hit
+                });
+            }
+
+            // Initial fetch on first load OR when socket is not available (fallback)
+            // If socket is connected, skip re-fetch on focus/AppState — socket handles live delivery
+            if (isMountedRef.current && isActive) {
+                const isFirstLoad = lastFetchTimeRef.current === 0;
+                const now = Date.now();
+                
+                if (isFirstLoad) {
+                    lastFetchTimeRef.current = now;
+                    // On FIRST load, NEVER call fetchMessages if we have cache.
+                    if (!hasSufficientCacheRef.current) {
+                        fetchMessages(); // Fetch latest 30 only if empty
+                    }
+                    // We check block status from local cache initially, avoid API overhead
+                    checkBlockStatus(); 
+                } else if (now - lastFetchTimeRef.current > 2000) {
+                    lastFetchTimeRef.current = now;
+                    
+                    // If we are foregrounding (not first load), we might have missed messages.
+                    // Instead of a blind fetch, we do a proper reconciliation fetch (isReconnect = true).
+                    // We only do this if we suspect a disconnect/reconnect gap.
+                    if (!socketService.socket?.connected) {
+                        fetchMessages(null, true);
+                    }
                 }
-            }, 3000);
+            }
         };
 
         const stopPolling = () => {
-            if (interval) clearInterval(interval);
+            if (notificationSubscription) {
+                notificationSubscription.remove();
+                notificationSubscription = null;
+            }
+            if (socketService.socket) {
+                // Important: Clean up the event listener to avoid memory leaks and multiple fires
+                socketService.socket.off('new_notification');
+                socketService.socket.off('new_group_notification');
+                socketService.socket.off('chat:ack');
+                socketService.socket.off('chat:error');
+                socketService.socket.off('typing');
+                socketService.socket.off('stop_typing');
+                socketService.socket.off('user_status');
+                socketService.socket.off('messages_seen');
+            }
         };
 
         startPolling();
 
         const unsubscribeFocus = navigation.addListener('focus', () => {
             isActive = true;
+            // stopPolling() is called inside startPolling() — no double-listener stacking
             startPolling();
         });
 
@@ -204,6 +369,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         const subscription = AppState.addEventListener('change', nextAppState => {
             if (nextAppState === 'active' && navigation.isFocused()) {
                 isActive = true;
+                // stopPolling() is called inside startPolling() — no double-listener stacking
                 startPolling();
             } else {
                 isActive = false;
@@ -227,6 +393,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                 const user = JSON.parse(u);
                 userIdRef.current = user.id;
                 setUserId(user.id);
+                await loadCachedChatMessages(user.id);
                 checkPayment(user.id);
                 updateMyOnlineStatus(user.id);
             }
@@ -293,14 +460,68 @@ const ChatScreen = ({ navigation, route }: any) => {
     const updateMyOnlineStatus = async (uid?: string) => {
         try {
             const id = uid || userId;
-            if (id) {
-                await api.post('update_app_online.php', { user_id: id }).catch(() => { });
+            if (id && socketService.socket) {
+                socketService.socket.emit('heartbeat', id);
             }
         } catch { }
     };
 
+    const loadCachedChatMessages = async (uid: string) => {
+        try {
+            const isGroup = route.params?.isGroup;
+            const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+            
+            // Try SQLite first with limit 30
+            const cachedMessages = await ChatDBService.getMessages(chatId, 30, 0);
+            
+            if (cachedMessages && cachedMessages.length > 0) {
+                if (cachedMessages.length >= 1) {
+                    hasSufficientCacheRef.current = true;
+                }
+                
+                // Map from SQLite schema back to UI structure
+                const mapped = cachedMessages.map((m: any) => ({
+                    ...m,
+                    id: m.server_id,
+                    is_mine: m.is_mine === 1,
+                    isOptimistic: m.status === 'pending'
+                })).reverse();
+                
+                setMessages(mapped);
+                setLoading(false);
+                console.log('[CHAT HISTORY] SQLite messages:', mapped.length);
+            } else {
+                // Fallback to AsyncStorage
+                const cacheKey = `cached_messages_v2_${isGroup ? 'grp' : uid}_${receiver?.id}`;
+                const cached = await AsyncStorage.getItem(cacheKey);
+                if (cached) {
+                    setMessages(JSON.parse(cached));
+                    setLoading(false);
+                }
+            }
+        } catch (e) { }
+    };
+
     const checkPayment = async (uId: string) => {
         if (!receiver?.id) return;
+        
+        const cacheKey = `payment_cache_${platform}_${uId}_${receiver.id}`;
+        try {
+            // Check cache first
+            const cachedData = await AsyncStorage.getItem(cacheKey);
+            if (cachedData) {
+                const parsed = JSON.parse(cachedData);
+                const now = Date.now();
+                // If paid and cache is less than 24 hours old, use it
+                if (parsed.paid && parsed.my_profile_id && (now - parsed.timestamp < 24 * 60 * 60 * 1000)) {
+                    setMyProfileId(parsed.my_profile_id);
+                    setPaymentStatus('paid');
+                    setLoading(false);
+                    return; // Skip API call
+                }
+            }
+        } catch (e) { }
+
         try {
             const res = await api.get(
                 `check_chat_payment.php?user_id=${uId}&receiver_id=${receiver.id}&platform=${platform}`
@@ -309,14 +530,15 @@ const ChatScreen = ({ navigation, route }: any) => {
             if (res.data.status === 'success') {
                 setMyProfileId(res.data.my_profile_id);
 
-                // Check block status right away
-                // using the ID from response as state update might be async
-                checkBlockStatusInternal(res.data.my_profile_id);
-
+                // Block status will be checked by startPolling once myProfileId is set.
                 if (res.data.paid) {
                     setPaymentStatus('paid');
-                    fetchMessages(res.data.my_profile_id);
-                    fetchUserStatus(res.data.my_profile_id);
+                    // Cache successful payment status
+                    AsyncStorage.setItem(cacheKey, JSON.stringify({
+                        paid: true,
+                        my_profile_id: res.data.my_profile_id,
+                        timestamp: Date.now()
+                    })).catch(() => {});
                 } else {
                     setPaymentStatus('unpaid');
                     setPaymentUrl(
@@ -324,6 +546,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                             ? getFullPaymentUrl(res.data.payment_url)
                             : null
                     );
+                    // Clear cache if unpaid
+                    AsyncStorage.removeItem(cacheKey).catch(() => {});
                 }
             } else {
                 Alert.alert('Error', res.data.message || 'Payment check failed');
@@ -396,15 +620,25 @@ const ChatScreen = ({ navigation, route }: any) => {
         return d1.toDateString() !== d2.toDateString();
     };
 
-    const fetchMessages = async (pid: string | null = null) => {
+    const fetchMessages = async (pid: string | null = null, isReconnect: boolean = false) => {
         const currentId = pid || myProfileId;
         if (!currentId || !receiver?.id) return;
 
         try {
             const isGroup = route.params?.isGroup;
+            let extraParams = '';
+            if (isReconnect && messagesRef.current && messagesRef.current.length > 0) {
+                const realMessages = messagesRef.current.filter(m => !m.isOptimistic);
+                const newestMsg = realMessages.length > 0 ? realMessages[realMessages.length - 1] : null;
+                if (newestMsg) {
+                    const sinceId = typeof newestMsg.id === 'string' && newestMsg.id.includes('pending') ? 0 : newestMsg.id;
+                    extraParams = `&since_time=${encodeURIComponent(newestMsg.created_at)}&since_id=${sinceId}`;
+                }
+            }
+
             const endpoint = isGroup
-                ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}&t=${Date.now()}`
-                : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}&t=${Date.now()}`;
+                ? `get_group_messages.php?group_id=${receiver.id}&user_id=${userId}${extraParams}&t=${Date.now()}`
+                : `get_chat_messages.php?my_profile_id=${currentId}&receiver_id=${receiver.id}&platform=${platform}${extraParams}&t=${Date.now()}`;
             const res = await api.get(endpoint);
             if (res?.data?.status === 'success' && Array.isArray(res?.data?.data) && isMountedRef.current) {
                 // Map group messages for common keys
@@ -430,9 +664,27 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 ? 'video' : (fileField ? 'image' : null)
                         )
                     };
+                }).sort((a: any, b: any) => {
+                    const timeA = new Date((a.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    const timeB = new Date((b.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    return timeA - timeB; // Ascending: oldest first, newest last
                 });
+                if (mappedData.length === 0 && isReconnect) return;
+
                 setMessages(prev => {
-                    if (prev.length === mappedData.length) {
+                    const optimisticMsgs = prev.filter((m: any) => m.isOptimistic);
+                    
+                    if (isReconnect && extraParams) {
+                        const finalData = [...prev.filter(m => !m.isOptimistic), ...mappedData, ...optimisticMsgs];
+                        const currentUIdForCache = userIdRef.current || userId;
+                        const cacheKey = `cached_messages_v2_${isGroup ? 'grp' : currentUIdForCache}_${receiver?.id}`;
+                        AsyncStorage.setItem(cacheKey, JSON.stringify(finalData));
+                        const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+                        ChatDBService.saveMessages(chatId, mappedData).catch(() => {});
+                        return finalData;
+                    }
+
+                    if (prev.length === mappedData.length && optimisticMsgs.length === 0) {
                         let changed = false;
                         for (let i = 0; i < prev.length; i++) {
                             if (prev[i].id !== mappedData[i].id ||
@@ -445,7 +697,27 @@ const ChatScreen = ({ navigation, route }: any) => {
                         }
                         if (!changed) return prev;
                     }
-                    return mappedData;
+
+                    // If backend returned fewer messages than we have (including optimistics),
+                    // append our optimistics to the end so they don't vanish instantly due to lag
+                    let finalData = mappedData;
+                    if (optimisticMsgs.length > 0) {
+                        const lastRealMsg = mappedData[mappedData.length - 1];
+                        // If the last real message doesn't match our optimistic message text/sender, keep it
+                        if (!lastRealMsg || lastRealMsg.message !== optimisticMsgs[0].message) {
+                            finalData = [...mappedData, ...optimisticMsgs];
+                        }
+                    }
+
+                    const currentUIdForCache = userIdRef.current || userId;
+                    const cacheKey = `cached_messages_v2_${isGroup ? 'grp' : currentUIdForCache}_${receiver?.id}`;
+                    AsyncStorage.setItem(cacheKey, JSON.stringify(finalData));
+                    
+                    // Save to SQLite asynchronously
+                    const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+                    ChatDBService.saveMessages(chatId, finalData).catch(() => {});
+                    
+                    return finalData;
                 });
 
                 if (isGroup) {
@@ -463,6 +735,78 @@ const ChatScreen = ({ navigation, route }: any) => {
             }
         } catch { }
     };
+    const [hasMoreHistory, setHasMoreHistory] = useState(true);
+
+    const fetchMoreMessages = async () => {
+        if (isFetchingMoreRef.current || !hasMoreHistory) return;
+        isFetchingMoreRef.current = true;
+        try {
+            const isGroup = route.params?.isGroup;
+            // The oldest message is at index 0 (chronological order)
+            const oldestMessage = messages.length > 0 ? messages[0] : null;
+            const beforeTime = oldestMessage ? oldestMessage.created_at : '';
+            // Handle pending messages gracefully by defaulting before_id to 0 if id is non-numeric (e.g. pending_uuid)
+            const beforeId = oldestMessage && typeof oldestMessage.id === 'string' && oldestMessage.id.includes('pending') ? 0 : (oldestMessage ? oldestMessage.id : 0);
+            
+            console.log('\n[CHAT HISTORY] TOP REACHED');
+            console.log('[CHAT HISTORY] cursor_time=' + beforeTime);
+            console.log('[CHAT HISTORY] cursor_id=' + beforeId);
+            console.log('[CHAT HISTORY] Loading 30 older messages');
+
+            const endpoint = isGroup
+                ? `get_group_messages.php?group_id=${receiver?.id}&user_id=${userId}&limit=30&before_time=${encodeURIComponent(beforeTime)}&before_id=${beforeId}&t=${Date.now()}`
+                : `get_chat_messages.php?my_profile_id=${myProfileId}&receiver_id=${receiver?.id}&platform=${platform}&limit=30&before_time=${encodeURIComponent(beforeTime)}&before_id=${beforeId}&t=${Date.now()}`;
+            
+            const res = await api.get(endpoint);
+            
+            if (res?.data?.status === 'success' && Array.isArray(res?.data?.data) && isMountedRef.current) {
+                const mappedData = res.data.data.map((m: any) => {
+                    const att = isGroup ? (m.attachment || '') : (m.file || '');
+                    const fileField = att.trim() === '' ? null : att;
+                    const currentUserId = userIdRef.current || userId;
+                    const isSeen = isGroup ? (m.seen_by && m.seen_by !== '[]' && m.seen_by !== '') : m.seen == 1;
+
+                    return {
+                        ...m,
+                        is_mine: isGroup ? (String(m.sender_id) === String(currentUserId)) : m.is_mine,
+                        seen: isSeen ? 1 : 0,
+                        file: fileField,
+                        file_type: m.file_type || (
+                            fileField && (fileField.toLowerCase().endsWith('.mp4') || fileField.toLowerCase().endsWith('.mov')) ? 'video' : (fileField ? 'image' : null)
+                        )
+                    };
+                }).sort((a: any, b: any) => {
+                    const timeA = new Date((a.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    const timeB = new Date((b.created_at || '').replace(' ', 'T')).getTime() || 0;
+                    return timeA - timeB;
+                });
+                
+                console.log('[CHAT HISTORY] received=' + mappedData.length);
+                if (mappedData.length > 0) {
+                    console.log('[CHAT HISTORY] first_received_id=' + mappedData[0].id);
+                    console.log('[CHAT HISTORY] last_received_id=' + mappedData[mappedData.length - 1].id);
+                }
+
+                if (mappedData.length < 30) {
+                    console.log('[CHAT HISTORY] END OF HISTORY');
+                    setHasMoreHistory(false);
+                }
+                
+                if (mappedData.length > 0) {
+                    setMessages(prev => {
+                        const finalData = [...mappedData, ...prev];
+                        console.log('[CHAT HISTORY] first_state_id=' + finalData[0]?.id);
+                        console.log('[CHAT HISTORY] last_state_id=' + finalData[finalData.length - 1]?.id);
+                        console.log('[HISTORY] latest messages NOT reloaded');
+                        return finalData;
+                    });
+                }
+            }
+        } catch {} finally {
+            isFetchingMoreRef.current = false;
+        }
+    };
+
     const fetchUserStatus = async (pid: string | null = null) => {
         if (route.params?.isGroup) {
             // For group chats, fetch group typing status
@@ -526,12 +870,14 @@ const ChatScreen = ({ navigation, route }: any) => {
                 });
             } else {
                 if (!myProfileId) return;
-                await api.post('update_chat_typing.php', {
-                    profile_id: myProfileId,
-                    receiver_id: receiver.id,
-                    is_typing: typing ? '1' : '0',
-                    platform: platform
-                });
+                // Use WebSocket instead of hitting the API directly
+                if (socketService.socket) {
+                    socketService.socket.emit(typing ? 'typing' : 'stop_typing', {
+                        senderId: myProfileId,
+                        receiverId: receiver.id,
+                        platform: platform
+                    });
+                }
             }
         } catch { }
     };
@@ -618,7 +964,17 @@ const ChatScreen = ({ navigation, route }: any) => {
     const cancelMedia = () => setSelectedMedia(null);
 
     const sendMessage = async () => {
-        if ((!text.trim() && !selectedMedia) || !myProfileId || paymentStatus !== 'paid' || isBlocked) return;
+        console.log("SEND MESSAGE TRIGGERED", { text, myProfileId, paymentStatus, isBlocked, hasMedia: !!selectedMedia });
+        if ((!text.trim() && !selectedMedia) || !myProfileId || paymentStatus !== 'paid' || isBlocked) {
+            console.log("SEND MESSAGE EARLY RETURN", {
+                textEmpty: !text.trim(),
+                noMedia: !selectedMedia,
+                myProfileId,
+                paymentStatus,
+                isBlocked
+            });
+            return;
+        }
 
         setShowEmojiPicker(false);
 
@@ -631,23 +987,73 @@ const ChatScreen = ({ navigation, route }: any) => {
         updateTypingStatus(false);
         setUploading(!!mediaToSend);
 
-        try {
-            const formData = new FormData();
-            const isGroup = route.params?.isGroup;
-            if (isGroup) {
-                formData.append('group_id', receiver.id);
-                formData.append('sender_id', userId || '');
-            } else {
-                formData.append('my_profile_id', myProfileId);
-                formData.append('receiver_id', receiver.id);
-            }
-            formData.append('message', msgContent);
-            formData.append('platform', platform);
-            // Actually API says: if(!$my || !$receiver){ error }. It doesn't check msg emptiness strictly if file is there. 
-            // BUT: $msg = trim(...). If empty, it's empty string.
-            // Let's ensure at least one exists. The check at top does that.
+        // Optimistic UI Render (Show instantly to Sender)
+        const tempId = 'msg_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+        const optimisticMsg = {
+            id: tempId,
+            client_message_id: tempId,
+            message: msgContent,
+            sender_id: myProfileId,
+            receiver_id: receiver.id,
+            created_at: (() => {
+                // toISOString() gives UTC — but server stores IST (NOW() with +05:30 tz).
+                // Use local time string so optimistic timestamp matches server format.
+                const n = new Date();
+                const pad = (x: number) => x.toString().padStart(2, '0');
+                return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+            })(),
+            is_mine: true,
+            seen: 0,
+            is_deleted: 0,
+            file: mediaToSend ? mediaToSend.uri : null,
+            file_type: mediaToSend ? (mediaToSend.type === 'video' ? 'video' : 'image') : null,
+            isOptimistic: true
+        };
 
-            if (mediaToSend) {
+        setMessages(prev => [...prev, optimisticMsg]);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+        
+        // Save to SQLite
+        const isGroup = route.params?.isGroup;
+        const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
+        ChatDBService.saveMessages(chatId, [optimisticMsg]).catch(() => {});
+
+        try {
+            const isGroup = route.params?.isGroup;
+            
+            // 1. Text Message (WebSocket Only)
+            if (!mediaToSend) {
+                if (socketService.socket) {
+                    socketService.socket.emit('chat:send', {
+                        isGroup,
+                        receiver_id: receiver.id,
+                        my_profile_id: myProfileId,
+                        client_message_id: tempId,
+                        message: msgContent,
+                        platform: String(platform)
+                    });
+                    // We don't await the ACK here to keep the UI snappy and fully optimistic.
+                    // The socket listener for 'chat:ack' will handle SQLite update to 'sent'.
+                    // Fallback 'chat:error' will handle SQLite update to 'failed'.
+                } else {
+                    Alert.alert('Error', 'WebSocket not connected. Message pending.');
+                    // Leave message in pending state; offline reconciliation logic will retry it
+                }
+            } 
+            // 2. Media Message (Requires Multi-part upload)
+            else {
+                const formData = new FormData();
+                if (isGroup) {
+                    formData.append('group_id', String(receiver.id));
+                    formData.append('sender_id', String(userId || ''));
+                } else {
+                    formData.append('my_profile_id', String(myProfileId));
+                    formData.append('receiver_id', String(receiver.id));
+                }
+                formData.append('client_message_id', tempId);
+                formData.append('message', msgContent);
+                formData.append('platform', String(platform));
+
                 const filename = mediaToSend.fileName || mediaToSend.uri.split('/').pop();
                 const type = mediaToSend.mimeType || (mediaToSend.type === 'video' ? 'video/mp4' : 'image/jpeg');
                 formData.append(isGroup ? 'file' : 'attachment', {
@@ -655,19 +1061,24 @@ const ChatScreen = ({ navigation, route }: any) => {
                     name: filename,
                     type: type,
                 } as any);
-            }
 
-            const endpoint = isGroup ? 'send_group_message.php' : 'send_chat_message.php';
-            const res = await api.post(endpoint, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+                const endpoint = isGroup ? 'send_group_message.php' : 'send_chat_message.php';
+                const res = await api.post(endpoint, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
 
-            if (res.data.status === 'success') {
-                fetchMessages();
-            } else {
-                console.log("Send Message Failed. Response:", res.data);
-                Alert.alert('Error', res.data.message || 'Failed to send message');
-                // Restore if failed? user experience trade-off. For now just alert.
+                if (res.data.status === 'success') {
+                    const realId = res.data.id || res.data.client_message_id;
+                    setMessages(prev => prev.map(m => m.id === tempId ? { ...m, isOptimistic: false } : m));
+                    ChatDBService.updateMessageStatus(tempId, { status: 'sent', server_id: realId }).catch(() => {});
+                    
+                    // The server already broadcasts new_notification internally now,
+                    // so we do NOT emit 'send_notification' manually here anymore.
+                } else {
+                    console.log("Send Message Failed. Response:", res.data);
+                    Alert.alert('Error', res.data.message || 'Failed to send message');
+                    setMessages(prev => prev.filter(m => m.id !== tempId)); 
+                }
             }
         } catch (e: any) {
             console.error("Send Error:", e);
@@ -724,12 +1135,18 @@ const ChatScreen = ({ navigation, route }: any) => {
         if (!myProfileId || !receiver?.id) return;
 
         // Check local storage first
+        let cacheFound = false;
         try {
             const storedByMe = await AsyncStorage.getItem(`blocked_by_me_${myProfileId}_${receiver.id}`);
             const storedByThem = await AsyncStorage.getItem(`blocked_by_them_${myProfileId}_${receiver.id}`);
-            if (storedByMe !== null) setIsBlockedByMe(storedByMe === 'true');
-            if (storedByThem !== null) setIsBlockedByThem(storedByThem === 'true');
+            if (storedByMe !== null && storedByThem !== null) {
+                setIsBlockedByMe(storedByMe === 'true');
+                setIsBlockedByThem(storedByThem === 'true');
+                cacheFound = true;
+            }
         } catch (e) { }
+
+        if (cacheFound) return; // Do not call API on every open if we have cached status
 
         try {
             const res = await api.post('block_user.php', {
@@ -959,16 +1376,8 @@ const ChatScreen = ({ navigation, route }: any) => {
     };
 
 
-    if (loading || paymentStatus === 'checking') {
-        return (
-            <View className="flex-1 justify-center items-center bg-gray-50">
-                <ActivityIndicator size="large" color="#ea580c" />
-                <Text className="text-gray-400 text-xs mt-3">
-                    {t('loading')}...
-                </Text>
-            </View>
-        );
-    }
+    // Removed full-screen loader to provide zero-loading experience.
+    // Local SQLite cache will render instantly while payment status is checked in the background.
 
     if (paymentStatus === 'unpaid') {
         return (
@@ -1197,16 +1606,47 @@ const ChatScreen = ({ navigation, route }: any) => {
                 className="flex-1"
                 enabled={true}
             >
-                <FlatList
+                <FlashList
+                    onScroll={(e) => {
+                        const offsetY = e.nativeEvent.contentOffset.y;
+                        const contentHeight = e.nativeEvent.contentSize.height;
+                        const layoutHeight = e.nativeEvent.layoutMeasurement.height;
+                        
+                        console.log(`[CHAT SCROLL] offsetY=${Math.round(offsetY)} contentHeight=${Math.round(contentHeight)} layoutHeight=${Math.round(layoutHeight)}`);
+
+                        const isAtBottom = offsetY + layoutHeight >= contentHeight - 50;
+                        isAtBottomRef.current = isAtBottom;
+
+                        if (offsetY <= 50 && messages.length > 0) {
+                            console.log('[HISTORY] UP → loading 30 older');
+                            fetchMoreMessages();
+                        } else if (isAtBottom) {
+                            console.log('[HISTORY] DOWN → NO API');
+                        } else {
+                            // Middle scroll
+                        }
+                    }}
+                    onContentSizeChange={(w, h) => {
+                        if (!hasScrolledToBottomRef.current && messages.length > 0) {
+                            flatListRef.current?.scrollToEnd({ animated: false });
+                            hasScrolledToBottomRef.current = true;
+                        }
+                    }}
+                    scrollEventThrottle={16}
                     ref={flatListRef}
                     keyboardShouldPersistTaps="handled"
                     data={searchQuery.trim() ? messages.filter(m => m.message?.toLowerCase().includes(searchQuery.toLowerCase())) : messages}
-                    keyExtractor={(item, index) => item?.id?.toString() ?? index.toString()}
-                    initialNumToRender={20}
-                    maxToRenderPerBatch={15}
-                    windowSize={10}
-                    removeClippedSubviews={Platform.OS === 'android'}
+                    keyExtractor={(item, index) => (item?.id ? `msg_${item.id}` : (item?.client_message_id ? `cmid_${item.client_message_id}` : `idx_${index}`))}
+                    estimatedItemSize={70}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 20 }}
+                    getItemType={(item: any) => item.is_mine ? 'sent' : 'received'}
+                    ListHeaderComponent={
+                        hasMoreHistory && messages.length >= 30 ? (
+                            <View style={{ padding: 10, alignItems: 'center' }}>
+                                <ActivityIndicator size="small" color="#ea580c" />
+                            </View>
+                        ) : null
+                    }
                     renderItem={({ item, index }) => {
                         const isMe = item.is_mine;
                         const hasFile = !!(item.file && item.file.trim && item.file.trim() !== '');
@@ -1251,17 +1691,32 @@ const ChatScreen = ({ navigation, route }: any) => {
                                     activeOpacity={0.9}
                                     onPress={() => isSelectionMode ? toggleMessageSelection(item.id) : null}
                                     onLongPress={() => !isDeleted && handleLongPress(item)}
-                                    className={`mb-3 w-full flex-row ${isMe ? 'justify-end' : 'justify-start'} ${isSelected ? 'bg-orange-100/50 rounded-xl' : ''}`}
+                                    style={{
+                                        marginBottom: 12,
+                                        width: '100%',
+                                        flexDirection: 'row',
+                                        justifyContent: isMe ? 'flex-end' : 'flex-start',
+                                        backgroundColor: isSelected ? 'rgba(251,146,60,0.15)' : 'transparent',
+                                        borderRadius: isSelected ? 12 : 0,
+                                    }}
                                 >
                                     <View
-                                        className={`
-                                        max-w-[75%] shadow-sm overflow-hidden flex-shrink
-                                        ${isDeleted
-                                                ? 'bg-gray-100 rounded-2xl border border-gray-200'
-                                                : (isMe ? 'bg-orange-600 rounded-2xl rounded-tr-none' : 'bg-white rounded-2xl rounded-tl-none border border-gray-100')
-                                            }
-                                    `}
-                                        style={{ elevation: 1 }}
+                                        style={{
+                                            maxWidth: '75%',
+                                            elevation: 1,
+                                            shadowColor: '#000',
+                                            shadowOpacity: 0.06,
+                                            shadowRadius: 3,
+                                            shadowOffset: { width: 0, height: 1 },
+                                            overflow: 'hidden',
+                                            flexShrink: 1,
+                                            backgroundColor: isDeleted ? '#f3f4f6' : (isMe ? '#ea580c' : '#ffffff'),
+                                            borderRadius: 18,
+                                            borderTopRightRadius: isMe ? (isDeleted ? 18 : 4) : 18,
+                                            borderTopLeftRadius: isMe ? 18 : (isDeleted ? 18 : 4),
+                                            borderWidth: isDeleted ? 1 : (isMe ? 0 : 1),
+                                            borderColor: isDeleted ? '#e5e7eb' : '#f3f4f6',
+                                        }}
                                     >
                                         {hasFile && fileUrl && !isDeleted && (
                                             <View className="mb-1">
@@ -1295,7 +1750,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                         <Image
                                                             source={{ uri: fileUrl as string }}
                                                             style={{ width: 200, height: 200, backgroundColor: 'transparent' }}
-                                                            resizeMode="cover"
+                                                            contentFit="cover"
                                                         />
                                                     </TouchableOpacity>
                                                 )}
@@ -1359,8 +1814,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                 {!!item.message && (
                                                     <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 2 }}>
                                                         <Text
-                                                            style={{ fontSize, flexShrink: 1 }}
-                                                            className={`leading-5 ${isMe ? 'text-white' : 'text-gray-800'} ${hasFile ? 'pb-1' : 'pb-1'}`}
+                                                            key={`msg-${item.id}`}
+                                                            style={{ fontSize, flexShrink: 1, color: isMe ? '#ffffff' : '#1f2937', lineHeight: fontSize * 1.4 }}
                                                             numberOfLines={expandedMessageIds.includes(item.id) ? undefined : 10}
                                                         >
                                                             {item.message}
@@ -1384,7 +1839,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                 )}
 
                                                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6, gap: 4 }}>
-                                                    <Text style={{ fontSize: 10, fontWeight: '500', color: isMe ? 'rgba(255,255,255,0.7)' : '#9ca3af' }}>
+                                                    <Text key={`time-${item.id}`} style={{ fontSize: 10, fontWeight: '500', color: isMe ? 'rgba(255,255,255,0.7)' : '#9ca3af' }}>
                                                         {timeStr}
                                                     </Text>
                                                     {isMe && (
@@ -1402,7 +1857,6 @@ const ChatScreen = ({ navigation, route }: any) => {
                             </View>
                         );
                     }}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                     showsVerticalScrollIndicator={false}
                 />
 
@@ -1593,7 +2047,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         <Image
                             source={{ uri: fullScreenImage }}
                             className="w-full h-full"
-                            resizeMode="contain"
+                            contentFit="contain"
                         />
                     )}
                 </View>
@@ -1662,7 +2116,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 <Text className="text-gray-400 mt-2">Fetching viewers...</Text>
                             </View>
                         ) : (
-                            <FlatList
+                            <FlashList
                                 data={viewers}
                                 keyExtractor={(item, index) => index.toString()}
                                 contentContainerStyle={{ padding: 16 }}
@@ -1726,7 +2180,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                             </View>
                         </View>
 
-                        <FlatList
+                        <FlashList
                             data={forwardingTargets.filter(t => t.full_name?.toLowerCase().includes(forwardSearch.toLowerCase()))}
                             keyExtractor={(item, index) => index.toString()}
                             contentContainerStyle={{ padding: 16 }}

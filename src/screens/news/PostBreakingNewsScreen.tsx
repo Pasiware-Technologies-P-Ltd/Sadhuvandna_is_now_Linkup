@@ -1,5 +1,6 @@
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Alert, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -124,7 +125,7 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
                     {fetching ? (
                         <ActivityIndicator size="large" color="#ea580c" style={{ marginTop: 20 }} />
                     ) : (
-                        <FlatList
+                        <FlashList
                             data={myNews}
                             keyExtractor={item => item.id.toString()}
                             renderItem={renderItem}

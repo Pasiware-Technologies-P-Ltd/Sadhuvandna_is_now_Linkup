@@ -17,7 +17,7 @@ if($user_id){
     $con->query("UPDATE tbl_members SET last_active=NOW() WHERE id='$user_id'");
     
     // Also update marriage profile if exists (for easier joining in other queries)
-    $con->query("UPDATE tbl_marriage_profiles SET last_active=NOW() WHERE user_id='$user_id'");
+    // $con->query("UPDATE tbl_marriage_profiles SET last_active=NOW() WHERE user_id='$user_id'");
     
     echo json_encode(['status'=>'success']);
 } else {

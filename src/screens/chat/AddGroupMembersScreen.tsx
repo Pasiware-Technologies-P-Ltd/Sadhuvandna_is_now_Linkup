@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -159,7 +161,7 @@ const AddGroupMembersScreen = ({ navigation, route }: any) => {
                 {fetching ? (
                     <ActivityIndicator color="#ea580c" style={{ marginTop: 20 }} />
                 ) : (
-                    <FlatList
+                    <FlashList
                         data={filteredUsers}
                         renderItem={renderFriend}
                         keyExtractor={(item, index) => item.partner_id ? `user_${item.partner_id}` : index.toString()}

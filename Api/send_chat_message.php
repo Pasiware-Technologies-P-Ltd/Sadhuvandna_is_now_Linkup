@@ -56,44 +56,161 @@ if ($chk_blk) {
     }
 }
 
-$stmt = $con->prepare("INSERT INTO tbl_messages (sender_id, receiver_id, message, file, file_type, chat_platform, seen, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
-$stmt->bind_param("iissss", $my, $receiver, $msg, $attachment, $file_type, $platform);
+// Server-side payment check
+if ($platform === 'marriage') {
+    $is_authorized = false;
+    
+    // Check Messages History
+    $msg_check = $con->query("
+        SELECT id FROM tbl_messages
+        WHERE 
+            (
+                (sender_id = '{$my}' AND receiver_id = '{$receiver}')
+                OR
+                (sender_id = '{$receiver}' AND receiver_id = '{$my}')
+            )
+            AND chat_platform = 'marriage'
+        LIMIT 1
+    ");
 
-if ($stmt->execute()) {
-    // Send Push Notification
-    $sender_name = "New Message";
-    $real_user_id = 0;
-
-    if ($platform === 'community') {
-        // Community: IDs are member IDs
-        $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $my LIMIT 1");
-        if ($sQ && $sRow = $sQ->fetch_assoc())
-            $sender_name = $sRow['name'];
-        $real_user_id = $receiver; // In community, receiver_id is the user_id
-    }
-    else {
-        // Marriage: IDs are marriage profile IDs
-        $sQ = $con->query("SELECT full_name FROM tbl_marriage_profiles WHERE id = $my LIMIT 1");
-        if ($sQ && $sRow = $sQ->fetch_assoc())
-            $sender_name = $sRow['full_name'];
-
-        $rQ = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = $receiver LIMIT 1");
-        if ($rQ && $rRow = $rQ->fetch_assoc()) {
-            $real_user_id = $rRow['user_id'];
+    if ($msg_check && $msg_check->num_rows > 0) {
+        $is_authorized = true;
+    } else {
+        // Check Wallet
+        $wallet_check = $con->query("
+            SELECT id FROM tbl_wallet
+            WHERE 
+                (
+                    (sender_id = '{$my}' AND receiver_id = '{$receiver}')
+                    OR
+                    (sender_id = '{$receiver}' AND receiver_id = '{$my}')
+                )
+                AND status = 'success'
+            LIMIT 1
+        ");
+        if ($wallet_check && $wallet_check->num_rows > 0) {
+            $is_authorized = true;
         }
     }
 
-    if ($real_user_id > 0) {
-        sendExpoPushNotification($con, $real_user_id, $sender_name, $msg, [
-            "type" => "chat",
-            "sender_profile_id" => $my,
-            "platform" => $platform
-        ]);
+    if (!$is_authorized) {
+        echo json_encode(["status" => "error", "message" => "Payment required to chat with this user.", "requires_payment" => true]);
+        exit;
     }
-
-    echo json_encode(["status" => "success", "message" => "Sent"]);
 }
-else {
-    echo json_encode(["status" => "error", "message" => "Database execute failed: " . $stmt->error]);
+
+$client_message_id = $_POST['client_message_id'] ?? uniqid('msg_', true);
+
+require_once 'RedisConfig.php';
+require_once 'QueueManager.php';
+
+$redis = RedisConfig::getConnection();
+
+if ($redis) {
+    // 1. Build message object
+    $chatObj = [
+        "client_message_id" => $client_message_id,
+        "sender_id" => $my,
+        "receiver_id" => $receiver,
+        "message" => $msg,
+        "file" => $attachment,
+        "file_type" => $file_type,
+        "chat_platform" => $platform,
+        "seen" => 0,
+        "is_deleted" => 0,
+        "created_at" => date('Y-m-d H:i:s')
+    ];
+
+    // 2. Determine conversation thread ID (min_max to keep it symmetrical)
+    $thread_id = min($my, $receiver) . "_" . max($my, $receiver);
+    $redisKey = "chat_thread:{$platform}:{$thread_id}";
+
+    // Add to Redis (TTL 7 days)
+    $redis->zAdd($redisKey, microtime(true), json_encode($chatObj));
+    $redis->expire($redisKey, 7 * 86400);
+
+    // 3. Push to Queue
+    QueueManager::pushJob('sync_chat', $chatObj, "chat_{$client_message_id}", 600);
+
+    // 4. WebSocket Broadcast
+    $url = 'http://localhost:3000/api/trigger';
+    
+    // Send to receiver
+    $postDataReceiver = array(
+        'room' => "user_{$receiver}",
+        'type' => 'new_notification',
+        'payload' => [
+            'type' => 'chat',
+            'sender_profile_id' => $my,
+            'receiverId' => $receiver,
+            'platform' => $platform,
+            'message' => $chatObj
+        ]
+    );
+    
+    // Send to sender's other devices
+    $postDataSender = array(
+        'room' => "user_{$my}",
+        'type' => 'new_notification',
+        'payload' => [
+            'type' => 'chat',
+            'sender_profile_id' => $my,
+            'receiverId' => $receiver,
+            'platform' => $platform,
+            'message' => $chatObj
+        ]
+    );
+
+    $options1 = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($postDataReceiver)
+        )
+    );
+    @file_get_contents($url, false, stream_context_create($options1));
+    
+    $options2 = array(
+        'http' => array(
+            'header'  => "Content-type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($postDataSender)
+        )
+    );
+    @file_get_contents($url, false, stream_context_create($options2));
+
+    // 5. Push Notification Job
+    $redis->lPush(QueueManager::QUEUE_NOTIFICATIONS, json_encode([
+        'type' => 'chat',
+        'sender_id' => $my,
+        'receiver_id' => $receiver,
+        'message' => $msg,
+        'platform' => $platform
+    ]));
+
+    echo json_encode(["status" => "success", "message" => "Sent", "client_message_id" => $client_message_id]);
+    exit;
+} else {
+    // MySQL Fallback
+    $stmt = $con->prepare("INSERT IGNORE INTO tbl_messages (client_message_id, sender_id, receiver_id, message, file, file_type, chat_platform, seen, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+    $stmt->bind_param("siissss", $client_message_id, $my, $receiver, $msg, $attachment, $file_type, $platform);
+    
+    if ($stmt->execute()) {
+        $redis = RedisConfig::getConnection();
+        if($redis) {
+            $redis->lPush(QueueManager::QUEUE_NOTIFICATIONS, json_encode([
+                'type' => 'chat',
+                'sender_id' => $my,
+                'receiver_id' => $receiver,
+                'message' => $msg,
+                'platform' => $platform
+            ]));
+        }
+        
+        $inserted_id = $con->insert_id;
+        echo json_encode(["status" => "success", "message" => "Sent", "id" => $inserted_id, "client_message_id" => $client_message_id]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Database execute failed: " . $stmt->error]);
+    }
 }
 ?>

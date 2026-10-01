@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
@@ -58,7 +60,7 @@ const GalleryScreen = ({ navigation }: any) => {
             <Image
                 source={{ uri: item.url }}
                 className="w-full h-full"
-                resizeMode="cover"
+                contentFit="cover"
             />
         </TouchableOpacity>
     );
@@ -77,7 +79,7 @@ const GalleryScreen = ({ navigation }: any) => {
                     <ActivityIndicator size="large" color="#ea580c" />
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={images}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => index.toString()}

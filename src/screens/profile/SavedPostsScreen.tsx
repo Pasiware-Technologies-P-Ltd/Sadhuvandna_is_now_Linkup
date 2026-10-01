@@ -1,5 +1,6 @@
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -151,7 +152,7 @@ const SavedPostsScreen = ({ navigation }: any) => {
                     <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>{t('loading')}...</Text>
                 </View>
             ) : (
-                <FlatList
+                <FlashList
                     data={posts}
                     keyExtractor={(item) => String(item.id)}
                     renderItem={renderPostItem}

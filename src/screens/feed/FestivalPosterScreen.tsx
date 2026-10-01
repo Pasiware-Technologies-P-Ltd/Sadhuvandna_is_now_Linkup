@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, FlatList, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet, Dimensions, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -417,7 +419,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                         {/* Frame Selection */}
                         <View className="mb-8">
                             <Text className="text-gray-900 font-extrabold text-lg mb-4">Choose Frame</Text>
-                            <FlatList
+                            <FlashList
                                 data={[{ id: 'default', title: 'Solid', frame_image: '' }, ...frames]}
                                 horizontal
                                 showsHorizontalScrollIndicator={false}

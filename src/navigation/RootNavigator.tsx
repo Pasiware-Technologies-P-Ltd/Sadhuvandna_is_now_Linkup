@@ -1,9 +1,10 @@
+import { Image } from 'expo-image';
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity, Image } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { WEBSITE_URL } from '../services/api';
 
@@ -72,6 +73,7 @@ function MainTabNavigator() {
   const [isBusiness, setIsBusiness] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
   const [isSwitcherVisible, setSwitcherVisible] = React.useState(false);
+  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
 
   React.useEffect(() => {
     const checkUser = async () => {
@@ -81,6 +83,7 @@ function MainTabNavigator() {
         setUser(u);
         setIsBusiness(u.is_business == 1);
       }
+      setIsLoadingUser(false);
     };
     checkUser();
     
@@ -93,6 +96,8 @@ function MainTabNavigator() {
       subscription.remove();
     };
   }, []);
+
+  if (isLoadingUser) return null;
 
   return (
     <>

@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,7 +61,7 @@ const BranchScreen = ({ navigation }: any) => {
                 <Text className="text-xl font-bold text-gray-800">{t('branches')}</Text>
             </View>
 
-            <FlatList
+            <FlashList
                 data={branches}
                 renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}
@@ -84,7 +86,7 @@ const BranchCard = ({ item, t }: { item: any, t: any }) => {
                 <Image
                     source={{ uri: `${BRANCH_IMAGE_URL}${item.photo}` }}
                     className="w-full h-72 bg-gray-50"
-                    resizeMode="contain"
+                    contentFit="contain"
                 />
             )}
             <View className="p-4">

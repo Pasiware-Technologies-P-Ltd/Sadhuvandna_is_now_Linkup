@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, Platform } from 'react-native';
+import { View, ActivityIndicator, Text, Platform, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -20,6 +20,9 @@ import { RootStackParamList } from './src/navigation/types';
 import { updateServerToken } from './src/services/NotificationService';
 import GlobalCallListener from './src/components/GlobalCallListener';
 import api from './src/services/api';
+import socketService from './src/services/socket';
+import { initDB } from './src/services/database';
+import { MediaCacheService } from './src/services/MediaCacheService';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -29,12 +32,7 @@ import mobileAds from 'react-native-google-mobile-ads';
 // import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Audio } from 'expo-av';
 
-mobileAds()
-  .initialize()
-  .then(adapterStatuses => {
-    console.log("[AdMob] Initialization complete!", adapterStatuses);
-  });
-
+// Removed synchronous mobileAds initialization from here
 
 
 import { UploadProvider } from './src/context/UploadContext';
@@ -56,7 +54,15 @@ export default function App() {
 
   useEffect(() => {
     console.log("[App] Initializing...");
-    setupAudio();
+    
+    // Non-blocking secondary setup
+    setTimeout(() => {
+      setupAudio();
+      initDB().then(() => {
+        MediaCacheService.cleanupOldCache(24).catch(e => console.error("Cache Cleanup Error:", e));
+      }).catch(e => console.error("DB Init Error:", e));
+    }, 100);
+    
     checkAuth();
   }, []);
 
@@ -84,16 +90,38 @@ export default function App() {
       if (u) {
         const user = JSON.parse(u);
         setInitialRoute('MainTabs');
-        updateServerToken(user.id);
+        // Push secondary init to background to keep startup fast
+        setTimeout(() => {
+          updateServerToken(user.id);
 
-        // Start Global Online Heartbeat 
-        // Updates every 60 seconds while app is open
-        setInterval(async () => {
-          try {
-            const payload = { user_id: user.id };
-            await api.post('update_app_online.php', payload);
-          } catch (e) { }
-        }, 60000);
+          mobileAds()
+            .initialize()
+            .then(adapterStatuses => {
+              console.log("[AdMob] Initialization complete!", adapterStatuses);
+            });
+
+          // Global Online Heartbeat (Insta-like)
+          let heartbeatInterval: NodeJS.Timeout;
+          const sendHeartbeat = () => {
+            socketService.connect(user.id);
+            if (socketService.socket) {
+              socketService.socket.emit('heartbeat', user.id);
+            }
+          };
+          
+          sendHeartbeat();
+          heartbeatInterval = setInterval(sendHeartbeat, 60000);
+          
+          AppState.addEventListener('change', nextAppState => {
+              if (nextAppState === 'active') {
+                  sendHeartbeat();
+                  if (heartbeatInterval) clearInterval(heartbeatInterval);
+                  heartbeatInterval = setInterval(sendHeartbeat, 60000);
+              } else {
+                  if (heartbeatInterval) clearInterval(heartbeatInterval);
+              }
+          });
+        }, 300);
 
       } else {
         setInitialRoute('Auth');

@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, FlatList, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api, { WEBSITE_URL } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -196,7 +198,7 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                         </View>
                     ) : (
                         <View style={{ marginTop: 10 }}>
-                            <FlatList 
+                            <FlashList 
                                 data={profiles}
                                 keyExtractor={(item) => item.id.toString()}
                                 renderItem={renderItem}

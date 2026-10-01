@@ -59,9 +59,10 @@ while ($row = $res->fetch_assoc()) {
     $partner_photo = "";
 
     $is_online = false;
+    $partner_user_id = $partner_id; // Default to partner_id for non-marriage
     if ($platform === 'marriage') {
         // Join with marriage profiles and members to get online status
-        $p = $con->query("SELECT mp.full_name, mp.photo, (m.last_active >= NOW() - INTERVAL 5 MINUTE) as is_online 
+        $p = $con->query("SELECT mp.full_name, mp.photo, (m.last_active >= NOW() - INTERVAL 2 MINUTE) as is_online, m.id as member_id 
                           FROM tbl_marriage_profiles mp 
                           JOIN tbl_members m ON mp.user_id = m.id
                           WHERE mp.id = $partner_id LIMIT 1")->fetch_assoc();
@@ -69,10 +70,11 @@ while ($row = $res->fetch_assoc()) {
             $partner_name = $p['full_name'];
             $partner_photo = $p['photo'];
             $is_online = ($p['is_online'] == 1);
+            $partner_user_id = $p['member_id'];
         }
     } else {
         // Join with members
-        $p = $con->query("SELECT name, profile_photo, (last_active >= NOW() - INTERVAL 5 MINUTE) as is_online 
+        $p = $con->query("SELECT name, profile_photo, (last_active >= NOW() - INTERVAL 2 MINUTE) as is_online 
                           FROM tbl_members WHERE id = $partner_id LIMIT 1")->fetch_assoc();
         if ($p) {
             $partner_name = $p['name'];
@@ -83,6 +85,7 @@ while ($row = $res->fetch_assoc()) {
 
     $chats[] = [
         "partner_id" => $partner_id,
+        "user_id" => $partner_user_id,
         "full_name" => $partner_name,
         "profile_photo" => $partner_photo,
         "last_message" => $row['message'],

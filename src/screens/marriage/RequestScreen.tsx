@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -227,7 +229,7 @@ const RequestScreen = ({ navigation }: any) => {
     );
 
     const PendingRoute = () => (
-        <FlatList
+        <FlashList
             data={pendingRequests}
             renderItem={renderPendingItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
@@ -241,7 +243,7 @@ const RequestScreen = ({ navigation }: any) => {
     );
 
     const SentRoute = () => (
-        <FlatList
+        <FlashList
             data={sentRequests}
             renderItem={renderSentItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
@@ -255,7 +257,7 @@ const RequestScreen = ({ navigation }: any) => {
     );
 
     const ConnectedRoute = () => (
-        <FlatList
+        <FlashList
             data={connectedFriends}
             renderItem={renderConnectedItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
