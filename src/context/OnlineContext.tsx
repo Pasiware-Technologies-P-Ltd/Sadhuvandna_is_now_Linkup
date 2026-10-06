@@ -5,18 +5,21 @@ interface OnlineContextType {
     onlineUsers: Set<string>;
     isUserOnline: (userId: string | number) => boolean;
     checkOnlineStatuses: (userIds: string[]) => void;
+    isConnected: boolean;
 }
 
 const OnlineContext = createContext<OnlineContextType>({
     onlineUsers: new Set(),
     isUserOnline: () => false,
     checkOnlineStatuses: () => {},
+    isConnected: false,
 });
 
 export const useOnlineStatus = () => useContext(OnlineContext);
 
 export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     // Use a ref to always have the latest setter in the socket handler
     const pendingCheckIds = useRef<string[]>([]);
 
@@ -63,14 +66,25 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
         };
 
+        const onConnect = () => {
+            setIsConnected(true);
+            attachListeners();
+        };
+
+        const onDisconnect = () => {
+            setIsConnected(false);
+        };
+
         // Poll until the socket is created (it's created async after login)
         const initInterval = setInterval(() => {
             if (socketService.socket) {
                 clearInterval(initInterval);
-                attachListeners();
+                setIsConnected(socketService.socket.connected);
+                if (socketService.socket.connected) attachListeners();
 
                 // Re-attach on reconnect
-                socketService.socket.on('connect', attachListeners);
+                socketService.socket.on('connect', onConnect);
+                socketService.socket.on('disconnect', onDisconnect);
             }
         }, 300);
 
@@ -79,7 +93,8 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             if (socketService.socket) {
                 socketService.socket.off('user_status', handleUserStatus);
                 socketService.socket.off('multiple_user_status', handleMultipleUserStatus);
-                socketService.socket.off('connect', attachListeners);
+                socketService.socket.off('connect', onConnect);
+                socketService.socket.off('disconnect', onDisconnect);
             }
         };
     }, []);
@@ -94,10 +109,13 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
     };
 
-    const isUserOnline = (userId: string | number) => onlineUsers.has(String(userId));
+    const isUserOnline = (userId: string | number) => {
+        if (!isConnected) return false;
+        return onlineUsers.has(String(userId));
+    };
 
     return (
-        <OnlineContext.Provider value={{ onlineUsers, isUserOnline, checkOnlineStatuses }}>
+        <OnlineContext.Provider value={{ onlineUsers, isUserOnline, checkOnlineStatuses, isConnected }}>
             {children}
         </OnlineContext.Provider>
     );

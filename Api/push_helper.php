@@ -15,6 +15,21 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [],
         $stmt = $con->prepare("INSERT INTO tbl_notifications (user_id, title, message, type, data_payload) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param("issss", $receiver_id, $title, $body, $type, $data_json);
         $stmt->execute();
+
+        $url = 'http://127.0.0.1:3000/api/trigger';
+        $postData = [
+            'room' => "user_{$receiver_id}",
+            'type' => 'app_notification',
+            'payload' => ['title' => $title, 'body' => $body, 'type' => $type]
+        ];
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+        curl_exec($ch);
+        curl_close($ch);
     } catch (Exception $e) {
         file_put_contents("push_log.txt", date('Y-m-d H:i:s') . " | DB Error: " . $e->getMessage() . "\n", FILE_APPEND);
     }
@@ -36,6 +51,10 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [],
                 "priority" => "high",
                 "channelId" => $data['channelId'] ?? "default"
             ];
+
+            if (isset($data['collapseId'])) {
+                $payload['collapseId'] = $data['collapseId'];
+            }
 
             $json = json_encode($payload);
 

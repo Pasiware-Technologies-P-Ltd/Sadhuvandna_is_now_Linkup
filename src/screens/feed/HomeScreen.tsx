@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, RefreshControl, Linking, Alert, Modal, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, RefreshControl, Linking, Alert, Modal, Pressable, StyleSheet, DeviceEventEmitter } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -10,9 +10,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useBadge } from '../../context/BadgeContext';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { ImageService } from '../../services/ImageService';
+import socketService from '../../services/socket';
 
 const { width } = Dimensions.get('window');
 
@@ -50,7 +52,7 @@ const HomeScreen = () => {
     const [isFetchingMore, setIsFetchingMore] = useState(false);
 
     const [feedSeed, setFeedSeed] = useState(Math.floor(Math.random() * 100000) + 1);
-    const [notificationCount, setNotificationCount] = useState(0);
+    const { notificationCount, chatCount, refreshCounts } = useBadge();
     const navigation = useNavigation<any>();
 
 
@@ -66,7 +68,7 @@ const HomeScreen = () => {
                 flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
                 setRefreshing(true);
                 fetchInitialFeed();
-                fetchNotificationCount();
+                refreshCounts();
             }
             lastTabPress.current = time;
         });
@@ -104,7 +106,7 @@ const HomeScreen = () => {
                     setStories([]);
                     setReels([]);
                     fetchInitialFeed(u.id);
-                    fetchNotificationCount(u.id);
+                    refreshCounts();
                 }
             } catch (err) {
                 console.error("Switch error:", err);
@@ -123,28 +125,78 @@ const HomeScreen = () => {
                     setUser(u);
                 }
                 fetchInitialFeed(u?.id);
-                fetchNotificationCount(u?.id);
+                refreshCounts();
             } catch (err) {
                 console.error("Init Error:", err);
                 fetchInitialFeed();
-                fetchNotificationCount();
+                refreshCounts();
             }
         };
         initUser();
     }, []);
 
-    const fetchNotificationCount = async (userId?: string) => {
-        const uid = userId || user?.id;
-        if (!uid) return;
-        try {
-            const res = await api.get(`fetch_notifications.php?action=count&user_id=${uid}`);
-            if (res.data.status === 'success') {
-                setNotificationCount(res.data.unread_count);
-            }
-        } catch (e) {
-            console.error("Badge fetch error:", e);
-        }
-    };
+    useEffect(() => {
+        const handleCommentAdded = (data: any) => {
+            setPosts(prev => prev.map(p => {
+                if (p.id == data.post_id) {
+                    if (Array.isArray(p.comments)) {
+                        return { ...p, comments: [data.comment, ...p.comments] };
+                    }
+                    return { ...p, comments: Number(p.comments || 0) + 1 };
+                }
+                return p;
+            }));
+        };
+
+        const handleCommentDeleted = (data: any) => {
+            setPosts(prev => prev.map(p => {
+                if (p.id == data.post_id) {
+                    if (Array.isArray(p.comments)) {
+                        return { ...p, comments: p.comments.filter((c: any) => c.comment_id != data.comment_id) };
+                    }
+                    return { ...p, comments: Math.max(0, Number(p.comments || 0) - 1) };
+                }
+                return p;
+            }));
+        };
+
+        const handleLikeUpdated = (data: any) => {
+            setPosts(prev => prev.map(p => {
+                if (p.id == data.post_id) {
+                    const newLikes = data.status === 'liked'
+                        ? Number(p.likes || 0) + 1
+                        : Math.max(0, Number(p.likes || 0) - 1);
+                    if (user && data.user_id && String(data.user_id) === String(user.id)) {
+                        return {
+                            ...p,
+                            likes: newLikes,
+                            isLiked: data.status === 'liked',
+                            user_liked: data.status === 'liked'
+                        };
+                    }
+                    return { ...p, likes: newLikes };
+                }
+                return p;
+            }));
+        };
+
+        const commentAddedSub = DeviceEventEmitter.addListener('post_comment_added', handleCommentAdded);
+        const commentDeletedSub = DeviceEventEmitter.addListener('post_comment_deleted', handleCommentDeleted);
+        const likeUpdatedSub = DeviceEventEmitter.addListener('post_like_updated', handleLikeUpdated);
+
+        return () => {
+            commentAddedSub.remove();
+            commentDeletedSub.remove();
+            likeUpdatedSub.remove();
+        };
+    }, [user]);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        refreshCounts();
+        setFeedSeed(Math.floor(Math.random() * 100000) + 1);
+        fetchInitialFeed();
+    }, []);
 
     const getImageUrl = (photo: string | undefined | null, type: 'photo' | 'post' = 'photo') => {
         if (!photo) return 'https://via.placeholder.com/100';
@@ -361,12 +413,7 @@ const HomeScreen = () => {
             isFetchingRef.current = false;
         }
     };
-    const onRefresh = () => {
-        setRefreshing(true);
-        setFeedSeed(Math.floor(Math.random() * 100000) + 1);
-        fetchInitialFeed();
-        fetchNotificationCount();
-    };
+
 
     const handlePlusPress = () => {
         setShowUploadModal(true);
@@ -770,9 +817,16 @@ const HomeScreen = () => {
                     <TouchableOpacity
                         onPress={() => navigation.navigate('Chats')}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                     >
                         <Ionicons name="chatbubbles-outline" size={18} color="#374151" />
+                        {chatCount > 0 && (
+                            <View style={{ position: 'absolute', top: -3, right: -3, backgroundColor: '#ef4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: 'white' }}>
+                                <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
+                                    {chatCount > 9 ? '9+' : chatCount}
+                                </Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>

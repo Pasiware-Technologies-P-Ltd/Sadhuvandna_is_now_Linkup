@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, RefreshControl, Animated, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, RefreshControl, Animated, Platform, DeviceEventEmitter } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -221,6 +221,84 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             };
         }, [isFemale])
     );
+
+    useEffect(() => {
+        const uid = userId || currentUserId;
+
+        const onFollowUpdated = (data: any) => {
+            if (String(data.following_id) === String(uid)) {
+                setFollowStats((prev: any) => ({
+                    ...prev,
+                    followers: data.status === 'connected' ? Number(prev.followers || 0) + 1 : Math.max(0, Number(prev.followers || 0) - 1)
+                }));
+            }
+        };
+
+        const handleCommentAdded = (data: any) => {
+            const updatePosts = (prev: any[]) => prev.map(p => {
+                if (p.id == data.post_id) {
+                    if (Array.isArray(p.comments)) {
+                        return { ...p, comments: [data.comment, ...p.comments] };
+                    }
+                    return { ...p, comments: Number(p.comments || 0) + 1 };
+                }
+                return p;
+            });
+            setPosts(updatePosts);
+            setPhotoPosts(updatePosts);
+            setReelPosts(updatePosts);
+        };
+
+        const handleCommentDeleted = (data: any) => {
+            const updatePosts = (prev: any[]) => prev.map(p => {
+                if (p.id == data.post_id) {
+                    if (Array.isArray(p.comments)) {
+                        return { ...p, comments: p.comments.filter((c: any) => c.comment_id != data.comment_id) };
+                    }
+                    return { ...p, comments: Math.max(0, Number(p.comments || 0) - 1) };
+                }
+                return p;
+            });
+            setPosts(updatePosts);
+            setPhotoPosts(updatePosts);
+            setReelPosts(updatePosts);
+        };
+
+        const handleLikeUpdated = (data: any) => {
+            const updatePosts = (prev: any[]) => prev.map(p => {
+                if (p.id == data.post_id) {
+                    const newLikes = data.status === 'liked'
+                        ? Number(p.likes || 0) + 1
+                        : Math.max(0, Number(p.likes || 0) - 1);
+                    if (currentUserId && data.user_id && String(data.user_id) === String(currentUserId)) {
+                        return {
+                            ...p,
+                            likes: newLikes,
+                            isLiked: data.status === 'liked',
+                            user_liked: data.status === 'liked'
+                        };
+                    }
+                    return { ...p, likes: newLikes };
+                }
+                return p;
+            });
+            setPosts(updatePosts);
+            setPhotoPosts(updatePosts);
+            setReelPosts(updatePosts);
+        };
+
+        const followSub = DeviceEventEmitter.addListener('follow_counts_updated', onFollowUpdated);
+        const commentAddedSub = DeviceEventEmitter.addListener('post_comment_added', handleCommentAdded);
+        const commentDeletedSub = DeviceEventEmitter.addListener('post_comment_deleted', handleCommentDeleted);
+        const likeUpdatedSub = DeviceEventEmitter.addListener('post_like_updated', handleLikeUpdated);
+
+        return () => {
+            followSub.remove();
+            commentAddedSub.remove();
+            commentDeletedSub.remove();
+            likeUpdatedSub.remove();
+        };
+    }, [userId, currentUserId]);
 
     const [refreshing, setRefreshing] = useState(false);
 

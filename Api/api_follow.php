@@ -14,12 +14,13 @@ if(!$current_user_id){
 }
 
 // WebSocket helper
-function triggerWebSocket($receiverId, $type, $payload) {
+function triggerWebSocket($receiverId, $type, $payload, $isGlobal = false) {
     $url = 'http://localhost:3000/api/trigger';
     $postData = array(
         'receiverId' => $receiverId,
         'type' => $type,
-        'payload' => $payload
+        'payload' => $payload,
+        'global' => $isGlobal
     );
     $options = array(
         'http' => array(
@@ -136,8 +137,8 @@ if($action === 'follow'){
     
     $followers_count = $redis->hGet($theirCountsKey, 'friends');
     
-    // Notify the target user of the count change in real-time
-    triggerWebSocket($following_id, "follow_counts_updated", ["follower_id" => $follower_id, "status" => $status]);
+    // Notify the target user of the count change in real-time and broadcast to update all connected UI instances
+    triggerWebSocket($following_id, "follow_counts_updated", ["follower_id" => $follower_id, "following_id" => $following_id, "status" => $status], true);
     
     echo json_encode(["ok" => true, "status" => $status, "followers_count" => $followers_count]);
     exit;

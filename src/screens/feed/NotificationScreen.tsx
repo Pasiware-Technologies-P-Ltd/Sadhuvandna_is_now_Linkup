@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { NotificationDBService } from '../../services/NotificationDBService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
@@ -48,12 +49,33 @@ const BadgeIcon = ({ type }: { type: string }) => {
 
 const NotificationScreen = ({ navigation }: any) => {
     const [notifications, setNotifications] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
-        fetchNotifications();
+        loadLocalThenFetch();
     }, []);
+
+    const loadLocalThenFetch = async () => {
+        try {
+            const u = await AsyncStorage.getItem('user');
+            if (!u) return;
+            const user = JSON.parse(u);
+
+            // Load instantly from SQLite
+            const localNotes = await NotificationDBService.getNotifications(String(user.id), 15);
+            if (localNotes && localNotes.length > 0) {
+                setNotifications(localNotes);
+            }
+
+            // Then fetch from API
+            await fetchNotifications();
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const fetchNotifications = async () => {
         try {
@@ -61,16 +83,180 @@ const NotificationScreen = ({ navigation }: any) => {
             if (!u) return;
             const user = JSON.parse(u);
 
-            const res = await api.get(`/fetch_notifications.php?user_id=${user.id}`);
+            const res = await api.get(`/fetch_notifications.php?user_id=${user.id}&limit=15`);
             if (res.data.status === 'success') {
-                setNotifications(res.data.data);
+                const fetched = res.data.data;
+                
+                setNotifications(prev => {
+                    const combined = [...fetched];
+                    const fetchedIds = new Set(fetched.map((f: any) => f.id));
+                    for (const item of prev) {
+                        if (!fetchedIds.has(item.id)) {
+                            combined.push(item);
+                        }
+                    }
+
+                    // Grouping Logic
+                    const groupedMap = new Map();
+                    for (const item of combined) {
+                        let key = item.id;
+                        const itemDate = new Date(item.date || item.created_at);
+                        const dateKey = `${itemDate.getFullYear()}-${itemDate.getMonth()}-${itemDate.getDate()}`;
+                        
+                        if (item.type === 'like' || item.type === 'comment') {
+                            let refId = '';
+                            try {
+                                if (item.data_payload) {
+                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                    refId = data.postId || data.reference_id || '';
+                                }
+                            } catch (e) {}
+                            
+                            if (refId) {
+                                key = `${item.type}_${refId}_${dateKey}`;
+                            } else {
+                                key = `${item.type}_${item.title}_${dateKey}`;
+                            }
+                        } else if (item.type === 'message' || item.type === 'chat') {
+                            key = `msg_${item.sender_id}_${dateKey}`;
+                        } else if (item.type === 'incoming_call') {
+                            let callerId = '';
+                            try {
+                                if (item.data_payload) {
+                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                    callerId = data.caller_id || '';
+                                }
+                            } catch (e) {}
+                            key = `call_${callerId}_${dateKey}`;
+                        } else if (item.type === 'group_chat') {
+                            let groupId = '';
+                            try {
+                                if (item.data_payload) {
+                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                    groupId = data.group_id || '';
+                                }
+                            } catch (e) {}
+                            key = `group_${groupId}_${dateKey}`;
+                        } else if (item.type === 'post' && item.title === 'New Post') {
+                            key = `post_Linkup_${dateKey}`;
+                        }
+
+                        if (!groupedMap.has(key)) {
+                            groupedMap.set(key, { ...item, _groupCount: 1 });
+                        } else {
+                            const existing = groupedMap.get(key);
+                            const existingDate = new Date(existing.date || existing.created_at).getTime();
+                            const newDate = new Date(item.date || item.created_at).getTime();
+                            
+                            if (newDate > existingDate) {
+                                groupedMap.set(key, { ...item, _groupCount: (existing._groupCount || 1) + 1 });
+                            } else {
+                                existing._groupCount = (existing._groupCount || 1) + 1;
+                            }
+                        }
+                    }
+
+                    const finalMerged = Array.from(groupedMap.values());
+                    finalMerged.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
+                    return finalMerged;
+                });
+
+                if (fetched.length < 15) setHasMore(false);
+                else setHasMore(true);
+
+                // Save to SQLite
+                await NotificationDBService.saveNotifications(fetched, String(user.id));
                 await api.post('/mark_notification_seen.php', `user_id=${user.id}`);
             }
         } catch (error) {
             console.error(error);
         } finally {
-            setLoading(false);
             setRefreshing(false);
+        }
+    };
+
+    const fetchMoreNotifications = async () => {
+        if (loadingMore || !hasMore || notifications.length === 0) return;
+        setLoadingMore(true);
+        try {
+            const u = await AsyncStorage.getItem('user');
+            if (!u) return;
+            const user = JSON.parse(u);
+
+            const cursor = notifications[notifications.length - 1].date || notifications[notifications.length - 1].created_at;
+            
+            const res = await api.get(`/fetch_notifications.php?user_id=${user.id}&limit=15&cursor=${encodeURIComponent(cursor)}`);
+            if (res.data.status === 'success') {
+                const fetched = res.data.data;
+                if (fetched.length > 0) {
+                    setNotifications(prev => {
+                        const combined = [...prev, ...fetched];
+                        const groupedMap = new Map();
+                        for (const item of combined) {
+                            let key = item.id;
+                            const itemDate = new Date(item.date || item.created_at);
+                            const dateKey = `${itemDate.getFullYear()}-${itemDate.getMonth()}-${itemDate.getDate()}`;
+                            
+                            if (item.type === 'like' || item.type === 'comment') {
+                                let refId = '';
+                                try {
+                                    if (item.data_payload) {
+                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                        refId = data.postId || data.reference_id || '';
+                                    }
+                                } catch (e) {}
+                                if (refId) key = `${item.type}_${refId}_${dateKey}`;
+                                else key = `${item.type}_${item.title}_${dateKey}`;
+                            } else if (item.type === 'message' || item.type === 'chat') {
+                                key = `msg_${item.sender_id}_${dateKey}`;
+                            } else if (item.type === 'incoming_call') {
+                                let callerId = '';
+                                try {
+                                    if (item.data_payload) {
+                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                        callerId = data.caller_id || '';
+                                    }
+                                } catch (e) {}
+                                key = `call_${callerId}_${dateKey}`;
+                            } else if (item.type === 'group_chat') {
+                                let groupId = '';
+                                try {
+                                    if (item.data_payload) {
+                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                                        groupId = data.group_id || '';
+                                    }
+                                } catch (e) {}
+                                key = `group_${groupId}_${dateKey}`;
+                            } else if (item.type === 'post' && item.title === 'New Post') {
+                                key = `post_Linkup_${dateKey}`;
+                            }
+
+                            if (!groupedMap.has(key)) {
+                                groupedMap.set(key, { ...item, _groupCount: item._groupCount || 1 });
+                            } else {
+                                const existing = groupedMap.get(key);
+                                const existingDate = new Date(existing.date || existing.created_at).getTime();
+                                const newDate = new Date(item.date || item.created_at).getTime();
+                                if (newDate > existingDate) {
+                                    groupedMap.set(key, { ...item, _groupCount: (existing._groupCount || 1) + 1 });
+                                } else {
+                                    existing._groupCount = (existing._groupCount || 1) + 1;
+                                }
+                            }
+                        }
+                        const finalMerged = Array.from(groupedMap.values());
+                        finalMerged.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
+                        return finalMerged;
+                    });
+                }
+                if (fetched.length < 15) {
+                    setHasMore(false);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -98,8 +284,18 @@ const NotificationScreen = ({ navigation }: any) => {
         }
     };
 
+    const getInitials = (item: any) => {
+        let name = item.title;
+        if (name === 'New Like' || name === 'New Comment' || name === 'New Message' || name === 'New Request') {
+            name = item.body?.split(' ')[0] || '?';
+        }
+        return name ? name.charAt(0).toUpperCase() : '?';
+    };
+
     const renderItem = ({ item }: { item: any }) => {
         const isUnread = item.seen === "0" || item.seen === 0;
+        const isLogo = item.image?.endsWith('logo.png') || item.image?.includes('via.placeholder.com');
+        const isSystem = item.type === 'news' || (item.type === 'system' && item.title === 'System');
         
         return (
             <TouchableOpacity
@@ -114,22 +310,28 @@ const NotificationScreen = ({ navigation }: any) => {
 
                 {/* Avatar with Badge */}
                 <View style={styles.avatarContainer}>
-                    <Image
-                        source={
-                            item.image?.endsWith('logo.png')
-                                ? require('../../../assets/logo.png')
-                                : { 
-                                    uri: item.image?.startsWith('http') 
-                                        ? item.image 
-                                        : (item.image?.startsWith('uploads') || item.image?.startsWith('images')
-                                            ? `${BASE_URL_ROOT}/${item.image}`
-                                            : 'https://via.placeholder.com/100')
-                                }
-                        }
-                        style={styles.avatar}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                    />
+                    {isLogo && !isSystem ? (
+                        <View style={[styles.avatar, { backgroundColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' }]}>
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#475569' }}>{getInitials(item)}</Text>
+                        </View>
+                    ) : (
+                        <Image
+                            source={
+                                item.image?.endsWith('logo.png')
+                                    ? require('../../../assets/logo.png')
+                                    : { 
+                                        uri: item.image?.startsWith('http') 
+                                            ? item.image 
+                                            : (item.image?.startsWith('uploads') || item.image?.startsWith('images')
+                                                ? `${BASE_URL_ROOT}/${item.image}`
+                                                : 'https://via.placeholder.com/100')
+                                    }
+                            }
+                            style={styles.avatar}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                        />
+                    )}
                     <BadgeIcon type={item.type} />
                 </View>
 
@@ -141,9 +343,21 @@ const NotificationScreen = ({ navigation }: any) => {
                     </View>
                     <Text style={styles.body} numberOfLines={2}>
                         {item.type === 'post' && item.title === 'New Post' ? (
-                            <Text><Text style={{fontWeight: 'bold'}}>Linkup</Text> shared a new post.</Text>
+                            item._groupCount && item._groupCount > 1
+                                ? <Text><Text style={{fontWeight: 'bold'}}>Linkup</Text> shared {item._groupCount} new posts.</Text>
+                                : <Text><Text style={{fontWeight: 'bold'}}>Linkup</Text> shared a new post.</Text>
+                        ) : item.type === 'incoming_call' ? (
+                            item._groupCount && item._groupCount > 1
+                                ? `${(item.body || item.message)} (${item._groupCount} calls)`
+                                : (item.body || item.message)
+                        ) : item.type === 'group_chat' ? (
+                            item._groupCount && item._groupCount > 1
+                                ? `${(item.body || item.message)} (${item._groupCount} messages)`
+                                : (item.body || item.message)
                         ) : (
-                            item.body || item.message
+                            item._groupCount && item._groupCount > 1 
+                                ? `${(item.body || item.message).replace('.', '')} and ${item._groupCount - 1} more.`
+                                : (item.body || item.message)
                         )}
                     </Text>
                     
@@ -183,6 +397,9 @@ const NotificationScreen = ({ navigation }: any) => {
                     keyExtractor={item => item.id?.toString() || Math.random().toString()}
                     contentContainerStyle={{ paddingBottom: 20 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchNotifications(); }} colors={['#ea580c']} />}
+                    onEndReached={fetchMoreNotifications}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#ea580c" style={{ margin: 20 }} /> : null}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 50 }}>
                             <Text style={{ color: 'gray' }}>No notifications yet.</Text>

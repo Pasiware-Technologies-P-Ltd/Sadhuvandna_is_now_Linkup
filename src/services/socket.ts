@@ -58,6 +58,24 @@ class SocketService {
                     this.heartbeatInterval = null;
                 }
             });
+
+            // Set up global event forwarders
+            const forwardToDevice = (eventName: string) => {
+                this.socket?.on(eventName, (data: any) => {
+                    import('react-native').then(({ DeviceEventEmitter }) => {
+                        DeviceEventEmitter.emit(eventName, data);
+                    });
+                });
+            };
+
+            forwardToDevice('app_notification');
+            forwardToDevice('new_notification');
+            forwardToDevice('new_group_notification');
+            forwardToDevice('post_comment_added');
+            forwardToDevice('post_comment_deleted');
+            forwardToDevice('post_like_updated');
+            forwardToDevice('follow_counts_updated');
+
         } else if (this.registeredUserId !== uid) {
             // Different user logged in — re-register
             this.socket.emit('register', uid);

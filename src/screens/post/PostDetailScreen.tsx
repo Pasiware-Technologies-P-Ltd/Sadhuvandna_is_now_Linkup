@@ -117,12 +117,14 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            const payload = { action: 'delete_comment', post_id: currentPost.id, comment_id: selectedComment.comment_id, comment: selectedComment.comment };
+                            const payload = { action: 'delete_comment', post_id: currentPost.id, comment_id: selectedComment.comment_id, comment: selectedComment.comment, user_id: user?.id || selectedComment.user_id };
                             setComments(prev => prev.filter(c => String(c.comment_id) !== String(selectedComment.comment_id)));
                             setCurrentPost(prev => prev ? ({ ...prev, comments: Math.max(0, prev.comments - 1) }) : null);
                             await api.post('like_comment_action.php', payload);
+                            await fetchComments(String(currentPost.id));
                         } catch (e) {
                             console.error(e);
+                            await fetchComments(String(currentPost?.id));
                         }
                     }
                 }

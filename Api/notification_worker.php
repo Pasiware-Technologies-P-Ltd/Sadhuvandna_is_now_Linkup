@@ -17,6 +17,26 @@ function processGroupedNotification($con, $redis, $receiver_id, $type, $referenc
             $msg = $actor_name . ' wants to connect with you.';
         } else {
             $msg = $actor_name . ' sent you a message.';
+            if (isset($payload_data['is_group']) && $payload_data['is_group']) {
+                $group_id = $payload_data['group_id'];
+                $default_title = $payload_data['group_name'] ?? "New Group Message";
+                $msg = $actor_name . ': ' . ($payload_data['message_text'] ?? "Sent an attachment");
+                $payload_data['collapseId'] = "group_{$group_id}";
+            } else {
+                $default_title = $actor_name;
+                $payload_data['collapseId'] = "chat_{$actor_id}";
+                
+                $unreadQ = $con->query("SELECT message FROM tbl_chat WHERE sender_id = '$actor_id' AND receiver_id = '$receiver_id' AND seen = 0 ORDER BY id ASC LIMIT 5");
+                $unreadMsgs = [];
+                if ($unreadQ && $unreadQ->num_rows > 0) {
+                    while($uRow = $unreadQ->fetch_assoc()) {
+                        $unreadMsgs[] = !empty($uRow['message']) ? $uRow['message'] : "Sent an attachment";
+                    }
+                    $msg = implode("\n", $unreadMsgs);
+                } else {
+                    $msg = $payload_data['message_text'] ?? "Sent an attachment";
+                }
+            }
         }
         deliverNotification($con, $receiver_id, $type, $reference_id, $default_title, $msg, $payload_data);
         return;
@@ -148,14 +168,16 @@ while (true) {
         } elseif ($type === 'chat') {
             $sender_id = $payload['sender_id'];
             $receiver_id = $payload['receiver_id'];
+            $message_text = $payload['message'] ?? '';
             
             $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
             $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
             
-            processGroupedNotification($con, $redis, $receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id)]);
+            processGroupedNotification($con, $redis, $receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id), "message_text" => $message_text]);
         } elseif ($type === 'group_chat') {
             $sender_id = $payload['sender_id'];
             $group_id = $payload['group_id'];
+            $message_text = $payload['message'] ?? '';
             
             // Get all group members except sender
             $gQ = $con->query("SELECT user_id FROM tbl_group_members WHERE group_id = $group_id AND user_id != $sender_id");
@@ -163,9 +185,12 @@ while (true) {
                 $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
                 $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
                 
+                $grpQ = $con->query("SELECT name FROM tbl_groups WHERE id = $group_id LIMIT 1");
+                $group_name = ($grpQ && $grpRow = $grpQ->fetch_assoc()) ? $grpRow['name'] : "Group";
+                
                 while ($gRow = $gQ->fetch_assoc()) {
                     $receiver_id = $gRow['user_id'];
-                    processGroupedNotification($con, $redis, $receiver_id, 'message', "group_{$group_id}", $sender_id, $sender_name, "New Group Message", ["type" => "message", "sender_id" => strval($sender_id), "group_id" => strval($group_id)]);
+                    processGroupedNotification($con, $redis, $receiver_id, 'message', "group_{$group_id}", $sender_id, $sender_name, "New Group Message", ["type" => "message", "sender_id" => strval($sender_id), "group_id" => strval($group_id), "is_group" => true, "group_name" => $group_name, "message_text" => $message_text]);
                 }
             }
         }

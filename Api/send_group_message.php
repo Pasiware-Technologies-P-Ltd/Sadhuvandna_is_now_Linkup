@@ -99,12 +99,17 @@ if ($redis) {
 
     // 4. WebSocket Broadcast
     $url = 'http://localhost:3000/api/trigger';
+    
+    $groupNameQ = $con->query("SELECT name FROM tbl_groups WHERE id = '$group_id' LIMIT 1");
+    $groupName = ($groupNameQ && $gRow = $groupNameQ->fetch_assoc()) ? $gRow['name'] : "Group";
+
     $postData = array(
         'room' => "group_{$group_id}",
         'type' => 'new_group_notification',
         'payload' => [
             'type' => 'group_chat',
             'group_id' => $group_id,
+            'group_name' => $groupName,
             'message' => $chatObj
         ]
     );

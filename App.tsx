@@ -37,6 +37,7 @@ import { Audio } from 'expo-av';
 
 import { UploadProvider } from './src/context/UploadContext';
 import { OnlineProvider } from './src/context/OnlineContext';
+import { BadgeProvider } from './src/context/BadgeContext';
 import UploadProgressBanner from './src/components/UploadProgressBanner';
 import CustomAlertManager, { CustomAlertProvider } from './src/components/CustomAlert';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -188,13 +189,15 @@ export default function App() {
           <LanguageProvider>
             <UploadProvider>
               <OnlineProvider>
-                <NavigationContainer ref={navigationRef} linking={linking}>
-                  <StatusBar style="dark" />
-                  <RootNavigator initialRoute={initialRoute} />
-                  <GlobalCallListener />
-                </NavigationContainer>
-                <UploadProgressBanner />
-                <CustomAlertProvider />
+                <BadgeProvider>
+                  <NavigationContainer ref={navigationRef} linking={linking}>
+                    <StatusBar style="dark" />
+                    <RootNavigator initialRoute={initialRoute} />
+                    <GlobalCallListener />
+                  </NavigationContainer>
+                  <UploadProgressBanner />
+                  <CustomAlertProvider />
+                </BadgeProvider>
               </OnlineProvider>
             </UploadProvider>
           </LanguageProvider>

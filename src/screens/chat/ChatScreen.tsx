@@ -33,7 +33,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();
     const { receiver: rawReceiver, platform = 'community' } = route.params || {};
     const { t } = useLanguage();
-    const { isUserOnline } = useOnlineStatus();
+    const { isUserOnline, isConnected } = useOnlineStatus();
 
     // Ensure receiver object is robust
     const receiver = rawReceiver
@@ -66,8 +66,9 @@ const ChatScreen = ({ navigation, route }: any) => {
 
     const isTypingRef = useRef(false);
     const [isReceiverTyping, setIsReceiverTyping] = useState(false);
-    // receiverOnline driven by global OnlineContext — instant across all screens
-    const receiverOnline = !route.params?.isGroup && isUserOnline(receiver?.id);
+    // receiverOnline driven by global OnlineContext — instant across all screens.
+    // If socket is disconnected, isConnected is false and it defaults to DB last seen.
+    const receiverOnline = !route.params?.isGroup && isConnected && isUserOnline(receiver?.id);
     const [receiverLastSeen, setReceiverLastSeen] = useState<string | null>(null);
     // Group typing indicator
     const [groupTypingUser, setGroupTypingUser] = useState<string | null>(null);
@@ -259,8 +260,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                 // Handle Send Errors
                 socketService.socket.on('chat:error', (data: any) => {
                     if (data && data.client_message_id) {
-                        setMessages(prev => prev.filter(m => m.client_message_id !== data.client_message_id));
-                        Alert.alert('Send Error', data.message || 'Message could not be sent.');
+                        // Silently handle error, message remains in pending/optimistic state for retry
+                        console.log('Send Error', data.message);
                     }
                 });
 
@@ -426,6 +427,14 @@ const ChatScreen = ({ navigation, route }: any) => {
             console.error(e);
         }
     };
+
+    // Re-fetch receiver status instantly when WebSocket reconnects
+    useEffect(() => {
+        if (isConnected && myProfileId && receiver?.id) {
+            fetchUserStatus(myProfileId);
+            socketService.socket?.emit('check_status', receiver.id);
+        }
+    }, [isConnected, myProfileId, receiver?.id]);
 
     // Typing Animation
     useEffect(() => {
@@ -1050,8 +1059,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                     // The socket listener for 'chat:ack' will handle SQLite update to 'sent'.
                     // Fallback 'chat:error' will handle SQLite update to 'failed'.
                 } else {
-                    Alert.alert('Error', 'WebSocket not connected. Message pending.');
-                    // Leave message in pending state; offline reconciliation logic will retry it
+                    // Silently wait. Leave message in pending state; offline reconciliation logic will retry it.
+                    console.log('WebSocket not connected. Message pending.');
                 }
             }
             // 2. Media Message (Requires Multi-part upload)
@@ -1090,13 +1099,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                     // so we do NOT emit 'send_notification' manually here anymore.
                 } else {
                     console.log("Send Message Failed. Response:", res.data);
-                    Alert.alert('Error', res.data.message || 'Failed to send message');
-                    setMessages(prev => prev.filter(m => m.id !== tempId));
+                    // Leave optimistic state for retry
                 }
             }
         } catch (e: any) {
             console.error("Send Error:", e);
-            Alert.alert('Error', e.message || 'Network error');
+            // Silently handle network errors
         } finally {
             setUploading(false);
         }

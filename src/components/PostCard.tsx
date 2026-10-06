@@ -339,8 +339,10 @@ const BasePostCard = ({
     renderMedia?: (props: any) => React.ReactNode
 }) => {
     const isFocused = useIsFocused();
-    const [liked, setLiked] = useState(post.isLiked);
+    const [liked, setLiked] = useState(Boolean(post.isLiked || (post as any).user_liked));
     const [likeCount, setLikeCount] = useState(post.likes);
+    // Track self-initiated like/unlike so we skip the next socket sync (avoid double-count)
+    const skipNextLikeSync = useRef(false);
     const [saved, setSaved] = useState(Boolean(post.isSaved || (post as any).user_saved || (post as any).is_saved));
     const [videoReady, setVideoReady] = useState(false);
     const [musicMuted, setMusicMuted] = useState(MuteManager.isGlobalMuted);
@@ -355,9 +357,18 @@ const BasePostCard = ({
     const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
-        setLiked(post.isLiked);
-        setLikeCount(post.likes);
-    }, [post.isLiked, post.likes]);
+        setLiked(Boolean(post.isLiked || (post as any).user_liked));
+    }, [post.isLiked, (post as any).user_liked]);
+
+    useEffect(() => {
+        // If this update was triggered by our own like action, skip it (PostCard already did optimistic update)
+        if (skipNextLikeSync.current) {
+            skipNextLikeSync.current = false;
+            return;
+        }
+        // For all other updates (from other screens, other users), accept server count
+        setLikeCount(Number(post.likes || 0));
+    }, [post.likes]);
 
     useEffect(() => {
         setSaved(Boolean(post.isSaved || (post as any).user_saved || (post as any).is_saved));
@@ -496,7 +507,9 @@ const BasePostCard = ({
     const toggleLike = async () => {
         const newStatus = !liked;
         setLiked(newStatus);
-        setLikeCount(prev => newStatus ? prev + 1 : prev - 1);
+        // Mark that we are self-initiating — skip next socket sync to avoid double-count
+        skipNextLikeSync.current = true;
+        setLikeCount(prev => newStatus ? prev + 1 : Math.max(0, prev - 1));
 
         if (newStatus) {
             likeScale.setValue(0.7);
@@ -898,7 +911,7 @@ const BasePostCard = ({
 
                     <TouchableOpacity style={styles.actionButton} onPress={handlePostPress} activeOpacity={0.7}>
                         <Ionicons name="chatbubble-outline" size={23} color="#374151" />
-                        <Text style={styles.actionText}>{post.comments}</Text>
+                        <Text style={styles.actionText}>{Array.isArray(post.comments) ? post.comments.length : (post.comments || 0)}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.actionButton} onPress={handleShare} activeOpacity={0.7}>
@@ -1293,7 +1306,7 @@ export const areEqual = (prevProps: any, nextProps: any) => {
     return (
         String(prevPost.id) === String(nextPost.id) &&
         Number(prevPost.likes || 0) === Number(nextPost.likes || 0) &&
-        Number(prevPost.comments || 0) === Number(nextPost.comments || 0) &&
+        (Array.isArray(prevPost.comments) ? prevPost.comments.length : Number(prevPost.comments || 0)) === (Array.isArray(nextPost.comments) ? nextPost.comments.length : Number(nextPost.comments || 0)) &&
         Boolean(prevPost.isLiked) === Boolean(nextPost.isLiked) &&
         Boolean(prevPost.isSaved || prevPost.user_saved || prevPost.is_saved) === Boolean(nextPost.isSaved || nextPost.user_saved || nextPost.is_saved) &&
         Boolean(prevProps.shouldPlay) === Boolean(nextProps.shouldPlay) &&

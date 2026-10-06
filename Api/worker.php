@@ -225,10 +225,10 @@ function processBatch($type, $jobs) {
                 }
                 else if ($type === 'sync_delete_comment') {
                     $comment_id = $payload['comment_id'];
-                    $comment_text = $payload['comment'];
+                    $comment_text = htmlspecialchars_decode($payload['comment']);
                     
                     if (strpos($comment_id, 'temp_') === 0) {
-                        $stmt = $con->prepare("DELETE FROM tbl_comments WHERE post_id=? AND user_id=? AND comment=?");
+                        $stmt = $con->prepare("DELETE FROM tbl_comments WHERE post_id=? AND user_id=? AND comment=? LIMIT 1");
                         $stmt->bind_param("iis", $pid, $uid, $comment_text);
                     } else {
                         $stmt = $con->prepare("DELETE FROM tbl_comments WHERE id=? AND user_id=?");
@@ -238,6 +238,63 @@ function processBatch($type, $jobs) {
                 }
             }
             $con->commit();
+        } catch (Exception $e) {
+            $con->rollback();
+            throw $e;
+        }
+    }
+    else if ($type === 'batch_delete_comments') {
+        $pendingDeleteKey = "pending_deletes:comments";
+        // Get all pending deletes from Redis
+        $pendingRaw = $redis->lRange($pendingDeleteKey, 0, -1);
+        
+        if (empty($pendingRaw)) return;
+        
+        $con->begin_transaction();
+        try {
+            $realIdsToDelete = [];
+            $affectedPostIds = []; // Track post IDs for cache invalidation
+            
+            foreach ($pendingRaw as $pr) {
+                $pObj = json_decode($pr, true);
+                if (!$pObj) continue;
+                
+                $comment_id = $pObj['comment_id'];
+                $pid = $pObj['post_id'];
+                $uid = $pObj['user_id'];
+                $text = $pObj['comment_text'];
+                
+                $affectedPostIds[$pid] = true; // collect for cache bust
+                
+                if (strpos($comment_id, 'temp_') === 0) {
+                    // Delete temp comments one by one (they don't have DB IDs yet)
+                    $stmt = $con->prepare("DELETE FROM tbl_comments WHERE post_id=? AND user_id=? AND comment=? LIMIT 1");
+                    $stmt->bind_param("iis", $pid, $uid, $text);
+                    $stmt->execute();
+                } else {
+                    $realIdsToDelete[] = (int)$comment_id;
+                }
+            }
+            
+            // Delete all real IDs in one single query
+            if (!empty($realIdsToDelete)) {
+                $ids_str = implode(',', $realIdsToDelete);
+                $con->query("DELETE FROM tbl_comments WHERE id IN ($ids_str)");
+            }
+            
+            $con->commit();
+            
+            // Clear the pending list from Redis now that DB is updated
+            $redis->del($pendingDeleteKey);
+            
+            // Bust the comments cache for every affected post so next fetch reads fresh data from DB
+            foreach (array_keys($affectedPostIds) as $affPid) {
+                $redis->del("post:{$affPid}:comments_loaded");
+                // Also wipe the stale Redis comments list — worker already deleted from DB,
+                // next fetch_comments will rebuild it cleanly from DB.
+                $redis->del("post:{$affPid}:comments");
+            }
+            
         } catch (Exception $e) {
             $con->rollback();
             throw $e;

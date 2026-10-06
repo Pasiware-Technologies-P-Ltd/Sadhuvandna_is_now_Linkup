@@ -218,8 +218,13 @@ io.on('connection', (socket) => {
 // PHP backend can also hit this Node API to trigger socket events
 app.post('/api/trigger', (req, res) => {
   console.log('/api/trigger received', req.body);
-  const { receiverId, type, payload, room } = req.body;
+  const { receiverId, type, payload, room, global } = req.body;
   
+  if (global) {
+    io.emit(type, payload);
+    return res.json({ success: true, message: 'Event emitted globally' });
+  }
+
   if (room) {
     io.to(room).emit(type, payload);
     return res.json({ success: true, message: 'Event emitted to room' });

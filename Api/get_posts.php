@@ -73,23 +73,97 @@ if ($action === 'comment') {
 if ($action === 'fetch_comments') {
     $pid = intval($_REQUEST['id']);
     $comments = [];
-    $cres = $con->query("
-        SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo
-        FROM tbl_comments c 
-        JOIN tbl_members m ON c.user_id=m.id 
-        WHERE c.post_id=$pid 
-        ORDER BY c.date DESC
-    ");
-    while ($c = $cres->fetch_assoc()) {
-        $comments[] = [
-            'comment_id' => $c['id'],
-            'user_id' => $c['user_id'],
-            'name' => htmlspecialchars($c['name']),
-            'profile_photo' => htmlspecialchars($c['profile_photo']),
-            'comment' => htmlspecialchars($c['comment']),
-            'date' => date("d M Y, h:i A", strtotime($c['date']))
-        ];
+
+    $use_redis = false;
+    require_once 'RedisConfig.php';
+    $redis = RedisConfig::getConnection();
+    if ($redis) {
+        $use_redis = true;
     }
+
+    if ($use_redis) {
+        $redisKey = "post:{$pid}:comments";
+        $cacheLoadedKey = "post:{$pid}:comments_loaded";
+
+        if (!$redis->exists($cacheLoadedKey)) {
+            $cres = $con->query("SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo FROM tbl_comments c JOIN tbl_members m ON c.user_id=m.id WHERE c.post_id=$pid ORDER BY c.date DESC");
+            if ($cres) {
+                $cacheComments = [];
+                while ($c = $cres->fetch_assoc()) {
+                    $cacheComments[] = json_encode([
+                        'comment_id' => $c['id'],
+                        'user_id' => $c['user_id'],
+                        'name' => $c['name'],
+                        'profile_photo' => $c['profile_photo'],
+                        'comment' => htmlspecialchars($c['comment']),
+                        'date' => date("d M Y, h:i A", strtotime($c['date']))
+                    ]);
+                }
+                if (!empty($cacheComments)) {
+                    call_user_func_array([$redis, 'rPush'], array_merge([$redisKey], $cacheComments));
+                }
+                $redis->setex($cacheLoadedKey, 3600, "1");
+            }
+        }
+        $commentsRaw = $redis->lRange($redisKey, 0, -1);
+        if ($commentsRaw) {
+            foreach ($commentsRaw as $cr) {
+                $cObj = json_decode($cr, true);
+                if ($cObj) $comments[] = $cObj;
+            }
+        }
+    } else {
+        $cres = $con->query("
+            SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo
+            FROM tbl_comments c 
+            JOIN tbl_members m ON c.user_id=m.id 
+            WHERE c.post_id=$pid 
+            ORDER BY c.date DESC
+        ");
+        while ($c = $cres->fetch_assoc()) {
+            $comments[] = [
+                'comment_id' => $c['id'],
+                'user_id' => $c['user_id'],
+                'name' => htmlspecialchars($c['name']),
+                'profile_photo' => htmlspecialchars($c['profile_photo']),
+                'comment' => htmlspecialchars($c['comment']),
+                'date' => date("d M Y, h:i A", strtotime($c['date']))
+            ];
+        }
+    }
+
+    // Filter out any comments that are pending deletion (batch not yet processed by worker)
+    if ($use_redis && $redis) {
+        $pendingDeleteKey = "pending_deletes:comments";
+        $pendingRaw = $redis->lRange($pendingDeleteKey, 0, -1);
+        if (!empty($pendingRaw)) {
+            $pendingIds = [];
+            $pendingTexts = []; // To catch temp_ comments by text
+            
+            foreach ($pendingRaw as $pr) {
+                $pObj = json_decode($pr, true);
+                if ($pObj) {
+                    if (isset($pObj['comment_id'])) {
+                        $pendingIds[(string)$pObj['comment_id']] = true;
+                    }
+                    if (isset($pObj['user_id']) && isset($pObj['comment_text'])) {
+                        $hash = $pObj['user_id'] . '_' . md5(htmlspecialchars($pObj['comment_text']));
+                        $pendingTexts[$hash] = true;
+                    }
+                }
+            }
+            
+            if (!empty($pendingIds) || !empty($pendingTexts)) {
+                $comments = array_values(array_filter($comments, function($c) use ($pendingIds, $pendingTexts) {
+                    $idMatch = isset($pendingIds[(string)$c['comment_id']]);
+                    $hash = $c['user_id'] . '_' . md5($c['comment']);
+                    $textMatch = isset($pendingTexts[$hash]);
+                    return !$idMatch && !$textMatch;
+                }));
+            }
+        }
+    }
+
     echo json_encode($comments);
     exit;
 }
@@ -202,21 +276,60 @@ while ($p = $result->fetch_assoc()) {
             $user_saved = true;
     }
 
-    // Comments
     $comments = [];
-    $cres = $con->query("SELECT c.comment, c.date, m.name, m.profile_photo 
-                         FROM tbl_comments c 
-                         JOIN tbl_members m ON c.user_id=m.id 
-                         WHERE c.post_id=$pid 
-                         ORDER BY c.date DESC");
-    if ($cres) {
-        while ($c = $cres->fetch_assoc()) {
-            $comments[] = [
-                'name' => $c['name'],
-                'profile_photo' => $c['profile_photo'],
-                'comment' => $c['comment'],
-                'date' => $c['date']
-            ];
+    $use_redis = false;
+    require_once 'RedisConfig.php';
+    $redis = RedisConfig::getConnection();
+    if ($redis) {
+        $use_redis = true;
+    }
+
+    if ($use_redis) {
+        $redisKey = "post:{$pid}:comments";
+        $cacheLoadedKey = "post:{$pid}:comments_loaded";
+
+        if (!$redis->exists($cacheLoadedKey)) {
+            $cres = $con->query("SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo FROM tbl_comments c JOIN tbl_members m ON c.user_id=m.id WHERE c.post_id=$pid ORDER BY c.date DESC");
+            if ($cres) {
+                $cacheComments = [];
+                while ($c = $cres->fetch_assoc()) {
+                    $cacheComments[] = json_encode([
+                        'comment_id' => $c['id'],
+                        'user_id' => $c['user_id'],
+                        'name' => $c['name'],
+                        'profile_photo' => $c['profile_photo'],
+                        'comment' => htmlspecialchars($c['comment']),
+                        'date' => $c['date']
+                    ]);
+                }
+                if (!empty($cacheComments)) {
+                    call_user_func_array([$redis, 'rPush'], array_merge([$redisKey], $cacheComments));
+                }
+                $redis->setex($cacheLoadedKey, 3600, "1");
+            }
+        }
+        $commentsRaw = $redis->lRange($redisKey, 0, -1);
+        if ($commentsRaw) {
+            foreach ($commentsRaw as $cr) {
+                $cObj = json_decode($cr, true);
+                if ($cObj) $comments[] = $cObj;
+            }
+        }
+    } else {
+        $cres = $con->query("SELECT c.comment, c.date, m.name, m.profile_photo 
+                             FROM tbl_comments c 
+                             JOIN tbl_members m ON c.user_id=m.id 
+                             WHERE c.post_id=$pid 
+                             ORDER BY c.date DESC");
+        if ($cres) {
+            while ($c = $cres->fetch_assoc()) {
+                $comments[] = [
+                    'name' => $c['name'],
+                    'profile_photo' => $c['profile_photo'],
+                    'comment' => $c['comment'],
+                    'date' => $c['date']
+                ];
+            }
         }
     }
 

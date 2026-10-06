@@ -58,12 +58,21 @@ const CommentsScreen = ({ route, navigation }: any) => {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            const payload = { action: 'delete_comment', post_id: postId, comment_id: commentId, comment: commentText };
-                            // Immediately remove from UI
-                            setComments(prev => prev.filter(c => c.comment_id !== commentId));
-                            await api.post('like_comment_action.php', payload);
+                            const payload = { 
+                                action: 'delete_comment', 
+                                post_id: postId, 
+                                comment_id: commentId, 
+                                comment: commentText,
+                                user_id: user.id 
+                            };
+                            // Optimistically remove from UI immediately
+                            setComments(prev => prev.filter(c => String(c.comment_id) !== String(commentId)));
+                            const res = await api.post('like_comment_action.php', payload);
+                            // Re-fetch to ensure UI is in sync with server
+                            await fetchComments();
                         } catch (e) {
                             console.error(e);
+                            await fetchComments(); // Sync even on error
                         }
                     }
                 }
@@ -113,7 +122,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                 const res = await api.post('like_comment_action.php', payload);
                 if (res.data.ok || res.data.status === 'success' || res.data.ok === true) {
                     setNewComment('');
-                    fetchComments(); // Refresh list
+                    await fetchComments(); // Await so real DB IDs are in state
                 } else {
                     Alert.alert("Error", "Failed to post comment");
                 }
@@ -140,11 +149,21 @@ const CommentsScreen = ({ route, navigation }: any) => {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            const payload = { action: 'delete_comment', post_id: postId, comment_id: selectedComment.comment_id, comment: selectedComment.comment };
+                            const payload = { 
+                                action: 'delete_comment', 
+                                post_id: postId, 
+                                comment_id: selectedComment.comment_id, 
+                                comment: selectedComment.comment,
+                                user_id: user?.id || selectedComment.user_id 
+                            };
+                            // Optimistically remove from UI immediately
                             setComments(prev => prev.filter(c => String(c.comment_id) !== String(selectedComment.comment_id)));
                             await api.post('like_comment_action.php', payload);
+                            // Re-fetch to ensure UI is in sync with server
+                            await fetchComments();
                         } catch (e) {
                             console.error(e);
+                            await fetchComments(); // Sync even on error
                         }
                     }
                 }

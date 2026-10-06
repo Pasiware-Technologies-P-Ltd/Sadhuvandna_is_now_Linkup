@@ -135,6 +135,9 @@ if ($redis) {
     // 4. WebSocket Broadcast
     $url = 'http://localhost:3000/api/trigger';
     
+    $senderNameQ = $con->query("SELECT name FROM tbl_members WHERE id = '$my' LIMIT 1");
+    $senderName = ($senderNameQ && $sRow = $senderNameQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+
     // Send to receiver
     $postDataReceiver = array(
         'receiverId' => $receiver,
@@ -142,6 +145,7 @@ if ($redis) {
         'payload' => [
             'type' => 'chat',
             'sender_profile_id' => $my,
+            'sender_name' => $senderName,
             'receiverId' => $receiver,
             'platform' => $platform,
             'message' => $chatObj
@@ -155,6 +159,7 @@ if ($redis) {
         'payload' => [
             'type' => 'chat',
             'sender_profile_id' => $my,
+            'sender_name' => $senderName,
             'receiverId' => $receiver,
             'platform' => $platform,
             'message' => $chatObj
