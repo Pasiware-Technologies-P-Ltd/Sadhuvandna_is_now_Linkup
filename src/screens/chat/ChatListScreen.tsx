@@ -1,7 +1,6 @@
 import { Image } from 'expo-image';
-import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, LayoutAnimation, Platform, UIManager, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +8,7 @@ import socketService from '../../services/socket';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { ChatDBService } from '../../services/ChatDBService';
+import { useOnlineStatus } from '../../context/OnlineContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL_COMMUNITY = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -19,6 +19,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const ChatListScreen = ({ navigation }: any) => {
+    const { isUserOnline, checkOnlineStatuses, onlineUsers } = useOnlineStatus();
     const [friends, setFriends] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchContacts, setSearchContacts] = useState<any[]>([]);
@@ -47,6 +48,8 @@ const ChatListScreen = ({ navigation }: any) => {
                     full_name: c.full_name,
                     profile_photo: c.profile_photo,
                     last_message: c.last_message,
+                    last_message_is_mine: c.last_message_is_mine === 1,
+                    last_message_seen: c.last_message_seen === 1,
                     unread: c.unread_count,
                     time: c.time
                 }));
@@ -74,28 +77,64 @@ const ChatListScreen = ({ navigation }: any) => {
                 setLoading(false);
             }
         });
-        const unsubscribe = navigation.addListener('focus', () => {
-            fetchFriends();
-        });
-        return unsubscribe;
+        
+        const unsubscribe = navigation.addListener('focus', () => { AsyncStorage.getItem('user').then((u) => { if (u) { const user = JSON.parse(u); loadCachedChats(user.id); fetchFriends(user.id); } }); }); return unsubscribe;
     }, [navigation, activePlatform]);
 
     useEffect(() => {
         if (socketService.socket) {
-            const handleUserStatus = (data: any) => {
-                setFriends(prev => prev.map(f => {
-                    if (f.user_id == data.userId || f.partner_id == data.userId) {
-                        return { ...f, is_online: data.status === 'online' };
-                    }
-                    return f;
-                }));
+            const handleMessagesSeen = (data: any) => { setFriends(prev => prev.map(f => { if (String(f.partner_id) === String(data.viewer_id) && f.last_message_is_mine) { return { ...f, last_message_seen: true }; } return f; })); const chatId = `user_${data.viewer_id}`; ChatDBService.markAllAsSeen(chatId).catch(() => {}); }; const handleNewNotification = (data: any) => {
+                if (data.type === 'chat' && data.message) {
+                    const msg = data.message;
+                    const partnerId = msg.sender_id == userId ? msg.receiver_id : msg.sender_id;
+                    
+                    let found = false;
+                    setFriends(prev => {
+                        const existingIdx = prev.findIndex(f => f.partner_id == partnerId);
+                        if (existingIdx >= 0) {
+                            found = true;
+                            const updatedChats = [...prev];
+                            const chat = { ...updatedChats[existingIdx] };
+                            chat.last_message = msg.message || 'Media';
+                            chat.last_message_is_mine = msg.sender_id == userId;
+                            chat.last_message_seen = false; // It's a new message, so if it's mine it hasn't been seen yet
+                            
+                            try {
+                                const d = new Date(msg.created_at.replace(' ', 'T'));
+                                chat.time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            } catch (e) {
+                                chat.time = '';
+                            }
+                            
+                            if (msg.sender_id != userId) {
+                                chat.unread = (chat.unread || 0) + 1;
+                            }
+                            
+                            updatedChats.splice(existingIdx, 1);
+                            return [chat, ...updatedChats];
+                        }
+                        return prev;
+                    });
+                    
+                    if (!found && userId !== null) { fetchFriends(userId); }
+                }
             };
-            socketService.socket.on('user_status', handleUserStatus);
+            
+            socketService.socket.on('new_notification', handleNewNotification); socketService.socket.on('messages_seen', handleMessagesSeen);
+            
             return () => {
-                socketService.socket?.off('user_status', handleUserStatus);
+                socketService.socket?.off('new_notification', handleNewNotification); socketService.socket?.off('messages_seen', handleMessagesSeen);
             };
         }
-    }, []);
+    }, [userId]);
+    
+    // Check statuses via Global Context whenever friends load
+    useEffect(() => {
+        if (friends.length > 0) {
+            const userIds = friends.filter(f => !f.isGroup).map(f => String(f.partner_id));
+            checkOnlineStatuses(userIds);
+        }
+    }, [friends.length]);
 
     // Debounced search for connected contacts (even those with no messages)
     useEffect(() => {
@@ -215,6 +254,7 @@ const ChatListScreen = ({ navigation }: any) => {
         };
 
         const currentPhotoUrl = PHOTO_URL_COMMUNITY;
+        const isOnline = !item.isGroup && isUserOnline(item.partner_id);
 
         return (
             <TouchableOpacity
@@ -227,7 +267,7 @@ const ChatListScreen = ({ navigation }: any) => {
                         source={{ uri: (item.profile_photo) ? `${currentPhotoUrl}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
                         style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#f3f4f6' }}
                     />
-                    {!item.isGroup && item.is_online && (
+                    {isOnline && (
                         <View 
                             style={{ position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2, borderColor: 'white' }} 
                         />
@@ -243,9 +283,19 @@ const ChatListScreen = ({ navigation }: any) => {
                         </Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 13, color: '#6b7280', flex: 1, marginRight: 8 }} numberOfLines={1}>
-                            {item.last_message || 'Media'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                            {item.last_message_is_mine && (
+                                <Ionicons
+                                    name={item.last_message_seen ? "checkmark-done-outline" : "checkmark-outline"}
+                                    size={16}
+                                    color={item.last_message_seen ? "#3b82f6" : "#9ca3af"}
+                                    style={{ marginRight: 4 }}
+                                />
+                            )}
+                            <Text style={{ fontSize: 13, color: '#6b7280', flex: 1 }} numberOfLines={1}>
+                                {item.last_message || 'Media'}
+                            </Text>
+                        </View>
                         {item.unread > 0 && (
                             <View style={{ backgroundColor: '#ea580c', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, shadowColor: '#ea580c', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 1 }}>
                                 <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{item.unread}</Text>
@@ -267,9 +317,7 @@ const ChatListScreen = ({ navigation }: any) => {
         ...(searchQuery.trim().length > 0 ? searchContacts : [])
     ];
 
-    if (loading && friends.length === 0) {
-        return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}><ActivityIndicator color="#ea580c" size="large" /></View>;
-    }
+    
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
@@ -330,11 +378,11 @@ const ChatListScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            <FlashList
+            <FlatList
                 data={filteredFriends}
                 renderItem={renderItem}
                 keyExtractor={(item, index) => item.partner_id ? `${item.isGroup ? 'group_' : 'user_'}${item.partner_id}` : index.toString()}
-                contentContainerStyle={{ paddingVertical: 4 }}
+                contentContainerStyle={{ paddingVertical: 4 }} extraData={onlineUsers}
                 ListFooterComponent={
                     searchingContacts ? (
                         <View style={{ paddingVertical: 12, alignItems: 'center' }}>
@@ -342,8 +390,7 @@ const ChatListScreen = ({ navigation }: any) => {
                         </View>
                     ) : null
                 }
-                ListEmptyComponent={
-                    !searchingContacts ? (
+                ListEmptyComponent={(!searchingContacts && !loading) ? (
                         <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 20 }}>
                             <Ionicons name="chatbubbles-outline" size={60} color="#fed7aa" />
                             <Text style={{ color: '#9ca3af', fontSize: 15, fontWeight: '600', marginTop: 12, textAlign: 'center' }}>
@@ -404,3 +451,15 @@ const ChatListScreen = ({ navigation }: any) => {
 };
 
 export default ChatListScreen;
+
+
+
+
+
+
+
+
+
+
+
+

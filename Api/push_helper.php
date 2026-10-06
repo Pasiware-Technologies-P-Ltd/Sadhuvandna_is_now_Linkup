@@ -5,8 +5,9 @@
  * Also logs to tbl_notifications for in-app bell
  */
 
-function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [])
+function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [], $skip_db = false)
 {
+    if (!$skip_db) {
     // 1. Insert into tbl_notifications (for the Bell icon)
     try {
         $data_json = json_encode($data);
@@ -16,6 +17,7 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [])
         $stmt->execute();
     } catch (Exception $e) {
         file_put_contents("push_log.txt", date('Y-m-d H:i:s') . " | DB Error: " . $e->getMessage() . "\n", FILE_APPEND);
+    }
     }
 
     // 2. Get FCM Token from tbl_members for Push
@@ -65,3 +67,4 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [])
     return false;
 }
 ?>
+

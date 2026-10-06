@@ -94,6 +94,16 @@ io.on('connection', (socket) => {
     socket.emit('user_status', { userId: targetUserId, status: isOnline ? 'online' : 'offline' });
   });
 
+  socket.on('check_multiple_status', (userIds) => {
+    if (Array.isArray(userIds)) {
+      const statuses = userIds.map(uid => ({
+        userId: uid,
+        status: connectedUsers.has(String(uid)) ? 'online' : 'offline'
+      }));
+      socket.emit('multiple_user_status', statuses);
+    }
+  });
+
   // Handle post subscriptions for realtime feed updates
   socket.on('join_post', (postId) => {
     socket.join(`post_${postId}`);
@@ -128,6 +138,24 @@ io.on('connection', (socket) => {
       io.to(receiverSocket).emit('stop_typing', data);
     }
   });
+
+  socket.on('mark_seen', async (payload) => {
+    try {
+      const axios = require('axios');
+      const FormData = require('form-data');
+      const formData = new FormData();
+      formData.append('message_id', payload.message_id || '');
+      formData.append('my_profile_id', payload.my_profile_id || '');
+      formData.append('receiver_id', payload.receiver_id || '');
+      formData.append('platform', payload.platform || '');
+      
+      await axios.post('http://127.0.0.1:8000/mark_seen.php', formData, {
+        headers: formData.getHeaders()
+      });
+    } catch (e) {
+      console.error("mark_seen error", e.message);
+    }
+  });
   socket.on('chat:send', async (payload) => {
     console.log("chat:send received", payload);
     try {
@@ -149,7 +177,7 @@ io.on('connection', (socket) => {
       const endpoint = payload.isGroup ? 'send_group_message.php' : 'send_chat_message.php';
       
       // Node forwards the message to the PHP backend which handles MySQL, Redis, Auth, and WS Broadcast
-      const res = await axios.post(`http://localhost:8000/${endpoint}`, formData, {
+      const res = await axios.post(`http://127.0.0.1:8000/${endpoint}`, formData, {
         headers: formData.getHeaders()
       });
       
@@ -210,3 +238,4 @@ const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`WebSocket Server running on port ${PORT}`);
 });
+

@@ -23,6 +23,23 @@ $updated = $con->query("
     WHERE receiver_id={$my} AND sender_id={$receiver} AND seen=0 AND chat_platform='{$platform}'
 ");
 
+// Update Redis
+require_once 'RedisConfig.php';
+$redis = RedisConfig::getConnection();
+if ($redis) {
+    $thread_id = min($my, $receiver) . "_" . max($my, $receiver);
+    $redisKey = "chat_thread:{$platform}:{$thread_id}";
+    $redisMessages = $redis->zRange($redisKey, 0, -1, true);
+    foreach ($redisMessages as $rm => $score) {
+        $msgObj = json_decode($rm, true);
+        if ($msgObj && $msgObj['receiver_id'] == $my && $msgObj['seen'] == 0) {
+            $redis->zRem($redisKey, $rm);
+            $msgObj['seen'] = 1;
+            $redis->zAdd($redisKey, $score, json_encode($msgObj));
+        }
+    }
+}
+
 // If any messages were marked seen, notify the sender via WebSocket
 // so their single tick → double tick updates instantly (no need to wait for a reply)
 if ($con->affected_rows > 0) {
@@ -129,3 +146,5 @@ usort($messages, function($a, $b) {
 
 echo json_encode(["status" => "success", "data" => $messages]);
 ?>
+
+

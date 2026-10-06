@@ -137,7 +137,7 @@ if ($redis) {
     
     // Send to receiver
     $postDataReceiver = array(
-        'room' => "user_{$receiver}",
+        'receiverId' => $receiver,
         'type' => 'new_notification',
         'payload' => [
             'type' => 'chat',
@@ -168,8 +168,28 @@ if ($redis) {
             'content' => json_encode($postDataReceiver)
         )
     );
-    @file_get_contents($url, false, stream_context_create($options1));
+    $responseReceiver = @file_get_contents($url, false, stream_context_create($options1));
+    $is_online = false;
+    if ($responseReceiver) {
+        $resObj = json_decode($responseReceiver, true);
+        if (isset($resObj['success']) && $resObj['success'] === true) {
+            $is_online = true;
+        }
+    }
     
+    if (!$is_online) {
+        // Fallback to FCM Push Notification if offline
+        $senderNameQ = $con->query("SELECT name FROM tbl_members WHERE id = '$my' LIMIT 1");
+        $senderName = ($senderNameQ && $sRow = $senderNameQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+        
+        $push_text = !empty($msg) ? $msg : "Sent an attachment";
+        sendExpoPushNotification($con, $receiver, $senderName, $push_text, [
+            'type' => 'chat',
+            'sender_id' => $my,
+            'message' => $chatObj
+        ], true); // skip_db = true
+    }
+
     $options2 = array(
         'http' => array(
             'header'  => "Content-type: application/json\r\n",

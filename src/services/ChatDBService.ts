@@ -16,11 +16,26 @@ export const ChatDBService = {
         full_name TEXT,
         profile_photo TEXT,
         last_message TEXT,
+        last_message_is_mine INTEGER DEFAULT 0,
+        last_message_seen INTEGER DEFAULT 0,
         unread_count INTEGER,
         time TEXT,
+        timestamp_val TEXT,
         my_user_id TEXT
       );
-      
+    `);
+    
+    try {
+      await db.execAsync(`ALTER TABLE chat_conversations ADD COLUMN last_message_is_mine INTEGER DEFAULT 0;`);
+    } catch (e) {}
+    try {
+      await db.execAsync(`ALTER TABLE chat_conversations ADD COLUMN last_message_seen INTEGER DEFAULT 0;`);
+    } catch (e) {}
+    try {
+      await db.execAsync(`ALTER TABLE chat_conversations ADD COLUMN timestamp_val TEXT;`);
+    } catch (e) {}
+
+    await db.execAsync(`
       CREATE TABLE IF NOT EXISTS chat_messages (
         client_message_id TEXT PRIMARY KEY,
         server_id TEXT,
@@ -39,8 +54,8 @@ export const ChatDBService = {
 
     await db.runAsync(`
       INSERT OR REPLACE INTO chat_conversations 
-      (chat_id, partner_id, is_group, full_name, profile_photo, last_message, unread_count, time, my_user_id) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (chat_id, partner_id, is_group, full_name, profile_photo, last_message, last_message_is_mine, last_message_seen, unread_count, time, timestamp_val, my_user_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       uniqueChatId,
       partnerId,
@@ -48,8 +63,11 @@ export const ChatDBService = {
       conv.full_name || conv.name,
       conv.profile_photo || conv.photo || '',
       conv.last_message || '',
+      conv.last_message_is_mine ? 1 : 0,
+      conv.last_message_seen ? 1 : 0,
       conv.unread || 0,
       conv.time || '',
+      conv.timestamp || '',
       userId
     ]);
   },
@@ -57,9 +75,14 @@ export const ChatDBService = {
   getConversations: async (userId: string) => {
     const db = await getDBConnection();
     try {
-      return await db.getAllAsync(`SELECT * FROM chat_conversations WHERE my_user_id = ? ORDER BY time DESC`, [userId]);
+      return await db.getAllAsync(`SELECT * FROM chat_conversations WHERE my_user_id = ? ORDER BY timestamp_val DESC`, [userId]);
     } catch {
       return [];
+    }
+  },
+
+  resetConversationUnreadCount: async (chatId: string) => { const db = await getDBConnection(); try { await db.runAsync(`UPDATE chat_conversations SET unread_count = 0 WHERE chat_id = ?`, [chatId]); } catch (e) {} }, updateConversationLastMessage: async (chatId: string, lastMessage: string, time: string, incrementUnread: boolean, isMine: boolean = false, seen: boolean = false, timestampVal: string = "") => { const db = await getDBConnection(); try { const ts = timestampVal || new Date().toISOString().replace("T", " ").substring(0, 19); if (incrementUnread) { await db.runAsync(`UPDATE chat_conversations SET last_message = ?, time = ?, timestamp_val = ?, unread_count = unread_count + 1, last_message_is_mine = ?, last_message_seen = ? WHERE chat_id = ?`, [lastMessage, time, ts, isMine ? 1 : 0, seen ? 1 : 0, chatId]); } else { await db.runAsync(`UPDATE chat_conversations SET last_message = ?, time = ?, timestamp_val = ?, last_message_is_mine = ?, last_message_seen = ? WHERE chat_id = ?`, [lastMessage, time, ts, isMine ? 1 : 0, seen ? 1 : 0, chatId]); } } catch (e) {
+      console.log('Error updating conversation', e);
     }
   },
 
@@ -73,7 +96,7 @@ export const ChatDBService = {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         cid,
-        String(m.id),
+        m.id ? String(m.id) : null,
         chatId,
         String(m.sender_id),
         m.message || '',
@@ -122,7 +145,7 @@ export const ChatDBService = {
       UPDATE chat_messages 
       SET ${setKeys} 
       WHERE client_message_id = ?
-    `, [...values, clientMsgId]);
+    `, [...values, clientMsgId] as any[]);
   },
   
   markAllAsSeen: async (chatId: string) => {
@@ -132,5 +155,15 @@ export const ChatDBService = {
       SET seen = 1 
       WHERE chat_id = ? AND is_mine = 1 AND seen = 0
     `, [chatId]);
+    await db.runAsync(`
+      UPDATE chat_conversations
+      SET last_message_seen = 1
+      WHERE chat_id = ?
+    `, [chatId]);
   }
 };
+
+
+
+
+

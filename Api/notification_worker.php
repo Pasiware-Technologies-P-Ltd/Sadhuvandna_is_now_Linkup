@@ -9,6 +9,98 @@ $redis = RedisConfig::getConnection();
 
 if (!$redis) die("Redis not available.\n");
 
+function processGroupedNotification($con, $redis, $receiver_id, $type, $reference_id, $actor_id, $actor_name, $default_title, $payload_data) {
+    if ($type === 'follow_request' || $type === 'follow' || $type === 'message') {
+        if ($type === 'follow') {
+            $msg = $actor_name . ' accepted your request and followed you back!';
+        } elseif ($type === 'follow_request') {
+            $msg = $actor_name . ' wants to connect with you.';
+        } else {
+            $msg = $actor_name . ' sent you a message.';
+        }
+        deliverNotification($con, $receiver_id, $type, $reference_id, $default_title, $msg, $payload_data);
+        return;
+    }
+
+    $redisKey = "notify:{$type}:{$reference_id}:actors";
+    $redis->sAdd($redisKey, $actor_name);
+    $redis->expire($redisKey, 7 * 24 * 3600); 
+
+    $actors = $redis->sMembers($redisKey);
+    $count = count($actors);
+    
+    $actors = array_diff($actors, [$actor_name]);
+    array_unshift($actors, $actor_name);
+    $actors = array_values($actors);
+    
+    if ($count == 1) {
+        $msg = "{$actor_name} " . ($type == 'like' ? 'liked' : 'commented on') . " your post.";
+    } elseif ($count == 2) {
+        $msg = "{$actors[0]} and {$actors[1]} " . ($type == 'like' ? 'liked' : 'commented on') . " your post.";
+    } else {
+        $others = $count - 2;
+        $msg = "{$actors[0]}, {$actors[1]} and {$others} other" . ($others > 1 ? 's' : '') . " " . ($type == 'like' ? 'liked' : 'commented on') . " your post.";
+    }
+    
+    deliverNotification($con, $receiver_id, $type, $reference_id, $default_title, $msg, $payload_data);
+}
+
+function deliverNotification($con, $receiver_id, $type, $reference_id, $title, $msg, $payload_data) {
+    $payload_json = json_encode($payload_data);
+    $notif_id = 0;
+    
+    // Group only unread notifications (seen = 0)
+    $checkQ = $con->query("SELECT id FROM tbl_notifications WHERE user_id = '$receiver_id' AND type = '$type' AND reference_id = '$reference_id' AND seen = 0 LIMIT 1");
+    if ($checkQ && $row = $checkQ->fetch_assoc()) {
+        $notif_id = $row['id'];
+        $stmt = $con->prepare("UPDATE tbl_notifications SET message = ?, created_at = NOW() WHERE id = ?");
+        $stmt->bind_param("si", $msg, $notif_id);
+        $stmt->execute();
+    } else {
+        $stmt = $con->prepare("INSERT INTO tbl_notifications (user_id, title, message, type, data_payload, reference_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssss", $receiver_id, $title, $msg, $type, $payload_json, $reference_id);
+        $stmt->execute();
+        $notif_id = $con->insert_id;
+    }
+    
+    // Attempt WebSocket Delivery
+    $ch = curl_init('http://127.0.0.1:3000/api/trigger');
+    $postPayload = json_encode([
+        'receiverId' => $receiver_id,
+        'type' => 'bell_notification',
+        'payload' => [
+            'id' => $notif_id,
+            'title' => $title,
+            'message' => $msg,
+            'type' => $type,
+            'data_payload' => $payload_json,
+            'created_at' => date('Y-m-d H:i:s'),
+            'seen' => 0
+        ]
+    ]);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postPayload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    $success = false;
+    if ($httpCode == 200 && $response) {
+        $resObj = json_decode($response, true);
+        if (isset($resObj['success']) && $resObj['success'] === true) {
+            $success = true;
+        }
+    }
+    
+    if (!$success) {
+        // Fallback FCM Push (skip_db = true because we already UPSERTed above)
+        sendExpoPushNotification($con, $receiver_id, $title, $msg, $payload_data, true);
+    }
+}
+
 while (true) {
     try {
         $json = $redis->brPop(QueueManager::QUEUE_NOTIFICATIONS, 5);
@@ -25,8 +117,8 @@ while (true) {
             if ($ownQ && $row = $ownQ->fetch_assoc()) {
                 $owner_id = $row['user_id'];
                 $liker_name = $row['liker_name'];
-                if ($owner_id != $uid && function_exists('sendExpoPushNotification')) {
-                    sendExpoPushNotification($con, $owner_id, "New Like", "$liker_name liked your post.", ["type" => "like", "postId" => strval($pid)]);
+                if ($owner_id != $uid) {
+                    processGroupedNotification($con, $redis, $owner_id, 'like', "post_{$pid}", $uid, $liker_name, "New Like", ["type" => "like", "postId" => strval($pid)]);
                 }
             }
         } elseif ($type === 'comment') {
@@ -36,8 +128,8 @@ while (true) {
             if ($ownQ && $row = $ownQ->fetch_assoc()) {
                 $owner_id = $row['user_id'];
                 $commenter_name = $row['commenter_name'];
-                if ($owner_id != $uid && function_exists('sendExpoPushNotification')) {
-                    sendExpoPushNotification($con, $owner_id, "New Comment", "$commenter_name commented on your post.", ["type" => "comment", "postId" => strval($pid)]);
+                if ($owner_id != $uid) {
+                    processGroupedNotification($con, $redis, $owner_id, 'comment', "post_{$pid}", $uid, $commenter_name, "New Comment", ["type" => "comment", "postId" => strval($pid)]);
                 }
             }
         } elseif ($type === 'follow') {
@@ -48,11 +140,32 @@ while (true) {
             $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $follower_id LIMIT 1");
             $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
             
-            if (function_exists('sendExpoPushNotification')) {
-                if ($status === 'accepted') {
-                    sendExpoPushNotification($con, $following_id, "New Connection", "$sender_name accepted your request and followed you back!", ["type" => "follow", "user_id" => $follower_id]);
-                } else {
-                    sendExpoPushNotification($con, $following_id, "Follow Request", "$sender_name wants to connect with you.", ["type" => "follow_request", "user_id" => $follower_id]);
+            if ($status === 'accepted') {
+                processGroupedNotification($con, $redis, $following_id, 'follow', "user_{$follower_id}", $follower_id, $sender_name, "New Connection", ["type" => "follow", "user_id" => $follower_id]);
+            } else {
+                processGroupedNotification($con, $redis, $following_id, 'follow_request', "user_{$follower_id}", $follower_id, $sender_name, "Follow Request", ["type" => "follow_request", "user_id" => $follower_id]);
+            }
+        } elseif ($type === 'chat') {
+            $sender_id = $payload['sender_id'];
+            $receiver_id = $payload['receiver_id'];
+            
+            $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
+            $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+            
+            processGroupedNotification($con, $redis, $receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id)]);
+        } elseif ($type === 'group_chat') {
+            $sender_id = $payload['sender_id'];
+            $group_id = $payload['group_id'];
+            
+            // Get all group members except sender
+            $gQ = $con->query("SELECT user_id FROM tbl_group_members WHERE group_id = $group_id AND user_id != $sender_id");
+            if ($gQ && $gQ->num_rows > 0) {
+                $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
+                $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+                
+                while ($gRow = $gQ->fetch_assoc()) {
+                    $receiver_id = $gRow['user_id'];
+                    processGroupedNotification($con, $redis, $receiver_id, 'message', "group_{$group_id}", $sender_id, $sender_name, "New Group Message", ["type" => "message", "sender_id" => strval($sender_id), "group_id" => strval($group_id)]);
                 }
             }
         }
@@ -61,3 +174,7 @@ while (true) {
     }
 }
 ?>
+
+
+
+

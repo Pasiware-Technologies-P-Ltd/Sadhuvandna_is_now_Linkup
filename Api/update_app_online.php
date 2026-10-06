@@ -12,13 +12,8 @@ $data = json_decode(file_get_contents("php://input"), true);
 $user_id = $data['user_id'] ?? $_POST['user_id'] ?? 0;
 
 if($user_id){
-    // Update tbl_members last_active
-    // We also update tbl_marriage_profiles if linked, but tbl_members is the auth source
-    $con->query("UPDATE tbl_members SET last_active=NOW() WHERE id='$user_id'");
-    
-    // Also update marriage profile if exists (for easier joining in other queries)
-    // $con->query("UPDATE tbl_marriage_profiles SET last_active=NOW() WHERE user_id='$user_id'");
-    
+    // DB update is no longer needed on connect because realtime status is handled by WS.
+    // We only update last_seen on disconnect via mark_offline.php
     echo json_encode(['status'=>'success']);
 } else {
     echo json_encode(['status'=>'error', 'message'=>'No user_id']);

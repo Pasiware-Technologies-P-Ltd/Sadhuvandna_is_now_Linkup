@@ -257,10 +257,10 @@ function processBatch($type, $jobs) {
             $cid = $con->real_escape_string($payload['client_message_id']);
             $sender = (int)$payload['sender_id'];
             $receiver = (int)$payload['receiver_id'];
-            $msg = $con->real_escape_string($payload['message']);
-            $file = $con->real_escape_string($payload['file']);
-            $file_type = $con->real_escape_string($payload['file_type']);
-            $plat = $con->real_escape_string($payload['chat_platform']);
+            $msg = $con->real_escape_string($payload['message'] ?? '');
+            $file = $con->real_escape_string($payload['file'] ?? '');
+            $file_type = $con->real_escape_string($payload['file_type'] ?? '');
+            $plat = $con->real_escape_string($payload['chat_platform'] ?? '');
             
             $inserts[] = "('$cid', $sender, $receiver, '$msg', '$file', '$file_type', '$plat', 0, NOW())";
         }
@@ -268,6 +268,46 @@ function processBatch($type, $jobs) {
         if (!empty($inserts)) {
             $sql = "INSERT IGNORE INTO tbl_messages (client_message_id, sender_id, receiver_id, message, file, file_type, chat_platform, seen, created_at) VALUES " . implode(',', $inserts);
             if (!$con->query($sql)) throw new Exception("Bulk Chat Insert Failed: " . $con->error);
+        }
+    }
+    else if ($type === 'mark_seen_batch') {
+        $client_ids = [];
+        $numeric_ids = [];
+        
+        foreach ($jobs as $jobItem) {
+            $p = $jobItem['data']['payload'];
+            $mid = $p['message_id'];
+            if (!empty($p['is_numeric'])) {
+                $numeric_ids[] = (int)$mid;
+            } else {
+                $client_ids[] = "'" . $con->real_escape_string($mid) . "'";
+            }
+        }
+        
+        if (!empty($numeric_ids) || !empty($client_ids)) {
+            $where = [];
+            if (!empty($numeric_ids)) {
+                $where[] = "id IN (" . implode(',', array_unique($numeric_ids)) . ")";
+            }
+            if (!empty($client_ids)) {
+                $where[] = "client_message_id IN (" . implode(',', array_unique($client_ids)) . ")";
+            }
+            
+            $sql = "UPDATE tbl_messages SET seen = 1 WHERE " . implode(' OR ', $where);
+            if (!$con->query($sql)) throw new Exception("Bulk Mark Seen Failed: " . $con->error);
+        }
+    }
+    else if ($type === 'update_last_seen') {
+        $user_ids = [];
+        
+        foreach ($jobs as $jobItem) {
+            $uid = (int)$jobItem['data']['payload']['user_id'];
+            $user_ids[$uid] = $uid;
+        }
+        
+        if (!empty($user_ids)) {
+            $sql = "UPDATE tbl_members SET last_active=NOW() - INTERVAL 5 MINUTE WHERE id IN (" . implode(',', $user_ids) . ")";
+            if (!$con->query($sql)) throw new Exception("Bulk Last Seen Update Failed: " . $con->error);
         }
     }
     else if ($type === 'sync_group_chat') {

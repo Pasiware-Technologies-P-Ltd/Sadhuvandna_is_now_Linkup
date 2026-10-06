@@ -29,7 +29,7 @@ if (!$search_id) {
 // We use a subquery to get the latest message for each partner
 $sql = "
     SELECT 
-        m1.*, 
+        m1.*, m2.unread_count, 
         CASE 
             WHEN m1.sender_id = $search_id THEN m1.receiver_id 
             ELSE m1.sender_id 
@@ -37,7 +37,7 @@ $sql = "
     FROM tbl_messages m1
     INNER JOIN (
         SELECT 
-            MAX(id) as max_id
+            MAX(id) as max_id, SUM(CASE WHEN receiver_id = $search_id AND seen = 0 THEN 1 ELSE 0 END) as unread_count
         FROM tbl_messages
         WHERE (sender_id = $search_id OR receiver_id = $search_id)
         AND chat_platform = '$platform'
@@ -88,10 +88,10 @@ while ($row = $res->fetch_assoc()) {
         "user_id" => $partner_user_id,
         "full_name" => $partner_name,
         "profile_photo" => $partner_photo,
-        "last_message" => $row['message'],
+        "last_message" => $row['message'], "last_message_is_mine" => ($row['sender_id'] == $search_id), "last_message_seen" => ($row['seen'] == 1),
         "time" => date("h:i A", strtotime($row['created_at'])),
         "timestamp" => $row['created_at'],
-        "unread" => ($row['receiver_id'] == $search_id && $row['seen'] == 0) ? 1 : 0,
+        "unread" => intval($row['unread_count']),
         "is_online" => $is_online
     ];
 }
@@ -114,7 +114,7 @@ if ($groups_res) {
             "partner_id" => $grow['id'], // use group_id as partner_id for mapping
             "full_name" => $grow['name'],
             "profile_photo" => $grow['photo'],
-            "last_message" => $grow['last_message'] ?: 'Group created',
+            "last_message" => $grow['last_message'] ?: 'Group created', "last_message_is_mine" => false, "last_message_seen" => false,
             "time" => date("h:i A", strtotime($msg_time)),
             "timestamp" => $msg_time,
             "unread" => 0, // Simplified for now
@@ -132,3 +132,6 @@ usort($chats, function($a, $b) {
 
 echo json_encode(["status" => "success", "data" => $chats]);
 ?>
+
+
+

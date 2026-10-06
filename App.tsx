@@ -36,6 +36,7 @@ import { Audio } from 'expo-av';
 
 
 import { UploadProvider } from './src/context/UploadContext';
+import { OnlineProvider } from './src/context/OnlineContext';
 import UploadProgressBanner from './src/components/UploadProgressBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -178,12 +179,14 @@ export default function App() {
         <FontProvider>
           <LanguageProvider>
             <UploadProvider>
-              <NavigationContainer ref={navigationRef} linking={linking}>
-                <StatusBar style="dark" />
-                <RootNavigator initialRoute={initialRoute} />
-                <GlobalCallListener />
-              </NavigationContainer>
-              <UploadProgressBanner />
+              <OnlineProvider>
+                <NavigationContainer ref={navigationRef} linking={linking}>
+                  <StatusBar style="dark" />
+                  <RootNavigator initialRoute={initialRoute} />
+                  <GlobalCallListener />
+                </NavigationContainer>
+                <UploadProgressBanner />
+              </OnlineProvider>
             </UploadProvider>
           </LanguageProvider>
         </FontProvider>
