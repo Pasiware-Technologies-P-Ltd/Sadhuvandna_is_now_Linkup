@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
 import { Animated, LayoutAnimation, UIManager } from 'react-native';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal, Pressable, Linking, Keyboard, ScrollView, AppState } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal, Pressable, Linking, Keyboard, ScrollView, AppState, FlatList } from 'react-native';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { ChatDBService } from '../../services/ChatDBService';
+import { useOnlineStatus } from '../../context/OnlineContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
@@ -32,6 +33,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();
     const { receiver: rawReceiver, platform = 'community' } = route.params || {};
     const { t } = useLanguage();
+    const { isUserOnline } = useOnlineStatus();
 
     // Ensure receiver object is robust
     const receiver = rawReceiver
@@ -45,7 +47,7 @@ const ChatScreen = ({ navigation, route }: any) => {
 
     const [messages, setMessages] = useState<any[]>([]);
     const messagesRef = useRef<any[]>([]);
-    
+
     useEffect(() => {
         messagesRef.current = messages;
     }, [messages]);
@@ -64,7 +66,8 @@ const ChatScreen = ({ navigation, route }: any) => {
 
     const [isTyping, setIsTyping] = useState(false);
     const [isReceiverTyping, setIsReceiverTyping] = useState(false);
-    const [receiverOnline, setReceiverOnline] = useState(false);
+    // receiverOnline driven by global OnlineContext — instant across all screens
+    const receiverOnline = !route.params?.isGroup && isUserOnline(receiver?.id);
     const [receiverLastSeen, setReceiverLastSeen] = useState<string | null>(null);
     // Group typing indicator
     const [groupTypingUser, setGroupTypingUser] = useState<string | null>(null);
@@ -124,15 +127,14 @@ const ChatScreen = ({ navigation, route }: any) => {
     const lastFetchTimeRef = useRef(0);
     const hasSufficientCacheRef = useRef(false);
     const hasScrolledToBottomRef = useRef(false);
+    const allowHistoryFetchRef = useRef(false);
+    const isUserScrollingRef = useRef(false);
     const isAtBottomRef = useRef(true);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     useEffect(() => {
         const show = Keyboard.addListener('keyboardDidShow', (e) => {
             setKeyboardHeight(e.endCoordinates.height);
-            setTimeout(() => {
-                flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
         });
         const hide = Keyboard.addListener('keyboardDidHide', () => {
             setKeyboardHeight(0);
@@ -174,39 +176,39 @@ const ChatScreen = ({ navigation, route }: any) => {
                     if (actualPayload && actualPayload.message) {
                         const isFromReceiver = String(actualPayload.message.sender_id) === String(receiver?.id);
                         const isFromMeToReceiver = String(actualPayload.message.sender_id) === String(myProfileId) && String(actualPayload.message.receiver_id) === String(receiver?.id);
-                        
+
                         if (isFromReceiver || isFromMeToReceiver) {
                             const newMsg = actualPayload.message;
                             const isMine = isFromMeToReceiver;
-                            
+
                             setMessages(prev => {
                                 // Deduplicate by client_message_id to avoid echoing back our own optimistic message
                                 if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (newMsg.client_message_id && m.client_message_id === newMsg.client_message_id))) return prev;
                                 console.log('[WS] NEW MESSAGE → appended');
-                                return [...prev, { ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }];
+                                return [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }, ...prev];
                             });
 
-                            if (isAtBottomRef.current) {
+                            if (isAtBottomRef.current && navigation.isFocused()) {
                                 setTimeout(() => {
-                                    flatListRef.current?.scrollToEnd({ animated: true });
+                                    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
                                 }, 150);
                             }
-                            
+
                             // Save to SQLite
                             const isGroup = route.params?.isGroup;
                             const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-                            ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => {});
-                            
-                            // Mark message as seen on server without a full re-fetch
-                            // (avoids an unnecessary GET just to update seen status)
-                            try {
-                                api.post('mark_seen.php', {
-                                    message_id: newMsg.id,
-                                    my_profile_id: myProfileId,
-                                    receiver_id: receiver?.id,
-                                    platform: platform,
-                                });
-                            } catch { }
+                            ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => { });
+
+                            if (!isMine && isAtBottomRef.current && navigation.isFocused()) {
+                                try {
+                                    socketService.socket?.emit('mark_seen', {
+                                        message_id: newMsg.id || newMsg.client_message_id,
+                                        my_profile_id: myProfileId,
+                                        receiver_id: receiver?.id,
+                                        platform: platform,
+                                    });
+                                } catch { }
+                            }
                         }
                         // If notification is from someone else, just ignore —
                         // socket already handled message delivery for this chat.
@@ -224,33 +226,33 @@ const ChatScreen = ({ navigation, route }: any) => {
                     if (actualPayload && actualPayload.message && route.params?.isGroup && String(actualPayload.group_id) === String(receiver?.id)) {
                         const newMsg = actualPayload.message;
                         const isMine = String(newMsg.sender_id) === String(myProfileId);
-                        
+
                         setMessages(prev => {
                             if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (newMsg.client_message_id && m.client_message_id === newMsg.client_message_id))) return prev;
                             console.log('[WS] NEW GROUP MESSAGE → appended');
-                            return [...prev, { ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }];
+                            return [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }, ...prev];
                         });
 
-                        if (isAtBottomRef.current) {
+                        if (isAtBottomRef.current && navigation.isFocused()) {
                             setTimeout(() => {
-                                flatListRef.current?.scrollToEnd({ animated: true });
+                                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
                             }, 150);
                         }
-                        
+
                         const chatId = `group_${receiver?.id}`;
-                        ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => {});
+                        ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }]).catch(() => { });
                     }
                 });
 
                 // Handle Send ACKs
                 socketService.socket.on('chat:ack', (data: any) => {
                     if (data && data.client_message_id) {
-                        setMessages(prev => prev.map(m => 
-                            m.client_message_id === data.client_message_id 
-                                ? { ...m, isOptimistic: false, id: data.server_id, server_id: data.server_id } 
+                        setMessages(prev => prev.map(m =>
+                            m.client_message_id === data.client_message_id
+                                ? { ...m, isOptimistic: false, id: data.server_id, server_id: data.server_id }
                                 : m
                         ));
-                        ChatDBService.updateMessageStatus(data.client_message_id, { status: 'sent', server_id: data.server_id }).catch(() => {});
+                        ChatDBService.updateMessageStatus(data.client_message_id, { status: 'sent', server_id: data.server_id }).catch(() => { });
                     }
                 });
 
@@ -274,12 +276,11 @@ const ChatScreen = ({ navigation, route }: any) => {
                     }
                 });
 
+                // user_status is handled globally by OnlineContext.
+                // We still listen locally only for last-seen text update.
                 socketService.socket.on('user_status', (data: any) => {
-                    if (data.userId == receiver?.id || data.userId == receiver?.user_id) {
-                        setReceiverOnline(data.status === 'online');
-                        if (data.status === 'offline') {
-                            setReceiverLastSeen('Just now');
-                        }
+                    if ((data.userId == receiver?.id || data.userId == receiver?.user_id) && data.status === 'offline') {
+                        fetchUserStatus();
                     }
                 });
 
@@ -289,15 +290,19 @@ const ChatScreen = ({ navigation, route }: any) => {
                     if (String(data.viewer_id) === String(receiver?.id)) {
                         // Mark all sent messages (is_mine: true) as seen instantly in UI
                         setMessages(prev => prev.map(m =>
-                            m.is_mine && m.seen === 0 ? { ...m, seen: 1 } : m
+                            m.is_mine && m.seen == 0 ? { ...m, seen: 1 } : m
                         ));
-                        
+
                         // Mark in SQLite locally
                         const isGrp = route.params?.isGroup;
                         const chatId = isGrp ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-                        ChatDBService.markAllAsSeen(chatId).catch(() => {});
+                        ChatDBService.markAllAsSeen(chatId).catch(() => { });
                     }
                 });
+
+                if (receiver?.id) {
+                    socketService.socket.emit('check_status', receiver.id);
+                }
             }
 
             // Listen to foreground push notifications directly for instant message delivery
@@ -312,18 +317,16 @@ const ChatScreen = ({ navigation, route }: any) => {
             if (isMountedRef.current && isActive) {
                 const isFirstLoad = lastFetchTimeRef.current === 0;
                 const now = Date.now();
-                
+
                 if (isFirstLoad) {
                     lastFetchTimeRef.current = now;
                     // On FIRST load, NEVER call fetchMessages if we have cache.
-                    if (!hasSufficientCacheRef.current) {
-                        fetchMessages(); // Fetch latest 30 only if empty
-                    }
+                    fetchMessages(null, true); // ALWAYS fetch to reconcile gap if app was killed and mark as seen
                     // We check block status from local cache initially, avoid API overhead
-                    checkBlockStatus(); 
+                    checkBlockStatus();
                 } else if (now - lastFetchTimeRef.current > 2000) {
                     lastFetchTimeRef.current = now;
-                    
+
                     // If we are foregrounding (not first load), we might have missed messages.
                     // Instead of a blind fetch, we do a proper reconciliation fetch (isReconnect = true).
                     // We only do this if we suspect a disconnect/reconnect gap.
@@ -469,24 +472,22 @@ const ChatScreen = ({ navigation, route }: any) => {
     const loadCachedChatMessages = async (uid: string) => {
         try {
             const isGroup = route.params?.isGroup;
-            const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-            
-            // Try SQLite first with limit 30
+            const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`; ChatDBService.resetConversationUnreadCount(chatId); // Try SQLite first with limit 30
             const cachedMessages = await ChatDBService.getMessages(chatId, 30, 0);
-            
+
             if (cachedMessages && cachedMessages.length > 0) {
                 if (cachedMessages.length >= 1) {
                     hasSufficientCacheRef.current = true;
                 }
-                
+
                 // Map from SQLite schema back to UI structure
                 const mapped = cachedMessages.map((m: any) => ({
                     ...m,
                     id: m.server_id,
                     is_mine: m.is_mine === 1,
                     isOptimistic: m.status === 'pending'
-                })).reverse();
-                
+                }));
+
                 setMessages(mapped);
                 setLoading(false);
                 console.log('[CHAT HISTORY] SQLite messages:', mapped.length);
@@ -504,7 +505,7 @@ const ChatScreen = ({ navigation, route }: any) => {
 
     const checkPayment = async (uId: string) => {
         if (!receiver?.id) return;
-        
+
         const cacheKey = `payment_cache_${platform}_${uId}_${receiver.id}`;
         try {
             // Check cache first
@@ -538,7 +539,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                         paid: true,
                         my_profile_id: res.data.my_profile_id,
                         timestamp: Date.now()
-                    })).catch(() => {});
+                    })).catch(() => { });
                 } else {
                     setPaymentStatus('unpaid');
                     setPaymentUrl(
@@ -547,7 +548,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                             : null
                     );
                     // Clear cache if unpaid
-                    AsyncStorage.removeItem(cacheKey).catch(() => {});
+                    AsyncStorage.removeItem(cacheKey).catch(() => { });
                 }
             } else {
                 Alert.alert('Error', res.data.message || 'Payment check failed');
@@ -629,7 +630,7 @@ const ChatScreen = ({ navigation, route }: any) => {
             let extraParams = '';
             if (isReconnect && messagesRef.current && messagesRef.current.length > 0) {
                 const realMessages = messagesRef.current.filter(m => !m.isOptimistic);
-                const newestMsg = realMessages.length > 0 ? realMessages[realMessages.length - 1] : null;
+                const newestMsg = realMessages.length > 0 ? realMessages[0] : null;
                 if (newestMsg) {
                     const sinceId = typeof newestMsg.id === 'string' && newestMsg.id.includes('pending') ? 0 : newestMsg.id;
                     extraParams = `&since_time=${encodeURIComponent(newestMsg.created_at)}&since_id=${sinceId}`;
@@ -667,30 +668,32 @@ const ChatScreen = ({ navigation, route }: any) => {
                 }).sort((a: any, b: any) => {
                     const timeA = new Date((a.created_at || '').replace(' ', 'T')).getTime() || 0;
                     const timeB = new Date((b.created_at || '').replace(' ', 'T')).getTime() || 0;
-                    return timeA - timeB; // Ascending: oldest first, newest last
+                    return timeB - timeA; // Descending: newest first, oldest last
                 });
                 if (mappedData.length === 0 && isReconnect) return;
 
                 setMessages(prev => {
                     const optimisticMsgs = prev.filter((m: any) => m.isOptimistic);
-                    
-                    if (isReconnect && extraParams) {
-                        const finalData = [...prev.filter(m => !m.isOptimistic), ...mappedData, ...optimisticMsgs];
-                        const currentUIdForCache = userIdRef.current || userId;
-                        const cacheKey = `cached_messages_v2_${isGroup ? 'grp' : currentUIdForCache}_${receiver?.id}`;
-                        AsyncStorage.setItem(cacheKey, JSON.stringify(finalData));
-                        const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-                        ChatDBService.saveMessages(chatId, mappedData).catch(() => {});
-                        return finalData;
-                    }
+                    const realPrevMsgs = prev.filter((m: any) => !m.isOptimistic);
 
-                    if (prev.length === mappedData.length && optimisticMsgs.length === 0) {
+                    const newIds = new Set(mappedData.map((m: any) => m.id));
+                    const preservedOlderMsgs = realPrevMsgs.filter((m: any) => !newIds.has(m.id));
+
+                    // Deduplicate optimistics just in case
+                    const finalOptimistics = optimisticMsgs.filter(o => {
+                        const lastRealMsg = mappedData.length > 0 ? mappedData[0] : null;
+                        return !(lastRealMsg && lastRealMsg.message === o.message);
+                    });
+
+                    const finalData = [...finalOptimistics, ...mappedData, ...preservedOlderMsgs];
+
+                    if (prev.length === finalData.length) {
                         let changed = false;
                         for (let i = 0; i < prev.length; i++) {
-                            if (prev[i].id !== mappedData[i].id ||
-                                prev[i].seen !== mappedData[i].seen ||
-                                prev[i].is_deleted !== mappedData[i].is_deleted ||
-                                prev[i].message !== mappedData[i].message) {
+                            if (prev[i].id !== finalData[i].id ||
+                                prev[i].seen !== finalData[i].seen ||
+                                prev[i].is_deleted !== finalData[i].is_deleted ||
+                                prev[i].message !== finalData[i].message) {
                                 changed = true;
                                 break;
                             }
@@ -698,25 +701,14 @@ const ChatScreen = ({ navigation, route }: any) => {
                         if (!changed) return prev;
                     }
 
-                    // If backend returned fewer messages than we have (including optimistics),
-                    // append our optimistics to the end so they don't vanish instantly due to lag
-                    let finalData = mappedData;
-                    if (optimisticMsgs.length > 0) {
-                        const lastRealMsg = mappedData[mappedData.length - 1];
-                        // If the last real message doesn't match our optimistic message text/sender, keep it
-                        if (!lastRealMsg || lastRealMsg.message !== optimisticMsgs[0].message) {
-                            finalData = [...mappedData, ...optimisticMsgs];
-                        }
-                    }
-
                     const currentUIdForCache = userIdRef.current || userId;
                     const cacheKey = `cached_messages_v2_${isGroup ? 'grp' : currentUIdForCache}_${receiver?.id}`;
                     AsyncStorage.setItem(cacheKey, JSON.stringify(finalData));
-                    
+
                     // Save to SQLite asynchronously
                     const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-                    ChatDBService.saveMessages(chatId, finalData).catch(() => {});
-                    
+                    ChatDBService.saveMessages(chatId, finalData).catch(() => { });
+
                     return finalData;
                 });
 
@@ -743,11 +735,11 @@ const ChatScreen = ({ navigation, route }: any) => {
         try {
             const isGroup = route.params?.isGroup;
             // The oldest message is at index 0 (chronological order)
-            const oldestMessage = messages.length > 0 ? messages[0] : null;
+            const oldestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
             const beforeTime = oldestMessage ? oldestMessage.created_at : '';
             // Handle pending messages gracefully by defaulting before_id to 0 if id is non-numeric (e.g. pending_uuid)
             const beforeId = oldestMessage && typeof oldestMessage.id === 'string' && oldestMessage.id.includes('pending') ? 0 : (oldestMessage ? oldestMessage.id : 0);
-            
+
             console.log('\n[CHAT HISTORY] TOP REACHED');
             console.log('[CHAT HISTORY] cursor_time=' + beforeTime);
             console.log('[CHAT HISTORY] cursor_id=' + beforeId);
@@ -756,9 +748,9 @@ const ChatScreen = ({ navigation, route }: any) => {
             const endpoint = isGroup
                 ? `get_group_messages.php?group_id=${receiver?.id}&user_id=${userId}&limit=30&before_time=${encodeURIComponent(beforeTime)}&before_id=${beforeId}&t=${Date.now()}`
                 : `get_chat_messages.php?my_profile_id=${myProfileId}&receiver_id=${receiver?.id}&platform=${platform}&limit=30&before_time=${encodeURIComponent(beforeTime)}&before_id=${beforeId}&t=${Date.now()}`;
-            
+
             const res = await api.get(endpoint);
-            
+
             if (res?.data?.status === 'success' && Array.isArray(res?.data?.data) && isMountedRef.current) {
                 const mappedData = res.data.data.map((m: any) => {
                     const att = isGroup ? (m.attachment || '') : (m.file || '');
@@ -778,9 +770,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                 }).sort((a: any, b: any) => {
                     const timeA = new Date((a.created_at || '').replace(' ', 'T')).getTime() || 0;
                     const timeB = new Date((b.created_at || '').replace(' ', 'T')).getTime() || 0;
-                    return timeA - timeB;
+                    return timeB - timeA;
                 });
-                
+
                 console.log('[CHAT HISTORY] received=' + mappedData.length);
                 if (mappedData.length > 0) {
                     console.log('[CHAT HISTORY] first_received_id=' + mappedData[0].id);
@@ -791,10 +783,13 @@ const ChatScreen = ({ navigation, route }: any) => {
                     console.log('[CHAT HISTORY] END OF HISTORY');
                     setHasMoreHistory(false);
                 }
-                
+
                 if (mappedData.length > 0) {
                     setMessages(prev => {
-                        const finalData = [...mappedData, ...prev];
+                        // Deduplicate to prevent key errors
+                        const existingIds = new Set(prev.map(m => m.id));
+                        const newData = mappedData.filter((m: any) => !existingIds.has(m.id));
+                        const finalData = [...prev, ...newData];
                         console.log('[CHAT HISTORY] first_state_id=' + finalData[0]?.id);
                         console.log('[CHAT HISTORY] last_state_id=' + finalData[finalData.length - 1]?.id);
                         console.log('[HISTORY] latest messages NOT reloaded');
@@ -802,7 +797,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     });
                 }
             }
-        } catch {} finally {
+        } catch { } finally {
             isFetchingMoreRef.current = false;
         }
     };
@@ -829,9 +824,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                 `get_chat_user_status.php?profile_id=${receiver.id}&my_profile_id=${currentId}&platform=${platform}&t=${Date.now()}`
             );
             if (res.data.status === 'success' && isMountedRef.current) {
-                setReceiverOnline(prev => (prev === res.data.online ? prev : res.data.online));
-                setReceiverLastSeen(prev => (prev === res.data.last_active ? prev : res.data.last_active));
-                setIsReceiverTyping(prev => (prev === res.data.is_typing ? prev : res.data.is_typing));
+                // online status driven by global OnlineContext
+                setReceiverLastSeen((prev: string | null) => (prev === res.data.last_active ? prev : res.data.last_active));
+                setIsReceiverTyping((prev: boolean) => (prev === res.data.is_typing ? prev : res.data.is_typing));
             }
         } catch (e) { console.log("Fetch Status Error", e); }
     };
@@ -1010,17 +1005,21 @@ const ChatScreen = ({ navigation, route }: any) => {
             isOptimistic: true
         };
 
-        setMessages(prev => [...prev, optimisticMsg]);
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
-        
+        setMessages(prev => [optimisticMsg, ...prev]);
+        setTimeout(() => {
+            if (isAtBottomRef.current && navigation.isFocused()) {
+                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            }
+        }, 150);
+
         // Save to SQLite
         const isGroup = route.params?.isGroup;
         const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-        ChatDBService.saveMessages(chatId, [optimisticMsg]).catch(() => {});
+        ChatDBService.saveMessages(chatId, [optimisticMsg]).catch(() => { }); let timeStr = ""; try { const d = new Date(optimisticMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { } ChatDBService.updateConversationLastMessage(chatId, optimisticMsg.message || "Media", timeStr, false, true, false);
 
         try {
             const isGroup = route.params?.isGroup;
-            
+
             // 1. Text Message (WebSocket Only)
             if (!mediaToSend) {
                 if (socketService.socket) {
@@ -1039,7 +1038,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                     Alert.alert('Error', 'WebSocket not connected. Message pending.');
                     // Leave message in pending state; offline reconciliation logic will retry it
                 }
-            } 
+            }
             // 2. Media Message (Requires Multi-part upload)
             else {
                 const formData = new FormData();
@@ -1070,14 +1069,14 @@ const ChatScreen = ({ navigation, route }: any) => {
                 if (res.data.status === 'success') {
                     const realId = res.data.id || res.data.client_message_id;
                     setMessages(prev => prev.map(m => m.id === tempId ? { ...m, isOptimistic: false } : m));
-                    ChatDBService.updateMessageStatus(tempId, { status: 'sent', server_id: realId }).catch(() => {});
-                    
+                    ChatDBService.updateMessageStatus(tempId, { status: 'sent', server_id: realId }).catch(() => { });
+
                     // The server already broadcasts new_notification internally now,
                     // so we do NOT emit 'send_notification' manually here anymore.
                 } else {
                     console.log("Send Message Failed. Response:", res.data);
                     Alert.alert('Error', res.data.message || 'Failed to send message');
-                    setMessages(prev => prev.filter(m => m.id !== tempId)); 
+                    setMessages(prev => prev.filter(m => m.id !== tempId));
                 }
             }
         } catch (e: any) {
@@ -1361,7 +1360,7 @@ const ChatScreen = ({ navigation, route }: any) => {
             return (
                 <Image
                     source={source}
-                    className="w-11 h-11 rounded-full bg-gray-200 border-2 border-white shadow-sm"
+                    style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#e5e7eb', borderWidth: 2, borderColor: 'white' }}
                 />
             );
         }
@@ -1369,8 +1368,8 @@ const ChatScreen = ({ navigation, route }: any) => {
         // Fallback: Initials
         const initials = (receiver?.full_name || 'U').charAt(0).toUpperCase();
         return (
-            <View className="w-11 h-11 rounded-full bg-orange-100 border-2 border-white shadow-sm items-center justify-center">
-                <Text className="text-orange-600 font-bold text-lg">{initials}</Text>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#ffedd5', borderWidth: 2, borderColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>{initials}</Text>
             </View>
         );
     };
@@ -1511,10 +1510,6 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 </>
                             )}
 
-                            <TouchableOpacity onPress={() => setIsSearchActive(true)} style={{ padding: 6 }} activeOpacity={0.7}>
-                                <Ionicons name="search" size={22} color="#374151" />
-                            </TouchableOpacity>
-
                             {/* 3-Dot Menu */}
                             <TouchableOpacity onPress={toggleMenu} style={{ padding: 6 }} activeOpacity={0.7}>
                                 <Ionicons name="ellipsis-vertical" size={22} color="#1f2937" />
@@ -1545,6 +1540,13 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 </>
                             )}
 
+                            <TouchableOpacity
+                                onPress={() => { setShowMenu(false); setIsSearchActive(true); }}
+                                className="flex-row items-center px-4 py-3 active:bg-gray-50 bg-white border-b border-gray-100"
+                            >
+                                <Ionicons name="search" size={20} color="#374151" />
+                                <Text className="ml-3 font-medium text-gray-700">Search</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={toggleBlockUser}
                                 className="flex-row items-center px-4 py-3 active:bg-gray-50 bg-white"
@@ -1606,41 +1608,18 @@ const ChatScreen = ({ navigation, route }: any) => {
                 className="flex-1"
                 enabled={true}
             >
-                <FlashList
-                    onScroll={(e) => {
-                        const offsetY = e.nativeEvent.contentOffset.y;
-                        const contentHeight = e.nativeEvent.contentSize.height;
-                        const layoutHeight = e.nativeEvent.layoutMeasurement.height;
-                        
-                        console.log(`[CHAT SCROLL] offsetY=${Math.round(offsetY)} contentHeight=${Math.round(contentHeight)} layoutHeight=${Math.round(layoutHeight)}`);
-
-                        const isAtBottom = offsetY + layoutHeight >= contentHeight - 50;
-                        isAtBottomRef.current = isAtBottom;
-
-                        if (offsetY <= 50 && messages.length > 0) {
-                            console.log('[HISTORY] UP → loading 30 older');
-                            fetchMoreMessages();
-                        } else if (isAtBottom) {
-                            console.log('[HISTORY] DOWN → NO API');
-                        } else {
-                            // Middle scroll
-                        }
-                    }}
-                    onContentSizeChange={(w, h) => {
-                        if (!hasScrolledToBottomRef.current && messages.length > 0) {
-                            flatListRef.current?.scrollToEnd({ animated: false });
-                            hasScrolledToBottomRef.current = true;
-                        }
-                    }}
+                <FlatList
+                    inverted={true}
+                    onScroll={(e) => { isAtBottomRef.current = e.nativeEvent.contentOffset.y <= 50; }}
+                    onEndReached={fetchMoreMessages}
+                    onEndReachedThreshold={0.3}
                     scrollEventThrottle={16}
                     ref={flatListRef}
-                    keyboardShouldPersistTaps="handled"
+                    keyboardShouldPersistTaps="handled" extraData={receiverOnline}
                     data={searchQuery.trim() ? messages.filter(m => m.message?.toLowerCase().includes(searchQuery.toLowerCase())) : messages}
-                    keyExtractor={(item, index) => (item?.id ? `msg_${item.id}` : (item?.client_message_id ? `cmid_${item.client_message_id}` : `idx_${index}`))}
-                    estimatedItemSize={70}
+                    keyExtractor={(item, index) => (item?.id && item.id !== 'undefined' ? `msg_${item.id}` : (item?.client_message_id ? `cmid_${item.client_message_id}` : `idx_${index}`))}
                     contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 20 }}
-                    getItemType={(item: any) => item.is_mine ? 'sent' : 'received'}
-                    ListHeaderComponent={
+                    ListFooterComponent={
                         hasMoreHistory && messages.length >= 30 ? (
                             <View style={{ padding: 10, alignItems: 'center' }}>
                                 <ActivityIndicator size="small" color="#ea580c" />
@@ -1653,8 +1632,8 @@ const ChatScreen = ({ navigation, route }: any) => {
                         const timeStr = formatTime(item.created_at);
                         const isDeleted = item.is_deleted == 1;
 
-                        const prevItem = index > 0 ? messages[index - 1] : null;
-                        const showDateHeader = !prevItem || isDifferentDay(item.created_at, prevItem.created_at);
+                        const nextItem = index < messages.length - 1 ? messages[index + 1] : null;
+                        const showDateHeader = !nextItem || isDifferentDay(item.created_at, nextItem.created_at);
 
                         // Robust URL resolution
                         let fileUrl: string | null = null;
@@ -1844,9 +1823,13 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                     </Text>
                                                     {isMe && (
                                                         <Ionicons
-                                                            name={item.seen == 1 ? "checkmark-done-outline" : "checkmark-outline"}
+                                                            name={
+                                                                item.isOptimistic ? "time-outline" :
+                                                                    (item.seen == 1 || receiverOnline) ? "checkmark-done-outline" :
+                                                                        "checkmark-outline"
+                                                            }
                                                             size={14}
-                                                            color={item.seen == 1 ? "#dbeafe" : "rgba(255,255,255,0.7)"}
+                                                            color={item.seen == 1 ? "#3b82f6" : "rgba(255,255,255,0.8)"}
                                                         />
                                                     )}
                                                 </View>
@@ -2265,3 +2248,20 @@ const ChatScreen = ({ navigation, route }: any) => {
 };
 
 export default ChatScreen;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
