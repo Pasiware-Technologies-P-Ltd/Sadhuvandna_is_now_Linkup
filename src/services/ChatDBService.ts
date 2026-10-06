@@ -160,6 +160,15 @@ export const ChatDBService = {
       SET last_message_seen = 1
       WHERE chat_id = ?
     `, [chatId]);
+  },
+  
+  deleteMessage: async (msgIdOrClientId: string) => {
+    const db = await getDBConnection();
+    await db.runAsync(`
+      UPDATE chat_messages 
+      SET is_deleted = 1, message = '🚫 This message was deleted', file = '', file_type = '' 
+      WHERE server_id = ? OR client_message_id = ?
+    `, [msgIdOrClientId, msgIdOrClientId]);
   }
 };
 

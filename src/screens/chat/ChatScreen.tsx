@@ -64,7 +64,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [selectedMedia, setSelectedMedia] = useState<any>(null); // { uri, type, mimeType }
     const [uploading, setUploading] = useState(false);
 
-    const [isTyping, setIsTyping] = useState(false);
+    const isTypingRef = useRef(false);
     const [isReceiverTyping, setIsReceiverTyping] = useState(false);
     // receiverOnline driven by global OnlineContext — instant across all screens
     const receiverOnline = !route.params?.isGroup && isUserOnline(receiver?.id);
@@ -300,6 +300,20 @@ const ChatScreen = ({ navigation, route }: any) => {
                     }
                 });
 
+                socketService.socket.on('chat_deleted', (data: any) => {
+                    if (data && data.message_id) {
+                        const msgId = data.message_id;
+                        setMessages(prev => prev.map(m => (m.id === msgId || m.client_message_id === msgId) ? {
+                            ...m,
+                            is_deleted: 1,
+                            message: '🚫 This message was deleted',
+                            attachment: '',
+                            file: ''
+                        } : m));
+                        ChatDBService.deleteMessage(msgId).catch(() => {});
+                    }
+                });
+
                 if (receiver?.id) {
                     socketService.socket.emit('check_status', receiver.id);
                 }
@@ -352,6 +366,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                 socketService.socket.off('stop_typing');
                 socketService.socket.off('user_status');
                 socketService.socket.off('messages_seen');
+                socketService.socket.off('chat_deleted');
             }
         };
 
@@ -839,13 +854,13 @@ const ChatScreen = ({ navigation, route }: any) => {
             clearTimeout(typingTimeoutRef.current);
         }
 
-        if (!isTyping) {
-            setIsTyping(true);
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
             updateTypingStatus(true);
         }
 
         typingTimeoutRef.current = setTimeout(() => {
-            setIsTyping(false);
+            isTypingRef.current = false;
             updateTypingStatus(false);
         }, 2000);
     };
@@ -1230,7 +1245,13 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 attachment: '',
                                 file: ''
                             } : m));
+                            
+                            // Also update SQLite cache
+                            ChatDBService.deleteMessage(msgId).catch(() => {});
+                            
                             setShowMessageOptions(false);
+                            setIsSelectionMode(false);
+                            setSelectedMessageIds([]);
                             // Also fetch from server to sync
                             fetchMessages();
                         } else {

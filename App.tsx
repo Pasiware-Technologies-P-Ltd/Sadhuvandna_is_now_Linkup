@@ -38,7 +38,15 @@ import { Audio } from 'expo-av';
 import { UploadProvider } from './src/context/UploadContext';
 import { OnlineProvider } from './src/context/OnlineContext';
 import UploadProgressBanner from './src/components/UploadProgressBanner';
+import CustomAlertManager, { CustomAlertProvider } from './src/components/CustomAlert';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Alert } from 'react-native';
+
+// Globally override React Native Alert
+const originalAlert = Alert.alert;
+Alert.alert = (title: string, message?: string, buttons?: any[], options?: any) => {
+  CustomAlertManager.show(title, message, buttons, options);
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -186,6 +194,7 @@ export default function App() {
                   <GlobalCallListener />
                 </NavigationContainer>
                 <UploadProgressBanner />
+                <CustomAlertProvider />
               </OnlineProvider>
             </UploadProvider>
           </LanguageProvider>
