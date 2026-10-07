@@ -52,8 +52,15 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [],
                 "channelId" => $data['channelId'] ?? "default"
             ];
 
-            if (isset($data['collapseId'])) {
-                $payload['collapseId'] = $data['collapseId'];
+            if (isset($data['collapseId']) || isset($data['bigText'])) {
+                if (!isset($payload['android'])) $payload['android'] = [];
+                if (isset($data['collapseId'])) {
+                    $payload['collapseId'] = $data['collapseId'];
+                    $payload['android']['tag'] = $data['collapseId'];
+                }
+                if (isset($data['bigText'])) {
+                    $payload['android']['bigText'] = $data['bigText'];
+                }
             }
 
             $json = json_encode($payload);

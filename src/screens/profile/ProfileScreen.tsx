@@ -18,6 +18,7 @@ const getInitials = (name: string) => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+import { StatusBar } from 'expo-status-bar';
 const ProfileScreen = ({ navigation }: any) => {
     const [user, setUser] = useState<any>(null);
     const [marriageProfile, setMarriageProfile] = useState<any>(null);
@@ -121,6 +122,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+            <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
             <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
                 {/* Banner Cover Image Backdrop */}
                 <View style={{ height: 145, backgroundColor: '#ea580c', position: 'relative', overflow: 'hidden' }}>

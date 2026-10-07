@@ -8,8 +8,11 @@ import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import Slider from '@react-native-community/slider';
 import { FlatList, ViewToken } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useIsFocused } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';
@@ -178,6 +181,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     ];
     
     const [reportModalVisible, setReportModalVisible] = useState(false);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
     const [reportCategory, setReportCategory] = useState('Child Safety Concern');
     const [reportReason, setReportReason] = useState('');
     const [reporting, setReporting] = useState(false);
@@ -460,76 +464,68 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         }
     };
 
-    const handleOptions = () => {
-        if (!currentUserId) return;
-
-        const downloadOption = {
-            text: "Download Reel",
-            onPress: handleDownloadReel
-        };
-
-        if (String(item.user_id) === String(currentUserId)) {
-            Alert.alert("Manage Reel", "What would you like to do?", [
+    const onDeletePress = () => {
+        Alert.alert(
+            "Delete Reel",
+            "Are you sure you want to delete this reel?",
+            [
                 { text: "Cancel", style: "cancel" },
-                downloadOption,
-                {
-                    text: saved ? "Unsave Reel" : "Save Reel",
-                    onPress: toggleSave
-                },
-                {
-                    text: "Delete Reel",
-                    style: "destructive",
-                    onPress: () => {
-                        Alert.alert(
-                            "Delete Reel",
-                            "Are you sure you want to delete this reel?",
-                            [
-                                { text: "Cancel", style: "cancel" },
-                                { 
-                                    text: "Delete", 
-                                    style: "destructive", 
-                                    onPress: async () => {
-                                        try {
-                                            const formData = new FormData();
-                                            formData.append('post_id', item.id);
-                                            formData.append('user_id', currentUserId);
-                                            
-                                            const res = await api.post('remove_post.php', formData, {
-                                                headers: { 'Content-Type': 'multipart/form-data' }
-                                            });
-                                            if (res.data.status === 'success' || res.data.ok) {
-                                                if (onDelete) onDelete(item.id);
-                                                Alert.alert("Deleted", "Reel deleted successfully.");
-                                            } else {
-                                                Alert.alert("Error", res.data.message || "Failed to delete reel");
-                                            }
-                                        } catch (e) {
-                                            Alert.alert("Error", "Network error");
-                                        }
-                                    } 
-                                }
-                            ]
-                        );
-                    }
-                }
-            ]);
-        } else {
-            Alert.alert("Reel Options", "What would you like to do?", [
-                { text: "Cancel", style: "cancel" },
-                downloadOption,
                 { 
-                    text: "Report Reel", 
+                    text: "Delete", 
                     style: "destructive", 
-                    onPress: () => {
-                        setReportModalVisible(true);
+                    onPress: async () => {
+                        try {
+                            const formData = new FormData();
+                            formData.append('post_id', item.id);
+                            formData.append('user_id', currentUserId);
+                            
+                            const res = await api.post('remove_post.php', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (res.data.status === 'success' || res.data.ok) {
+                                if (onDelete) onDelete(item.id);
+                                import('react-native').then(({ DeviceEventEmitter }) => {
+                                    DeviceEventEmitter.emit('postDeleted', { postId: item.id });
+                                });
+                                Alert.alert("Deleted", "Reel deleted successfully.");
+                            } else {
+                                Alert.alert("Error", res.data.message || "Failed to delete reel");
+                            }
+                        } catch (e) {
+                            Alert.alert("Error", "Network error");
+                        }
                     } 
                 }
-            ]);
-        }
+            ]
+        );
+    };
+
+    const handleOptions = () => {
+        if (!currentUserId) return;
+        setOptionsModalVisible(true);
     };
 
     const videoUri = item.media.find((m: string) => isVideo(m));
     const fullVideoUri = videoUri ? (videoUri.startsWith('http') ? videoUri : `${POST_MEDIA_PATH}${videoUri}`) : null;
+
+    const serverThumb = item.media.find((m: string) => !isVideo(m));
+    const [localThumbnail, setLocalThumbnail] = useState<string | null>(null);
+
+    useEffect(() => {
+        const generateThumb = async () => {
+            if (!serverThumb && fullVideoUri && isNearby && !localThumbnail) {
+                try {
+                    const { uri } = await VideoThumbnails.getThumbnailAsync(fullVideoUri, { time: 1000 });
+                    setLocalThumbnail(uri);
+                } catch (e) {
+                    console.log("Error generating thumbnail:", e);
+                }
+            }
+        };
+        generateThumb();
+    }, [isNearby, fullVideoUri, serverThumb, localThumbnail]);
+
+    const finalThumbUri = serverThumb ? (serverThumb.startsWith('http') ? serverThumb : `${POST_MEDIA_PATH}${serverThumb}`) : localThumbnail;
 
     if (!fullVideoUri) return null;
 
@@ -554,7 +550,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                                 }
                             }}
                             usePoster={true}
-                            posterSource={{ uri: item.media.find((m: string) => !isVideo(m)) ? (item.media.find((m: string) => !isVideo(m)).startsWith('http') ? item.media.find((m: string) => !isVideo(m)) : `${POST_MEDIA_PATH}${item.media.find((m: string) => !isVideo(m))}`) : (fullVideoUri || '') }}
+                            posterSource={{ uri: finalThumbUri || '' }}
                             posterStyle={{ resizeMode: ResizeMode.COVER }}
                             isMuted={false} // Allow original audio to mix with music
                             onPlaybackStatusUpdate={(status: any) => {
@@ -576,11 +572,15 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         }}
                     />
                 ) : (
-                    <View style={[styles.backgroundVideo, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
-                        <Image 
-                            source={{ uri: item.media.find((m: string) => !isVideo(m)) ? (item.media.find((m: string) => !isVideo(m)).startsWith('http') ? item.media.find((m: string) => !isVideo(m)) : `${POST_MEDIA_PATH}${item.media.find((m: string) => !isVideo(m))}`) : (fullVideoUri || 'https://via.placeholder.com/640x360.png?text=Loading...') }} 
-                            style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
-                        />
+                    <View style={[styles.backgroundVideo, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+                        {finalThumbUri ? (
+                            <Image 
+                                source={{ uri: finalThumbUri }} 
+                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                            />
+                        ) : (
+                            <ActivityIndicator size="large" color="#ffffff" />
+                        )}
                     </View>
                 )}
 
@@ -602,16 +602,16 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
             </TouchableOpacity>
 
             {/* Always visible slider at bottom edge of video */}
-            {duration > 0 && active && (
-                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, justifyContent: 'center', zIndex: 10, backgroundColor: 'rgba(0,0,0,0.2)' }}>
+            {active && (
+                <View style={{ position: 'absolute', bottom: -5, left: -16, right: -16, height: 20, justifyContent: 'center', zIndex: 10 }}>
                     <Slider
-                        style={{ width: '100%', height: 20 }}
+                        style={{ width: width + 32, height: 20 }}
                         minimumValue={0}
-                        maximumValue={duration}
+                        maximumValue={duration > 0 ? duration : 1}
                         value={position}
-                        minimumTrackTintColor="#ea580c"
-                        maximumTrackTintColor="rgba(255,255,255,0.4)"
-                        thumbTintColor="#ea580c"
+                        minimumTrackTintColor="rgba(255,255,255,0.85)"
+                        maximumTrackTintColor="rgba(255,255,255,0.2)"
+                        thumbTintColor="transparent"
                         onSlidingStart={() => {
                             isSliding.current = true;
                         }}
@@ -620,20 +620,24 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         }}
                         onSlidingComplete={(val) => {
                             isSliding.current = false;
-                            if (videoRef?.current) videoRef.current.setPositionAsync(val);
+                            if (videoRef?.current && duration > 0) videoRef.current.setPositionAsync(val);
                         }}
                     />
                 </View>
             )}
+            <LinearGradient
+                colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']}
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 250, pointerEvents: 'none' }}
+            />
 
-            <View style={[styles.bottomOverlay, { paddingBottom: 25 }]}>
-                <TouchableOpacity style={styles.userInfo} onPress={() => onUserPress(item.user_id)}>
+            <View style={[styles.bottomOverlay]}>
+                <TouchableOpacity style={[styles.userInfo, (!item.description || item.description.trim() === '') ? { marginBottom: 0 } : {}]} onPress={() => onUserPress(item.user_id)}>
                     <Image
                         source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
                         style={styles.avatar}
                     />
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.userName}>{item.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
+                        <Text style={[styles.userName, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
                         {item.user_id !== currentUserId && followStatus !== 'accepted' && (
                             <TouchableOpacity
                                 style={[
@@ -651,9 +655,11 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     </View>
                 </TouchableOpacity>
 
-                <Text style={styles.description} numberOfLines={2}>
-                    {item.description}
-                </Text>
+                {item.description && item.description.trim() !== '' && (
+                    <Text style={styles.description} numberOfLines={2}>
+                        {item.description}
+                    </Text>
+                )}
 
                 {/* Music Info Overlay & Audio Engine */}
                 {(() => {
@@ -787,17 +793,17 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         {/* Overlay Controls */}
             <View style={styles.rightOverlay}>
                 <TouchableOpacity style={styles.iconButton} onPress={() => toggleLike(true)}>
-                    <Ionicons name={liked ? "heart" : "heart-outline"} size={32} color={liked ? "#ff3b30" : "white"} />
+                    <Ionicons name={liked ? "heart" : "heart-outline"} size={32} color={liked ? "#ff3b30" : "white"} style={styles.iconShadow} />
                     <Text style={styles.iconText}>{likeCount}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.iconButton} onPress={() => onCommentPress(item.id)}>
-                    <Ionicons name="chatbubble-outline" size={28} color="white" />
+                    <Ionicons name="chatbubble-outline" size={28} color="white" style={styles.iconShadow} />
                     <Text style={styles.iconText}>{item.comments?.length || 0}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
-                    <Ionicons name="paper-plane-outline" size={28} color="white" />
+                    <Ionicons name="paper-plane-outline" size={28} color="white" style={styles.iconShadow} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.iconButton} onPress={toggleSave} activeOpacity={0.7}>
@@ -806,6 +812,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                             name={saved ? "bookmark" : "bookmark-outline"}
                             size={28}
                             color={saved ? "#ea580c" : "white"}
+                            style={styles.iconShadow}
                         />
                     </Animated.View>
                 </TouchableOpacity>
@@ -814,6 +821,76 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     <Ionicons name="ellipsis-vertical" size={24} color="white" />
                 </TouchableOpacity>
             </View>
+
+            {/* Reel Options Modal */}
+            <Modal
+                visible={optionsModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setOptionsModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} 
+                    activeOpacity={1} 
+                    onPress={() => setOptionsModalVisible(false)}
+                >
+                    <TouchableOpacity activeOpacity={1} style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
+                        <View style={{ width: 40, height: 4, backgroundColor: '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+                        
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#111827' }}>
+                            {String(item.user_id) === String(currentUserId) ? 'Manage Reel' : 'Reel Options'}
+                        </Text>
+                        
+                        <TouchableOpacity 
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                            onPress={() => {
+                                setOptionsModalVisible(false);
+                                handleDownloadReel();
+                            }}
+                        >
+                            <Ionicons name="download-outline" size={24} color="#374151" style={{ marginRight: 15 }} />
+                            <Text style={{ fontSize: 16, color: '#374151' }}>Download Reel</Text>
+                        </TouchableOpacity>
+
+                        {String(item.user_id) === String(currentUserId) ? (
+                            <>
+                                <TouchableOpacity 
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                                    onPress={() => {
+                                        setOptionsModalVisible(false);
+                                        toggleSave();
+                                    }}
+                                >
+                                    <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={24} color="#ea580c" style={{ marginRight: 15 }} />
+                                    <Text style={{ fontSize: 16, color: '#ea580c' }}>{saved ? "Unsave Reel" : "Save Reel"}</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15 }}
+                                    onPress={() => {
+                                        setOptionsModalVisible(false);
+                                        onDeletePress();
+                                    }}
+                                >
+                                    <Ionicons name="trash-outline" size={24} color="#ef4444" style={{ marginRight: 15 }} />
+                                    <Text style={{ fontSize: 16, color: '#ef4444' }}>Delete Reel</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <TouchableOpacity 
+                                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15 }}
+                                onPress={() => {
+                                    setOptionsModalVisible(false);
+                                    setReportModalVisible(true);
+                                }}
+                            >
+                                <Ionicons name="warning-outline" size={24} color="#ef4444" style={{ marginRight: 15 }} />
+                                <Text style={{ fontSize: 16, color: '#ef4444' }}>Report Reel</Text>
+                            </TouchableOpacity>
+                        )}
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
 
             {/* Report Reel Modal */}
             <Modal
@@ -942,6 +1019,25 @@ const ReelsScreen = ({ navigation, route }: any) => {
     });
 
     const reels = data ? data.pages.flat() : [];
+    const queryClient = useQueryClient();
+
+    useEffect(() => {
+        let deleteSub: any = null;
+        import('react-native').then(({ DeviceEventEmitter }) => {
+            deleteSub = DeviceEventEmitter.addListener('postDeleted', (data: any) => {
+                queryClient.setQueryData(['reels', filterUserId, currentUserId, refreshKey], (oldData: any) => {
+                    if (!oldData) return oldData;
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map((page: any[]) => page.filter(post => post.id !== data.postId))
+                    };
+                });
+            });
+        });
+        return () => {
+            if (deleteSub) deleteSub.remove();
+        };
+    }, [queryClient, filterUserId, currentUserId, refreshKey]);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('tabPress', () => {
@@ -997,20 +1093,6 @@ const ReelsScreen = ({ navigation, route }: any) => {
 
     return (
         <View style={[styles.container, { height: layoutHeight }]} onLayout={(e) => setLayoutHeight(e.nativeEvent.layout.height)}>
-            <SafeAreaView style={styles.headerOverlay} edges={['top']}>
-                <View style={styles.headerContent}>
-                    {showBack && (
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={28} color="white" />
-                        </TouchableOpacity>
-                    )}
-                    <Text style={styles.headerTitle}>{t('reels')}</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('CreateReel')} style={styles.cameraButton}>
-                        <Ionicons name="camera-outline" size={28} color="white" />
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-
             {isFetching && !isFetchingNextPage && (
                 <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 100 }}>
                     <ActivityIndicator size="small" color="white" />
@@ -1033,6 +1115,22 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 }}
                 onEndReachedThreshold={0.5}
             />
+
+            <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
+
+            <SafeAreaView style={styles.headerOverlay} edges={['top']} pointerEvents="box-none">
+                <View style={styles.headerContent}>
+                    {showBack && (
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                            <Ionicons name="arrow-back" size={28} color="white" />
+                        </TouchableOpacity>
+                    )}
+                    <Text style={styles.headerTitle}>{t('reels')}</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('CreateReel')} style={styles.cameraButton}>
+                        <Ionicons name="camera-outline" size={28} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -1132,6 +1230,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
         marginLeft: 10,
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: {width: 0, height: 1},
+        textShadowRadius: 4,
     },
     followButton: {
         marginLeft: 10,
@@ -1150,6 +1251,9 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 13,
         lineHeight: 18,
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: {width: 0, height: 1},
+        textShadowRadius: 4,
     },
     rightOverlay: {
         position: 'absolute',
@@ -1168,6 +1272,14 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
         fontWeight: '600',
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: {width: 0, height: 1},
+        textShadowRadius: 4,
+    },
+    iconShadow: {
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: {width: 0, height: 1},
+        textShadowRadius: 4,
     },
     vignettePart: {
         position: 'absolute',

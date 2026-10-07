@@ -6,6 +6,11 @@ $query          = $_REQUEST['query']          ?? '';
 $user_id        = intval($_REQUEST['user_id'] ?? 0);
 $connected_only = ($_REQUEST['connected_only'] ?? 'false') === 'true';
 
+$user_offset = intval($_REQUEST['user_offset'] ?? 0);
+$user_limit = intval($_REQUEST['user_limit'] ?? 20);
+$post_offset = intval($_REQUEST['post_offset'] ?? 0);
+$post_limit = intval($_REQUEST['post_limit'] ?? 20);
+
 if (!$query) {
     echo json_encode(["ok" => true, "users" => [], "posts" => []]);
     exit;
@@ -28,14 +33,14 @@ if ($connected_only && $user_id > 0) {
         WHERE m.id != $user_id
           AND m.status != 'Blocked'
           AND (m.name LIKE '%$safe_query%' OR m.city LIKE '%$safe_query%')
-        LIMIT 30
+        LIMIT $user_limit OFFSET $user_offset
     ";
 } else {
     $user_sql = "SELECT id, name, profile_photo, city 
                  FROM tbl_members 
                  WHERE (name LIKE '%$safe_query%' OR city LIKE '%$safe_query%') 
                  AND status != 'Blocked' 
-                 LIMIT 20";
+                 LIMIT $user_limit OFFSET $user_offset";
 }
 $user_res = $con->query($user_sql);
 
@@ -64,7 +69,7 @@ $post_sql = "SELECT p.*, m.name, m.profile_photo
              WHERE p.status LIKE '%$safe_query%' 
              AND m.status != 'Blocked' 
              ORDER BY p.id DESC 
-             LIMIT 20";
+             LIMIT $post_limit OFFSET $post_offset";
 $post_res = $con->query($post_sql);
 
 while($p = $post_res->fetch_assoc()){

@@ -1,0 +1,22 @@
+@@ -11,7 +11,7 @@
+ import * as Sharing from 'expo-sharing';
+ import { Picker } from '@react-native-picker/picker';
+ import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
+-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
++import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+ 
+ const { width } = Dimensions.get('window');
+ const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
+@@ -826,7 +826,7 @@
+                 {index !== undefined && index > 0 && index % 5 === 0 && (
+                     <View style={{ alignItems: 'center', paddingVertical: 12, backgroundColor: '#f9fafb', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                         <BannerAd
+-                            unitId="ca-app-pub-3506685647762869/7649518863"
++                            unitId={__DEV__ ? TestIds.BANNER : "ca-app-pub-3506685647762869/7649518863"}
+                             size={BannerAdSize.BANNER}
+                             requestOptions={{
+                                 requestNonPersonalizedAdsOnly: true,
+                             }}
+                         />
+                     </View>
+                 )}

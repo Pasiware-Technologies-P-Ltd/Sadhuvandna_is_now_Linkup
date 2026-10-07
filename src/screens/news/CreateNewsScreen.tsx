@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, StyleSheet, Modal, Pressable, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, StyleSheet, Modal, Pressable, Platform, KeyboardAvoidingView, Image as RNImage } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -344,7 +344,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
                 // Crop image
                 return new Promise<{ uri: string, type: string }>((resolve) => {
-                    Image.getSize(fileUri, async (w, h) => {
+                    RNImage.getSize(fileUri, async (w: number, h: number) => {
                         const imgAspect = w / h;
                         let cropOriginX = 0;
                         let cropOriginY = 0;
@@ -395,7 +395,6 @@ const CreateNewsScreen = ({ navigation }: any) => {
             const thumbUri = finalImages.length > 0 ? finalImages[0].uri : null;
             startUpload('create_news.php', formData, thumbUri);
 
-            Alert.alert("Success", "News is posting in the background!");
             navigation.goBack();
         } catch (error: any) {
             console.error('[CreateNews] Error posting news:', error);

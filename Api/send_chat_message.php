@@ -182,19 +182,7 @@ if ($redis) {
         }
     }
     
-    if (!$is_online) {
-        // Fallback to FCM Push Notification if offline
-        $senderNameQ = $con->query("SELECT name FROM tbl_members WHERE id = '$my' LIMIT 1");
-        $senderName = ($senderNameQ && $sRow = $senderNameQ->fetch_assoc()) ? $sRow['name'] : "Someone";
-        
-        $push_text = !empty($msg) ? $msg : "Sent an attachment";
-        sendExpoPushNotification($con, $receiver, $senderName, $push_text, [
-            'type' => 'chat',
-            'sender_id' => $my,
-            'message' => $chatObj
-        ], true); // skip_db = true
-    }
-
+    // Offline fallback push is now handled reliably by notification_worker.php
     $options2 = array(
         'http' => array(
             'header'  => "Content-type: application/json\r\n",

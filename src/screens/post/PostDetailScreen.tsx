@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
 import PostCard, { PostType } from '../../components/PostCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ImageService } from '../../services/ImageService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -188,7 +189,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
         return (
             <View className="flex-row p-3 border-b border-gray-100 bg-white">
                 <Image
-                    source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
+                    source={{ uri: item.profile_photo ? ImageService.getFeedImageUrl(`${PHOTO_URL}${item.profile_photo}`, 100) : 'https://via.placeholder.com/50' }}
                     className="w-8 h-8 rounded-full bg-gray-200 mt-1"
                 />
                 <View className="ml-3 flex-1 pr-2">
@@ -239,6 +240,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                         post={currentPost}
                                         currentUserId={user ? String(user.id) : undefined}
                                         shouldPlay={true}
+                                        isDetail={true}
                                         onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
                                     />
                                     <Text className="p-3 font-bold text-gray-500 text-sm">Comments</Text>

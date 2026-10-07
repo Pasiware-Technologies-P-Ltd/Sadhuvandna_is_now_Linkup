@@ -26,7 +26,10 @@ function processGroupedNotification($con, $redis, $receiver_id, $type, $referenc
                 $default_title = $actor_name;
                 $payload_data['collapseId'] = "chat_{$actor_id}";
                 
-                $unreadQ = $con->query("SELECT message FROM tbl_chat WHERE sender_id = '$actor_id' AND receiver_id = '$receiver_id' AND seen = 0 ORDER BY id ASC LIMIT 5");
+                $platform = $payload_data['platform'] ?? 'community';
+                $db_receiver_id = $payload_data['receiver_profile_id'] ?? $receiver_id;
+                $unreadQ = $con->query("SELECT message FROM tbl_messages WHERE sender_id = '$actor_id' AND receiver_id = '$db_receiver_id' AND seen = 0 AND chat_platform = '$platform' ORDER BY id ASC LIMIT 5");
+                
                 $unreadMsgs = [];
                 if ($unreadQ && $unreadQ->num_rows > 0) {
                     while($uRow = $unreadQ->fetch_assoc()) {
@@ -35,6 +38,7 @@ function processGroupedNotification($con, $redis, $receiver_id, $type, $referenc
                     $msg = implode("\n", $unreadMsgs);
                 } else {
                     $msg = $payload_data['message_text'] ?? "Sent an attachment";
+                    if (empty(trim($msg))) $msg = "Sent an attachment";
                 }
             }
         }
@@ -169,11 +173,23 @@ while (true) {
             $sender_id = $payload['sender_id'];
             $receiver_id = $payload['receiver_id'];
             $message_text = $payload['message'] ?? '';
+            $platform = $payload['platform'] ?? 'community';
             
-            $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
-            $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+            if ($platform === 'marriage') {
+                $sQ = $con->query("SELECT full_name as name FROM tbl_marriage_profiles WHERE id = $sender_id LIMIT 1");
+                $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+                
+                $rQ = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = $receiver_id LIMIT 1");
+                $actual_receiver_id = ($rQ && $rRow = $rQ->fetch_assoc()) ? $rRow['user_id'] : 0;
+            } else {
+                $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
+                $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+                $actual_receiver_id = $receiver_id;
+            }
             
-            processGroupedNotification($con, $redis, $receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id), "message_text" => $message_text]);
+            if ($actual_receiver_id) {
+                processGroupedNotification($con, $redis, $actual_receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id), "message_text" => $message_text, "platform" => $platform, "receiver_profile_id" => strval($receiver_id)]);
+            }
         } elseif ($type === 'group_chat') {
             $sender_id = $payload['sender_id'];
             $group_id = $payload['group_id'];

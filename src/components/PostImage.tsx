@@ -7,6 +7,7 @@ import { ImageService } from '../services/ImageService';
 interface PostImageProps {
     uri: string;
     forcedAspect?: number;
+    isDetail?: boolean;
 }
 
 const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
@@ -28,7 +29,7 @@ const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
     );
 };
 
-const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
+const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const [aspect, setAspect] = useState<number>(forcedAspect || 4 / 3);
@@ -66,7 +67,7 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect }) => {
     }
 
     // Use the abstraction for feed-optimized URLs (ready for CDN integration)
-    const optimizedUri = ImageService.getFeedImageUrl(uri);
+    const optimizedUri = isDetail ? ImageService.getDetailImageUrl(uri) : ImageService.getFeedImageUrl(uri);
 
     return (
         <View className="w-full bg-gray-50 rounded-xl overflow-hidden relative">

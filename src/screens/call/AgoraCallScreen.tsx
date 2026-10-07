@@ -279,64 +279,61 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
             }).catch(e => console.log("Status update failed", e));
         }
 
-        // Check call status periodically (handled by caller mostly, but good for both)
-        const statusInterval = setInterval(async () => {
-            try {
-                const res = await api.post('check_call_status.php', {
-                    channel_id: channelId
-                });
-                const data = res.data;
-
-                if (data.status === 'success') {
-                    if (data.call_status === 'rejected') {
-                        Alert.alert("Call Rejected", "User busy or declined.");
-                        leave();
-                    } else if (data.call_status === 'ended') {
-                        Alert.alert("Call Ended", "Call ended by user.");
-                        leave();
-                    } else if (data.call_status === 'video_request') {
-                        // If I didn't initiate the request (I am just receiving it)
-                        if (!isCameraOn) {
-                            Alert.alert(
-                                "Video Call Request",
-                                "The other user wants to switch to a Video Call.",
-                                [
-                                    {
-                                        text: "Decline",
-                                        style: "cancel",
-                                        onPress: () => {
-                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_rejected' }).catch(() => { });
-                                        }
-                                    },
-                                    {
-                                        text: "Accept",
-                                        onPress: () => {
-                                            api.post('update_call_status.php', { channel_id: channelId, status: 'video_accepted' }).catch(() => { });
-                                            agoraEngineRef.current?.enableVideo();
-                                            setIsCameraOn(true);
-                                        }
-                                    }
-                                ]
-                            );
-                        }
-                    } else if (data.call_status === 'video_accepted') {
-                        if (!isCameraOn) {
-                            agoraEngineRef.current?.enableVideo();
-                            setIsCameraOn(true);
-                            // Reset back to accepted so we don't loop
-                            api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
-                        }
-                    } else if (data.call_status === 'video_rejected') {
-                        Alert.alert("Declined", "User declined the video request.");
-                        // Reset back to accepted
-                        api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
-                    }
+        // Handle Call Status Updates via WebSocket
+        const handleCallStatus = (data: any) => {
+            if (data.channel_id !== channelId) return;
+            
+            const call_status = data.status;
+            if (call_status === 'rejected') {
+                Alert.alert("Call Rejected", "User busy or declined.");
+                leave();
+            } else if (call_status === 'ended') {
+                Alert.alert("Call Ended", "Call ended by user.");
+                leave();
+            } else if (call_status === 'video_request') {
+                if (!isCameraOn) {
+                    Alert.alert(
+                        "Video Call Request",
+                        "The other user wants to switch to a Video Call.",
+                        [
+                            {
+                                text: "Decline",
+                                style: "cancel",
+                                onPress: () => {
+                                    api.post('update_call_status.php', { channel_id: channelId, status: 'video_rejected' }).catch(() => { });
+                                }
+                            },
+                            {
+                                text: "Accept",
+                                onPress: () => {
+                                    api.post('update_call_status.php', { channel_id: channelId, status: 'video_accepted' }).catch(() => { });
+                                    agoraEngineRef.current?.enableVideo();
+                                    setIsCameraOn(true);
+                                }
+                            }
+                        ]
+                    );
                 }
-            } catch (e) { }
-        }, 3000);
+            } else if (call_status === 'video_accepted') {
+                if (!isCameraOn) {
+                    agoraEngineRef.current?.enableVideo();
+                    setIsCameraOn(true);
+                    api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
+                }
+            } else if (call_status === 'video_rejected') {
+                Alert.alert("Declined", "User declined the video request.");
+                api.post('update_call_status.php', { channel_id: channelId, status: 'accepted' }).catch(() => { });
+            }
+        };
+
+        import('react-native').then(({ DeviceEventEmitter }) => {
+            DeviceEventEmitter.addListener('call_status_update', handleCallStatus);
+        });
 
         return () => {
-            clearInterval(statusInterval);
+            import('react-native').then(({ DeviceEventEmitter }) => {
+                DeviceEventEmitter.removeAllListeners('call_status_update');
+            });
             isCancelled = true;
 
             // Mark as ended on the server when we leave

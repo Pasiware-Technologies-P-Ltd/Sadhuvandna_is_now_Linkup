@@ -1,21 +1,23 @@
 import { Image } from 'expo-image';
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
+import { ImageService } from '../../services/ImageService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const MarriageDetailScreen = ({ navigation, route }: any) => {
     const { profile } = route.params;
+    const insets = useSafeAreaInsets();
 
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
-    const [proposalStatus, setProposalStatus] = React.useState<string>('none');
+    const [proposalStatus, setProposalStatus] = React.useState<string>(profile.proposal_status || 'none');
     const [loading, setLoading] = React.useState(false);
 
     React.useEffect(() => {
@@ -56,7 +58,7 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
     const checkStatus = async () => {
         if (!currentUserId) return;
         try {
-            const res = await api.get(`get_proposal_status.php?sender_user_id=${currentUserId}&receiver_profile_id=${profile.id}`);
+            const res = await api.get(`get_proposal_status.php?user_id=${currentUserId}&receiver_id=${profile.id}`);
             if (res.data.status === 'success') {
                 setProposalStatus(res.data.proposal_status);
                 AsyncStorage.setItem(`cached_proposal_${currentUserId}_${profile.id}`, res.data.proposal_status);
@@ -153,21 +155,24 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
         </View>
     );
 
+    const isPending = proposalStatus === 'pending' || proposalStatus === 'sent' || proposalStatus === 'received';
+
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+        <SafeAreaView className="flex-1 bg-white">
+            <View className="flex-row items-center p-4 border-b border-gray-100 z-10 bg-white">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 p-1">
+                    <Ionicons name="arrow-back" size={24} color="black" />
+                </TouchableOpacity>
+                <Text className="text-xl font-bold text-gray-800 flex-1" numberOfLines={1}>{profile.full_name}</Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 40 }}>
                 <View className="relative">
                     <Image
-                        source={{ uri: profile.photo ? `${PHOTO_URL}${profile.photo}` : 'https://via.placeholder.com/300' }}
-                        className="w-full h-96 bg-gray-200"
+                        source={{ uri: profile.photo ? ImageService.getDetailImageUrl(`${PHOTO_URL}${profile.photo}`, 1080) : 'https://via.placeholder.com/300' }}
+                        className="bg-gray-200"
+                        style={{ width: '100%', height: 320 }}
                         contentFit="cover"
                     />
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        className="absolute top-4 left-4 bg-black/30 p-2 rounded-full"
-                    >
-                        <Ionicons name="arrow-back" size={24} color="white" />
-                    </TouchableOpacity>
                 </View>
 
                 <View className="p-6 -mt-10 bg-white rounded-t-3xl shadow-lg min-h-screen">
@@ -199,15 +204,15 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
-                                className={`p-4 rounded-xl items-center shadow-lg flex-row justify-center gap-2 ${proposalStatus === 'pending' ? 'bg-gray-200' : 'bg-orange-600 shadow-orange-200'}`}
+                                className={`p-4 rounded-xl items-center shadow-lg flex-row justify-center gap-2 ${isPending ? 'bg-gray-200' : 'bg-orange-600 shadow-orange-200'}`}
                                 onPress={handleSendProposal}
-                                disabled={proposalStatus === 'pending' || loading}
+                                disabled={isPending || loading}
                             >
                                 {loading ? <ActivityIndicator color="white" /> : (
                                     <>
-                                        <Ionicons name={proposalStatus === 'pending' ? "time" : "heart"} size={20} color={proposalStatus === 'pending' ? "gray" : "white"} />
-                                        <Text className={`font-bold text-lg ${proposalStatus === 'pending' ? 'text-gray-500' : 'text-white'}`}>
-                                            {proposalStatus === 'pending' ? "Request Sent" : "Send Interest"}
+                                        <Ionicons name={isPending ? "time" : "heart"} size={20} color={isPending ? "gray" : "white"} />
+                                        <Text className={`font-bold text-lg ${isPending ? 'text-gray-500' : 'text-white'}`}>
+                                            {isPending ? "Requested" : "Send Interest"}
                                         </Text>
                                     </>
                                 )}

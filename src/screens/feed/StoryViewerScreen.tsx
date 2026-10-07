@@ -7,11 +7,11 @@ import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
 import { MediaCacheService } from '../../services/MediaCacheService';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
+const BASE_URL_ROOT = WEBSITE_URL;
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const StoryViewerScreen = ({ navigation, route }: any) => {
@@ -325,6 +325,9 @@ const StoryViewerScreen = ({ navigation, route }: any) => {
             console.log("[DELETE STORY RESPONSE]", res.data);
             
             if (res.data.status === 'success') {
+                import('react-native').then(({ DeviceEventEmitter }) => {
+                    DeviceEventEmitter.emit('uploadSuccess', { source: 'story_delete' });
+                });
                 const newStories = stories.filter((s: any) => s.id !== story.id);
                 if (newStories.length > 0) {
                     setStories(newStories);

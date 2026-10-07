@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useImperativeHandle } from 'react';
-import { View, Image } from 'react-native';
+import { View, Image, ActivityIndicator } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 export const ResizeMode = {
@@ -8,7 +8,7 @@ export const ResizeMode = {
     STRETCH: 'stretch',
 };
 
-export const CompatVideo = React.forwardRef(({
+export const CompatVideoInner = React.forwardRef(({
     source,
     style,
     resizeMode,
@@ -25,12 +25,18 @@ export const CompatVideo = React.forwardRef(({
     onError,
     useNativeControls,
 }: any, ref) => {
-    const uri = source?.uri || null;
+    let uri = source?.uri || null;
+    if (uri && uri.startsWith('http') && !uri.includes('cb=')) {
+        uri = uri + (uri.includes('?') ? '&cb=2' : '?cb=2');
+    }
     const [status, setStatus] = useState<any>({ isLoaded: false });
 
     const player = useVideoPlayer(uri, player => {
         player.loop = !!isLooping;
         player.muted = !!isMuted;
+        if (shouldPlay) {
+            player.play();
+        }
     });
 
     useImperativeHandle(ref, () => ({
@@ -42,23 +48,27 @@ export const CompatVideo = React.forwardRef(({
     }));
 
     useEffect(() => {
-        if (shouldPlay) player.play();
-        else player.pause();
-    }, [shouldPlay]);
+        if (shouldPlay) {
+            player.play();
+        } else {
+            player.pause();
+        }
+    }, [shouldPlay, player]);
 
     useEffect(() => {
         player.muted = !!isMuted;
-    }, [isMuted]);
+    }, [isMuted, player]);
 
     useEffect(() => {
         player.loop = !!isLooping;
-    }, [isLooping]);
+    }, [isLooping, player]);
 
     useEffect(() => {
         if (onLoadStart) onLoadStart();
         
         const sub = player.addListener('statusChange', (e) => {
             if (e.status === 'readyToPlay') {
+                if (shouldPlay) player.play();
                 const loadedStatus = {
                     isLoaded: true,
                     durationMillis: player.duration * 1000,
@@ -89,19 +99,33 @@ export const CompatVideo = React.forwardRef(({
             sub.remove();
             clearInterval(interval);
         };
-    }, [player]);
+    }, [player, shouldPlay]);
 
-    // Handle poster
-    if (!status.isLoaded && usePoster && posterSource?.uri) {
-        return <Image source={{ uri: posterSource.uri }} style={[style, posterStyle]} />;
-    }
+    const showPoster = !status.isLoaded && usePoster && posterSource?.uri;
 
     return (
-        <VideoView
-            player={player}
-            style={style}
-            contentFit={resizeMode === ResizeMode.COVER ? 'cover' : 'contain'}
-            nativeControls={!!useNativeControls}
-        />
+        <View style={[style, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+            <VideoView
+                player={player}
+                style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, style]}
+                contentFit={resizeMode === ResizeMode.COVER ? 'cover' : 'contain'}
+                nativeControls={!!useNativeControls}
+            />
+            {showPoster && (
+                <Image 
+                    source={{ uri: posterSource.uri }} 
+                    style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, style, posterStyle]} 
+                />
+            )}
+            {!status.isLoaded && (
+                <View style={{ position: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#ffffff" />
+                </View>
+            )}
+        </View>
     );
+});
+
+export const CompatVideo = React.forwardRef((props: any, ref) => {
+    return <CompatVideoInner {...props} ref={ref} />;
 });

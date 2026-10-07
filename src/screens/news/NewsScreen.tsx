@@ -11,12 +11,14 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Picker } from '@react-native-picker/picker';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const { width } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
 import { useLanguage } from '../../context/LanguageContext';
 import { useIsFocused } from '@react-navigation/native';
+import { ImageService } from '../../services/ImageService';
 
 const formatTime = (millis: number) => {
     if (!millis || isNaN(millis)) return '0:00';
@@ -293,6 +295,7 @@ const NewsScreen = ({ navigation }: any) => {
     const [districtsList, setDistrictsList] = useState<any[]>([]);
     const [selectedState, setSelectedState] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const fetchStates = async () => {
@@ -326,6 +329,9 @@ const NewsScreen = ({ navigation }: any) => {
     const [news, setNews] = useState<any[]>([]);
     const [tickerData, setTickerData] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hasMore, setHasMore] = useState(true);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const cursorRef = useRef<number | null>(null);
     
     // DD News State
     const [ytNews, setYtNews] = useState<any[]>([]);
@@ -538,6 +544,7 @@ const NewsScreen = ({ navigation }: any) => {
     };
 
     const loadCachedData = async () => {
+        let hasNewsCache = false;
         try {
             const cachedNews = await AsyncStorage.getItem('cached_news_v1');
             if (cachedNews) {
@@ -545,6 +552,7 @@ const NewsScreen = ({ navigation }: any) => {
                 setNews(parsed);
                 setTickerData(parsed.slice(0, 5).map((n: any) => n.title));
                 setLoading(false);
+                hasNewsCache = true;
             }
             const cachedYT = await AsyncStorage.getItem('cached_yt_news_v1');
             if (cachedYT) {
@@ -557,6 +565,7 @@ const NewsScreen = ({ navigation }: any) => {
                 setAasthaLoading(false);
             }
         } catch (e) {}
+        return hasNewsCache;
     };
 
     useEffect(() => {
@@ -565,59 +574,109 @@ const NewsScreen = ({ navigation }: any) => {
         fetchAnchorStatus();
         
         // Load cache first for zero-loading time, then silently update
-        loadCachedData().then(() => {
-            fetchNews();
-            fetchYTNews();
-            fetchAasthaNews();
+        loadCachedData().then((hasCache) => {
+            fetchNews(false, false, hasCache);
+            fetchYTNews(true); // yt and aastha already handle silent fetching via loading states
+            fetchAasthaNews(true);
         });
 
         const unsubscribe = navigation.addListener('focus', () => {
             loadBookmarks();
             fetchAnchorStatus();
-            fetchNews();
+            fetchNews(false, false, true); // silent refresh on focus
+        });
+
+        const unsubscribeBlur = navigation.addListener('blur', () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
         });
 
         return () => { 
             isMounted.current = false; 
             unsubscribe();
+            unsubscribeBlur();
         };
     }, [navigation]);
 
-    const fetchNews = async () => {
+    const fetchNews = async (isMore = false, isRefresh = false, isSilent = false) => {
+        if (isMore && (isFetchingMore || !hasMore)) return;
+
+        if (isMore) setIsFetchingMore(true);
+        else if (isRefresh) setRefreshing(true);
+        else if (!isSilent) setLoading(true);
+
+        if (!isMore) {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            abortControllerRef.current = new AbortController();
+        }
+
         try {
-            const res = await api.get('/get_news.php');
+            const cursorParam = (isMore && cursorRef.current) ? `?limit=20&cursor=${cursorRef.current}` : '?limit=20';
+            const res = await api.get(`/get_news.php${cursorParam}`, {
+                signal: isMore ? undefined : abortControllerRef.current?.signal
+            });
             if (isMounted.current && res.data.status === 'success') {
-                const newsList = res.data.data;
-                setNews(newsList);
-                AsyncStorage.setItem('cached_news_v1', JSON.stringify(newsList));
+                const newsList = res.data.data || [];
+                
+                setHasMore(res.data.has_more);
+                cursorRef.current = res.data.next_cursor;
+
+                if (isMore) {
+                    setNews(prev => {
+                        const existingIds = new Set(prev.map((n) => n.id));
+                        const uniqueNew = newsList.filter((n: any) => !existingIds.has(n.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                } else {
+                    const newStringified = JSON.stringify(newsList);
+                    const cachedStr = await AsyncStorage.getItem('cached_news_v1');
+                    
+                    if (!isSilent || cachedStr !== newStringified) {
+                        setNews(newsList);
+                        AsyncStorage.setItem('cached_news_v1', newStringified);
+                    }
+                }
+
                 if (res.data.ticker && res.data.ticker.length > 0) {
                     setTickerData(res.data.ticker);
                 } else if (newsList && newsList.length > 0) {
                     setTickerData(newsList.slice(0, 5).map((n: any) => n.title));
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error?.name === 'CanceledError' || error?.message === 'canceled') {
+                return;
+            }
             console.error("Failed to fetch news", error);
         } finally {
-            if (isMounted.current) setLoading(false);
+            if (isMounted.current) {
+                setLoading(false);
+                setRefreshing(false);
+                setIsFetchingMore(false);
+            }
         }
     };
 
     const onRefreshApna = async () => {
-        setRefreshing(true);
-        await Promise.all([fetchNews(), fetchAnchorStatus()]);
-        setRefreshing(false);
+        cursorRef.current = null;
+        await Promise.all([fetchNews(false, true), fetchAnchorStatus()]);
     };
 
     const fetchYTNews = async (isRefresh = false) => {
         if (!isRefresh && ytNews.length === 0) setYtLoading(true);
         try {
-            const res = await api.get('/get_video_news.php');
+            const res = await api.get('/get_video_news.php', {
+                signal: abortControllerRef.current?.signal
+            });
             if (isMounted.current && res.data.status === 'success') {
                 setYtNews(res.data.data);
                 AsyncStorage.setItem('cached_yt_news_v1', JSON.stringify(res.data.data));
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error?.name === 'CanceledError' || error?.message === 'canceled') return;
             console.error("Failed to fetch DD news", error);
         } finally {
             if (isMounted.current) setYtLoading(false);
@@ -633,12 +692,15 @@ const NewsScreen = ({ navigation }: any) => {
     const fetchAasthaNews = async (isRefresh = false) => {
         if (!isRefresh && aasthaNews.length === 0) setAasthaLoading(true);
         try {
-            const res = await api.get('/get_aastha.php');
+            const res = await api.get('/get_aastha.php', {
+                signal: abortControllerRef.current?.signal
+            });
             if (isMounted.current && res.data.status === 'success') {
                 setAasthaNews(res.data.data);
                 AsyncStorage.setItem('cached_aastha_news_v1', JSON.stringify(res.data.data));
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error?.name === 'CanceledError' || error?.message === 'canceled') return;
             console.error("Failed to fetch Aastha news", error);
         } finally {
             if (isMounted.current) setAasthaLoading(false);
@@ -684,7 +746,7 @@ const NewsScreen = ({ navigation }: any) => {
         const THUMB_WIDTH = width * 0.72; // 72% width per item in scroll
 
         if (index === 0) {
-            const displayImage = images.length > 0 ? `${NEWS_URL}${images[0]}` : 'https://via.placeholder.com/400x250?text=News';
+            const displayImage = images.length > 0 ? (isVideo(images[0]) ? `${NEWS_URL}${images[0]}` : ImageService.getFeedImageUrl(`${NEWS_URL}${images[0]}`, 800)) : 'https://via.placeholder.com/400x250?text=News';
             return (
                 <TouchableOpacity
                     activeOpacity={0.9}
@@ -728,39 +790,53 @@ const NewsScreen = ({ navigation }: any) => {
         }
 
         // For index > 0, show compact row layout
-        const displayImage = images.length > 0 ? `${NEWS_URL}${images[0]}` : 'https://via.placeholder.com/150?text=News';
+        const displayImage = images.length > 0 ? (isVideo(images[0]) ? `${NEWS_URL}${images[0]}` : ImageService.getFeedImageUrl(`${NEWS_URL}${images[0]}`, 400)) : 'https://via.placeholder.com/150?text=News';
         
         return (
-            <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('NewsDetail', { news: item })}
-                style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
-            >
-                {/* Left side: Image */}
-                <View style={{ width: 130, height: 85, borderRadius: 8, overflow: 'hidden', backgroundColor: '#f3f4f6', marginRight: 14 }}>
-                    {images.length > 0 && isVideo(images[0]) ? (
-                        <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-                            <Ionicons name="play-circle" size={32} color="white" />
-                        </View>
-                    ) : (
-                        <Image source={{ uri: displayImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                    )}
-                </View>
-                
-                {/* Right side: Content */}
-                <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', lineHeight: 22 }} numberOfLines={3}>
-                        {item.title}
-                    </Text>
-                    
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                        <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '500' }}>
-                            {item.created_at?.split(' ')[0] || 'Recently'}
-                            {item.district || item.state ? `  |  ${item.district || item.state}` : ''}
-                        </Text>
+            <>
+                <TouchableOpacity 
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('NewsDetail', { news: item })}
+                    style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                >
+                    {/* Left side: Image */}
+                    <View style={{ width: 130, height: 85, borderRadius: 8, overflow: 'hidden', backgroundColor: '#f3f4f6', marginRight: 14 }}>
+                        {images.length > 0 && isVideo(images[0]) ? (
+                            <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+                                <Ionicons name="play-circle" size={32} color="white" />
+                            </View>
+                        ) : (
+                            <Image source={{ uri: displayImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        )}
                     </View>
-                </View>
-            </TouchableOpacity>
+                    
+                    {/* Right side: Content */}
+                    <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', lineHeight: 22 }} numberOfLines={3}>
+                            {item.title}
+                        </Text>
+                        
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                            <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '500' }}>
+                                {item.created_at?.split(' ')[0] || 'Recently'}
+                                {item.district || item.state ? `  |  ${item.district || item.state}` : ''}
+                            </Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
+                {index !== undefined && index > 0 && index % 5 === 0 && (
+                    <View style={{ alignItems: 'center', paddingVertical: 12, backgroundColor: '#f9fafb', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                        <BannerAd
+                            unitId="ca-app-pub-3506685647762869/7649518863"
+                            size={BannerAdSize.BANNER}
+                            requestOptions={{
+                                requestNonPersonalizedAdsOnly: true,
+                            }}
+                        />
+                    </View>
+                )}
+            </>
         );
     };
 
@@ -1100,6 +1176,15 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingTop: headerHeight + 12, paddingBottom: 12 }}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" progressViewOffset={headerHeight} />}
                         renderItem={renderNewsItem}
+                        onEndReached={() => fetchNews(true)}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={
+                            isFetchingMore ? (
+                                <View style={{ paddingVertical: 20 }}>
+                                    <ActivityIndicator color="#ea580c" />
+                                </View>
+                            ) : null
+                        }
                         ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noNewsAvailable')}</Text>}
                         onScroll={Animated.event(
                             [{ nativeEvent: { contentOffset: { y: scrollY } } }],

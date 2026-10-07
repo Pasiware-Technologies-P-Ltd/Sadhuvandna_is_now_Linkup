@@ -21,7 +21,8 @@ export const ChatDBService = {
         unread_count INTEGER,
         time TEXT,
         timestamp_val TEXT,
-        my_user_id TEXT
+        my_user_id TEXT,
+        platform TEXT DEFAULT 'community'
       );
     `);
     
@@ -33,6 +34,9 @@ export const ChatDBService = {
     } catch (e) {}
     try {
       await db.execAsync(`ALTER TABLE chat_conversations ADD COLUMN timestamp_val TEXT;`);
+    } catch (e) {}
+    try {
+      await db.execAsync(`ALTER TABLE chat_conversations ADD COLUMN platform TEXT DEFAULT 'community';`);
     } catch (e) {}
 
     await db.execAsync(`
@@ -54,8 +58,8 @@ export const ChatDBService = {
 
     await db.runAsync(`
       INSERT OR REPLACE INTO chat_conversations 
-      (chat_id, partner_id, is_group, full_name, profile_photo, last_message, last_message_is_mine, last_message_seen, unread_count, time, timestamp_val, my_user_id) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (chat_id, partner_id, is_group, full_name, profile_photo, last_message, last_message_is_mine, last_message_seen, unread_count, time, timestamp_val, my_user_id, platform) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       uniqueChatId,
       partnerId,
@@ -68,14 +72,15 @@ export const ChatDBService = {
       conv.unread || 0,
       conv.time || '',
       conv.timestamp || '',
-      userId
+      userId,
+      conv.platform || 'community'
     ]);
   },
 
-  getConversations: async (userId: string) => {
+  getConversations: async (userId: string, platform: string = 'community') => {
     const db = await getDBConnection();
     try {
-      return await db.getAllAsync(`SELECT * FROM chat_conversations WHERE my_user_id = ? ORDER BY timestamp_val DESC`, [userId]);
+      return await db.getAllAsync(`SELECT * FROM chat_conversations WHERE my_user_id = ? AND platform = ? ORDER BY timestamp_val DESC`, [userId, platform]);
     } catch {
       return [];
     }

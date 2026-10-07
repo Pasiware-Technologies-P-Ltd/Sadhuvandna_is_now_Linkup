@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Dimensions, Modal, StyleSheet, KeyboardAvoidingView, Pressable, Image as RNImage } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -249,7 +249,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                     if (uri.toLowerCase().endsWith('.mp4')) return uri; // Don't crop videos
                     
                     return new Promise<string>((resolve) => {
-                        Image.getSize(uri, async (w, h) => {
+                        RNImage.getSize(uri, async (w: number, h: number) => {
                             const imgAspect = w / h;
                             let cropOriginX = 0;
                             let cropOriginY = 0;

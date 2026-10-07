@@ -75,6 +75,7 @@ class SocketService {
             forwardToDevice('post_comment_deleted');
             forwardToDevice('post_like_updated');
             forwardToDevice('follow_counts_updated');
+            forwardToDevice('call_status_update');
 
         } else if (this.registeredUserId !== uid) {
             // Different user logged in — re-register

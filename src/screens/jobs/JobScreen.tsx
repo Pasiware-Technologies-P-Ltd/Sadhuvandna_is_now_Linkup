@@ -1,18 +1,24 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, Linking, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { ImageService } from '../../services/ImageService';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const JobScreen = ({ navigation }: any) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const cursorRef = useRef<number | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
     const { t } = useLanguage();
 
     const loadCachedJobs = async () => {
@@ -21,28 +27,88 @@ const JobScreen = ({ navigation }: any) => {
             if (cached) {
                 setJobs(JSON.parse(cached));
                 setLoading(false);
+                return true;
             }
         } catch (e) {}
+        return false;
     };
 
     useEffect(() => {
-        loadCachedJobs().then(() => {
-            fetchJobs();
+        loadCachedJobs().then((hasCache) => {
+            fetchJobs(false, false, hasCache);
         });
-    }, []);
 
-    const fetchJobs = async () => {
-        try {
-            const res = await api.get('/get_jobs.php');
-            if (res.data.status === 'success') {
-                setJobs(res.data.data);
-                AsyncStorage.setItem('cached_jobs_v1', JSON.stringify(res.data.data));
+        const unsubscribeBlur = navigation.addListener('blur', () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
             }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
+        });
+        return unsubscribeBlur;
+    }, [navigation]);
+
+    const fetchJobs = async (isMore = false, isRefresh = false, isSilent = false) => {
+        if (isMore && (isFetchingMore || !hasMore)) return;
+
+        if (isMore) setIsFetchingMore(true);
+        else if (isRefresh) setRefreshing(true);
+        else if (!isSilent) setLoading(true);
+
+        if (!isMore) {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            abortControllerRef.current = new AbortController();
         }
+
+        try {
+            const cursorParam = (isMore && cursorRef.current) ? `?limit=20&cursor=${cursorRef.current}` : '?limit=20';
+            const res = await api.get(`/get_jobs.php${cursorParam}`, {
+                signal: isMore ? undefined : abortControllerRef.current?.signal
+            });
+            if (res.data.status === 'success') {
+                const newJobs = res.data.data || [];
+                if (isMore) {
+                    setJobs(prev => {
+                        const existingIds = new Set(prev.map((p) => p.id));
+                        const uniqueNew = newJobs.filter((p: any) => !existingIds.has(p.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                } else {
+                    const newStringified = JSON.stringify(newJobs);
+                    const cachedStr = await AsyncStorage.getItem('cached_jobs_v1');
+                    
+                    if (!isSilent || cachedStr !== newStringified) {
+                        setJobs(newJobs);
+                        AsyncStorage.setItem('cached_jobs_v1', newStringified);
+                    }
+                }
+                
+                setHasMore(res.data.has_more);
+                cursorRef.current = res.data.next_cursor;
+            }
+            setLoading(false);
+            setRefreshing(false);
+            setIsFetchingMore(false);
+        } catch (error: any) {
+            if (error?.name === 'CanceledError' || error?.message === 'canceled') {
+                // Request was canceled, do nothing
+                return;
+            }
+            console.error(error);
+            setLoading(false);
+            setRefreshing(false);
+            setIsFetchingMore(false);
+        }
+    };
+
+    const onRefresh = () => {
+        cursorRef.current = null;
+        fetchJobs(false, true);
+    };
+
+    const renderFooter = () => {
+        if (!isFetchingMore) return null;
+        return <ActivityIndicator style={{ marginVertical: 20 }} color="#ea580c" />;
     };
 
     const renderItem = ({ item }: { item: any }) => (
@@ -67,6 +133,14 @@ const JobScreen = ({ navigation }: any) => {
                 renderItem={renderItem}
                 keyExtractor={item => item.id?.toString()}
                 contentContainerStyle={{ paddingVertical: 10 }}
+                // @ts-ignore: IDE erroneously flags this property
+                estimatedItemSize={250}
+                onEndReached={() => fetchJobs(true)}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={renderFooter}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />
+                }
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
                         <Text className="text-gray-500 text-center text-lg">{t('noUpdatesAvailable')}</Text>
@@ -95,14 +169,18 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
 
     const getImageUrl = (imagePath: string) => {
         if (!imagePath) return null;
-        if (imagePath.startsWith('http')) return imagePath;
-        // Strip leading slash if present
-        const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-        // If the path already has 'uploads/', just append it to root, else assume uploads/jobs/
-        if (cleanPath.includes('uploads/')) {
-            return `${BASE_URL_ROOT}/${cleanPath}`;
+        let finalUrl = imagePath;
+        if (!imagePath.startsWith('http')) {
+            // Strip leading slash if present
+            const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+            // If the path already has 'uploads/', just append it to root, else assume uploads/jobs/
+            if (cleanPath.includes('uploads/')) {
+                finalUrl = `${BASE_URL_ROOT}/${cleanPath}`;
+            } else {
+                finalUrl = `${BASE_URL_ROOT}/uploads/jobs/${cleanPath}`;
+            }
         }
-        return `${BASE_URL_ROOT}/uploads/jobs/${cleanPath}`;
+        return ImageService.getFeedImageUrl(finalUrl, 800);
     };
 
     const imageUrl = getImageUrl(item.image);

@@ -47,12 +47,72 @@ const BadgeIcon = ({ type }: { type: string }) => {
     );
 };
 
+const groupNotifications = (notifications: any[]) => {
+    const groupedMap = new Map();
+    for (const item of notifications) {
+        let key = item.id;
+        const itemDate = new Date(item.date || item.created_at);
+        const dateKey = `${itemDate.getFullYear()}-${itemDate.getMonth()}-${itemDate.getDate()}`;
+        
+        if (item.type === 'like' || item.type === 'comment') {
+            let refId = '';
+            try {
+                if (item.data_payload) {
+                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                    refId = data.postId || data.reference_id || '';
+                }
+            } catch (e) {}
+            if (refId) key = `${item.type}_${refId}_${dateKey}`;
+            else key = `${item.type}_${item.title}_${dateKey}`;
+        } else if (item.type === 'message' || item.type === 'chat') {
+            key = `msg_${item.sender_id}_${dateKey}`;
+        } else if (item.type === 'incoming_call') {
+            let callerId = '';
+            try {
+                if (item.data_payload) {
+                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                    callerId = data.caller_id || '';
+                }
+            } catch (e) {}
+            key = `call_${callerId}_${dateKey}`;
+        } else if (item.type === 'group_chat') {
+            let groupId = '';
+            try {
+                if (item.data_payload) {
+                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
+                    groupId = data.group_id || '';
+                }
+            } catch (e) {}
+            key = `group_${groupId}_${dateKey}`;
+        } else if (item.type === 'post' && item.title === 'New Post') {
+            key = `post_Linkup_${dateKey}`;
+        }
+
+        if (!groupedMap.has(key)) {
+            groupedMap.set(key, { ...item, _groupCount: item._groupCount || 1 });
+        } else {
+            const existing = groupedMap.get(key);
+            const existingDate = new Date(existing.date || existing.created_at).getTime();
+            const newDate = new Date(item.date || item.created_at).getTime();
+            if (newDate > existingDate) {
+                groupedMap.set(key, { ...item, _groupCount: (existing._groupCount || 1) + 1 });
+            } else {
+                existing._groupCount = (existing._groupCount || 1) + 1;
+            }
+        }
+    }
+    const finalMerged = Array.from(groupedMap.values());
+    finalMerged.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
+    return finalMerged;
+};
+
 const NotificationScreen = ({ navigation }: any) => {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [lastCursor, setLastCursor] = useState<string | null>(null);
 
     useEffect(() => {
         loadLocalThenFetch();
@@ -67,7 +127,7 @@ const NotificationScreen = ({ navigation }: any) => {
             // Load instantly from SQLite
             const localNotes = await NotificationDBService.getNotifications(String(user.id), 15);
             if (localNotes && localNotes.length > 0) {
-                setNotifications(localNotes);
+                setNotifications(groupNotifications(localNotes));
             }
 
             // Then fetch from API
@@ -96,70 +156,13 @@ const NotificationScreen = ({ navigation }: any) => {
                         }
                     }
 
-                    // Grouping Logic
-                    const groupedMap = new Map();
-                    for (const item of combined) {
-                        let key = item.id;
-                        const itemDate = new Date(item.date || item.created_at);
-                        const dateKey = `${itemDate.getFullYear()}-${itemDate.getMonth()}-${itemDate.getDate()}`;
-                        
-                        if (item.type === 'like' || item.type === 'comment') {
-                            let refId = '';
-                            try {
-                                if (item.data_payload) {
-                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                    refId = data.postId || data.reference_id || '';
-                                }
-                            } catch (e) {}
-                            
-                            if (refId) {
-                                key = `${item.type}_${refId}_${dateKey}`;
-                            } else {
-                                key = `${item.type}_${item.title}_${dateKey}`;
-                            }
-                        } else if (item.type === 'message' || item.type === 'chat') {
-                            key = `msg_${item.sender_id}_${dateKey}`;
-                        } else if (item.type === 'incoming_call') {
-                            let callerId = '';
-                            try {
-                                if (item.data_payload) {
-                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                    callerId = data.caller_id || '';
-                                }
-                            } catch (e) {}
-                            key = `call_${callerId}_${dateKey}`;
-                        } else if (item.type === 'group_chat') {
-                            let groupId = '';
-                            try {
-                                if (item.data_payload) {
-                                    const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                    groupId = data.group_id || '';
-                                }
-                            } catch (e) {}
-                            key = `group_${groupId}_${dateKey}`;
-                        } else if (item.type === 'post' && item.title === 'New Post') {
-                            key = `post_Linkup_${dateKey}`;
-                        }
-
-                        if (!groupedMap.has(key)) {
-                            groupedMap.set(key, { ...item, _groupCount: 1 });
-                        } else {
-                            const existing = groupedMap.get(key);
-                            const existingDate = new Date(existing.date || existing.created_at).getTime();
-                            const newDate = new Date(item.date || item.created_at).getTime();
-                            
-                            if (newDate > existingDate) {
-                                groupedMap.set(key, { ...item, _groupCount: (existing._groupCount || 1) + 1 });
-                            } else {
-                                existing._groupCount = (existing._groupCount || 1) + 1;
-                            }
-                        }
-                    }
-
-                    const finalMerged = Array.from(groupedMap.values());
-                    finalMerged.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
-                    return finalMerged;
+                    return groupNotifications(combined);
                 });
+
+                if (fetched.length > 0) {
+                    const lastFetched = fetched[fetched.length - 1];
+                    setLastCursor(lastFetched.date || lastFetched.created_at);
+                }
 
                 if (fetched.length < 15) setHasMore(false);
                 else setHasMore(true);
@@ -183,70 +186,21 @@ const NotificationScreen = ({ navigation }: any) => {
             if (!u) return;
             const user = JSON.parse(u);
 
-            const cursor = notifications[notifications.length - 1].date || notifications[notifications.length - 1].created_at;
+            let cursorToUse = lastCursor;
+            if (!cursorToUse) {
+                cursorToUse = notifications[notifications.length - 1].date || notifications[notifications.length - 1].created_at;
+            }
             
-            const res = await api.get(`/fetch_notifications.php?user_id=${user.id}&limit=15&cursor=${encodeURIComponent(cursor)}`);
+            const res = await api.get(`/fetch_notifications.php?user_id=${user.id}&limit=15&cursor=${encodeURIComponent(cursorToUse || '')}`);
             if (res.data.status === 'success') {
                 const fetched = res.data.data;
                 if (fetched.length > 0) {
+                    const lastFetched = fetched[fetched.length - 1];
+                    setLastCursor(lastFetched.date || lastFetched.created_at);
+                    
                     setNotifications(prev => {
                         const combined = [...prev, ...fetched];
-                        const groupedMap = new Map();
-                        for (const item of combined) {
-                            let key = item.id;
-                            const itemDate = new Date(item.date || item.created_at);
-                            const dateKey = `${itemDate.getFullYear()}-${itemDate.getMonth()}-${itemDate.getDate()}`;
-                            
-                            if (item.type === 'like' || item.type === 'comment') {
-                                let refId = '';
-                                try {
-                                    if (item.data_payload) {
-                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                        refId = data.postId || data.reference_id || '';
-                                    }
-                                } catch (e) {}
-                                if (refId) key = `${item.type}_${refId}_${dateKey}`;
-                                else key = `${item.type}_${item.title}_${dateKey}`;
-                            } else if (item.type === 'message' || item.type === 'chat') {
-                                key = `msg_${item.sender_id}_${dateKey}`;
-                            } else if (item.type === 'incoming_call') {
-                                let callerId = '';
-                                try {
-                                    if (item.data_payload) {
-                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                        callerId = data.caller_id || '';
-                                    }
-                                } catch (e) {}
-                                key = `call_${callerId}_${dateKey}`;
-                            } else if (item.type === 'group_chat') {
-                                let groupId = '';
-                                try {
-                                    if (item.data_payload) {
-                                        const data = typeof item.data_payload === 'string' ? JSON.parse(item.data_payload) : item.data_payload;
-                                        groupId = data.group_id || '';
-                                    }
-                                } catch (e) {}
-                                key = `group_${groupId}_${dateKey}`;
-                            } else if (item.type === 'post' && item.title === 'New Post') {
-                                key = `post_Linkup_${dateKey}`;
-                            }
-
-                            if (!groupedMap.has(key)) {
-                                groupedMap.set(key, { ...item, _groupCount: item._groupCount || 1 });
-                            } else {
-                                const existing = groupedMap.get(key);
-                                const existingDate = new Date(existing.date || existing.created_at).getTime();
-                                const newDate = new Date(item.date || item.created_at).getTime();
-                                if (newDate > existingDate) {
-                                    groupedMap.set(key, { ...item, _groupCount: (existing._groupCount || 1) + 1 });
-                                } else {
-                                    existing._groupCount = (existing._groupCount || 1) + 1;
-                                }
-                            }
-                        }
-                        const finalMerged = Array.from(groupedMap.values());
-                        finalMerged.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
-                        return finalMerged;
+                        return groupNotifications(combined);
                     });
                 }
                 if (fetched.length < 15) {

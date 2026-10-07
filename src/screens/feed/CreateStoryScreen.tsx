@@ -13,10 +13,12 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 import { Modal, TextInput } from 'react-native';
+import { useUpload } from '../../context/UploadContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CreateStoryScreen = ({ navigation }: any) => {
+    const { startUpload } = useUpload();
     const [image, setImage] = useState<string | null>(null);
     const [isVideo, setIsVideo] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -207,15 +209,10 @@ const CreateStoryScreen = ({ navigation }: any) => {
 
             console.log("[STORY UPLOAD] Sending to server:", { finalUri, filename, type, userId: user.id });
 
-            const res = await api.post('story_upload.php', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            if (res.data.status === 'success') {
-                Alert.alert("Success", "Story uploaded successfully");
-                navigation.goBack();
-            } else {
-                Alert.alert("Error", res.data.message || "Failed to upload");
-            }
+            const thumbUri = isVideo ? null : finalUri; // Can't easily extract video thumb here without expo-video-thumbnails
+            startUpload('story_upload.php', formData, thumbUri);
+            
+            navigation.goBack();
 
         } catch (e: any) {
             console.error(e);

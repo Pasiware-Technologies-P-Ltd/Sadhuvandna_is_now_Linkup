@@ -8,10 +8,12 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL, getFullPaymentUrl } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUpload } from '../../context/UploadContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
+    const { startUpload } = useUpload();
     const { profile: routeProfile } = route.params || {};
     const [formData, setFormData] = useState({
         full_name: '',
@@ -265,19 +267,11 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 data.append('photo', { uri: photo, name: filename, type } as any);
             }
 
-            const res = await api.post('/create_marriage_profile.php', data, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            if (res.data.status === 'success') {
-                Alert.alert("Success", isEdit ? "Marriage Profile Updated!" : "Marriage Profile Created!");
-                navigation.goBack();
-            } else {
-                Alert.alert("Error", res.data.message || "Failed to create profile");
-            }
+            const res = startUpload('create_marriage_profile.php', data as any, photo || null);
+            navigation.goBack();
         } catch (error) {
             console.error(error);
-            Alert.alert("Error", "Network request failed");
+            Alert.alert("Error", "Failed to start upload");
         } finally {
             setLoading(false);
         }
@@ -318,9 +312,9 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     <View className="items-center my-6">
                         <TouchableOpacity onPress={pickImage} className="relative">
                             {photo ? (
-                                <Image source={{ uri: photo }} className="w-32 h-32 rounded-full bg-gray-200 border-4 border-orange-100" />
+                                <Image source={{ uri: photo }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#e5e7eb', borderWidth: 4, borderColor: '#ffedd5' }} />
                             ) : existingPhoto ? (
-                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} className="w-32 h-32 rounded-full bg-gray-200 border-4 border-orange-100" />
+                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#e5e7eb', borderWidth: 4, borderColor: '#ffedd5' }} />
                             ) : (
                                 <View className="w-32 h-32 rounded-full bg-orange-50 items-center justify-center border-2 border-dashed border-orange-300">
                                     <Ionicons name="camera" size={36} color="#ea580c" />

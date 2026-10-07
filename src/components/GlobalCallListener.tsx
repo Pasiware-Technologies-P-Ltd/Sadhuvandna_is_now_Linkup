@@ -35,27 +35,28 @@ const GlobalCallListener = () => {
             if (!notif) return;
             
             // For chat messages, handleNewNotification already showed the in-app popup
-            // So only show in-app popup for non-message types here
+            // AND BadgeContext already displayed the system notification via Notifee.
+            // So skip both for message types.
             if (notif.type !== 'message') {
                 setInAppNotif(notif);
                 setTimeout(() => {
                     setInAppNotif(null);
                 }, 4000);
-            }
 
-            notifee.createChannel({ id: 'default', name: 'Default Channel' }).then(channelId => {
-                notifee.displayNotification({
-                    id: notif.reference_id ? String(notif.reference_id) : (notif.id ? String(notif.id) : undefined),
-                    title: notif.title,
-                    body: notif.message,
-                    android: {
-                        channelId,
-                        importance: AndroidImportance.HIGH,
-                        smallIcon: 'ic_notification',
-                        largeIcon: require('../../assets/icon.png'),
-                    },
-                }).catch(() => {});
-            });
+                notifee.createChannel({ id: 'default', name: 'Default Channel' }).then(channelId => {
+                    notifee.displayNotification({
+                        id: notif.reference_id ? String(notif.reference_id) : (notif.id ? String(notif.id) : undefined),
+                        title: notif.title,
+                        body: notif.message,
+                        android: {
+                            channelId,
+                            importance: AndroidImportance.HIGH,
+                            smallIcon: 'ic_notification',
+                            largeIcon: require('../../assets/icon.png'),
+                        },
+                    }).catch(() => {});
+                });
+            }
         };
 
         const handleNewNotification = (data: any) => {
@@ -198,7 +199,7 @@ const GlobalCallListener = () => {
 
         navigateWithRetry('AgoraCall', {
             channelId: channelId,
-            isVideo: (currentCall.type === 'video'),
+            isVideo: (currentCall.call_type === 'video'),
             isCaller: false,
             otherUserId: currentCall.caller_id,
             myProfileIdFallback: currentCall.my_profile_id_ref
@@ -239,7 +240,7 @@ const GlobalCallListener = () => {
             {incomingCall && currentRoute !== 'AgoraCall' && (
                 <View style={styles.container}>
                     <View style={styles.card}>
-                        <Text style={styles.title}>Incoming {incomingCall.type} Call</Text>
+                        <Text style={styles.title}>Incoming {incomingCall.call_type} Call</Text>
                         <Text style={styles.name}>{incomingCall.caller_name}</Text>
 
                         <View style={styles.row}>

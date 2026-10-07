@@ -251,94 +251,154 @@ $query = "SELECT $select_fields
           LIMIT $limit OFFSET $offset";
           
 $result = $con->query($query);
-$posts = [];
+$raw_posts = [];
+$post_ids = [];
 
 while ($p = $result->fetch_assoc()) {
-    $pid = intval($p['id']);
+    $raw_posts[] = $p;
+    $post_ids[] = intval($p['id']);
+}
 
-    // Likes count
-    $likes_res = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$pid");
-    $likes = $likes_res ? $likes_res->fetch_row()[0] : 0;
+if (empty($post_ids)) {
+    echo json_encode(["status" => "success", "data" => [], "seed" => $seed]);
+    exit;
+}
 
-    // User liked?
-    $user_liked = false;
-    if ($user_id > 0) {
-        $ul_res = $con->query("SELECT id FROM tbl_likes WHERE post_id=$pid AND user_id=$user_id");
-        if ($ul_res && $ul_res->num_rows > 0)
-            $user_liked = true;
+$ids_str = implode(',', $post_ids);
+
+// --- Batch: Likes count per post ---
+$likes_map = [];
+$lc_res = $con->query("SELECT post_id, COUNT(*) as cnt FROM tbl_likes WHERE post_id IN ($ids_str) GROUP BY post_id");
+if ($lc_res) {
+    while ($row = $lc_res->fetch_assoc()) {
+        $likes_map[$row['post_id']] = intval($row['cnt']);
     }
+}
 
-    // User saved / bookmarked?
-    $user_saved = false;
-    if ($user_id > 0) {
-        $us_res = $con->query("SELECT id FROM tbl_saved_posts WHERE post_id=$pid AND user_id=$user_id");
-        if ($us_res && $us_res->num_rows > 0)
-            $user_saved = true;
-    }
-
-    $comments = [];
-    $use_redis = false;
-    require_once 'RedisConfig.php';
-    $redis = RedisConfig::getConnection();
-    if ($redis) {
-        $use_redis = true;
-    }
-
-    if ($use_redis) {
-        $redisKey = "post:{$pid}:comments";
-        $cacheLoadedKey = "post:{$pid}:comments_loaded";
-
-        if (!$redis->exists($cacheLoadedKey)) {
-            $cres = $con->query("SELECT c.id, c.user_id, c.comment, c.date, m.name, m.profile_photo FROM tbl_comments c JOIN tbl_members m ON c.user_id=m.id WHERE c.post_id=$pid ORDER BY c.date DESC");
-            if ($cres) {
-                $cacheComments = [];
-                while ($c = $cres->fetch_assoc()) {
-                    $cacheComments[] = json_encode([
-                        'comment_id' => $c['id'],
-                        'user_id' => $c['user_id'],
-                        'name' => $c['name'],
-                        'profile_photo' => $c['profile_photo'],
-                        'comment' => htmlspecialchars($c['comment']),
-                        'date' => $c['date']
-                    ]);
-                }
-                if (!empty($cacheComments)) {
-                    call_user_func_array([$redis, 'rPush'], array_merge([$redisKey], $cacheComments));
-                }
-                $redis->setex($cacheLoadedKey, 3600, "1");
-            }
+// --- Batch: User liked? ---
+$user_liked_map = [];
+if ($user_id > 0) {
+    $ul_res = $con->query("SELECT post_id FROM tbl_likes WHERE post_id IN ($ids_str) AND user_id=$user_id");
+    if ($ul_res) {
+        while ($row = $ul_res->fetch_assoc()) {
+            $user_liked_map[$row['post_id']] = true;
         }
-        $commentsRaw = $redis->lRange($redisKey, 0, -1);
-        if ($commentsRaw) {
-            foreach ($commentsRaw as $cr) {
-                $cObj = json_decode($cr, true);
-                if ($cObj) $comments[] = $cObj;
-            }
+    }
+}
+
+// --- Batch: User saved? ---
+$user_saved_map = [];
+if ($user_id > 0) {
+    $us_res = $con->query("SELECT post_id FROM tbl_saved_posts WHERE post_id IN ($ids_str) AND user_id=$user_id");
+    if ($us_res) {
+        while ($row = $us_res->fetch_assoc()) {
+            $user_saved_map[$row['post_id']] = true;
         }
-    } else {
-        $cres = $con->query("SELECT c.comment, c.date, m.name, m.profile_photo 
-                             FROM tbl_comments c 
-                             JOIN tbl_members m ON c.user_id=m.id 
-                             WHERE c.post_id=$pid 
-                             ORDER BY c.date DESC");
+    }
+}
+
+// --- Batch: Comments (latest 3 per post) using Redis or DB ---
+require_once 'RedisConfig.php';
+$redis = RedisConfig::getConnection();
+$comments_map = [];
+
+if ($redis) {
+    // Check which posts need DB fetch (not cached)
+    $pipe = $redis->multi(\Redis::PIPELINE);
+    foreach ($post_ids as $pid) {
+        $pipe->exists("post:{$pid}:comments_loaded");
+    }
+    $exists_results = $pipe->exec();
+
+    $needs_db = [];
+    foreach ($post_ids as $i => $pid) {
+        if (!$exists_results[$i]) {
+            $needs_db[] = $pid;
+        }
+    }
+
+    // Fetch from DB in one query for all uncached posts
+    if (!empty($needs_db)) {
+        $needs_str = implode(',', $needs_db);
+        $cres = $con->query("SELECT c.id, c.post_id, c.user_id, c.comment, c.date, m.name, m.profile_photo 
+                              FROM tbl_comments c 
+                              JOIN tbl_members m ON c.user_id=m.id 
+                              WHERE c.post_id IN ($needs_str) 
+                              ORDER BY c.post_id, c.date DESC");
+        $db_comments = [];
         if ($cres) {
             while ($c = $cres->fetch_assoc()) {
-                $comments[] = [
-                    'name' => $c['name'],
+                $db_comments[$c['post_id']][] = $c;
+            }
+        }
+        // Store each in Redis
+        $pipe2 = $redis->multi(\Redis::PIPELINE);
+        foreach ($needs_db as $pid) {
+            $redisKey = "post:{$pid}:comments";
+            $cacheLoadedKey = "post:{$pid}:comments_loaded";
+            $items = $db_comments[$pid] ?? [];
+            foreach ($items as $c) {
+                $pipe2->rPush($redisKey, json_encode([
+                    'comment_id'    => $c['id'],
+                    'user_id'       => $c['user_id'],
+                    'name'          => $c['name'],
                     'profile_photo' => $c['profile_photo'],
-                    'comment' => $c['comment'],
-                    'date' => $c['date']
+                    'comment'       => htmlspecialchars($c['comment']),
+                    'date'          => $c['date']
+                ]));
+            }
+            $pipe2->setex($cacheLoadedKey, 3600, "1");
+        }
+        $pipe2->exec();
+    }
+
+    // Now fetch comments from Redis for all posts
+    $pipe3 = $redis->multi(\Redis::PIPELINE);
+    foreach ($post_ids as $pid) {
+        $pipe3->lRange("post:{$pid}:comments", 0, 2); // latest 3
+    }
+    $all_comments = $pipe3->exec();
+    foreach ($post_ids as $i => $pid) {
+        $comments_map[$pid] = [];
+        foreach ($all_comments[$i] as $cr) {
+            $obj = json_decode($cr, true);
+            if ($obj) $comments_map[$pid][] = $obj;
+        }
+    }
+} else {
+    // No Redis — single batch query
+    $cres = $con->query("SELECT c.id, c.post_id, c.user_id, c.comment, c.date, m.name, m.profile_photo 
+                          FROM tbl_comments c 
+                          JOIN tbl_members m ON c.user_id=m.id 
+                          WHERE c.post_id IN ($ids_str) 
+                          ORDER BY c.post_id, c.date DESC");
+    if ($cres) {
+        while ($c = $cres->fetch_assoc()) {
+            $pid = $c['post_id'];
+            if (!isset($comments_map[$pid])) $comments_map[$pid] = [];
+            if (count($comments_map[$pid]) < 3) {
+                $comments_map[$pid][] = [
+                    'comment_id'    => $c['id'],
+                    'user_id'       => $c['user_id'],
+                    'name'          => $c['name'],
+                    'profile_photo' => $c['profile_photo'],
+                    'comment'       => $c['comment'],
+                    'date'          => $c['date']
                 ];
             }
         }
     }
+}
 
-    // Media
+// --- Build output ---
+$posts = [];
+foreach ($raw_posts as $p) {
+    $pid = intval($p['id']);
+
     $media = [];
     if (!empty($p['media'])) {
         $media = array_values(array_filter(explode(',', $p['media'])));
     }
-    // Fallback for legacy 'image' column
     if (empty($media) && !empty($p['image'])) {
         $media[] = $p['image'];
     }
@@ -357,21 +417,21 @@ while ($p = $result->fetch_assoc()) {
     }
 
     $post_item = [
-        'id' => $pid,
-        'user_id' => $p['user_id'],
-        'name' => $p['name'] ?? 'Unknown User',
+        'id'            => $pid,
+        'user_id'       => $p['user_id'],
+        'name'          => $p['name'] ?? 'Unknown User',
         'profile_photo' => $p['profile_photo'],
-        'description' => $p['status'] ?? $p['description'] ?? '', // Map status to description for app compatibility
-        'link' => $p['link'] ?? '',
-        'likes' => $likes,
-        'user_liked' => $user_liked,
-        'user_saved' => $user_saved,
-        'is_saved' => $user_saved,
-        'comments' => $comments,
-        'media' => $media, // Array of strings
-        'image_width' => $image_width,
-        'image_height' => $image_height,
-        'date' => $p['created_at'] ?? $p['date']
+        'description'   => $p['status'] ?? $p['description'] ?? '',
+        'link'          => $p['link'] ?? '',
+        'likes'         => $likes_map[$pid] ?? 0,
+        'user_liked'    => isset($user_liked_map[$pid]),
+        'user_saved'    => isset($user_saved_map[$pid]),
+        'is_saved'      => isset($user_saved_map[$pid]),
+        'comments'      => $comments_map[$pid] ?? [],
+        'media'         => $media,
+        'image_width'   => $image_width,
+        'image_height'  => $image_height,
+        'date'          => $p['created_at'] ?? $p['date']
     ];
     if (isset($p['rand_score'])) {
         $post_item['rand_score'] = $p['rand_score'];

@@ -68,7 +68,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [isReceiverTyping, setIsReceiverTyping] = useState(false);
     // receiverOnline driven by global OnlineContext — instant across all screens.
     // If socket is disconnected, isConnected is false and it defaults to DB last seen.
-    const receiverOnline = !route.params?.isGroup && isConnected && isUserOnline(receiver?.id);
+    const receiverOnline = !route.params?.isGroup && isConnected && isUserOnline(receiver?.user_id || receiver?.id);
     const [receiverLastSeen, setReceiverLastSeen] = useState<string | null>(null);
     // Group typing indicator
     const [groupTypingUser, setGroupTypingUser] = useState<string | null>(null);
@@ -272,7 +272,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                 });
 
                 socketService.socket.on('stop_typing', (data: any) => {
-                    if (data.senderId == receiver?.id) {
+                    if (data.senderId == receiver?.id || data.senderId == receiver?.user_id) {
                         setIsReceiverTyping(false);
                     }
                 });
@@ -315,8 +315,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                     }
                 });
 
-                if (receiver?.id) {
-                    socketService.socket.emit('check_status', receiver.id);
+                const checkId = receiver?.user_id || receiver?.id;
+                if (checkId) {
+                    socketService.socket.emit('check_status', checkId);
                 }
             }
 
@@ -382,6 +383,9 @@ const ChatScreen = ({ navigation, route }: any) => {
         const unsubscribeBlur = navigation.addListener('blur', () => {
             isActive = false;
             stopPolling();
+            import('react-native').then(({ DeviceEventEmitter }) => {
+                DeviceEventEmitter.emit('refresh_badge_counts');
+            });
         });
 
         // AppState listener
@@ -432,9 +436,9 @@ const ChatScreen = ({ navigation, route }: any) => {
     useEffect(() => {
         if (isConnected && myProfileId && receiver?.id) {
             fetchUserStatus(myProfileId);
-            socketService.socket?.emit('check_status', receiver.id);
+            socketService.socket?.emit('check_status', receiver.user_id || receiver.id);
         }
-    }, [isConnected, myProfileId, receiver?.id]);
+    }, [isConnected, myProfileId, receiver?.id, receiver?.user_id]);
 
     // Typing Animation
     useEffect(() => {
@@ -1853,9 +1857,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                     {isMe && (
                                                         <Ionicons
                                                             name={
-                                                                item.isOptimistic ? "time-outline" :
-                                                                    (item.seen == 1 || receiverOnline) ? "checkmark-done-outline" :
-                                                                        "checkmark-outline"
+                                                                item.isOptimistic ? "time-outline" : "checkmark-done-outline"
                                                             }
                                                             size={14}
                                                             color={item.seen == 1 ? "#3b82f6" : "rgba(255,255,255,0.8)"}

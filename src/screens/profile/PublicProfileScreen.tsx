@@ -3,6 +3,7 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Dimensions, Alert, Modal, TextInput, RefreshControl, Animated, Platform, DeviceEventEmitter } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
@@ -36,7 +37,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     const [savedPosts, setSavedPosts] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'photos' | 'reels' | 'saved'>('photos');
     const [loading, setLoading] = useState(true);
-    const flatListRef = useRef<FlashList>(null);
+    const flatListRef = useRef<any>(null);
 
     const [followStats, setFollowStats] = useState<any>({
         followers: 0,
@@ -249,6 +250,13 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             setReelPosts(updatePosts);
         };
 
+        const handlePostDeleted = (data: any) => {
+            const filterPosts = (prev: any[]) => prev.filter(p => p.id !== data.postId);
+            setPosts(filterPosts);
+            setPhotoPosts(filterPosts);
+            setReelPosts(filterPosts);
+        };
+
         const handleCommentDeleted = (data: any) => {
             const updatePosts = (prev: any[]) => prev.map(p => {
                 if (p.id == data.post_id) {
@@ -291,12 +299,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
         const commentAddedSub = DeviceEventEmitter.addListener('post_comment_added', handleCommentAdded);
         const commentDeletedSub = DeviceEventEmitter.addListener('post_comment_deleted', handleCommentDeleted);
         const likeUpdatedSub = DeviceEventEmitter.addListener('post_like_updated', handleLikeUpdated);
+        const postDeletedSub = DeviceEventEmitter.addListener('postDeleted', handlePostDeleted);
 
         return () => {
             followSub.remove();
             commentAddedSub.remove();
             commentDeletedSub.remove();
             likeUpdatedSub.remove();
+            postDeletedSub.remove();
         };
     }, [userId, currentUserId]);
 
@@ -352,6 +362,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             });
                             if (res.data.status === 'success') {
                                 setPosts(prev => prev.filter(p => p.id !== postId));
+                                import('react-native').then(({ DeviceEventEmitter }) => {
+                                    DeviceEventEmitter.emit('postDeleted', { postId });
+                                });
                                 Alert.alert("Success", "Post deleted");
                             } else {
                                 Alert.alert("Error", res.data.message || "Failed to delete");
@@ -1156,6 +1169,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+            <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
             {/* Floating Back Button Overlay */}
             <TouchableOpacity 
                 onPress={() => navigation.goBack()} 

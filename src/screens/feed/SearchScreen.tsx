@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,13 @@ const SearchScreen = ({ navigation }: any) => {
     const [users, setUsers] = useState<any[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
     const [currentUserId, setCurrentUserId] = useState('');
+    
+    const usersOffset = useRef(0);
+    const postsOffset = useRef(0);
+    const hasMoreUsers = useRef(true);
+    const hasMorePosts = useRef(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const LIMIT = 20;
 
     useEffect(() => {
         const getUid = async () => {
@@ -32,29 +39,57 @@ const SearchScreen = ({ navigation }: any) => {
         getUid();
     }, []);
 
-    const performSearch = useCallback(async (text: string) => {
+    const performSearch = useCallback(async (text: string, reset: boolean = false) => {
         if (!text.trim()) {
             setUsers([]);
             setPosts([]);
+            usersOffset.current = 0;
+            postsOffset.current = 0;
+            hasMoreUsers.current = true;
+            hasMorePosts.current = true;
             return;
         }
-        setLoading(true);
+
+        if (reset) {
+            setLoading(true);
+            usersOffset.current = 0;
+            postsOffset.current = 0;
+            hasMoreUsers.current = true;
+            hasMorePosts.current = true;
+        } else {
+            setLoadingMore(true);
+        }
+
         try {
-            const res = await api.get(`/api_search.php?query=${encodeURIComponent(text)}&user_id=${currentUserId}`);
+            const res = await api.get(`/api_search.php?query=${encodeURIComponent(text)}&user_id=${currentUserId}&user_offset=${usersOffset.current}&user_limit=${LIMIT}&post_offset=${postsOffset.current}&post_limit=${LIMIT}`);
             if (res.data.ok) {
-                setUsers(res.data.users || []);
-                setPosts(res.data.posts || []);
+                const newUsers = res.data.users || [];
+                const newPosts = res.data.posts || [];
+                
+                if (reset) {
+                    setUsers(newUsers);
+                    setPosts(newPosts);
+                } else {
+                    if (newUsers.length > 0) setUsers(prev => [...prev, ...newUsers]);
+                    if (newPosts.length > 0) setPosts(prev => [...prev, ...newPosts]);
+                }
+
+                hasMoreUsers.current = newUsers.length === LIMIT;
+                hasMorePosts.current = newPosts.length === LIMIT;
+                usersOffset.current += newUsers.length;
+                postsOffset.current += newPosts.length;
             }
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     }, [currentUserId]);
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
-            performSearch(query);
+            performSearch(query, true);
         }, 500);
         return () => clearTimeout(delaySearch);
     }, [query, performSearch]);
@@ -102,6 +137,16 @@ const SearchScreen = ({ navigation }: any) => {
         if (users.length > 0) combined.push({ type: 'header', title: 'People' }, ...users.slice(0, 5));
         if (posts.length > 0) combined.push({ type: 'header', title: 'Posts' }, ...posts);
         return combined;
+    };
+
+    const loadMore = () => {
+        if (loading || loadingMore || !query.trim()) return;
+
+        if (activeTab === 'People' && !hasMoreUsers.current) return;
+        if (activeTab === 'Posts' && !hasMorePosts.current) return;
+        if (activeTab === 'All' && !hasMoreUsers.current && !hasMorePosts.current) return;
+
+        performSearch(query, false);
     };
 
     return (
@@ -162,6 +207,15 @@ const SearchScreen = ({ navigation }: any) => {
                         return item.name ? renderUser({ item }) : renderPost({ item });
                     }}
                     contentContainerStyle={{ paddingBottom: 20 }}
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? (
+                            <View className="py-4 items-center">
+                                <ActivityIndicator size="small" color="#ea580c" />
+                            </View>
+                        ) : null
+                    }
                     ListEmptyComponent={
                         query.length > 0 ? (
                             <View className="flex-1 items-center justify-center pt-20">

@@ -50,17 +50,26 @@ $con->query("CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-$whereClause = '';
+$conditions = [];
 if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
     $uid = intval($_REQUEST['user_id']);
-    $whereClause = "WHERE n.user_id = $uid";
+    $conditions[] = "n.user_id = $uid";
 }
+
+$limit = isset($_REQUEST['limit']) ? intval($_REQUEST['limit']) : 20;
+$cursor = isset($_REQUEST['cursor']) ? intval($_REQUEST['cursor']) : 0;
+
+if ($cursor > 0) {
+    $conditions[] = "n.id < $cursor";
+}
+
+$whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
 
 $query = "SELECT n.*, m.name as user_name, m.profile_photo as user_image, m.city as user_city 
           FROM tbl_news n 
           LEFT JOIN tbl_members m ON n.user_id = m.id 
           $whereClause 
-          ORDER BY n.id DESC";
+          ORDER BY n.id DESC LIMIT $limit";
 $result = $con->query($query);
 
 $news = [];
@@ -105,6 +114,14 @@ if (empty($tickerData)) {
     }
 }
 
+$hasMore = count($news) === $limit;
+$nextCursor = ($hasMore && count($news) > 0) ? $news[count($news) - 1]['id'] : null;
 
-echo json_encode(["status" => "success", "data" => $news, "ticker" => $tickerData]);
+echo json_encode([
+    "status"      => "success",
+    "data"        => $news,
+    "ticker"      => $tickerData,
+    "has_more"    => $hasMore,
+    "next_cursor" => $nextCursor
+]);
 ?>

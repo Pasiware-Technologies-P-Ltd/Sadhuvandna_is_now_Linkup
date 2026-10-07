@@ -16,7 +16,7 @@ try {
     $type = $_REQUEST['type'] ?? $data['type'] ?? '';
     
     $limit = intval($_REQUEST['limit'] ?? $data['limit'] ?? 20);
-    $offset = intval($_REQUEST['offset'] ?? $data['offset'] ?? 0);
+    $cursor = intval($_REQUEST['cursor'] ?? $data['cursor'] ?? 0);
 
     // Filters (Match labels exactly with App)
     $gender = $_REQUEST['gender'] ?? $data['gender'] ?? '';
@@ -30,12 +30,22 @@ try {
         exit;
     }
 
-    // Get My Profile ID (Ensure user_id search is robust)
-    $mq = $con->query("SELECT id FROM tbl_marriage_profiles WHERE user_id='$user_id' LIMIT 1");
-    $my_profile_id = ($mq && $mq->num_rows > 0) ? $mq->fetch_assoc()['id'] : 0;
+    // Get My Profile ID and Photo
+    $mq = $con->query("SELECT id, photo FROM tbl_marriage_profiles WHERE user_id='$user_id' LIMIT 1");
+    $my_profile_id = 0;
+    $my_profile_photo = "";
+    if ($mq && $mq->num_rows > 0) {
+        $m_row = $mq->fetch_assoc();
+        $my_profile_id = $m_row['id'];
+        $my_profile_photo = $m_row['photo'];
+    }
 
     // Building Query (Mirroring Website fetch_profiles.php)
     $where = " WHERE 1 ";
+    
+    if ($cursor > 0) {
+        $where .= " AND mp.id < $cursor ";
+    }
 
     if ($gender) $where .= " AND mp.gender = '$gender' ";
     if ($city) {
@@ -78,7 +88,7 @@ try {
         JOIN tbl_members m ON mp.user_id = m.id
         $where AND m.status != 'Blocked'
         ORDER BY mp.id DESC 
-        LIMIT $limit OFFSET $offset
+        LIMIT $limit
     ";
 
     $res = $con->query($query);
@@ -117,11 +127,17 @@ try {
         if ($rcq) $rc = $rcq->fetch_row()[0];
     }
 
+    $hasMore = count($profiles) === $limit;
+    $nextCursor = ($hasMore && count($profiles) > 0) ? $profiles[count($profiles) - 1]['id'] : null;
+
     echo json_encode([
         "status" => "success",
         "data" => $profiles,
         "my_profile_id" => (int)$my_profile_id,
-        "request_count" => (int)$rc
+        "my_profile_photo" => $my_profile_photo,
+        "request_count" => (int)$rc,
+        "has_more" => $hasMore,
+        "next_cursor" => $nextCursor
     ]);
 
 } catch (Exception $e) {

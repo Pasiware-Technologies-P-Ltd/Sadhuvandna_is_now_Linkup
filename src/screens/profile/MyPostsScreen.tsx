@@ -45,6 +45,13 @@ const MyPostsScreen = ({ navigation }: any) => {
     };
 
     useEffect(() => {
+        let deleteSub: any = null;
+        import('react-native').then(({ DeviceEventEmitter }) => {
+            deleteSub = DeviceEventEmitter.addListener('postDeleted', (data) => {
+                setPosts(prev => prev.filter(p => p.id !== data.postId));
+            });
+        });
+
         AsyncStorage.getItem('user').then(async (u) => {
             if (u) {
                 const user = JSON.parse(u);
@@ -54,6 +61,10 @@ const MyPostsScreen = ({ navigation }: any) => {
                 setLoading(false);
             }
         });
+
+        return () => {
+            if (deleteSub) deleteSub.remove();
+        };
     }, []);
 
     const fetchMyPosts = async (uid?: string) => {
@@ -95,6 +106,9 @@ const MyPostsScreen = ({ navigation }: any) => {
                             });
                             if (res.data.status === 'success') {
                                 setPosts(prev => prev.filter(p => p.id !== postId));
+                                import('react-native').then(({ DeviceEventEmitter }) => {
+                                    DeviceEventEmitter.emit('postDeleted', { postId });
+                                });
                                 Alert.alert("Success", "Post deleted");
                             } else {
                                 Alert.alert("Error", res.data.message || "Failed to delete");

@@ -68,7 +68,31 @@ try {
             "peer_id" => $peer_id,
             "platform" => $platform
         ];
-        sendExpoPushNotification($con, $real_receiver_member_id, "Incoming $type call", "From $caller_name", $push_data);
+        
+        // Also emit a socket event 'new_notification' with type 'call' so GlobalCallListener picks it up
+        $ws_payload = $push_data;
+        $ws_payload['type'] = 'call'; // GlobalCallListener expects type === 'call'
+        
+        $postData = [
+            'room' => "user_{$real_receiver_member_id}",
+            'type' => 'new_notification',
+            'payload' => $ws_payload
+        ];
+        
+        $ch = curl_init('http://127.0.0.1:3000/api/trigger');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen(json_encode($postData))
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 500);
+        curl_exec($ch);
+        curl_close($ch);
+
+        // Send FCM Push notification 
+        sendExpoPushNotification($con, $real_receiver_member_id, "Incoming $type call", "From $caller_name", $push_data, true); // true = skip DB insertion since this is a real-time call
     }
 
     echo json_encode(["status" => "success", "message" => "Call Signal Sent", "call_id" => $call_id]);

@@ -15,6 +15,7 @@ import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { ImageService } from '../../services/ImageService';
 import socketService from '../../services/socket';
+import StoryRing from '../../components/StoryRing';
 
 const { width } = Dimensions.get('window');
 
@@ -43,11 +44,14 @@ const HomeScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const setUserWithRef = (u: any) => { userRef.current = u; setUser(u); };
     const [showUploadModal, setShowUploadModal] = useState(false);
     const cursorScoreRef = useRef<string | null>(null);
     const cursorIdRef = useRef<number | null>(null);
     const statsFetchedRef = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
+    const fetchInitialFeedRef = useRef<Function | null>(null);
+    const userRef = useRef<any>(null);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
 
@@ -67,7 +71,7 @@ const HomeScreen = () => {
                 // Double tap detected
                 flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
                 setRefreshing(true);
-                fetchInitialFeed();
+                fetchInitialFeedRef.current?.(userRef.current?.id, true);
                 refreshCounts();
             }
             lastTabPress.current = time;
@@ -101,7 +105,7 @@ const HomeScreen = () => {
                 const uStr = await AsyncStorage.getItem('user');
                 if (uStr) {
                     const u = JSON.parse(uStr);
-                    setUser(u);
+                    setUserWithRef(u);
                     setPosts([]); // Clear visually to show refresh
                     setStories([]);
                     setReels([]);
@@ -112,7 +116,20 @@ const HomeScreen = () => {
                 console.error("Switch error:", err);
             }
         });
-        return () => subscription.remove();
+        
+        const uploadSub = DeviceEventEmitter.addListener('uploadSuccess', () => {
+            fetchInitialFeed(userRef.current?.id, false); // false to avoid blocking loading indicator
+        });
+
+        const deleteSub = DeviceEventEmitter.addListener('postDeleted', (data) => {
+            setPosts(prev => prev.filter(p => p.id !== data.postId));
+        });
+
+        return () => {
+            subscription.remove();
+            uploadSub.remove();
+            deleteSub.remove();
+        };
     }, []);
 
     useEffect(() => {
@@ -122,7 +139,7 @@ const HomeScreen = () => {
                 let u = null;
                 if (uStr) {
                     u = JSON.parse(uStr);
-                    setUser(u);
+                    setUserWithRef(u);
                 }
                 fetchInitialFeed(u?.id);
                 refreshCounts();
@@ -191,12 +208,7 @@ const HomeScreen = () => {
         };
     }, [user]);
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        refreshCounts();
-        setFeedSeed(Math.floor(Math.random() * 100000) + 1);
-        fetchInitialFeed();
-    }, []);
+    // onRefresh is defined after fetchInitialFeed below
 
     const getImageUrl = (photo: string | undefined | null, type: 'photo' | 'post' = 'photo') => {
         if (!photo) return 'https://via.placeholder.com/100';
@@ -268,12 +280,16 @@ const HomeScreen = () => {
         }
     };
 
-    const fetchInitialFeed = async (userId?: string) => {
-        if (!navigation.isFocused() && posts.length > 0) return;
-        if (isFetchingRef.current) return;
+    const fetchInitialFeed = async (userId?: string, isRefresh: boolean = false) => {
+        // For manual refresh: always force-reset and proceed
+        if (isRefresh) {
+            isFetchingRef.current = false;
+        } else {
+            if (!navigation.isFocused() && posts.length > 0) return;
+            if (isFetchingRef.current) return;
+        }
         
-        const uid = userId || user?.id;
-        if (!uid && loading && !userId) return; 
+        const uid = userId || userRef.current?.id || user?.id;
         const finalUid = uid || 0;
 
         isFetchingRef.current = true;
@@ -283,12 +299,15 @@ const HomeScreen = () => {
         statsFetchedRef.current.clear();
         setHasMore(true);
 
-        if (uid) await loadCachedData(uid.toString());
+        if (uid && !isRefresh) await loadCachedData(uid.toString());
 
         try {
-            console.log(`[HomeScreen API] Fetching INITIAL get_posts.php?seed=${feedSeed}`);
+            const currentSeed = isRefresh ? Math.floor(Math.random() * 100000) + 1 : feedSeed;
+            if (isRefresh) setFeedSeed(currentSeed);
+
+            console.log(`[HomeScreen API] Fetching INITIAL get_posts.php?seed=${currentSeed}`);
             const [postsRes, storiesRes, reelsRes, suggestRes] = await Promise.all([
-                api.get(`get_posts.php?user_id=${finalUid}&limit=20&seed=${feedSeed}&lazy=true`),
+                api.get(`get_posts.php?user_id=${finalUid}&limit=20&seed=${currentSeed}&lazy=true`),
                 api.get('fetch_stories.php?user_id=' + finalUid),
                 api.get('get_posts.php?filter_reels=1&limit=4&user_id=' + finalUid),
                 api.get(`api_follow.php?action=fetch_suggestions&current_user_id=${finalUid}&limit=10`)
@@ -336,10 +355,7 @@ const HomeScreen = () => {
             if (storiesRes.data.status === 'success') {
                 const myStories = storiesRes.data.my_stories || [];
                 const others = storiesRes.data.others || [];
-                const list = [];
-                if (myStories.length > 0) {
-                    list.push({ id: 'mine', name: 'You', profile_photo: user?.profile_photo, stories: myStories, isMine: true });
-                }
+                const list = [{ id: 'mine', name: 'Your Story', profile_photo: user?.profile_photo, stories: myStories, isMine: true }];
                 finalStories = [...list, ...others];
                 setStories(finalStories);
             }
@@ -369,6 +385,16 @@ const HomeScreen = () => {
             isFetchingRef.current = false;
         }
     };
+    // Always keep ref updated so onRefresh can call latest version
+    fetchInitialFeedRef.current = fetchInitialFeed;
+
+    // Defined AFTER fetchInitialFeed to avoid stale closure issues
+    const onRefresh = useCallback(() => {
+        console.log('[HomeScreen] onRefresh called, user=', userRef.current?.id);
+        setRefreshing(true);
+        refreshCounts();
+        fetchInitialFeedRef.current?.(userRef.current?.id, true);
+    }, []);
 
     const fetchNextPage = async () => {
         if (!hasMore || loading || isFetchingRef.current || cursorScoreRef.current === null || cursorIdRef.current === null) return;
@@ -433,81 +459,74 @@ const HomeScreen = () => {
     };
 
     const renderStoryItem = ({ item }: { item: any }) => {
-        // 1. Add Story Button
-        if (item.isAdd) {
-            return (
-                <TouchableOpacity
-                    style={{ alignItems: 'center', marginRight: 16 }}
-                    onPress={() => navigation.navigate('CreateStory')}
-                    activeOpacity={0.8}
-                >
-                    <View style={{ width: 56, height: 56, borderRadius: 28, position: 'relative', marginBottom: 6 }}>
-                        {user?.profile_photo ? (
-                            <Image
-                                source={{ uri: `${PHOTO_URL}${user?.profile_photo}` }}
-                                style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' }}
-                            />
-                        ) : (
-                            <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}>
-                                <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
-                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                                </Text>
-                            </View>
-                        )}
-                        {/* Floating plus badge overlay */}
-                        <View style={{ position: 'absolute', bottom: -2, right: -2, backgroundColor: '#ea580c', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' }}>
-                            <Ionicons name="add" size={14} color="white" />
-                        </View>
-                    </View>
-                    <Text style={{ fontSize: 10, color: '#4b5563', fontWeight: 'bold' }}>{t('add')}</Text>
-                </TouchableOpacity>
-            );
-        }
-
-        // 2. Story Bubble
+        const hasStory = item.stories && item.stories.length > 0;
         const hasUnseen = item.isMine ? false : (parseInt(item.unseen_count) > 0);
+        
+        // Premium ring for users with stories or others with unseen stories
+        const showRing = item.isMine ? hasStory : hasUnseen;
+        
+        const handlePress = () => {
+            if (item.isMine && !hasStory) {
+                navigation.navigate('CreateStory');
+            } else {
+                navigation.navigate('StoryViewer', {
+                    stories: item.stories,
+                    initialIndex: 0,
+                    userId: item.isMine ? user?.id : item.user_id,
+                    userName: item.name,
+                    userPhoto: item.profile_photo,
+                });
+            }
+        };
+
+        const photoUrl = item.isMine ? (user?.profile_photo || item.profile_photo) : item.profile_photo;
+        
+        const renderAvatarContent = () => (
+            <>
+                {photoUrl ? (
+                    <Image
+                        source={{ uri: `${getImageUrl(photoUrl)}` }}
+                        style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6' }}
+                    />
+                ) : (
+                    <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
+                            {item.isMine ? (user?.name ? user.name.charAt(0).toUpperCase() : 'Y') : (item.name ? item.name.charAt(0).toUpperCase() : 'U')}
+                        </Text>
+                    </View>
+                )}
+            </>
+        );
+
         return (
-            <TouchableOpacity
-                style={{ alignItems: 'center', marginRight: 16 }}
-                onPress={() => {
-                    navigation.navigate('StoryViewer', {
-                        stories: item.stories,
-                        initialIndex: 0,
-                        userId: item.isMine ? user?.id : item.user_id,
-                        userName: item.name,
-                        userPhoto: item.profile_photo,
-                    });
-                }}
-                activeOpacity={0.8}
-            >
-                <View style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    borderWidth: 2,
-                    borderColor: hasUnseen ? '#ea580c' : '#e5e7eb',
-                    padding: 2.5,
-                    marginBottom: 6,
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
-                    {item.profile_photo ? (
-                        <Image
-                            source={{ uri: `${PHOTO_URL}${item.profile_photo}` }}
-                            style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6' }}
-                        />
+            <View style={{ alignItems: 'center', marginRight: 16 }}>
+                <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={{ marginBottom: 6 }}>
+                    {showRing ? (
+                        <StoryRing storyCount={item.stories ? item.stories.length : 1} size={62}>
+                            {renderAvatarContent()}
+                        </StoryRing>
                     ) : (
-                        <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' }}>
-                            <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
-                                {item.isMine ? 'Y' : (item.name ? item.name.charAt(0).toUpperCase() : 'U')}
-                            </Text>
+                        <View style={{ width: 62, height: 62, borderRadius: 31, padding: 3, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}>
+                            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'white', padding: 2, justifyContent: 'center', alignItems: 'center' }}>
+                                {renderAvatarContent()}
+                            </View>
                         </View>
                     )}
-                </View>
-                <Text style={{ fontSize: 10, color: '#374151', fontWeight: 'bold', maxWidth: 60, textAlign: 'center' }} numberOfLines={1}>
-                    {item.isMine ? t('you') : item.name}
+                    
+                    {item.isMine && (
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('CreateStory')}
+                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#3b82f6', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white', zIndex: 10 }}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="add" size={14} color="white" />
+                        </TouchableOpacity>
+                    )}
+                </TouchableOpacity>
+                <Text style={{ fontSize: 11, color: '#374151', fontWeight: '500', maxWidth: 65, textAlign: 'center' }} numberOfLines={1}>
+                    {item.name}
                 </Text>
-            </TouchableOpacity>
+            </View>
         );
     };
 
@@ -541,7 +560,7 @@ const HomeScreen = () => {
             <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
                 <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
                     <Image
-                        source={{ uri: user?.profile_photo ? `${PHOTO_URL}${user?.profile_photo}` : 'https://via.placeholder.com/100' }}
+                        source={{ uri: user?.profile_photo ? `${getImageUrl(user?.profile_photo)}` : 'https://via.placeholder.com/100' }}
                         style={{ width: 38, height: 38, borderRadius: 19, marginRight: 12, borderWidth: 1, borderColor: '#ffedd5', backgroundColor: '#f9fafb' }}
                     />
                 </TouchableOpacity>
@@ -561,7 +580,7 @@ const HomeScreen = () => {
                     {t('stories')}
                 </Text>
                 <FlatList
-                    data={[{ id: 'add', isAdd: true }, ...stories]}
+                    data={stories}
                     renderItem={renderStoryItem}
                     keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
                     horizontal
@@ -598,7 +617,7 @@ const HomeScreen = () => {
                         >
                             {item.photo ? (
                                 <Image
-                                    source={{ uri: `${PHOTO_URL}${item.photo}` }}
+                                    source={{ uri: `${getImageUrl(item.photo)}` }}
                                     className="w-14 h-14 rounded-full bg-gray-100 mb-2.5 border border-orange-100"
                                 />
                             ) : (
@@ -741,6 +760,7 @@ const HomeScreen = () => {
                                             });
                                             if (res.data.status === 'success') {
                                                 setPosts(prev => prev.filter(p => p.id !== item.id));
+                                                DeviceEventEmitter.emit('postDeleted', { postId: item.id });
                                                 Alert.alert(t('success'), "Post deleted");
                                             } else {
                                                 Alert.alert(t('error'), res.data.message || "Failed to delete");

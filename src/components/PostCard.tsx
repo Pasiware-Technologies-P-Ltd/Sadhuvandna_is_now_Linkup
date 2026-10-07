@@ -329,6 +329,7 @@ const BasePostCard = ({
     currentUserId,
     onDeletePress,
     shouldPlay = false,
+    isDetail = false,
     renderMedia
 }: {
     post: PostType,
@@ -336,6 +337,7 @@ const BasePostCard = ({
     currentUserId?: string,
     onDeletePress?: () => void,
     shouldPlay?: boolean,
+    isDetail?: boolean,
     renderMedia?: (props: any) => React.ReactNode
 }) => {
     const isFocused = useIsFocused();
@@ -411,6 +413,7 @@ const BasePostCard = ({
     };
     const [soundReady, setSoundReady] = useState(false);
     const [reportModalVisible, setReportModalVisible] = useState(false);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
     const [reportCategory, setReportCategory] = useState('Child Safety Concern');
     const [reportReason, setReportReason] = useState('');
     const [reporting, setReporting] = useState(false);
@@ -680,29 +683,7 @@ const BasePostCard = ({
 
     const handleOptions = () => {
         if (!currentUserId) return;
-
-        const downloadOption = {
-            text: "Download/Share Media",
-            onPress: handleDownloadPost
-        };
-
-        if (String(post.user.id) === String(currentUserId)) {
-            Alert.alert("Manage Post", "What would you like to do?", [
-                { text: "Cancel", style: "cancel" },
-                downloadOption,
-                {
-                    text: "Delete Post",
-                    style: "destructive",
-                    onPress: onDeletePress
-                }
-            ]);
-        } else {
-            Alert.alert("Post Options", "What would you like to do?", [
-                { text: "Cancel", style: "cancel" },
-                downloadOption,
-                { text: "Report Post", onPress: () => setReportModalVisible(true) }
-            ]);
-        }
+        setOptionsModalVisible(true);
     };
 
     const renderContent = (text: string) => {
@@ -890,7 +871,7 @@ const BasePostCard = ({
                 mediaList, cardWidth,
                 postAspectRatio, isVideo, paused, setPaused, shouldPlay,
                 isFocused, actualShouldPlay, videoRef,
-                musicMuted, post, styles
+                musicMuted, post, styles, isDetail
             })}
 
             {/* Actions */}
@@ -943,6 +924,63 @@ const BasePostCard = ({
                     </Animated.View>
                 </TouchableOpacity>
             </View>
+
+            {/* Post Options Modal */}
+            <Modal
+                visible={optionsModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setOptionsModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} 
+                    activeOpacity={1} 
+                    onPress={() => setOptionsModalVisible(false)}
+                >
+                    <TouchableOpacity activeOpacity={1} style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
+                        <View style={{ width: 40, height: 4, backgroundColor: '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+                        
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#111827' }}>
+                            {String(post.user.id) === String(currentUserId) ? 'Manage Post' : 'Post Options'}
+                        </Text>
+                        
+                        <TouchableOpacity 
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                            onPress={() => {
+                                setOptionsModalVisible(false);
+                                handleDownloadPost();
+                            }}
+                        >
+                            <Ionicons name="download-outline" size={24} color="#374151" style={{ marginRight: 15 }} />
+                            <Text style={{ fontSize: 16, color: '#374151' }}>Download/Share Media</Text>
+                        </TouchableOpacity>
+
+                        {String(post.user.id) === String(currentUserId) ? (
+                            <TouchableOpacity 
+                                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15 }}
+                                onPress={() => {
+                                    setOptionsModalVisible(false);
+                                    if (onDeletePress) onDeletePress();
+                                }}
+                            >
+                                <Ionicons name="trash-outline" size={24} color="#ef4444" style={{ marginRight: 15 }} />
+                                <Text style={{ fontSize: 16, color: '#ef4444' }}>Delete Post</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity 
+                                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15 }}
+                                onPress={() => {
+                                    setOptionsModalVisible(false);
+                                    setReportModalVisible(true);
+                                }}
+                            >
+                                <Ionicons name="warning-outline" size={24} color="#ef4444" style={{ marginRight: 15 }} />
+                                <Text style={{ fontSize: 16, color: '#ef4444' }}>Report Post</Text>
+                            </TouchableOpacity>
+                        )}
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
 
             {/* Report Post Modal */}
             <Modal
@@ -1319,7 +1357,7 @@ export const PostMediaCarousel = React.memo((props: any) => {
         mediaList, cardWidth,
         postAspectRatio, isVideo, paused, setPaused, shouldPlay,
         isFocused, actualShouldPlay, videoRef,
-        musicMuted, post, styles
+        musicMuted, post, styles, isDetail
     } = props;
     
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -1361,7 +1399,7 @@ export const PostMediaCarousel = React.memo((props: any) => {
                                 />
                             </TouchableOpacity>
                         ) : (
-                            <PostImage uri={uri} forcedAspect={postAspectRatio} />
+                            <PostImage uri={uri} forcedAspect={postAspectRatio} isDetail={isDetail} />
                         )}
                     </View>
                 ))}
@@ -1408,6 +1446,7 @@ export const TextPost = React.memo((props: any) => {
 
 const PostCardRouter = (props: any) => {
     const { media, image } = props.post;
+    const isDetail = props.isDetail;
     const isVid = (uri: string) => uri && (uri.toLowerCase().endsWith('.mp4') || uri.toLowerCase().endsWith('.mov') || uri.toLowerCase().endsWith('.m4v') || uri.toLowerCase().endsWith('.3gp') || uri.toLowerCase().endsWith('.mkv') || uri.toLowerCase().endsWith('.webm'));
     
     let mediaList: string[] = [];

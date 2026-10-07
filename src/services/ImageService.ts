@@ -8,18 +8,21 @@ export class ImageService {
      */
     static getFeedImageUrl(originalUrl: string, targetWidth: number = 600): string {
         if (!originalUrl) return '';
-        // TODO: When a CDN (like Cloudflare) is configured, inject the resizing parameters here.
-        // Example: return originalUrl.replace('uploads/posts/', `cdn-cgi/image/width=${targetWidth},quality=75,format=auto/uploads/posts/`);
-        return originalUrl;
+        if (!originalUrl.startsWith('http') || originalUrl.includes('192.168.') || originalUrl.includes('localhost')) {
+            return originalUrl;
+        }
+        return `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}&w=${targetWidth}&output=webp&we`;
     }
 
     /**
      * Get an optimized URL for the detail/full-screen view.
      */
-    static getDetailImageUrl(originalUrl: string): string {
+    static getDetailImageUrl(originalUrl: string, targetWidth: number = 1200): string {
         if (!originalUrl) return '';
-        // TODO: CDN implementation for detail views (e.g. width=1200 or format=auto).
-        return originalUrl;
+        if (!originalUrl.startsWith('http') || originalUrl.includes('192.168.') || originalUrl.includes('localhost')) {
+            return originalUrl;
+        }
+        return `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}&w=${targetWidth}&output=webp&we`;
     }
 
     /**

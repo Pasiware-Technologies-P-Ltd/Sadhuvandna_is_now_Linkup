@@ -22,6 +22,7 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [isConnected, setIsConnected] = useState<boolean>(false);
     // Use a ref to always have the latest setter in the socket handler
     const pendingCheckIds = useRef<string[]>([]);
+    const trackedUserIds = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         const handleUserStatus = (data: any) => {
@@ -64,6 +65,9 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 sock.emit('check_multiple_status', pendingCheckIds.current);
                 pendingCheckIds.current = [];
             }
+            if (trackedUserIds.current.size > 0) {
+                sock.emit('check_multiple_status', Array.from(trackedUserIds.current));
+            }
         };
 
         const onConnect = () => {
@@ -101,6 +105,7 @@ export const OnlineProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const checkOnlineStatuses = (userIds: string[]) => {
         if (!userIds.length) return;
+        userIds.forEach(id => trackedUserIds.current.add(String(id)));
         if (socketService.socket?.connected) {
             socketService.socket.emit('check_multiple_status', userIds);
         } else {

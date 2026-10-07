@@ -112,12 +112,12 @@ const ConnectedScreen = ({ navigation }: any) => {
             onPress={() => checkPaymentAndNavigate(item)}
             className="flex-row items-center bg-white p-4 mx-4 mb-3 rounded-2xl shadow-sm border border-gray-100"
         >
-            <View className="relative">
+            <View style={{ position: 'relative' }}>
                 <Image
                     source={{ uri: (item.profile_photo || item.photo) ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo || item.photo)}` : 'https://via.placeholder.com/150' }}
-                    className="w-16 h-16 rounded-full bg-gray-200 border-2 border-orange-100"
+                    style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', borderWidth: 2, borderColor: '#ffedd5' }}
                 />
-                <View className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                <View style={{ position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, backgroundColor: '#22c55e', borderRadius: 7, borderWidth: 2, borderColor: 'white' }} />
             </View>
 
             <View className="flex-1 ml-4 justify-center">

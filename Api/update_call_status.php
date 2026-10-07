@@ -35,16 +35,17 @@ try {
     $prev_status = '';
 
     if ($call_id) {
-        $q = $con->prepare("SELECT caller_id, receiver_id, platform, type, created_at, status FROM tbl_calls WHERE id = ?");
+        $q = $con->prepare("SELECT caller_peer_id, caller_id, receiver_id, platform, type, created_at, status FROM tbl_calls WHERE id = ?");
         $q->bind_param("i", $call_id);
     } else {
-        $q = $con->prepare("SELECT caller_id, receiver_id, platform, type, created_at, status FROM tbl_calls WHERE caller_peer_id = ? ORDER BY id DESC LIMIT 1");
+        $q = $con->prepare("SELECT caller_peer_id, caller_id, receiver_id, platform, type, created_at, status FROM tbl_calls WHERE caller_peer_id = ? ORDER BY id DESC LIMIT 1");
         $q->bind_param("s", $channel_id);
     }
     
     if ($q->execute()) {
         $res = $q->get_result();
         if ($row = $res->fetch_assoc()) {
+            if (!$channel_id) $channel_id = $row['caller_peer_id'];
             $caller_id = $row['caller_id'];
             $receiver_id = $row['receiver_id'];
             $platform = $row['platform'];
@@ -66,6 +67,36 @@ try {
 $duration = intval($_REQUEST['duration'] ?? $data['duration'] ?? -1);
 
 if ($stmt->execute()) {
+        // Trigger WebSocket event
+        if ($caller_id && $receiver_id && $channel_id) {
+            $ws_payload = json_encode([
+                'channel_id' => $channel_id,
+                'status' => $status
+            ]);
+            
+            $triggerNode = function($uid, $payload) {
+                $postData = json_encode([
+                    'receiverId' => $uid,
+                    'type' => 'call_status_update',
+                    'payload' => $payload
+                ]);
+                
+                $ch = curl_init('http://127.0.0.1:3000/api/trigger');
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($postData)
+                ]);
+                curl_setopt($ch, CURLOPT_TIMEOUT_MS, 500);
+                curl_exec($ch);
+                curl_close($ch);
+            };
+            
+            $triggerNode($caller_id, json_decode($ws_payload, true));
+            $triggerNode($receiver_id, json_decode($ws_payload, true));
+        }
         
         // 3. Insert Call History Message if ended/rejected
         // Only do this if it wasn't already ended/rejected to prevent duplicates

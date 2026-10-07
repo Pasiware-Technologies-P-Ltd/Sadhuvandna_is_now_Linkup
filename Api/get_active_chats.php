@@ -126,6 +126,52 @@ if ($groups_res) {
 }
 
 // Sort chats by timestamp (most recent first)
+if ($platform === 'marriage') {
+    // Fetch connected profiles (proposals) that don't have active chats yet
+    $proposals_sql = "
+        SELECT p.sender_id, p.receiver_id, p.created_at
+        FROM tbl_proposals p
+        WHERE (p.sender_id = $search_id OR p.receiver_id = $search_id)
+        AND p.status IN ('friend', 'accepted')
+    ";
+    $p_res = $con->query($proposals_sql);
+    if ($p_res) {
+        while ($p_row = $p_res->fetch_assoc()) {
+            $partner_id = ($p_row['sender_id'] == $search_id) ? $p_row['receiver_id'] : $p_row['sender_id'];
+            
+            // Check if partner_id is already in $chats array
+            $found = false;
+            foreach ($chats as $c) {
+                if (!isset($c['isGroup']) && $c['partner_id'] == $partner_id) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $p = $con->query("SELECT mp.full_name, mp.photo, (m.last_active >= NOW() - INTERVAL 2 MINUTE) as is_online, m.id as member_id 
+                                  FROM tbl_marriage_profiles mp 
+                                  JOIN tbl_members m ON mp.user_id = m.id
+                                  WHERE mp.id = $partner_id LIMIT 1")->fetch_assoc();
+                if ($p) {
+                    $chats[] = [
+                        "partner_id" => $partner_id,
+                        "user_id" => $p['member_id'],
+                        "full_name" => $p['full_name'],
+                        "profile_photo" => $p['photo'],
+                        "last_message" => "Start a conversation",
+                        "last_message_is_mine" => false,
+                        "last_message_seen" => true,
+                        "time" => date("h:i A", strtotime($p_row['created_at'])),
+                        "timestamp" => $p_row['created_at'],
+                        "unread" => 0,
+                        "is_online" => ($p['is_online'] == 1)
+                    ];
+                }
+            }
+        }
+    }
+}
+
 usort($chats, function($a, $b) {
     return strtotime($b['timestamp']) - strtotime($a['timestamp']);
 });

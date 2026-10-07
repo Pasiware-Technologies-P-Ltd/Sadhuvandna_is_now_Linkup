@@ -18,14 +18,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const ChatListScreen = ({ navigation }: any) => {
+const ChatListScreen = ({ navigation, route }: any) => {
     const { isUserOnline, checkOnlineStatuses, onlineUsers } = useOnlineStatus();
     const [friends, setFriends] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchContacts, setSearchContacts] = useState<any[]>([]);
     const [searchingContacts, setSearchingContacts] = useState(false);
     const [loading, setLoading] = useState(true);
-    const activePlatform = 'community';
+    const activePlatform = route?.params?.platform || 'community';
     const { t } = useLanguage();
 
     const [joinModalVisible, setJoinModalVisible] = useState(false);
@@ -39,7 +39,7 @@ const ChatListScreen = ({ navigation }: any) => {
 
     const loadCachedChats = async (uid: number) => {
         try {
-            const cachedChats = await ChatDBService.getConversations(String(uid));
+            const cachedChats = await ChatDBService.getConversations(String(uid), activePlatform);
             if (cachedChats && cachedChats.length > 0) {
                 // Map sqlite format to UI format
                 const mapped = cachedChats.map((c: any) => ({
@@ -57,7 +57,7 @@ const ChatListScreen = ({ navigation }: any) => {
                 setLoading(false);
             } else {
                 // Fallback to asyncstorage if sqlite is empty
-                const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}`);
+                const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}_${activePlatform}`);
                 if (cached) {
                     setFriends(JSON.parse(cached));
                     setLoading(false);
@@ -131,7 +131,7 @@ const ChatListScreen = ({ navigation }: any) => {
     // Check statuses via Global Context whenever friends load
     useEffect(() => {
         if (friends.length > 0) {
-            const userIds = friends.filter(f => !f.isGroup).map(f => String(f.partner_id));
+            const userIds = friends.filter(f => !f.isGroup).map(f => String(f.user_id || f.partner_id));
             checkOnlineStatuses(userIds);
         }
     }, [friends.length]);
@@ -189,11 +189,11 @@ const ChatListScreen = ({ navigation }: any) => {
             const res = await api.get(`/get_active_chats.php?user_id=${currentUid}&platform=${activePlatform}`);
             if (res.data.status === 'success') {
                 setFriends(res.data.data);
-                AsyncStorage.setItem(`cached_chats_v1_${currentUid}`, JSON.stringify(res.data.data));
+                AsyncStorage.setItem(`cached_chats_v1_${currentUid}_${activePlatform}`, JSON.stringify(res.data.data));
                 
                 // Save to SQLite asynchronously
                 res.data.data.forEach((conv: any) => {
-                    ChatDBService.saveConversation(conv, String(currentUid)).catch(() => {});
+                    ChatDBService.saveConversation({ ...conv, platform: activePlatform }, String(currentUid)).catch(() => {});
                 });
             }
         } catch (error) {
@@ -254,7 +254,7 @@ const ChatListScreen = ({ navigation }: any) => {
         };
 
         const currentPhotoUrl = PHOTO_URL_COMMUNITY;
-        const isOnline = !item.isGroup && isUserOnline(item.partner_id);
+        const isOnline = !item.isGroup && isUserOnline(item.user_id || item.partner_id);
 
         return (
             <TouchableOpacity
@@ -286,7 +286,7 @@ const ChatListScreen = ({ navigation }: any) => {
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
                             {item.last_message_is_mine && (
                                 <Ionicons
-                                    name={item.last_message_seen ? "checkmark-done-outline" : "checkmark-outline"}
+                                    name={item.last_message_seen ? "checkmark-done" : "checkmark-done"}
                                     size={16}
                                     color={item.last_message_seen ? "#3b82f6" : "#9ca3af"}
                                     style={{ marginRight: 4 }}
@@ -329,10 +329,12 @@ const ChatListScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
                     <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
                 </View>
-                <TouchableOpacity onPress={toggleMenu} style={{ padding: 4 }} activeOpacity={0.7}>
-                    <Ionicons name="ellipsis-vertical" size={20} color="#374151" />
-                </TouchableOpacity>
-                {showMenu && (
+                {activePlatform !== 'marriage' && (
+                    <TouchableOpacity onPress={toggleMenu} style={{ padding: 4 }} activeOpacity={0.7}>
+                        <Ionicons name="ellipsis-vertical" size={20} color="#374151" />
+                    </TouchableOpacity>
+                )}
+                {showMenu && activePlatform !== 'marriage' && (
                     <View style={{ position: 'absolute', top: 48, right: 16, backgroundColor: 'white', borderRadius: 16, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 5, paddingVertical: 6, width: 150, zIndex: 100 }}>
                         <TouchableOpacity 
                             style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9fafb' }}

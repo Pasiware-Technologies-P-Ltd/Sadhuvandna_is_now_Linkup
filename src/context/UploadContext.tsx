@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import axios from 'axios';
 import { Alert } from 'react-native';
-import { UPLOAD_BASE_URL } from '../services/api';
+import { API_BASE_URL, UPLOAD_BASE_URL } from '../services/api';
 
 interface UploadContextType {
     isUploading: boolean;
@@ -43,10 +43,14 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
             if (response.data && response.data.status === 'success') {
                 // Keep the progress banner at 100% for a second before hiding
                 setProgress(100);
+                import('react-native').then(({ DeviceEventEmitter }) => {
+                    DeviceEventEmitter.emit('uploadSuccess', { endpoint });
+                });
                 setTimeout(() => {
                     setIsUploading(false);
                     setThumbnail(null);
                     setProgress(0);
+                    Alert.alert("Success", "Upload completed successfully!");
                 }, 1000);
             } else {
                 setIsUploading(false);

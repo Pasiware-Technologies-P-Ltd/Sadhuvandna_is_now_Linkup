@@ -51,6 +51,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
         };
 
         const subscription = DeviceEventEmitter.addListener('profileSwitched', onProfileSwitched);
+        const refreshSub = DeviceEventEmitter.addListener('refresh_badge_counts', refreshCounts);
 
         const showLocalNotification = async (data: any) => {
             console.log("Local Notification Triggered:", data);
@@ -151,6 +152,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
         return () => {
             subscription.remove();
+            refreshSub.remove();
             subApp.remove();
             subNew.remove();
             subGroup.remove();
