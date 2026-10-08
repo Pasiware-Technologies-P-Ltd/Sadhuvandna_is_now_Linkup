@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, Share, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, Share, Alert, ActivityIndicator, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
@@ -104,11 +104,8 @@ const ProfessionalVideoPlayer = ({
         : 0;
 
     return (
-        <TouchableOpacity
-            activeOpacity={1}
-            onPress={resetControlsTimer}
-            style={[{ position: 'relative', overflow: 'hidden', backgroundColor: 'black' }, style]}
-        >
+        <TouchableWithoutFeedback onPress={resetControlsTimer}>
+            <View style={[{ position: 'relative', overflow: 'hidden', backgroundColor: 'black' }, style]}>
             <Video
                 ref={videoRef}
                 source={{ uri }}
@@ -235,7 +232,8 @@ const ProfessionalVideoPlayer = ({
                     </View>
                 </View>
             )}
-        </TouchableOpacity>
+        </View>
+        </TouchableWithoutFeedback>
     );
 };
 

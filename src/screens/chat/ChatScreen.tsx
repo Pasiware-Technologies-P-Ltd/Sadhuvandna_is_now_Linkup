@@ -1413,21 +1413,72 @@ const ChatScreen = ({ navigation, route }: any) => {
 
     if (paymentStatus === 'unpaid') {
         return (
-            <View className="flex-1 items-center justify-center bg-white p-6">
-                <TouchableOpacity
-                    onPress={handlePayNow}
-                    className="bg-orange-600 px-6 py-3 rounded-xl"
-                >
-                    <Text className="text-white font-bold">Pay Now</Text>
-                </TouchableOpacity>
+            <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'bottom']}>
+                <View className="flex-1 items-center justify-center px-8">
+                    {/* Close Button Top Right */}
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        className="absolute top-6 right-6 p-2 bg-white rounded-full"
+                        style={{ elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }}
+                    >
+                        <Ionicons name="close" size={24} color="#64748b" />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    className="mt-6"
-                >
-                    <Ionicons name="close" size={26} color="gray" />
-                </TouchableOpacity>
-            </View>
+                    {/* Premium Icon/Illustration area */}
+                    <View 
+                        className="w-24 h-24 bg-orange-100 rounded-full items-center justify-center mb-8"
+                        style={{ elevation: 4, shadowColor: '#ea580c', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
+                    >
+                        <View 
+                            className="w-16 h-16 bg-white rounded-full items-center justify-center"
+                            style={{ elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }}
+                        >
+                            <Ionicons name="lock-closed" size={32} color="#ea580c" />
+                        </View>
+                    </View>
+
+                    <Text className="text-2xl font-black text-slate-800 text-center mb-3 tracking-tight">
+                        Unlock Premium Chat
+                    </Text>
+                    
+                    <Text className="text-slate-500 text-center text-base mb-10 leading-6 px-4">
+                        To continue messaging with this user, please upgrade your plan. Enjoy seamless and unlimited communication.
+                    </Text>
+
+                    {/* Features list */}
+                    <View 
+                        className="w-full bg-white p-5 rounded-2xl border border-slate-100 mb-10"
+                        style={{ elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }}
+                    >
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                            <Text className="ml-3 text-slate-700 font-medium">Unlimited messaging</Text>
+                        </View>
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                            <Text className="ml-3 text-slate-700 font-medium">Ultra HD Audio & Video Calls</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                            <Text className="ml-3 text-slate-700 font-medium">Priority support</Text>
+                        </View>
+                    </View>
+
+                    {/* Pay Button */}
+                    <TouchableOpacity
+                        onPress={handlePayNow}
+                        activeOpacity={0.8}
+                        className="w-full bg-[#ea580c] py-4 rounded-xl items-center"
+                        style={{ elevation: 5, shadowColor: '#ea580c', shadowOpacity: 0.3, shadowRadius: 5, shadowOffset: { width: 0, height: 4 } }}
+                    >
+                        <Text className="text-white font-bold text-lg tracking-wide">Unlock Now</Text>
+                    </TouchableOpacity>
+                    
+                    <Text className="text-slate-400 text-xs mt-6 text-center">
+                        Secure payment processed via Razorpay.
+                    </Text>
+                </View>
+            </SafeAreaView>
         );
     }
 

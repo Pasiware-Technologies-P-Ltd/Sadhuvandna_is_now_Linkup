@@ -52,14 +52,15 @@ const ChatListScreen = ({ navigation, route }: any) => {
                     last_message_seen: c.last_message_seen === 1,
                     unread: c.unread_count,
                     time: c.time
-                }));
+                })).filter((c: any) => String(c.partner_id) !== String(uid));
                 setFriends(mapped);
                 setLoading(false);
             } else {
                 // Fallback to asyncstorage if sqlite is empty
                 const cached = await AsyncStorage.getItem(`cached_chats_v1_${uid}_${activePlatform}`);
                 if (cached) {
-                    setFriends(JSON.parse(cached));
+                    const parsed = JSON.parse(cached);
+                    setFriends(parsed.filter((c: any) => String(c.partner_id) !== String(uid)));
                     setLoading(false);
                 }
             }
@@ -83,9 +84,18 @@ const ChatListScreen = ({ navigation, route }: any) => {
 
     useEffect(() => {
         if (socketService.socket) {
-            const handleMessagesSeen = (data: any) => { setFriends(prev => prev.map(f => { if (String(f.partner_id) === String(data.viewer_id) && f.last_message_is_mine) { return { ...f, last_message_seen: true }; } return f; })); const chatId = `user_${data.viewer_id}`; ChatDBService.markAllAsSeen(chatId).catch(() => {}); }; const handleNewNotification = (data: any) => {
-                if (data.type === 'chat' && data.message) {
-                    const msg = data.message;
+            const handleMessagesSeen = (data: any) => { setFriends(prev => prev.map(f => { if (String(f.partner_id) === String(data.viewer_id) && f.last_message_is_mine) { return { ...f, last_message_seen: true }; } return f; })); const chatId = `user_${data.viewer_id}`; ChatDBService.markAllAsSeen(chatId).catch(() => {}); }; 
+            
+            const handleNewNotification = (data: any) => {
+                let actualPayload = null;
+                if (data && data.type === 'new_notification' && data.payload) {
+                    actualPayload = data.payload;
+                } else if (data && (data.type === 'chat' || data.type === 'message')) {
+                    actualPayload = data;
+                }
+
+                if (actualPayload && (actualPayload.type === 'chat' || actualPayload.type === 'message') && actualPayload.message) {
+                    const msg = actualPayload.message;
                     const partnerId = msg.sender_id == userId ? msg.receiver_id : msg.sender_id;
                     
                     let found = false;
@@ -188,7 +198,8 @@ const ChatListScreen = ({ navigation, route }: any) => {
             if (!currentUid) return;
             const res = await api.get(`/get_active_chats.php?user_id=${currentUid}&platform=${activePlatform}`);
             if (res.data.status === 'success') {
-                setFriends(res.data.data);
+                const filteredData = (res.data.data || []).filter((f: any) => String(f.partner_id) !== String(currentUid));
+                setFriends(filteredData);
                 AsyncStorage.setItem(`cached_chats_v1_${currentUid}_${activePlatform}`, JSON.stringify(res.data.data));
                 
                 // Save to SQLite asynchronously

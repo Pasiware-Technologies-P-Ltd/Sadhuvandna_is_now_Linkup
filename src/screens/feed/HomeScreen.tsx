@@ -106,9 +106,6 @@ const HomeScreen = () => {
                 if (uStr) {
                     const u = JSON.parse(uStr);
                     setUserWithRef(u);
-                    setPosts([]); // Clear visually to show refresh
-                    setStories([]);
-                    setReels([]);
                     fetchInitialFeed(u.id);
                     refreshCounts();
                 }
@@ -121,7 +118,7 @@ const HomeScreen = () => {
             fetchInitialFeed(userRef.current?.id, false); // false to avoid blocking loading indicator
         });
 
-        const deleteSub = DeviceEventEmitter.addListener('postDeleted', (data) => {
+        const deleteSub = DeviceEventEmitter.addListener('postDeleted', (data: any) => {
             setPosts(prev => prev.filter(p => p.id !== data.postId));
         });
 
@@ -250,10 +247,12 @@ const HomeScreen = () => {
                 }
                 if (cached.suggestedUsers) setSuggestedUsers(cached.suggestedUsers);
                 setLoading(false); // Disable loading immediately since we have cached data
+                return true;
             }
         } catch (e) {
             console.log("Cache load error", e);
         }
+        return false;
     };
 
     const fetchPostStats = async (postIds: string[]) => {
@@ -293,13 +292,22 @@ const HomeScreen = () => {
         const finalUid = uid || 0;
 
         isFetchingRef.current = true;
-        if (posts.length === 0) setLoading(true);
         cursorScoreRef.current = null;
         cursorIdRef.current = null;
         statsFetchedRef.current.clear();
         setHasMore(true);
 
-        if (uid && !isRefresh) await loadCachedData(uid.toString());
+        let hasCache = false;
+        if (uid && !isRefresh) {
+            hasCache = await loadCachedData(uid.toString());
+        }
+
+        if (!hasCache) {
+            setPosts([]);
+            setStories([]);
+            setReels([]);
+            setLoading(true);
+        }
 
         try {
             const currentSeed = isRefresh ? Math.floor(Math.random() * 100000) + 1 : feedSeed;
@@ -557,27 +565,28 @@ const HomeScreen = () => {
 
     const renderHeader = () => (
         <>
-            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, marginBottom: 0, flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
-                    <Image
-                        source={{ uri: user?.profile_photo ? `${getImageUrl(user?.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                        style={{ width: 38, height: 38, borderRadius: 19, marginRight: 12, borderWidth: 1, borderColor: '#ffedd5', backgroundColor: '#f9fafb' }}
-                    />
+                    <View style={{ width: 46, height: 46, borderRadius: 18, borderWidth: 2, borderColor: '#ea580c', backgroundColor: 'white', padding: 2, overflow: 'hidden' }}>
+                        <Image
+                            source={{ uri: user?.profile_photo ? `${getImageUrl(user?.profile_photo)}` : 'https://via.placeholder.com/100' }}
+                            style={{ width: '100%', height: '100%', borderRadius: 14 }}
+                        />
+                    </View>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 16, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: 14, paddingHorizontal: 16, height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 12 }}
                     onPress={() => navigation.navigate('CreatePost')}
                     activeOpacity={0.7}
                 >
-                    <Text style={{ fontSize: 13, color: '#9ca3af', fontWeight: '500', flex: 1 }}>{t('whatsOnYourMind') || "What's on your mind?"}</Text>
-                    <Ionicons name="image-outline" size={18} color="#10b981" />
+                    <Text style={{ fontSize: 15, color: '#475569', flex: 1 }}>What are you connecting on today?</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Stories Rail */}
-            <View style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1f2937', marginBottom: 12, marginLeft: 4 }}>
-                    {t('stories')}
+            <View style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#f1f5f9' }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', letterSpacing: 0.5, color: '#000000', marginBottom: 16, marginLeft: 2 }}>
+                    STORIES
                 </Text>
                 <FlatList
                     data={stories}
@@ -794,7 +803,7 @@ const HomeScreen = () => {
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Image source={require('../../../assets/logo.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
                     <View>
-                        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', letterSpacing: -0.3 }}>
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#ea580c', fontStyle: 'italic', letterSpacing: -0.3 }}>
                             LinkUp
                         </Text>
                         {user?.is_business == 1 && (

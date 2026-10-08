@@ -102,6 +102,13 @@ Notifications.addNotificationResponseReceivedListener(response => {
     if (data && (data.type === 'post' || data.type === 'like') && data.postId) {
         navigateWithRetry('PostDetail', { postId: data.postId });
     }
+
+    if (data && data.type === 'message' && data.sender_id) {
+        navigateWithRetry('Chat', { 
+            receiver: { id: data.sender_id, full_name: data.sender_name || 'User', photo: data.sender_photo || null, user_id: data.sender_user_id || data.sender_id }, 
+            platform: data.platform || 'community' 
+        });
+    }
 });
 
 export const updateServerToken = async (userId: string) => {

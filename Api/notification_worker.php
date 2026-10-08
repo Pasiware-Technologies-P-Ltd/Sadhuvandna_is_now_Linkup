@@ -119,10 +119,9 @@ function deliverNotification($con, $receiver_id, $type, $reference_id, $title, $
         }
     }
     
-    if (!$success) {
-        // Fallback FCM Push (skip_db = true because we already UPSERTed above)
-        sendExpoPushNotification($con, $receiver_id, $title, $msg, $payload_data, true);
-    }
+    // Always send FCM Push because WebSocket success doesn't mean the user is in foreground.
+    // The frontend NotificationHandler suppresses it in foreground if needed.
+    sendExpoPushNotification($con, $receiver_id, $title, $msg, $payload_data, true);
 }
 
 while (true) {
@@ -176,19 +175,32 @@ while (true) {
             $platform = $payload['platform'] ?? 'community';
             
             if ($platform === 'marriage') {
-                $sQ = $con->query("SELECT full_name as name FROM tbl_marriage_profiles WHERE id = $sender_id LIMIT 1");
-                $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+                $sQ = $con->query("SELECT full_name as name, photo, user_id FROM tbl_marriage_profiles WHERE id = $sender_id LIMIT 1");
+                $sender_name = "Someone";
+                $sender_photo = "";
+                $sender_user_id = $sender_id;
+                if ($sQ && $sRow = $sQ->fetch_assoc()) {
+                    $sender_name = $sRow['name'];
+                    $sender_photo = $sRow['photo'];
+                    $sender_user_id = $sRow['user_id'];
+                }
                 
                 $rQ = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = $receiver_id LIMIT 1");
                 $actual_receiver_id = ($rQ && $rRow = $rQ->fetch_assoc()) ? $rRow['user_id'] : 0;
             } else {
-                $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $sender_id LIMIT 1");
-                $sender_name = ($sQ && $sRow = $sQ->fetch_assoc()) ? $sRow['name'] : "Someone";
+                $sQ = $con->query("SELECT name, profile_photo as photo FROM tbl_members WHERE id = $sender_id LIMIT 1");
+                $sender_name = "Someone";
+                $sender_photo = "";
+                $sender_user_id = $sender_id;
+                if ($sQ && $sRow = $sQ->fetch_assoc()) {
+                    $sender_name = $sRow['name'];
+                    $sender_photo = $sRow['photo'];
+                }
                 $actual_receiver_id = $receiver_id;
             }
             
             if ($actual_receiver_id) {
-                processGroupedNotification($con, $redis, $actual_receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id), "message_text" => $message_text, "platform" => $platform, "receiver_profile_id" => strval($receiver_id)]);
+                processGroupedNotification($con, $redis, $actual_receiver_id, 'message', "chat_{$sender_id}", $sender_id, $sender_name, "New Message", ["type" => "message", "sender_id" => strval($sender_id), "message_text" => $message_text, "platform" => $platform, "receiver_profile_id" => strval($receiver_id), "sender_name" => $sender_name, "sender_photo" => $sender_photo, "sender_user_id" => strval($sender_user_id)]);
             }
         } elseif ($type === 'group_chat') {
             $sender_id = $payload['sender_id'];

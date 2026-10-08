@@ -405,6 +405,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 28, // Restored good size
         fontWeight: '900',
+        fontStyle: 'italic',
         letterSpacing: 0.5,
     },
     headerSubTitle: {

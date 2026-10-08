@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api, { WEBSITE_URL } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { ProfileSwitcherDBService } from '../services/ProfileSwitcherDBService';
 
 interface ProfileSwitcherModalProps {
     visible: boolean;
@@ -35,23 +36,28 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
     }, [visible]);
 
     const fetchPages = async () => {
-        setLoading(true);
         try {
             const u = await AsyncStorage.getItem('user');
             if (u) {
                 const user = JSON.parse(u);
                 setCurrentUser(user);
                 
-                // Fetch based on the main parent_userid
                 const mainId = user.is_business == 1 ? user.parent_userid : user.id;
                 
-                // We also need the details of the main profile itself
+                // 1. Load from SQLite Cache Instantly
+                const cachedProfiles = await ProfileSwitcherDBService.getProfiles(String(mainId));
+                if (cachedProfiles && cachedProfiles.length > 0) {
+                    setProfiles(cachedProfiles);
+                } else {
+                    setLoading(true);
+                }
+                
+                // 2. Fetch fresh from API in background
                 const profileRes = await api.get(`/get_user_profile.php?user_id=${mainId}`);
                 let mainProfile = null;
                 if (profileRes.data.status === 'success') {
                     mainProfile = profileRes.data.user;
                 } else {
-                    // fallback
                     mainProfile = { id: mainId, name: user.name, profile_photo: user.profile_photo, is_business: 0 };
                 }
                 
@@ -78,6 +84,9 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                 ];
                 
                 setProfiles(allProfiles);
+                
+                // 3. Save back to SQLite Cache
+                await ProfileSwitcherDBService.saveProfiles(String(mainId), allProfiles);
             }
         } catch (error) {
             console.error("Failed to fetch pages", error);
@@ -110,9 +119,6 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                         console.log("Failed to fetch fresh user details during switch", e);
                     }
 
-                    // Remove cache for the new profile to force fresh data load
-                    await AsyncStorage.removeItem(`home_cache_${targetProfileId}`);
-                    
                     // Update Async Storage with new comprehensive profile
                     await AsyncStorage.setItem('user', JSON.stringify(freshData));
                     
@@ -197,31 +203,29 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                             <Text style={{ marginTop: 12, color: '#6b7280' }}>{switching ? 'Switching...' : 'Loading...'}</Text>
                         </View>
                     ) : (
-                        <View style={{ marginTop: 10 }}>
-                            <FlashList 
-                                data={profiles}
-                                keyExtractor={(item) => item.id.toString()}
-                                renderItem={renderItem}
-                                ListFooterComponent={
-                                    <TouchableOpacity 
-                                        onPress={handleCreatePage}
-                                        activeOpacity={0.7}
-                                        style={{
-                                            flexDirection: 'row', 
-                                            alignItems: 'center', 
-                                            paddingVertical: 12,
-                                            paddingHorizontal: 20,
-                                            marginTop: 4
-                                        }}
-                                    >
-                                        <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Ionicons name="add" size={24} color="#111827" />
-                                        </View>
-                                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>Create Business Page</Text>
-                                    </TouchableOpacity>
-                                }
-                            />
-                        </View>
+                        <ScrollView style={{ marginTop: 10 }} contentContainerStyle={{ paddingBottom: 20 }}>
+                            {profiles.map(item => (
+                                <React.Fragment key={item.id}>
+                                    {renderItem({ item })}
+                                </React.Fragment>
+                            ))}
+                            <TouchableOpacity 
+                                onPress={handleCreatePage}
+                                activeOpacity={0.7}
+                                style={{
+                                    flexDirection: 'row', 
+                                    alignItems: 'center', 
+                                    paddingVertical: 12,
+                                    paddingHorizontal: 20,
+                                    marginTop: 4
+                                }}
+                            >
+                                <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="add" size={24} color="#111827" />
+                                </View>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>Create Business Page</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
                     )}
                 </TouchableOpacity>
             </TouchableOpacity>

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, Share, Modal, RefreshControl, Animated, Easing, Alert, Linking, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, Share, Modal, RefreshControl, Animated, Easing, Alert, Linking, ScrollView, TextInput, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -82,11 +82,8 @@ const ProfessionalVideoPlayer = ({
         : 0;
 
     return (
-        <TouchableOpacity
-            activeOpacity={1}
-            onPress={resetControlsTimer}
-            style={[{ position: 'relative', overflow: 'hidden', backgroundColor: 'black' }, style]}
-        >
+        <TouchableWithoutFeedback onPress={resetControlsTimer}>
+            <View style={[{ position: 'relative', overflow: 'hidden', backgroundColor: 'black' }, style]}>
             <Video
                 ref={videoRef}
                 source={{ uri }}
@@ -200,7 +197,8 @@ const ProfessionalVideoPlayer = ({
                     </View>
                 </View>
             )}
-        </TouchableOpacity>
+        </View>
+        </TouchableWithoutFeedback>
     );
 };
 

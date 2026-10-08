@@ -21,9 +21,6 @@ export default function LoginScreen({ navigation }: any) {
     const { t } = useLanguage();
 
     // Form states
-    const [firstName, setFirstName] = useState('');
-    const [middleName, setMiddleName] = useState('');
-    const [lastName, setLastName] = useState('');
     const [caste, setCaste] = useState('Kapdi');
     const [mobile, setMobile] = useState('');
 
@@ -54,7 +51,7 @@ export default function LoginScreen({ navigation }: any) {
     }, [otp]);
 
     const validateForm = () => {
-        if (!firstName || !middleName || !lastName || !mobile) {
+        if (!mobile) {
             Alert.alert(t('error'), t('fillAllFields'));
             return false;
         }
@@ -134,7 +131,7 @@ export default function LoginScreen({ navigation }: any) {
             }
 
             if (isVerified) {
-                const fullName = `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`;
+                const fullName = `New User`;
 
                 const payload = {
                     mobile: mobile,
@@ -190,111 +187,70 @@ export default function LoginScreen({ navigation }: any) {
     return (
         <SafeAreaView className="flex-1 bg-[#fffaf5]" edges={['top', 'bottom']}>
             <KeyboardAvoidingView behavior="padding" className="flex-1">
-                <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40 }}>
+                <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingTop: 40, paddingBottom: 120 }}>
                     {!showOtpScreen ? (
                     <>
-                        <View className="items-center mb-8 mt-10">
-                            <View className="bg-orange-100 p-4 rounded-3xl mb-4">
-                                <Ionicons name="people" size={40} color="#ff6b00" />
+                        <View className="items-center mb-10">
+                            <View className="bg-white p-5 rounded-[32px] mb-6 shadow-xl shadow-orange-100 border border-orange-50">
+                                <Ionicons name="people" size={48} color="#ff6b00" />
                             </View>
-                            <Text className="text-3xl font-extrabold text-[#1a2b4c] text-center">{t('welcomeLogin')}</Text>
-                            <Text className="text-gray-500 font-medium mt-2 text-center text-base">{t('enterDetailsLogin')}</Text>
+                            <Text className="text-4xl font-black text-[#1a2b4c] text-center tracking-tight">{t('welcomeLogin')}</Text>
+                            <Text className="text-gray-500 font-medium mt-3 text-center text-base">{t('enterDetailsLogin')}</Text>
                         </View>
 
-                        <View className="space-y-4">
+                        <View className="space-y-6 px-2">
                             <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('firstName')} <Text className="text-red-500">*</Text></Text>
-                                <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
-                                    <Ionicons name="person" size={20} color="#ff6b00" />
+                                <Text className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-2">{t('mobileNumber')}</Text>
+                                <View className="flex-row items-center bg-white rounded-2xl px-5 py-4 shadow-sm shadow-gray-100 border border-gray-100">
+                                    <Ionicons name="phone-portrait" size={24} color="#ff6b00" />
                                     <TextInput
-                                        className="flex-1 ml-3 text-gray-800 text-base"
-                                        placeholder="e.g. Yuvraj"
-                                        placeholderTextColor="#9ca3af"
-                                        value={firstName}
-                                        onChangeText={setFirstName}
-                                    />
-                                </View>
-                            </View>
-
-                            <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('middleName')} <Text className="text-red-500">*</Text></Text>
-                                <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
-                                    <Ionicons name="person" size={20} color="#ff6b00" />
-                                    <TextInput
-                                        className="flex-1 ml-3 text-gray-800 text-base"
-                                        placeholder="e.g. Singh"
-                                        placeholderTextColor="#9ca3af"
-                                        value={middleName}
-                                        onChangeText={setMiddleName}
-                                    />
-                                </View>
-                            </View>
-
-                            <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('lastName')} <Text className="text-red-500">*</Text></Text>
-                                <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
-                                    <Ionicons name="people" size={20} color="#ff6b00" />
-                                    <TextInput
-                                        className="flex-1 ml-3 text-gray-800 text-base"
-                                        placeholder="e.g. Jadeja"
-                                        placeholderTextColor="#9ca3af"
-                                        value={lastName}
-                                        onChangeText={setLastName}
-                                    />
-                                </View>
-                            </View>
-
-
-
-                            <View>
-                                <Text className="text-xs font-bold text-gray-500 mb-1 ml-1">{t('mobileNumber')} <Text className="text-red-500">*</Text></Text>
-                                <View className="flex-row items-center bg-[#f0f5ff] rounded-xl px-4 py-3">
-                                    <Ionicons name="phone-portrait-outline" size={20} color="#6b7280" />
-                                    <TextInput
-                                        className="flex-1 ml-3 text-gray-800 text-base font-semibold"
-                                        placeholder="e.g. 9648022011"
-                                        placeholderTextColor="#9ca3af"
+                                        className="flex-1 ml-4 text-[#1a2b4c] text-lg font-bold"
+                                        placeholder="9648022011"
+                                        placeholderTextColor="#cbd5e1"
                                         value={mobile}
                                         onChangeText={setMobile}
                                         keyboardType="number-pad"
                                         maxLength={10}
+                                        selectionColor="#ff6b00"
                                     />
                                 </View>
                             </View>
                         </View>
 
-                        <TouchableOpacity
-                            className="w-full bg-[#ff6b00] py-4 rounded-xl items-center shadow-lg shadow-orange-300 mt-8 mb-4"
-                            onPress={handleGetLoginCode}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <View className="flex-row items-center">
-                                    <Text className="text-white font-bold text-lg mr-2">{t('getLoginCode')}</Text>
-                                    <Ionicons name="arrow-forward" size={20} color="white" />
-                                </View>
-                            )}
-                        </TouchableOpacity>
+                        <View className="px-2 mt-10">
+                            <TouchableOpacity
+                                className="w-full bg-[#ff6b00] py-4 rounded-2xl items-center shadow-lg shadow-orange-300 mb-4 flex-row justify-center"
+                                onPress={handleGetLoginCode}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Text className="text-white font-bold text-lg mr-2 tracking-wide">{t('getLoginCode')}</Text>
+                                        <Ionicons name="arrow-forward" size={22} color="white" />
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </>
                 ) : (
-                    <View className="flex-1 justify-center items-center mt-20">
-                        <View className="bg-orange-100 p-5 rounded-full mb-6">
-                            <Ionicons name="chatbubble-ellipses-outline" size={50} color="#ff6b00" />
+                    <View className="flex-1 justify-center items-center px-2">
+                        <View className="bg-white p-6 rounded-[32px] mb-8 shadow-xl shadow-orange-100 border border-orange-50">
+                            <Ionicons name="chatbubble-ellipses" size={56} color="#ff6b00" />
                         </View>
-                        <Text className="text-2xl font-bold text-[#1a2b4c] mb-2 text-center">{t('verifyOtp')}</Text>
-                        <Text className="text-gray-500 text-center mb-8 px-4">
-                            {t('sentCodeTo')} +91 {mobile}
+                        <Text className="text-3xl font-black text-[#1a2b4c] mb-3 text-center tracking-tight">{t('verifyOtp')}</Text>
+                        <Text className="text-gray-500 text-center mb-10 px-4 text-base leading-relaxed">
+                            {t('sentCodeTo')} <Text className="font-bold text-[#1a2b4c]">+91 {mobile}</Text>
                         </Text>
 
-                        <View className="w-full bg-white rounded-2xl p-6 shadow-sm shadow-gray-200">
-                            <Text className="text-xs font-bold text-gray-400 mb-2">{t('enterOtp')}</Text>
-                            <View className="bg-[#f8fafc] rounded-xl px-4 py-2 border border-gray-100 flex-row items-center mb-6">
-                                <Ionicons name="keypad-outline" size={24} color="#94a3b8" />
+                        <View className="w-full bg-white rounded-3xl p-8 shadow-xl shadow-gray-100 border border-gray-50">
+                            <Text className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 text-center">{t('enterOtp')}</Text>
+                            <View className="bg-[#f8fafc] rounded-2xl px-5 py-4 border border-gray-100 flex-row items-center mb-8">
+                                <Ionicons name="keypad" size={24} color="#ff6b00" />
                                 <TextInput
-                                    className="flex-1 ml-3 text-2xl tracking-widest text-[#1a2b4c] font-bold py-2"
-                                    placeholder="• • • • • •"
+                                    className="flex-1 ml-4 text-3xl tracking-[0.5em] text-[#1a2b4c] font-black text-center"
+                                    placeholder="••••••"
                                     placeholderTextColor="#cbd5e1"
                                     keyboardType="number-pad"
                                     maxLength={6}
@@ -304,27 +260,28 @@ export default function LoginScreen({ navigation }: any) {
                                     textContentType="oneTimeCode"
                                     autoComplete="sms-otp"
                                     importantForAutofill="yes"
+                                    selectionColor="#ff6b00"
                                 />
                             </View>
 
                             <TouchableOpacity
-                                className="w-full bg-[#ff6b00] py-4 rounded-xl items-center shadow-sm shadow-orange-200"
+                                className="w-full bg-[#ff6b00] py-4 rounded-2xl items-center shadow-lg shadow-orange-300"
                                 onPress={handleVerifyOtp}
                                 disabled={verifying}
                             >
                                 {verifying ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text className="text-white font-bold text-lg">{t('verifyAndLogin')}</Text>
+                                    <Text className="text-white font-bold text-lg tracking-wide">{t('verifyAndLogin')}</Text>
                                 )}
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                className="mt-6 items-center flex-row justify-center py-2"
+                                className="mt-8 items-center flex-row justify-center py-2"
                                 onPress={() => setShowOtpScreen(false)}
                             >
-                                <Ionicons name="arrow-back" size={16} color="#64748b" style={{ marginRight: 6 }} />
-                                <Text className="text-slate-500 font-medium">{t('changeMobileNumber')}</Text>
+                                <Ionicons name="arrow-back" size={18} color="#64748b" style={{ marginRight: 8 }} />
+                                <Text className="text-slate-500 font-semibold text-base">{t('changeMobileNumber')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
         color: '#fcd34d',
         fontSize: 11,
         fontWeight: '900',
+        fontStyle: 'italic',
         letterSpacing: 1,
     },
     orgSub: {

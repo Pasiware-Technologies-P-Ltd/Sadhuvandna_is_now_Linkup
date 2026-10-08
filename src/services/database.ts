@@ -92,6 +92,16 @@ export const initDB = async () => {
         cached_at INTEGER,
         size INTEGER
       );
+
+      CREATE TABLE IF NOT EXISTS switcher_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        main_user_id TEXT NOT NULL,
+        profile_id TEXT NOT NULL,
+        name TEXT,
+        photo TEXT,
+        type TEXT,
+        UNIQUE(main_user_id, profile_id)
+      );
     `);
 
     console.log('Database and tables initialized successfully');

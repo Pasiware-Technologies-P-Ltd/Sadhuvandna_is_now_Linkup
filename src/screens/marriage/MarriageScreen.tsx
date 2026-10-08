@@ -143,7 +143,8 @@ const MarriageScreen = ({ navigation }: any) => {
       const cached = await AsyncStorage.getItem(`cached_matrimony_${uid}`);
       if (cached) {
         const parsed = JSON.parse(cached);
-        setProfiles(parsed.profiles);
+        const filteredProfiles = parsed.profiles.filter((p: any) => String(p.user_id) !== String(uid) && String(p.id) !== String(parsed.myProfileId));
+        setProfiles(filteredProfiles);
         if (parsed.myProfileId) setMyProfileId(parsed.myProfileId);
         if (parsed.myProfilePhoto) setMyProfilePhoto(parsed.myProfilePhoto);
         if (parsed.requestCount) setRequestCount(parsed.requestCount);
@@ -261,7 +262,9 @@ const MarriageScreen = ({ navigation }: any) => {
         { signal: isMore ? undefined : abortControllerRef.current?.signal }
       );
       if (res.data.status === "success") {
-        const newData = res.data.data || [];
+        const rawData = res.data.data || [];
+        // Filter out the user's own profile so it doesn't show up in the feed
+        const newData = rawData.filter((p: any) => String(p.user_id) !== String(userId) && String(p.id) !== String(res.data.my_profile_id));
 
         setHasMore(res.data.has_more);
         cursorRef.current = res.data.next_cursor;
@@ -679,6 +682,43 @@ const MarriageScreen = ({ navigation }: any) => {
               <Ionicons name="funnel-outline" size={11} color="#ea580c" />
             </TouchableOpacity>
 
+            {/* Bell (Requests) Icon -> Changed to People Icon */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Requests")}
+              style={{ position: "relative" }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="people"
+                size={20}
+                color="#ea580c"
+              />
+              {requestCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -3,
+                    right: -3,
+                    backgroundColor: "#ef4444",
+                    minWidth: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 2,
+                    borderWidth: 1,
+                    borderColor: "white",
+                  }}
+                >
+                  <Text
+                    style={{ color: "white", fontSize: 6, fontWeight: "bold" }}
+                  >
+                    {requestCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             {/* Chat Icon */}
             <TouchableOpacity
               onPress={() =>
@@ -689,7 +729,7 @@ const MarriageScreen = ({ navigation }: any) => {
             >
               <Ionicons
                 name="chatbubble-ellipses-outline"
-                size={18}
+                size={22}
                 color="#16a34a"
               />
               {unreadCount > 0 && (
@@ -713,43 +753,6 @@ const MarriageScreen = ({ navigation }: any) => {
                     style={{ color: "white", fontSize: 6, fontWeight: "bold" }}
                   >
                     {unreadCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* Bell (Requests) Icon */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Requests")}
-              style={{ position: "relative" }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={18}
-                color="#db2777"
-              />
-              {requestCount > 0 && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -3,
-                    right: -3,
-                    backgroundColor: "#ef4444",
-                    minWidth: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 2,
-                    borderWidth: 1,
-                    borderColor: "white",
-                  }}
-                >
-                  <Text
-                    style={{ color: "white", fontSize: 6, fontWeight: "bold" }}
-                  >
-                    {requestCount}
                   </Text>
                 </View>
               )}

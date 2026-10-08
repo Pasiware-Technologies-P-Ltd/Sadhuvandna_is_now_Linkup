@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
-import { navigationRef } from './src/navigation/navigationRef';
+import { navigationRef, navigateWithRetry } from './src/navigation/navigationRef';
 import { RootStackParamList } from './src/navigation/types';
 import { updateServerToken } from './src/services/NotificationService';
 import GlobalCallListener from './src/components/GlobalCallListener';
@@ -59,8 +59,34 @@ const queryClient = new QueryClient({
   },
 });
 
+import * as Notifications from 'expo-notifications';
+
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+
+  useEffect(() => {
+    if (
+      lastNotificationResponse &&
+      lastNotificationResponse.notification.request.content.data &&
+      lastNotificationResponse.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER
+    ) {
+      const data = lastNotificationResponse.notification.request.content.data as any;
+      console.log("[App] Cold start notification clicked:", JSON.stringify(data));
+      
+      setTimeout(() => {
+        if (data && (data.type === 'post' || data.type === 'like') && data.postId) {
+          navigateWithRetry('PostDetail', { postId: data.postId });
+        }
+        if (data && data.type === 'message' && data.sender_id) {
+          navigateWithRetry('Chat', { 
+              receiver: { id: data.sender_id, full_name: data.sender_name || 'User', photo: data.sender_photo || null, user_id: data.sender_user_id || data.sender_id },
+              platform: data.platform || 'community' 
+          });
+        }
+      }, 1000);
+    }
+  }, [lastNotificationResponse]);
 
   useEffect(() => {
     console.log("[App] Initializing...");

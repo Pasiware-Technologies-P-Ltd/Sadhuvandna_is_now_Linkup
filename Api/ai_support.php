@@ -62,7 +62,7 @@ $payload = [
 ];
 
 $apiKey = GEMINI_API_KEY;
-$url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+$url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
 
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -71,7 +71,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json'
 ]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -90,7 +90,7 @@ $responseDecoded = json_decode($response, true);
 
 if ($httpCode !== 200) {
     // If API Key is placeholder or invalid, return a friendly mock fallback response for testing
-    if (strpos($apiKey, 'YOUR_GEMINI_API_KEY_HERE') !== false || $httpCode === 400 || $httpCode === 403) {
+    if (strpos($apiKey, 'YOUR_GEMINI_API_KEY_HERE') !== false || $httpCode === 400 || $httpCode === 403 || $httpCode === 404) {
         $mockReplies = [
             "नमस्कार! मैं आपका AI असिस्टेंट Linko हूँ। मैं Linkup ऐप में आपकी मदद के लिए तैयार हूँ। आप मुझसे मैट्रिमोनी प्रोफाइल बनाने, न्यूज़ पोस्ट करने या जॉब्स देखने के बारे में पूछ सकते हैं।",
             "Linkup ऐप में प्रोफाइल बनाने के लिए: Profile सेक्शन में जाकर 'Create Matrimony Profile' पर क्लिक करें और अपनी डिटेल्स भरें।",

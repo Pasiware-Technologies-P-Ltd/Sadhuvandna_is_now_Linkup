@@ -220,8 +220,10 @@ const NotificationScreen = ({ navigation }: any) => {
                 receiver: {
                     id: item.data?.sender_id,
                     full_name: item.title,
-                    photo: item.image
-                }
+                    photo: item.image,
+                    user_id: item.data?.sender_user_id || item.data?.sender_id
+                },
+                platform: item.data?.platform || 'community'
             });
         } else if (item.type === 'request' || item.type === 'follow_request') {
             navigation.navigate('Requests');
@@ -298,8 +300,8 @@ const NotificationScreen = ({ navigation }: any) => {
                     <Text style={styles.body} numberOfLines={2}>
                         {item.type === 'post' && item.title === 'New Post' ? (
                             item._groupCount && item._groupCount > 1
-                                ? <Text><Text style={{fontWeight: 'bold'}}>Linkup</Text> shared {item._groupCount} new posts.</Text>
-                                : <Text><Text style={{fontWeight: 'bold'}}>Linkup</Text> shared a new post.</Text>
+                                ? <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#ea580c'}}>LinkUp</Text> shared {item._groupCount} new posts.</Text>
+                                : <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#ea580c'}}>LinkUp</Text> shared a new post.</Text>
                         ) : item.type === 'incoming_call' ? (
                             item._groupCount && item._groupCount > 1
                                 ? `${(item.body || item.message)} (${item._groupCount} calls)`

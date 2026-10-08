@@ -63,12 +63,22 @@ export const CompatVideoInner = React.forwardRef(({
         player.loop = !!isLooping;
     }, [isLooping, player]);
 
+    const isLoadedRef = useRef(false);
+    const onPlaybackStatusUpdateRef = useRef(onPlaybackStatusUpdate);
+    
+    useEffect(() => {
+        onPlaybackStatusUpdateRef.current = onPlaybackStatusUpdate;
+    }, [onPlaybackStatusUpdate]);
+
     useEffect(() => {
         if (onLoadStart) onLoadStart();
         
         const sub = player.addListener('statusChange', (e) => {
             if (e.status === 'readyToPlay') {
-                if (shouldPlay) player.play();
+                isLoadedRef.current = true;
+                // We shouldn't use shouldPlay from the closure here because it's not a dependency, 
+                // but the player itself handles initial play. To force it we can just play if it's supposed to.
+                // Actually, since shouldPlay is in a separate useEffect, it handles it.
                 const loadedStatus = {
                     isLoaded: true,
                     durationMillis: player.duration * 1000,
@@ -84,22 +94,26 @@ export const CompatVideoInner = React.forwardRef(({
         });
         
         const interval = setInterval(() => {
-            if (status.isLoaded) {
+            if (isLoadedRef.current) {
                 const currentStatus = {
-                    ...status,
+                    isLoaded: true,
+                    durationMillis: player.duration * 1000,
                     positionMillis: player.currentTime * 1000,
+                    isBuffering: false,
                     isPlaying: player.playing
                 };
                 setStatus(currentStatus);
-                if (onPlaybackStatusUpdate) onPlaybackStatusUpdate(currentStatus);
+                if (onPlaybackStatusUpdateRef.current) {
+                    onPlaybackStatusUpdateRef.current(currentStatus);
+                }
             }
-        }, progressUpdateIntervalMillis || 500);
+        }, progressUpdateIntervalMillis || 250);
 
         return () => {
             sub.remove();
             clearInterval(interval);
         };
-    }, [player, shouldPlay]);
+    }, [player]);
 
     const showPoster = !status.isLoaded && usePoster && posterSource?.uri;
 

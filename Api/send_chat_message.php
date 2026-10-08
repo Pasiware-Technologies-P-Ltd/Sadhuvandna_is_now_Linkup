@@ -135,12 +135,24 @@ if ($redis) {
     // 4. WebSocket Broadcast
     $url = 'http://localhost:3000/api/trigger';
     
-    $senderNameQ = $con->query("SELECT name FROM tbl_members WHERE id = '$my' LIMIT 1");
+    // Determine real user IDs for WebSocket routing
+    $receiver_user_id = $receiver;
+    $sender_user_id = $my;
+    
+    if ($platform === 'marriage') {
+        $qR = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = '$receiver' LIMIT 1");
+        if ($qR && $rRow = $qR->fetch_assoc()) $receiver_user_id = $rRow['user_id'];
+        
+        $qS = $con->query("SELECT user_id FROM tbl_marriage_profiles WHERE id = '$my' LIMIT 1");
+        if ($qS && $sRow = $qS->fetch_assoc()) $sender_user_id = $sRow['user_id'];
+    }
+
+    $senderNameQ = $con->query("SELECT name FROM tbl_members WHERE id = '$sender_user_id' LIMIT 1");
     $senderName = ($senderNameQ && $sRow = $senderNameQ->fetch_assoc()) ? $sRow['name'] : "Someone";
 
     // Send to receiver
     $postDataReceiver = array(
-        'receiverId' => $receiver,
+        'receiverId' => $receiver_user_id,
         'type' => 'new_notification',
         'payload' => [
             'type' => 'chat',
@@ -154,7 +166,7 @@ if ($redis) {
     
     // Send to sender's other devices
     $postDataSender = array(
-        'room' => "user_{$my}",
+        'room' => "user_{$sender_user_id}",
         'type' => 'new_notification',
         'payload' => [
             'type' => 'chat',
