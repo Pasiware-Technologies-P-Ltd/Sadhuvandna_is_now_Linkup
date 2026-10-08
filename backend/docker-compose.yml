@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # 1. Redis Server
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - coolify
+
+  # 2. Main PHP API (Replaces: php -S 0.0.0.0:8000 -t Api)
+  api-server:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.php
+    ports:
+      - "8078:80"
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - REDIS_HOST=redis
+      - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
+      - DB_USER=${DB_USER:-u941015828_sadhuvandna}
+      - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
+      - DB_NAME=${DB_NAME:-u941015828_sadhuvandna}
+      - DB_PORT=${DB_PORT:-3306}
+    volumes:
+      - uploads-volume:/var/www/html/Api/uploads
+      - uploads-volume:/var/www/html/uploads
+    networks:
+      - coolify
+    depends_on:
+      - redis
+
+  # 3. Queue Worker (Replaces: php Api/worker.php)
+  php-worker:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.php
+    command: php /var/www/html/Api/worker.php
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - REDIS_HOST=redis
+      - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
+      - DB_USER=${DB_USER:-u941015828_sadhuvandna}
+      - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
+      - DB_NAME=${DB_NAME:-u941015828_sadhuvandna}
+      - DB_PORT=${DB_PORT:-3306}
+    networks:
+      - coolify
+    depends_on:
+      - redis
+
+  # 4. Notification Worker (Replaces: php Api/notification_worker.php)
+  php-notification-worker:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.php
+    command: php /var/www/html/Api/notification_worker.php
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - REDIS_HOST=redis
+      - SOCKET_URL=http://socket-server:3000
+      - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
+      - DB_USER=${DB_USER:-u941015828_sadhuvandna}
+      - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
+      - DB_NAME=${DB_NAME:-u941015828_sadhuvandna}
+      - DB_PORT=${DB_PORT:-3306}
+    networks:
+      - coolify
+    depends_on:
+      - redis
+
+  # 5. Socket Server (Replaces: node server/index.js)
+  socket-server:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.node
+    ports:
+      - "9000:3000"
+    environment:
+      - API_URL=http://api-server
+    networks:
+      - coolify
+    depends_on:
+      - redis
+
+networks:
+  coolify:
+    external: true
+
+volumes:
+  uploads-volume:
+    name: ugoko000c444w0kwwk84coc0-uploads-volume
+    external: true
