@@ -433,13 +433,13 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             onPress={() => navigation.navigate('MyNews')}
                             style={{
                                 flexDirection: 'row', alignItems: 'center',
-                                backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa',
+                                backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#fed7aa',
                                 borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, gap: 4
                             }}
                             activeOpacity={0.8}
                         >
-                            <Ionicons name="newspaper-outline" size={15} color="#ea580c" />
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#ea580c' }}>My News</Text>
+                            <Ionicons name="newspaper-outline" size={15} color="#2563EB" />
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#2563EB' }}>My News</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -489,7 +489,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
                     {/* Choose Files Button */}
                     <TouchableOpacity onPress={pickMedia} style={styles.chooseFilesBtn}>
-                        <Ionicons name="cloud-upload-outline" size={18} color="#4b5563" />
+                        <Ionicons name="cloud-upload-outline" size={18} color="#64748B" />
                         <Text style={styles.chooseFilesText}>Choose Photos & Videos</Text>
                     </TouchableOpacity>
 
@@ -499,23 +499,23 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             <Text style={styles.label}>Select Frame</Text>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.aspectBtn, postAspectRatio === null && styles.aspectBtnSelected]}>
-                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? '#ea580c' : '#6b7280'} />
-                                    <Text style={[styles.aspectBtnText, postAspectRatio === null && { color: '#ea580c', fontWeight: 'bold' }]}>Original</Text>
+                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? '#2563EB' : '#64748B'} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === null && { color: '#2563EB', fontWeight: 'bold' }]}>Original</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.aspectBtn, postAspectRatio === 1 && styles.aspectBtnSelected]}>
-                                    <View style={[styles.aspectIcon, { width: 18, height: 18, borderColor: postAspectRatio === 1 ? '#ea580c' : '#6b7280' }]} />
-                                    <Text style={[styles.aspectBtnText, postAspectRatio === 1 && { color: '#ea580c', fontWeight: 'bold' }]}>1:1</Text>
+                                    <View style={[styles.aspectIcon, { width: 18, height: 18, borderColor: postAspectRatio === 1 ? '#2563EB' : '#64748B' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 1 && { color: '#2563EB', fontWeight: 'bold' }]}>1:1</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(4 / 5)} style={[styles.aspectBtn, postAspectRatio === 4 / 5 && styles.aspectBtnSelected]}>
-                                    <View style={[styles.aspectIcon, { width: 16, height: 20, borderColor: postAspectRatio === 4 / 5 ? '#ea580c' : '#6b7280' }]} />
-                                    <Text style={[styles.aspectBtnText, postAspectRatio === 4 / 5 && { color: '#ea580c', fontWeight: 'bold' }]}>4:5</Text>
+                                    <View style={[styles.aspectIcon, { width: 16, height: 20, borderColor: postAspectRatio === 4 / 5 ? '#2563EB' : '#64748B' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 4 / 5 && { color: '#2563EB', fontWeight: 'bold' }]}>4:5</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(16 / 9)} style={[styles.aspectBtn, postAspectRatio === 16 / 9 && styles.aspectBtnSelected]}>
-                                    <View style={[styles.aspectIcon, { width: 22, height: 12, borderColor: postAspectRatio === 16 / 9 ? '#ea580c' : '#6b7280' }]} />
-                                    <Text style={[styles.aspectBtnText, postAspectRatio === 16 / 9 && { color: '#ea580c', fontWeight: 'bold' }]}>16:9</Text>
+                                    <View style={[styles.aspectIcon, { width: 22, height: 12, borderColor: postAspectRatio === 16 / 9 ? '#2563EB' : '#64748B' }]} />
+                                    <Text style={[styles.aspectBtnText, postAspectRatio === 16 / 9 && { color: '#2563EB', fontWeight: 'bold' }]}>16:9</Text>
                                 </TouchableOpacity>
                             </View>
-                            <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 6, fontStyle: 'italic' }}>
+                            <Text style={{ fontSize: 11, color: '#64748B', marginTop: 6, fontStyle: 'italic' }}>
                                 Frames keep your post looking consistent. Videos will automatically crop.
                             </Text>
                         </View>
@@ -551,7 +551,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                     {(category === 'State' || category === 'District') && (
                         <View style={styles.formGroup}>
                             <Text style={styles.label}>Select State</Text>
-                            <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', marginBottom: 12 }}>
+                            <View style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, backgroundColor: '#F8FAFC', marginBottom: 12 }}>
                                 <Picker
                                     selectedValue={selectedState}
                                     onValueChange={(itemValue, itemIndex) => {
@@ -573,7 +573,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             {category === 'District' && (
                                 <>
                                     <Text style={styles.label}>Select District</Text>
-                                    <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb' }}>
+                                    <View style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, backgroundColor: '#F8FAFC' }}>
                                         <Picker
                                             selectedValue={selectedDistrict}
                                             onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
@@ -597,15 +597,15 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             flexDirection: 'row',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: '#ea580c12',
+                            backgroundColor: '#2563EB12',
                             borderWidth: 1.5,
-                            borderColor: '#ea580c',
+                            borderColor: '#2563EB',
                             borderRadius: 24,
                             paddingVertical: 10,
                             paddingHorizontal: 16,
                             marginBottom: 20,
                             gap: 8,
-                            shadowColor: '#ea580c',
+                            shadowColor: '#2563EB',
                             shadowOffset: { width: 0, height: 2 },
                             shadowOpacity: 0.1,
                             shadowRadius: 4,
@@ -613,8 +613,8 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         }}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="sparkles" size={18} color="#ea580c" />
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c' }}>🤖 Generate Title & Description by AI</Text>
+                        <Ionicons name="sparkles" size={18} color="#2563EB" />
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2563EB' }}>🤖 Generate Title & Description by AI</Text>
                     </TouchableOpacity>
 
                     {/* Form Fields */}
@@ -663,15 +663,15 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 height: 20,
                                 borderRadius: 4,
                                 borderWidth: 1.5,
-                                borderColor: '#ea580c',
-                                backgroundColor: termsAccepted ? '#ea580c' : 'transparent',
+                                borderColor: '#2563EB',
+                                backgroundColor: termsAccepted ? '#2563EB' : 'transparent',
                                 justifyContent: 'center',
                                 alignItems: 'center'
                             }}>
                                 {termsAccepted && <Ionicons name="checkmark" size={14} color="white" />}
                             </View>
                             <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                                I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
+                                I agree to the <Text style={{ fontWeight: 'bold', color: '#2563EB', textDecorationLine: 'underline' }}>Disclaimer & Terms and Conditions</Text>
                             </Text>
                         </TouchableOpacity>
 
@@ -693,15 +693,15 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 height: 20,
                                 borderRadius: 4,
                                 borderWidth: 1.5,
-                                borderColor: '#ea580c',
-                                backgroundColor: policyAccepted ? '#ea580c' : 'transparent',
+                                borderColor: '#2563EB',
+                                backgroundColor: policyAccepted ? '#2563EB' : 'transparent',
                                 justifyContent: 'center',
                                 alignItems: 'center'
                             }}>
                                 {policyAccepted && <Ionicons name="checkmark" size={14} color="white" />}
                             </View>
                             <Text style={{ fontSize: 13, color: '#374151', flex: 1 }}>
-                                I agree to the <Text style={{ fontWeight: 'bold', color: '#ea580c', textDecorationLine: 'underline' }}>Privacy Policy</Text>
+                                I agree to the <Text style={{ fontWeight: 'bold', color: '#2563EB', textDecorationLine: 'underline' }}>Privacy Policy</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -735,13 +735,13 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 >
                     <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
                         {/* Handle bar */}
-                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
+                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 16 }} />
 
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Ionicons name="sparkles" size={20} color="#ea580c" />
-                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>AI News Assistant</Text>
+                                <Ionicons name="sparkles" size={20} color="#2563EB" />
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>AI News Assistant</Text>
                             </View>
                             <TouchableOpacity onPress={() => setAiModalVisible(false)}>
                                 <Ionicons name="close-circle" size={24} color="#9ca3af" />
@@ -756,13 +756,13 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={{
                                     borderWidth: 1,
-                                    borderColor: '#ea580c',
+                                    borderColor: '#2563EB',
                                     borderRadius: 12,
                                     paddingHorizontal: 14,
                                     paddingVertical: 12,
                                     fontSize: 15,
-                                    color: '#1f2937',
-                                    backgroundColor: '#fff7ed',
+                                    color: '#172554',
+                                    backgroundColor: '#EFF6FF',
                                     marginBottom: 16,
                                     textAlignVertical: 'top',
                                     height: 80
@@ -774,22 +774,22 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 multiline
                             />
 
-                            <Text style={{ fontSize: 12, color: '#6b7280', marginBottom: 20 }}>
-                                Selected Category / चयनित श्रेणी: <Text style={{ fontWeight: 'bold', color: '#ea580c' }}>{category}</Text>
+                            <Text style={{ fontSize: 12, color: '#64748B', marginBottom: 20 }}>
+                                Selected Category / चयनित श्रेणी: <Text style={{ fontWeight: 'bold', color: '#2563EB' }}>{category}</Text>
                             </Text>
 
                             <TouchableOpacity
                                 onPress={handleAiGenerate}
                                 disabled={generating}
                                 style={{
-                                    backgroundColor: '#ea580c',
+                                    backgroundColor: '#2563EB',
                                     paddingVertical: 14,
                                     borderRadius: 24,
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexDirection: 'row',
                                     gap: 8,
-                                    shadowColor: '#ea580c',
+                                    shadowColor: '#2563EB',
                                     shadowOffset: { width: 0, height: 4 },
                                     shadowOpacity: 0.2,
                                     shadowRadius: 6,
@@ -821,22 +821,22 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 }}>
                     <View style={{ backgroundColor: 'white', borderRadius: 24, flex: 0.85, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 10 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
                                 Disclaimer & Terms
                             </Text>
                             <TouchableOpacity onPress={() => setTermsModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#6b7280" />
+                                <Ionicons name="close" size={24} color="#64748B" />
                             </TouchableOpacity>
                         </View>
 
                         <ScrollView
-                            style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', marginBottom: 15 }}
+                            style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginBottom: 15 }}
                             onScroll={(e) => handleScroll(e, setTermsScrolledToBottom)}
                             scrollEventThrottle={16}
                             showsVerticalScrollIndicator={true}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c', marginBottom: 8 }}>Disclaimer</Text>
-                            <Text style={{ fontSize: 13, color: '#4b5563', lineHeight: 18, marginBottom: 16 }}>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2563EB', marginBottom: 8 }}>Disclaimer</Text>
+                            <Text style={{ fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 16 }}>
                                 LinkUp is a User-Generated Content Platform.{"\n\n"}
                                 All news, posts, reels, photos, videos, matrimony profiles, comments, chat messages, voice calls, and video calls available on the platform are created, uploaded, or shared by users.{"\n\n"}
                                 The respective user is solely responsible for the accuracy, legality, authenticity, ownership, and copyright compliance of the content they publish.{"\n\n"}
@@ -845,13 +845,13 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 The views and opinions expressed by users do not represent the views of LinkUp.
                             </Text>
 
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c', marginBottom: 8, marginTop: 8 }}>Terms and Conditions</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2563EB', marginBottom: 8, marginTop: 8 }}>Terms and Conditions</Text>
                             <Text style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12 }}>Last Updated: June 25, 2026</Text>
-                            <Text style={{ fontSize: 13, color: '#4b5563', lineHeight: 18, marginBottom: 16 }}>
+                            <Text style={{ fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 16 }}>
                                 By using LinkUp, you agree to the following terms and conditions:{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>1. User Responsibility</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>1. User Responsibility</Text>{"\n"}
                                 Users are solely responsible for all content uploaded, posted, shared, or transmitted through the platform.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>2. Prohibited Content</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>2. Prohibited Content</Text>{"\n"}
                                 Users must not upload, publish, or distribute:{"\n"}
                                 • Copyright-infringing content{"\n"}
                                 • False or misleading news{"\n"}
@@ -859,19 +859,19 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 • Hate speech or discriminatory content{"\n"}
                                 • Illegal or harmful content{"\n"}
                                 • Defamatory material{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>3. News Section</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>3. News Section</Text>{"\n"}
                                 Users are responsible for the accuracy and legality of news content they publish.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>4. Matrimony Section</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>4. Matrimony Section</Text>{"\n"}
                                 • Users are responsible for the accuracy of their profiles.{"\n"}
                                 • LinkUp does not guarantee any marriage proposal, relationship, or match.{"\n"}
                                 • Users interact with others at their own risk.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>5. Chat, Group Chat, Voice Call & Video Call</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>5. Chat, Group Chat, Voice Call & Video Call</Text>{"\n"}
                                 Users are solely responsible for their communications and interactions on the platform.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>6. Account Suspension</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>6. Account Suspension</Text>{"\n"}
                                 LinkUp reserves the right to suspend or terminate any account that violates these Terms.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>7. Limitation of Liability</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>7. Limitation of Liability</Text>{"\n"}
                                 LinkUp shall not be liable for any loss, damage, dispute, or legal claim arising from user-generated content or user interactions.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>8. Modification of Services</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>8. Modification of Services</Text>{"\n"}
                                 LinkUp may modify, suspend, or discontinue any service without prior notice.
                             </Text>
                         </ScrollView>
@@ -884,7 +884,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                     setTermsModalVisible(false);
                                 }}
                                 style={{
-                                    backgroundColor: '#ea580c',
+                                    backgroundColor: '#2563EB',
                                     paddingVertical: 14,
                                     borderRadius: 24,
                                     alignItems: 'center',
@@ -899,7 +899,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         ) : (
                             <View
                                 style={{
-                                    backgroundColor: '#f3f4f6',
+                                    backgroundColor: '#E2E8F0',
                                     paddingVertical: 14,
                                     borderRadius: 24,
                                     alignItems: 'center',
@@ -926,25 +926,25 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 }}>
                     <View style={{ backgroundColor: 'white', borderRadius: 24, flex: 0.85, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 10 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
                                 Privacy Policy
                             </Text>
                             <TouchableOpacity onPress={() => setPolicyModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#6b7280" />
+                                <Ionicons name="close" size={24} color="#64748B" />
                             </TouchableOpacity>
                         </View>
 
                         <ScrollView
-                            style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', marginBottom: 15 }}
+                            style={{ flex: 1, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginBottom: 15 }}
                             onScroll={(e) => handleScroll(e, setPolicyScrolledToBottom)}
                             scrollEventThrottle={16}
                             showsVerticalScrollIndicator={true}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ea580c', marginBottom: 8 }}>Privacy Policy</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2563EB', marginBottom: 8 }}>Privacy Policy</Text>
                             <Text style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12 }}>Last Updated: June 25, 2026</Text>
-                            <Text style={{ fontSize: 13, color: '#4b5563', lineHeight: 18, marginBottom: 16 }}>
+                            <Text style={{ fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 16 }}>
                                 Welcome to LinkUp. LinkUp is a Social Media, News, Matrimony, Chat, Group Chat, Voice Call, and Video Call platform. We respect your privacy and are committed to protecting your personal information.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>1. Information We Collect</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>1. Information We Collect</Text>{"\n"}
                                 • Name, mobile number, email address{"\n"}
                                 • Profile photos and profile information{"\n"}
                                 • News, posts, reels, photos, videos, comments{"\n"}
@@ -952,19 +952,19 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 • Chat and group chat information{"\n"}
                                 • Voice call and video call related technical data{"\n"}
                                 • Device information, IP address, and log data{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>2. How We Use Information</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>2. How We Use Information</Text>{"\n"}
                                 • To create and manage user accounts{"\n"}
                                 • To provide social media, news, and matrimony services{"\n"}
                                 • To enable chat, voice call, and video call features{"\n"}
                                 • To improve platform performance and user experience{"\n"}
                                 • To maintain security and prevent fraud{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>3. Information Sharing</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>3. Information Sharing</Text>{"\n"}
                                 We do not sell users' personal information. Information may be shared if required by law, court order, or government authority.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>4. Data Security</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>4. Data Security</Text>{"\n"}
                                 We implement reasonable security measures to protect user data. However, no internet-based service can guarantee 100% security.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>5. Children's Privacy</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>5. Children's Privacy</Text>{"\n"}
                                 Users under the age of 18 are not permitted to use Matrimony services.{"\n\n"}
-                                <Text style={{ fontWeight: 'bold', color: '#1f2937' }}>6. Changes to Policy</Text>{"\n"}
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }}>6. Changes to Policy</Text>{"\n"}
                                 LinkUp reserves the right to modify this Privacy Policy at any time.
                             </Text>
                         </ScrollView>
@@ -977,7 +977,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                     setPolicyModalVisible(false);
                                 }}
                                 style={{
-                                    backgroundColor: '#ea580c',
+                                    backgroundColor: '#2563EB',
                                     paddingVertical: 14,
                                     borderRadius: 24,
                                     alignItems: 'center',
@@ -992,7 +992,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         ) : (
                             <View
                                 style={{
-                                    backgroundColor: '#f3f4f6',
+                                    backgroundColor: '#E2E8F0',
                                     paddingVertical: 14,
                                     borderRadius: 24,
                                     alignItems: 'center',
@@ -1020,7 +1020,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
+        borderBottomColor: '#E2E8F0',
         backgroundColor: 'white',
     },
     backBtn: {
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1f2937',
+        color: '#172554',
     },
     scrollContainer: {
         padding: 20,
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
         borderColor: '#d1d5db',
         borderStyle: 'dashed',
         borderRadius: 12,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -1062,12 +1062,12 @@ const styles = StyleSheet.create({
     },
     uploadPlaceholderWithImages: {
         borderStyle: 'solid',
-        borderColor: '#e5e7eb',
+        borderColor: '#E2E8F0',
         height: 120,
     },
 
     uploadText: {
-        color: '#6b7280',
+        color: '#64748B',
         fontSize: 13,
         marginTop: 6,
     },
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         position: 'relative',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: '#E2E8F0',
     },
     imagePreview: {
         width: '100%',
@@ -1130,19 +1130,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 15,
-        color: '#1f2937',
+        color: '#172554',
         backgroundColor: '#fafafa',
     },
     textArea: {
         height: 130,
     },
     submitBtn: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 10,
-        shadowColor: '#ea580c',
+        shadowColor: '#2563EB',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 6,
@@ -1163,7 +1163,7 @@ const styles = StyleSheet.create({
     categoryBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#E2E8F0',
         borderRadius: 25,
         paddingHorizontal: 16,
         paddingVertical: 10,
@@ -1176,8 +1176,8 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     categoryBadgeSelected: {
-        backgroundColor: '#ea580c',
-        shadowColor: '#ea580c',
+        backgroundColor: '#2563EB',
+        shadowColor: '#2563EB',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 6,
@@ -1199,16 +1199,16 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 60,
         borderRadius: 12,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: '#E2E8F0',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6
     },
     aspectBtnSelected: {
-        backgroundColor: '#fff7ed',
-        borderColor: '#ea580c'
+        backgroundColor: '#EFF6FF',
+        borderColor: '#2563EB'
     },
     aspectIcon: {
         borderWidth: 2,
@@ -1216,7 +1216,7 @@ const styles = StyleSheet.create({
     },
     aspectBtnText: {
         fontSize: 12,
-        color: '#6b7280',
+        color: '#64748B',
         fontWeight: '600'
     },
 });

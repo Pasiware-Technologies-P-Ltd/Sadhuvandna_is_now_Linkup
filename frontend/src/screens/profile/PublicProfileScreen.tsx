@@ -529,7 +529,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
     const renderHeader = () => (
         <>
-            <View style={{ height: 155, backgroundColor: '#ea580c', position: 'relative', overflow: 'hidden' }}>
+            <View style={{ height: 155, backgroundColor: '#2563EB', position: 'relative', overflow: 'hidden' }}>
                 {user.cover_photo ? (
                     <TouchableOpacity
                         activeOpacity={0.9}
@@ -572,7 +572,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     >
                         <Image
                             source={{ uri: getImageUrl(user.profile_photo, PHOTO_URL) }}
-                            style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#f3f4f6' }}
+                            style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0' }}
                         />
                     </TouchableOpacity>
 
@@ -580,9 +580,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                         <View style={{ alignItems: 'center' }}>
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.posts || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.posts || 0}</Text>
                             )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                         </View>
@@ -592,9 +592,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.followers || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.followers || 0}</Text>
                             )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                         </TouchableOpacity>
@@ -604,9 +604,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#f3f4f6', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats?.following || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.following || 0}</Text>
                             )}
                             <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                         </TouchableOpacity>
@@ -616,29 +616,29 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 {/* User Info Details */}
                 <View style={{ marginTop: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827', marginRight: 8 }}>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#172554', marginRight: 8 }}>
                             {user.name || "Community Member"}
                         </Text>
                         {followStats.follows_me && (
-                            <View style={{ backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-                                <Text style={{ fontSize: 9, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followsYou')}</Text>
+                            <View style={{ backgroundColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                <Text style={{ fontSize: 9, color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followsYou')}</Text>
                             </View>
                         )}
                     </View>
                     {user.is_business == 1 && user.category ? (
                         <View style={{ marginTop: 4, flexDirection: 'row', alignItems: 'center' }}>
-                            <Ionicons name="pricetag-outline" size={13} color="#ea580c" />
-                            <Text style={{ fontSize: 13, color: '#ea580c', marginLeft: 4, fontWeight: '600' }}>{user.category}</Text>
+                            <Ionicons name="pricetag-outline" size={13} color="#2563EB" />
+                            <Text style={{ fontSize: 13, color: '#2563EB', marginLeft: 4, fontWeight: '600' }}>{user.category}</Text>
                         </View>
                     ) : null}
                     {user.joined_date && !user.joined_date.startsWith('0000') && (
                         <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Joined {new Date(user.joined_date).toLocaleDateString()}</Text>
                     )}
-                    {user.about ? <Text style={{ fontSize: 13, color: '#4b5563', fontStyle: 'italic', marginTop: 6 }}>{user.about}</Text> : null}
+                    {user.about ? <Text style={{ fontSize: 13, color: '#64748B', fontStyle: 'italic', marginTop: 6 }}>{user.about}</Text> : null}
                     {user.city ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                            <Ionicons name="location-outline" size={14} color="#6b7280" />
-                            <Text style={{ fontSize: 12, color: '#6b7280', marginLeft: 4 }}>{user.city}</Text>
+                            <Ionicons name="location-outline" size={14} color="#64748B" />
+                            <Text style={{ fontSize: 12, color: '#64748B', marginLeft: 4 }}>{user.city}</Text>
                         </View>
                     ) : null}
                 </View>
@@ -648,7 +648,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     {isOwner ? (
                         <TouchableOpacity
                             onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
-                            style={{ backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
+                            style={{ backgroundColor: '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
                             <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
@@ -666,11 +666,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     justifyContent: 'center',
                                     backgroundColor: followStats.is_following || followStats.is_connected
                                         ? '#f0fdf4'
-                                        : (followStats.is_requested && !user.is_business) ? '#f3f4f6' : '#ea580c',
+                                        : (followStats.is_requested && !user.is_business) ? '#E2E8F0' : '#2563EB',
                                     borderWidth: 1,
                                     borderColor: followStats.is_following || followStats.is_connected
                                         ? '#dcfce7'
-                                        : (followStats.is_requested && !user.is_business) ? '#e5e7eb' : '#ea580c',
+                                        : (followStats.is_requested && !user.is_business) ? '#E2E8F0' : '#2563EB',
                                 }}
                                 activeOpacity={0.8}
                             >
@@ -679,7 +679,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     fontWeight: 'bold',
                                     color: followStats.is_following || followStats.is_connected
                                         ? '#16a34a'
-                                        : (followStats.is_requested && !user.is_business) ? '#6b7280' : 'white'
+                                        : (followStats.is_requested && !user.is_business) ? '#64748B' : 'white'
                                 }}>
                                     {togglingFollow ? t('updating') :
                                         user.is_business
@@ -703,11 +703,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         },
                                         platform: 'community'
                                     })}
-                                    style={{ flex: 1, backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#ffedd5', borderRadius: 14, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    style={{ flex: 1, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE', borderRadius: 14, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="chatbubble-ellipses" size={16} color="#ea580c" />
-                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('message')}</Text>
+                                    <Ionicons name="chatbubble-ellipses" size={16} color="#2563EB" />
+                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#2563EB' }}>{t('message')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -717,11 +717,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 {/* Business Details Card - only for business profiles */}
                 {user.is_business == 1 && profile?.business_details && (
                     <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#dbeafe', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingBottom: 10, marginBottom: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 10, marginBottom: 12 }}>
                             <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#0064e015', alignItems: 'center', justifyContent: 'center' }}>
                                 <Ionicons name="briefcase" size={15} color="#0064e0" />
                             </View>
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827' }}>Business Details</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554' }}>Business Details</Text>
                         </View>
                         <View style={{ gap: 10 }}>
                             {profile.business_details.phone_no ? (
@@ -759,8 +759,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             ) : null}
                             {profile.business_details.full_address ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#ea580c15', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Ionicons name="location-outline" size={15} color="#ea580c" />
+                                    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#2563EB15', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Ionicons name="location-outline" size={15} color="#2563EB" />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Address</Text>
@@ -796,8 +796,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
                 {/* Personal Details Section Card - only for personal profiles */}
                 {!user.is_business && (
-                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827', borderBottomWidth: 1, borderBottomColor: '#f9fafb', paddingBottom: 8, marginBottom: 12 }}>Personal Details</Text>
+                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554', borderBottomWidth: 1, borderBottomColor: '#F8FAFC', paddingBottom: 8, marginBottom: 12 }}>Personal Details</Text>
                     
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                         {user.education && (
@@ -870,8 +870,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         )}
                         {user.cast && (
                             <View style={{ width: '47%', flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#ea580c12', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Ionicons name="people-outline" size={14} color="#ea580c" />
+                                <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#2563EB12', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="people-outline" size={14} color="#2563EB" />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Caste</Text>
@@ -898,19 +898,19 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             {/* Family & Marriage Info Section Card - only for personal profiles */}
             {!user.is_business && (
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#f9fafb', paddingBottom: 8, marginBottom: 12 }}>
-                        <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#ea580c12', alignItems: 'center', justifyContent: 'center' }}>
-                            <Ionicons name="people" size={16} color="#ea580c" />
+                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#F8FAFC', paddingBottom: 8, marginBottom: 12 }}>
+                        <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#2563EB12', alignItems: 'center', justifyContent: 'center' }}>
+                            <Ionicons name="people" size={16} color="#2563EB" />
                         </View>
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827', flex: 1 }}>Family & Marriage Info</Text>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554', flex: 1 }}>Family & Marriage Info</Text>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>Family Members</Text>
                         {isOwner && (
                             <TouchableOpacity onPress={() => { resetFamForm(); setModalVisible(true); }}>
-                                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#ea580c' }}>+ Add Member</Text>
+                                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#2563EB' }}>+ Add Member</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -929,10 +929,10 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 >
                                     <Image
                                         source={{ uri: member.photo ? `${FAMILY_PHOTO_URL}${member.photo}` : 'https://via.placeholder.com/100' }}
-                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#ffedd5', backgroundColor: '#f9fafb' }}
+                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#DBEAFE', backgroundColor: '#F8FAFC' }}
                                     />
                                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#374151', textAlign: 'center', marginTop: 4 }} numberOfLines={1}>{member.name}</Text>
-                                    <Text style={{ fontSize: 9, color: '#6b7280', textAlign: 'center' }}>{member.relation}</Text>
+                                    <Text style={{ fontSize: 9, color: '#64748B', textAlign: 'center' }}>{member.relation}</Text>
                                     {isOwner && (
                                         <>
                                             <TouchableOpacity
@@ -958,31 +958,31 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
                     {canShowMatrimony && (
                         marriage_profile ? (
-                            <View style={{ backgroundColor: '#fff7ed', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: '#ffedd5', flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ backgroundColor: '#EFF6FF', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: '#DBEAFE', flexDirection: 'row', alignItems: 'center' }}>
                                 <TouchableOpacity
                                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
                                     onPress={() => navigation.navigate('MarriageDetail', { profile: marriage_profile })}
                                     activeOpacity={0.8}
                                 >
-                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                        <Ionicons name="heart" size={20} color="#ea580c" />
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <Ionicons name="heart" size={20} color="#2563EB" />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#7c2d12' }}>Marriage Profile</Text>
                                         <Text style={{ fontSize: 11, color: '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
                                     </View>
-                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#ea580c', marginRight: 4 }}>VIEW</Text>
-                                    <Ionicons name="chevron-forward" size={16} color="#ea580c" />
+                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#2563EB', marginRight: 4 }}>VIEW</Text>
+                                    <Ionicons name="chevron-forward" size={16} color="#2563EB" />
                                 </TouchableOpacity>
                             </View>
                         ) : isOwner ? (
                             <TouchableOpacity
-                                style={{ backgroundColor: '#fff7ed', borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#ffedd5', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
+                                style={{ backgroundColor: '#EFF6FF', borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#DBEAFE', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
                                 onPress={() => navigation.navigate('CreateMarriageProfile')}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="heart-outline" size={18} color="#ea580c" />
-                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('createMatrimonyProfile')}</Text>
+                                <Ionicons name="heart-outline" size={18} color="#2563EB" />
+                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#2563EB' }}>{t('createMatrimonyProfile')}</Text>
                             </TouchableOpacity>
                         ) : null
                     )}
@@ -990,35 +990,35 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </View>
             )}
 
-            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', backgroundColor: 'white', marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: 'white', marginTop: 8 }}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('photos')}
-                    style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'photos' ? 2 : 0, borderBottomColor: '#ea580c' }}
+                    style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'photos' ? 2 : 0, borderBottomColor: '#2563EB' }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="images-outline" size={18} color={activeTab === 'photos' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
-                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'photos' ? '#ea580c' : '#6b7280' }}>
+                    <Ionicons name="images-outline" size={18} color={activeTab === 'photos' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'photos' ? '#2563EB' : '#64748B' }}>
                         {t('photos')} ({photoPosts.length})
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setActiveTab('reels')}
-                    style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'reels' ? 2 : 0, borderBottomColor: '#ea580c' }}
+                    style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'reels' ? 2 : 0, borderBottomColor: '#2563EB' }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="film-outline" size={18} color={activeTab === 'reels' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
-                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'reels' ? '#ea580c' : '#6b7280' }}>
+                    <Ionicons name="film-outline" size={18} color={activeTab === 'reels' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'reels' ? '#2563EB' : '#64748B' }}>
                         {t('reels')} ({reelPosts.length})
                     </Text>
                 </TouchableOpacity>
                 {isOwner && (
                     <TouchableOpacity
                         onPress={() => setActiveTab('saved')}
-                        style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'saved' ? 2 : 0, borderBottomColor: '#ea580c' }}
+                        style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'saved' ? 2 : 0, borderBottomColor: '#2563EB' }}
                         activeOpacity={0.7}
                     >
-                        <Ionicons name={activeTab === 'saved' ? "bookmark" : "bookmark-outline"} size={18} color={activeTab === 'saved' ? "#ea580c" : "#6b7280"} style={{ marginRight: 6 }} />
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'saved' ? '#ea580c' : '#6b7280' }}>
+                        <Ionicons name={activeTab === 'saved' ? "bookmark" : "bookmark-outline"} size={18} color={activeTab === 'saved' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'saved' ? '#2563EB' : '#64748B' }}>
                             {t('saved')} ({savedPosts.length})
                         </Text>
                     </TouchableOpacity>
@@ -1107,7 +1107,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 });
                             }}
                         >
-                            <View style={{ flex: 1, backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
+                            <View style={{ flex: 1, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
                                 {isVideoMedia ? (
                                     <Video
                                         source={{ uri: `${POST_IMAGE_URL}${item.media[0]}` }}
@@ -1119,7 +1119,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 ) : meta?.thumbnail ? (
                                     <Image source={{ uri: meta.thumbnail }} style={{ width: '100%', height: '100%' }} />
                                 ) : (
-                                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#e5e7eb' }}>
+                                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E2E8F0' }}>
                                         <Ionicons name="film-outline" size={24} color="#9ca3af" />
                                     </View>
                                 )}
@@ -1154,7 +1154,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-white">
-                <ActivityIndicator size="large" color="#ea580c" />
+                <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
     }
@@ -1162,13 +1162,13 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
     if (!profile) {
         return (
             <View className="flex-1 justify-center items-center bg-white">
-                <Text className="text-gray-500">User not found</Text>
+                <Text className="text-slate-500">User not found</Text>
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+        <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
             {/* Floating Back Button Overlay */}
             <TouchableOpacity 
@@ -1202,12 +1202,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     viewabilityConfig={viewabilityConfig}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     ListEmptyComponent={
-                        <Text className="text-center text-gray-500 py-10">
+                        <Text className="text-center text-slate-500 py-10">
                             {activeTab === 'saved' ? (t('noSavedPosts') || 'No saved posts yet.') : `No ${activeTab} shared yet.`}
                         </Text>
                     }
                     contentContainerStyle={{ paddingBottom: 40 }}
-                    className="bg-gray-50"
+                    className="bg-slate-50"
                 />
             </Animated.View>
 
@@ -1215,9 +1215,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             <Modal animationType="slide" visible={modalVisible} onRequestClose={() => setModalVisible(false)} presentationStyle="pageSheet">
                 <View className="flex-1 bg-white">
                     <View className="flex-row items-center justify-between p-4 border-b border-gray-100">
-                        <Text className="text-xl font-bold text-gray-800">{editFamId ? 'Edit Family Member' : 'Add Family Member'}</Text>
+                        <Text className="text-xl font-bold text-blue-900">{editFamId ? 'Edit Family Member' : 'Add Family Member'}</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Text className="text-gray-500 text-lg">Cancel</Text>
+                            <Text className="text-slate-500 text-lg">Cancel</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView className="flex-1 p-5">
@@ -1227,9 +1227,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 {famPhoto ? (
                                     <Image source={{ uri: famPhoto }} className="w-24 h-24 rounded-full" />
                                 ) : (
-                                    <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center border border-gray-300">
+                                    <View className="w-24 h-24 rounded-full bg-slate-100 items-center justify-center border border-slate-300">
                                         <Ionicons name="camera" size={24} color="gray" />
-                                        <Text className="text-xs text-gray-500 mt-1">Photo</Text>
+                                        <Text className="text-xs text-slate-500 mt-1">Photo</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -1237,80 +1237,80 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
                         <View className="space-y-4 mb-20">
                             <View>
-                                <Text className="mb-1 text-gray-600">Name *</Text>
-                                <TextInput value={famName} onChangeText={setFamName} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Name *</Text>
+                                <TextInput value={famName} onChangeText={setFamName} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Relation *</Text>
-                                <TextInput value={famRelation} onChangeText={setFamRelation} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholder="e.g. Brother" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Relation *</Text>
+                                <TextInput value={famRelation} onChangeText={setFamRelation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. Brother" placeholderTextColor="#9ca3af" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Gender</Text>
+                                <Text className="mb-1 text-slate-500">Gender</Text>
                                 <View className="flex-row gap-4">
                                     {['Male', 'Female', 'Other'].map(g => (
-                                        <TouchableOpacity key={g} onPress={() => setFamGender(g)} className={`px-4 py-2 rounded-full border ${famGender === g ? 'bg-orange-50 border-orange-500' : 'border-gray-200'}`}>
-                                            <Text className={famGender === g ? 'text-orange-600' : 'text-gray-600'}>{g}</Text>
+                                        <TouchableOpacity key={g} onPress={() => setFamGender(g)} className={`px-4 py-2 rounded-full border ${famGender === g ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
+                                            <Text className={famGender === g ? 'text-blue-600' : 'text-slate-500'}>{g}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Marital Status</Text>
+                                <Text className="mb-1 text-slate-500">Marital Status</Text>
                                 <View className="flex-row gap-2 flex-wrap">
                                     {['Unmarried', 'Married', 'Divorced', 'Widow'].map(s => (
-                                        <TouchableOpacity key={s} onPress={() => setFamMaritalStatus(s)} className={`px-3 py-1.5 rounded-full border ${famMaritalStatus === s ? 'bg-orange-50 border-orange-500' : 'border-gray-200'}`}>
-                                            <Text className={`text-xs ${famMaritalStatus === s ? 'text-orange-600' : 'text-gray-600'}`}>{s}</Text>
+                                        <TouchableOpacity key={s} onPress={() => setFamMaritalStatus(s)} className={`px-3 py-1.5 rounded-full border ${famMaritalStatus === s ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
+                                            <Text className={`text-xs ${famMaritalStatus === s ? 'text-blue-600' : 'text-slate-500'}`}>{s}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Occupation</Text>
-                                <TextInput value={famOccupation} onChangeText={setFamOccupation} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholder="e.g. Engineer" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Occupation</Text>
+                                <TextInput value={famOccupation} onChangeText={setFamOccupation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. Engineer" placeholderTextColor="#9ca3af" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">DOB (YYYY-MM-DD)</Text>
-                                <TextInput value={famDob} onChangeText={setFamDob} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholder="2000-01-01" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">DOB (YYYY-MM-DD)</Text>
+                                <TextInput value={famDob} onChangeText={setFamDob} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="2000-01-01" placeholderTextColor="#9ca3af" />
                             </View>
 
                             <View className="flex-row gap-4">
                                 <View className="flex-1">
-                                    <Text className="mb-1 text-gray-600">Height</Text>
-                                    <TextInput value={famHeight} onChangeText={setFamHeight} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholder="e.g. 5.9" placeholderTextColor="#9ca3af" />
+                                    <Text className="mb-1 text-slate-500">Height</Text>
+                                    <TextInput value={famHeight} onChangeText={setFamHeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. 5.9" placeholderTextColor="#9ca3af" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="mb-1 text-gray-600">Weight</Text>
-                                    <TextInput value={famWeight} onChangeText={setFamWeight} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholder="e.g. 70kg" placeholderTextColor="#9ca3af" />
+                                    <Text className="mb-1 text-slate-500">Weight</Text>
+                                    <TextInput value={famWeight} onChangeText={setFamWeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. 70kg" placeholderTextColor="#9ca3af" />
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Education</Text>
-                                <TextInput value={famEducation} onChangeText={setFamEducation} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Education</Text>
+                                <TextInput value={famEducation} onChangeText={setFamEducation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Monthly Income</Text>
-                                <TextInput value={famIncome} onChangeText={setFamIncome} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" keyboardType="numeric" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Monthly Income</Text>
+                                <TextInput value={famIncome} onChangeText={setFamIncome} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" keyboardType="numeric" placeholderTextColor="#9ca3af" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Caste / Samaj</Text>
-                                <TextInput value={famCaste} onChangeText={setFamCaste} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Caste / Samaj</Text>
+                                <TextInput value={famCaste} onChangeText={setFamCaste} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Kuldevi</Text>
-                                <TextInput value={famKuldevi} onChangeText={setFamKuldevi} className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-900" placeholderTextColor="#9ca3af" />
+                                <Text className="mb-1 text-slate-500">Kuldevi</Text>
+                                <TextInput value={famKuldevi} onChangeText={setFamKuldevi} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
                             </View>
 
                         </View>
                     </ScrollView>
                     <View className="p-4 border-t border-gray-100">
-                        <TouchableOpacity onPress={handleAddMember} disabled={submittingFam} className="bg-orange-600 py-4 rounded-xl items-center">
+                        <TouchableOpacity onPress={handleAddMember} disabled={submittingFam} className="bg-blue-600 py-4 rounded-xl items-center">
                             {submittingFam ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">Save Member</Text>}
                         </TouchableOpacity>
                     </View>
@@ -1322,8 +1322,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 <View className="flex-1 bg-black/50 justify-center items-center p-4">
                     <View className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl">
                         <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-lg font-bold text-gray-900">Family Member Details</Text>
-                            <TouchableOpacity onPress={() => setViewModalVisible(false)} className="bg-gray-100 p-1 rounded-full">
+                            <Text className="text-lg font-bold text-blue-950">Family Member Details</Text>
+                            <TouchableOpacity onPress={() => setViewModalVisible(false)} className="bg-slate-100 p-1 rounded-full">
                                 <Ionicons name="close" size={20} color="gray" />
                             </TouchableOpacity>
                         </View>
@@ -1333,58 +1333,58 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 <View className="items-center mb-4">
                                     <Image
                                         source={{ uri: selectedMember.photo ? `${FAMILY_PHOTO_URL}${selectedMember.photo}` : 'https://via.placeholder.com/100' }}
-                                        className="w-24 h-24 rounded-full bg-gray-200 mb-2 border-2 border-orange-100"
+                                        className="w-24 h-24 rounded-full bg-slate-200 mb-2 border-2 border-orange-100"
                                     />
-                                    <Text className="text-xl font-bold text-gray-800">{selectedMember.name}</Text>
-                                    <Text className="text-orange-600 font-medium">{selectedMember.relation}</Text>
+                                    <Text className="text-xl font-bold text-blue-900">{selectedMember.name}</Text>
+                                    <Text className="text-blue-600 font-medium">{selectedMember.relation}</Text>
                                 </View>
 
                                 <View className="space-y-3">
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Gender</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.gender || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Gender</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.gender || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Marital Status</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.marital_status || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Marital Status</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.marital_status || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Occupation</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.occupation || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Occupation</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.occupation || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">DOB</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.dob || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">DOB</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.dob || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Education</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.education || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Education</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.education || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Income</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.income ? `₹${selectedMember.income}` : 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Income</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.income ? `₹${selectedMember.income}` : 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Height</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.height || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Height</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.height || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Weight</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.weight || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Weight</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.weight || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Caste</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.caste || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Caste</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.caste || 'N/A'}</Text>
                                     </View>
                                     <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-gray-500">Kuldevi</Text>
-                                        <Text className="flex-1 text-gray-800">{selectedMember.kuldevi || 'N/A'}</Text>
+                                        <Text className="w-28 text-slate-500">Kuldevi</Text>
+                                        <Text className="flex-1 text-blue-900">{selectedMember.kuldevi || 'N/A'}</Text>
                                     </View>
                                 </View>
                             </ScrollView>
                         )}
 
-                        <TouchableOpacity onPress={() => setViewModalVisible(false)} className="mt-6 bg-orange-600 py-3 rounded-xl items-center">
+                        <TouchableOpacity onPress={() => setViewModalVisible(false)} className="mt-6 bg-blue-600 py-3 rounded-xl items-center">
                             <Text className="text-white font-bold">Close</Text>
                         </TouchableOpacity>
                     </View>

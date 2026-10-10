@@ -108,7 +108,7 @@ const JobScreen = ({ navigation }: any) => {
 
     const renderFooter = () => {
         if (!isFetchingMore) return null;
-        return <ActivityIndicator style={{ marginVertical: 20 }} color="#ea580c" />;
+        return <ActivityIndicator style={{ marginVertical: 20 }} color="#2563EB" />;
     };
 
     const renderItem = ({ item }: { item: any }) => (
@@ -116,7 +116,7 @@ const JobScreen = ({ navigation }: any) => {
     );
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#ea580c" /></View>;
+        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
@@ -125,7 +125,7 @@ const JobScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">{t('jobsEducation')}</Text>
+                <Text className="text-xl font-bold text-blue-900">{t('jobsEducation')}</Text>
             </View>
 
             <FlashList
@@ -139,11 +139,11 @@ const JobScreen = ({ navigation }: any) => {
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={renderFooter}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />
                 }
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
-                        <Text className="text-gray-500 text-center text-lg">{t('noUpdatesAvailable')}</Text>
+                        <Text className="text-slate-500 text-center text-lg">{t('noUpdatesAvailable')}</Text>
                     </View>
                 }
             />
@@ -213,23 +213,23 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                     <Text className={`text-xs font-bold px-2 py-1 rounded self-start mb-2 ${item.type === 'job' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                         {item.type ? item.type.toUpperCase() : t('updateBadge')}
                     </Text>
-                    <Text className="text-lg font-bold text-gray-900 leading-6">{item.title}</Text>
+                    <Text className="text-lg font-bold text-blue-950 leading-6">{item.title}</Text>
                 </View>
                 <Text className="text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString()}</Text>
             </View>
 
-            <Text className="text-gray-600 text-sm leading-5 mb-2">
+            <Text className="text-slate-500 text-sm leading-5 mb-2">
                 {expanded ? renderDescription(description) : renderDescription(description.substring(0, 150) + (isLong ? '...' : ''))}
             </Text>
 
             {isLong && (
                 <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mb-4">
-                    <Text className="text-orange-600 font-bold text-xs">{expanded ? t('readLess') : t('readMore')}</Text>
+                    <Text className="text-blue-600 font-bold text-xs">{expanded ? t('readLess') : t('readMore')}</Text>
                 </TouchableOpacity>
             )}
 
             {imageUrl && (
-                <View className="mb-4 w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+                <View className="mb-4 w-full h-48 rounded-lg overflow-hidden bg-slate-100">
                     <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 </View>
             )}
@@ -239,7 +239,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
             <View className="flex-row gap-3 mt-2 flex-wrap">
                 {item.type === 'job' && (
                     <TouchableOpacity
-                        className="bg-orange-600 py-2.5 px-4 rounded-lg flex-row items-center"
+                        className="bg-blue-600 py-2.5 px-4 rounded-lg flex-row items-center"
                         onPress={handleApply}
                     >
                         <Text className="text-white font-bold text-sm">{t('applyNow')}</Text>

@@ -103,45 +103,45 @@ const AddGroupMembersScreen = ({ navigation, route }: any) => {
         const isSelected = selectedFriends.includes(item.partner_id);
         return (
             <TouchableOpacity 
-                className={`flex-row items-center p-3 mb-2 rounded-lg border ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'}`}
+                className={`flex-row items-center p-3 mb-2 rounded-lg border ${isSelected ? 'border-orange-500 bg-blue-50' : 'border-slate-200 bg-white'}`}
                 onPress={() => toggleFriendSelection(item.partner_id)}
             >
                 <View className="relative mr-3">
                     <Image
                         source={{ uri: item.profile_photo ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                        className="w-10 h-10 rounded-full bg-gray-200"
+                        className="w-10 h-10 rounded-full bg-slate-200"
                     />
                     <View 
                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
                     />
                 </View>
                 <Text className="flex-1 text-base font-medium">{item.full_name}</Text>
-                {isSelected && <Ionicons name="checkmark-circle" size={24} color="#ea580c" />}
+                {isSelected && <Ionicons name="checkmark-circle" size={24} color="#2563EB" />}
             </TouchableOpacity>
         );
     };
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center p-4 border-b border-gray-100 bg-orange-50">
+            <View className="flex-row items-center p-4 border-b border-gray-100 bg-blue-50">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-                    <Ionicons name="arrow-back" size={24} color="#ea580c" />
+                    <Ionicons name="arrow-back" size={24} color="#2563EB" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold flex-1 text-orange-600">Add Members</Text>
+                <Text className="text-xl font-bold flex-1 text-blue-600">Add Members</Text>
                 <TouchableOpacity onPress={addMembers} disabled={loading || selectedFriends.length === 0}>
                     {loading ? (
-                        <ActivityIndicator color="#ea580c" />
+                        <ActivityIndicator color="#2563EB" />
                     ) : (
-                        <Text className={`font-bold text-base ${selectedFriends.length > 0 ? 'text-orange-600' : 'text-orange-300'}`}>Add</Text>
+                        <Text className={`font-bold text-base ${selectedFriends.length > 0 ? 'text-blue-600' : 'text-orange-300'}`}>Add</Text>
                     )}
                 </TouchableOpacity>
             </View>
 
             <View className="flex-1 p-4">
                 <View className="mb-4">
-                    <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Search Members</Text>
-                    <View className="flex-row items-center bg-gray-50 rounded-lg px-3 py-1 border border-orange-100">
-                        <Ionicons name="search" size={18} color="#ea580c" />
+                    <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Search Members</Text>
+                    <View className="flex-row items-center bg-slate-50 rounded-lg px-3 py-1 border border-orange-100">
+                        <Ionicons name="search" size={18} color="#2563EB" />
                         <TextInput
                             className="flex-1 ml-2 text-base p-1"
                             placeholder="Type name to search..."
@@ -156,17 +156,17 @@ const AddGroupMembersScreen = ({ navigation, route }: any) => {
                     </View>
                 </View>
 
-                <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Select Members ({selectedFriends.length} selected)</Text>
+                <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Select Members ({selectedFriends.length} selected)</Text>
 
                 {fetching ? (
-                    <ActivityIndicator color="#ea580c" style={{ marginTop: 20 }} />
+                    <ActivityIndicator color="#2563EB" style={{ marginTop: 20 }} />
                 ) : (
                     <FlashList
                         data={filteredUsers}
                         renderItem={renderFriend}
                         keyExtractor={(item, index) => item.partner_id ? `user_${item.partner_id}` : index.toString()}
                         contentContainerStyle={{ paddingBottom: 100 }}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-4">No connected members found.</Text>}
+                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-4">No connected members found.</Text>}
                     />
                 )}
             </View>

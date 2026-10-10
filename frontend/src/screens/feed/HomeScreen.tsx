@@ -477,6 +477,9 @@ const HomeScreen = () => {
             if (item.isMine && !hasStory) {
                 navigation.navigate('CreateStory');
             } else {
+                if (!item.isMine) {
+                    setStories(prev => prev.map(s => s.id === item.id ? { ...s, unseen_count: 0 } : s));
+                }
                 navigation.navigate('StoryViewer', {
                     stories: item.stories,
                     initialIndex: 0,
@@ -494,11 +497,11 @@ const HomeScreen = () => {
                 {photoUrl ? (
                     <Image
                         source={{ uri: `${getImageUrl(photoUrl)}` }}
-                        style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#f3f4f6' }}
+                        style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#E2E8F0' }}
                     />
                 ) : (
-                    <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 18 }}>
+                    <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: 18 }}>
                             {item.isMine ? (user?.name ? user.name.charAt(0).toUpperCase() : 'Y') : (item.name ? item.name.charAt(0).toUpperCase() : 'U')}
                         </Text>
                     </View>
@@ -514,7 +517,7 @@ const HomeScreen = () => {
                             {renderAvatarContent()}
                         </StoryRing>
                     ) : (
-                        <View style={{ width: 62, height: 62, borderRadius: 31, padding: 3, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}>
+                        <View style={{ width: 62, height: 62, borderRadius: 31, padding: 3, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}>
                             <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'white', padding: 2, justifyContent: 'center', alignItems: 'center' }}>
                                 {renderAvatarContent()}
                             </View>
@@ -524,14 +527,14 @@ const HomeScreen = () => {
                     {item.isMine && (
                         <TouchableOpacity 
                             onPress={() => navigation.navigate('CreateStory')}
-                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#3b82f6', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white', zIndex: 10 }}
+                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#2563EB', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white', zIndex: 10 }}
                             activeOpacity={0.8}
                         >
                             <Ionicons name="add" size={14} color="white" />
                         </TouchableOpacity>
                     )}
                 </TouchableOpacity>
-                <Text style={{ fontSize: 11, color: '#374151', fontWeight: '500', maxWidth: 65, textAlign: 'center' }} numberOfLines={1}>
+                <Text style={{ fontSize: 11, color: '#334155', fontWeight: '500', maxWidth: 65, textAlign: 'center' }} numberOfLines={1}>
                     {item.name}
                 </Text>
             </View>
@@ -567,7 +570,7 @@ const HomeScreen = () => {
         <>
             <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, marginBottom: 0, flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
-                    <View style={{ width: 46, height: 46, borderRadius: 18, borderWidth: 2, borderColor: '#ea580c', backgroundColor: 'white', padding: 2, overflow: 'hidden' }}>
+                    <View style={{ width: 46, height: 46, borderRadius: 18, borderWidth: 2, borderColor: '#2563EB', backgroundColor: 'white', padding: 2, overflow: 'hidden' }}>
                         <Image
                             source={{ uri: user?.profile_photo ? `${getImageUrl(user?.profile_photo)}` : 'https://via.placeholder.com/100' }}
                             style={{ width: '100%', height: '100%', borderRadius: 14 }}
@@ -585,7 +588,7 @@ const HomeScreen = () => {
 
             {/* Stories Rail */}
             <View style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#f1f5f9' }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', letterSpacing: 0.5, color: '#000000', marginBottom: 16, marginLeft: 2 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', letterSpacing: 0.5, color: '#172554', marginBottom: 16, marginLeft: 2 }}>
                     STORIES
                 </Text>
                 <FlatList
@@ -603,11 +606,11 @@ const HomeScreen = () => {
         <View className="bg-white py-4 mb-2 border-y border-gray-100">
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
-                    <Ionicons name="people" size={18} color="#ea580c" />
-                    <Text className="font-bold text-gray-800 text-sm ml-2">{t('peopleYouMayKnow')}</Text>
+                    <Ionicons name="people" size={18} color="#2563EB" />
+                    <Text className="font-bold text-blue-900 text-sm ml-2">{t('peopleYouMayKnow')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.push('FollowList', { userId: user?.id, action: 'fetch_all_members', title: 'All Members' })} activeOpacity={0.7}>
-                    <Text className="text-orange-600 font-bold text-xs">{t('viewAll') || 'See All'}</Text>
+                    <Text className="text-blue-600 font-bold text-xs">{t('viewAll') || 'See All'}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -627,21 +630,21 @@ const HomeScreen = () => {
                             {item.photo ? (
                                 <Image
                                     source={{ uri: `${getImageUrl(item.photo)}` }}
-                                    className="w-14 h-14 rounded-full bg-gray-100 mb-2.5 border border-orange-100"
+                                    className="w-14 h-14 rounded-full bg-slate-100 mb-2.5 border border-orange-100"
                                 />
                             ) : (
-                                <View className="w-14 h-14 rounded-full bg-orange-50 items-center justify-center mb-2.5 border border-orange-100">
-                                    <Text className="text-orange-600 font-bold text-lg">{item.full_name?.[0] || item.name?.[0] || '?'}</Text>
+                                <View className="w-14 h-14 rounded-full bg-blue-50 items-center justify-center mb-2.5 border border-orange-100">
+                                    <Text className="text-blue-600 font-bold text-lg">{item.full_name?.[0] || item.name?.[0] || '?'}</Text>
                                 </View>
                             )}
-                            <Text className="text-gray-800 font-semibold text-xs text-center px-1" numberOfLines={1}>{item.full_name || item.name}</Text>
+                            <Text className="text-blue-900 font-semibold text-xs text-center px-1" numberOfLines={1}>{item.full_name || item.name}</Text>
                             {item.city ? <Text className="text-gray-400 text-[10px] mt-0.5" numberOfLines={1}>{item.city}</Text> : null}
                             <TouchableOpacity
                                 onPress={() => handleFollowUser(item.id?.toString())}
-                                className={`mt-3 px-4 py-1.5 rounded-full ${isFollowed ? 'bg-gray-100 border border-gray-200' : 'bg-orange-600'}`}
+                                className={`mt-3 px-4 py-1.5 rounded-full ${isFollowed ? 'bg-slate-100 border border-slate-200' : 'bg-blue-600'}`}
                                 activeOpacity={0.7}
                             >
-                                <Text className={`text-[10px] font-bold ${isFollowed ? 'text-gray-500' : 'text-white'}`}>
+                                <Text className={`text-[10px] font-bold ${isFollowed ? 'text-slate-500' : 'text-white'}`}>
                                     {isFollowed ? t('followingStatus') : t('followStatus')}
                                 </Text>
                             </TouchableOpacity>
@@ -656,11 +659,11 @@ const HomeScreen = () => {
         <View className="bg-white py-4 mb-2 border-y border-gray-100">
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
-                    <Ionicons name="videocam" size={18} color="#ea580c" />
-                    <Text className="font-bold text-gray-800 text-sm ml-2">{t('reels')}</Text>
+                    <Ionicons name="videocam" size={18} color="#2563EB" />
+                    <Text className="font-bold text-blue-900 text-sm ml-2">{t('reels')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.navigate('Reels')} activeOpacity={0.7}>
-                    <Text className="text-orange-600 font-bold text-xs">{t('viewAll')}</Text>
+                    <Text className="text-blue-600 font-bold text-xs">{t('viewAll')}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -674,13 +677,13 @@ const HomeScreen = () => {
                         return (
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('CreateReel')}
-                                className="mr-3 w-32 h-52 rounded-2xl bg-orange-50/50 items-center justify-center border border-orange-100 border-dashed"
+                                className="mr-3 w-32 h-52 rounded-2xl bg-blue-50/50 items-center justify-center border border-orange-100 border-dashed"
                                 activeOpacity={0.7}
                             >
-                                <View className="bg-orange-100 w-10 h-10 rounded-full items-center justify-center mb-2">
-                                    <Ionicons name="add" size={24} color="#ea580c" />
+                                <View className="bg-blue-100 w-10 h-10 rounded-full items-center justify-center mb-2">
+                                    <Ionicons name="add" size={24} color="#2563EB" />
                                 </View>
-                                <Text className="text-orange-700 font-bold text-xs">{t('create')}</Text>
+                                <Text className="text-blue-950 font-bold text-xs">{t('create')}</Text>
                             </TouchableOpacity>
                         );
                     }
@@ -791,19 +794,19 @@ const HomeScreen = () => {
 
     if (loading) {
         return (
-            <View className="flex-1 justify-center items-center bg-orange-50">
-                <ActivityIndicator size="large" color="#ea580c" />
+            <View className="flex-1 justify-center items-center bg-blue-50">
+                <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#f9fafb]" edges={['top']}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1, zIndex: 10 }}>
+        <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1, zIndex: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Image source={require('../../../assets/logo.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
+                    <Image source={require('../../../assets/icon.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
                     <View>
-                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#ea580c', fontStyle: 'italic', letterSpacing: -0.3 }}>
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#2563EB', fontStyle: 'italic', letterSpacing: -0.3 }}>
                             LinkUp
                         </Text>
                         {user?.is_business == 1 && (
@@ -818,21 +821,21 @@ const HomeScreen = () => {
                     <TouchableOpacity
                         onPress={() => navigation.navigate('Search')}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}
                     >
                         <Ionicons name="search-outline" size={18} color="#374151" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={handlePlusPress}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#ea580c12', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#2563EB12', alignItems: 'center', justifyContent: 'center' }}
                     >
-                        <Ionicons name="add" size={20} color="#ea580c" />
+                        <Ionicons name="add" size={20} color="#2563EB" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('Notifications')}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                     >
                         <Ionicons name="notifications-outline" size={18} color="#374151" />
                         {notificationCount > 0 && (
@@ -846,7 +849,7 @@ const HomeScreen = () => {
                     <TouchableOpacity
                         onPress={() => navigation.navigate('Chats')}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                     >
                         <Ionicons name="chatbubbles-outline" size={18} color="#374151" />
                         {chatCount > 0 && (
@@ -872,23 +875,23 @@ const HomeScreen = () => {
                 }}
                 extraData={activePostId}
                 ListHeaderComponent={renderHeader}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 // @ts-ignore
                 estimatedItemSize={600}
-                contentContainerStyle={{ paddingBottom: 100, backgroundColor: '#f9fafb' }}
+                contentContainerStyle={{ paddingBottom: 100, backgroundColor: '#F8FAFC' }}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20">
                         <Ionicons name="newspaper-outline" size={48} color="#ccc" />
-                        <Text className="text-gray-500 mt-4">{t('noPosts')}</Text>
+                        <Text className="text-slate-500 mt-4">{t('noPosts')}</Text>
                     </View>
                 }
                 onEndReached={() => fetchNextPage()}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={isFetchingMore ? (
                     <View style={{ paddingVertical: 20 }}>
-                        <ActivityIndicator color="#ea580c" />
+                        <ActivityIndicator color="#2563EB" />
                     </View>
                 ) : null}
             />
@@ -901,13 +904,13 @@ const HomeScreen = () => {
                     position: 'absolute',
                     bottom: 24,
                     right: 20,
-                    backgroundColor: '#ea580c',
+                    backgroundColor: '#2563EB',
                     width: 50,
                     height: 50,
                     borderRadius: 25,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    shadowColor: '#ea580c',
+                    shadowColor: '#2563EB',
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.3,
                     shadowRadius: 8,
@@ -931,22 +934,22 @@ const HomeScreen = () => {
                 >
                     <View className="bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
                         <View className="items-center mb-6">
-                            <View className="w-12 h-1.5 bg-gray-200 rounded-full mb-6" />
-                            <Text className="text-xl font-bold text-gray-800">{t('createNew')}</Text>
-                            <Text className="text-gray-500 text-sm mt-1">{t('whatToShare')}</Text>
+                            <View className="w-12 h-1.5 bg-slate-200 rounded-full mb-6" />
+                            <Text className="text-xl font-bold text-blue-900">{t('createNew')}</Text>
+                            <Text className="text-slate-500 text-sm mt-1">{t('whatToShare')}</Text>
                         </View>
 
                         <View className="gap-3">
                             <TouchableOpacity
-                                className="flex-row items-center p-4 bg-orange-50 rounded-2xl border border-orange-100"
+                                className="flex-row items-center p-4 bg-blue-50 rounded-2xl border border-orange-100"
                                 onPress={() => { setShowUploadModal(false); navigation.navigate('CreatePost'); }}
                             >
                                 <View className="w-12 h-12 bg-white rounded-xl items-center justify-center shadow-sm">
-                                    <Ionicons name="create" size={24} color="#ea580c" />
+                                    <Ionicons name="create" size={24} color="#2563EB" />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-gray-800">Create Post</Text>
-                                    <Text className="text-gray-500 text-xs">Share your photos and thoughts</Text>
+                                    <Text className="text-base font-bold text-blue-900">Create Post</Text>
+                                    <Text className="text-slate-500 text-xs">Share your photos and thoughts</Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color="#ccc" />
                             </TouchableOpacity>
@@ -959,8 +962,8 @@ const HomeScreen = () => {
                                     <Ionicons name="videocam" size={24} color="#8b5cf6" />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-gray-800">Create Reel</Text>
-                                    <Text className="text-gray-500 text-xs">Record and share short videos</Text>
+                                    <Text className="text-base font-bold text-blue-900">Create Reel</Text>
+                                    <Text className="text-slate-500 text-xs">Record and share short videos</Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color="#ccc" />
                             </TouchableOpacity>
@@ -973,8 +976,8 @@ const HomeScreen = () => {
                                     <Ionicons name="camera" size={24} color="#3b82f6" />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-gray-800">Add Story</Text>
-                                    <Text className="text-gray-500 text-xs">Share a moment for 24 hours</Text>
+                                    <Text className="text-base font-bold text-blue-900">Add Story</Text>
+                                    <Text className="text-slate-500 text-xs">Share a moment for 24 hours</Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color="#ccc" />
                             </TouchableOpacity>

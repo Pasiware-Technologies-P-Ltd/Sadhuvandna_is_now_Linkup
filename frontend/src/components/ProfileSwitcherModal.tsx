@@ -161,21 +161,21 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                 {item.photo ? (
                     <Image 
                         source={{ uri: `${WEBSITE_URL}/uploads/photo/${item.photo}` }} 
-                        style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6' }} 
+                        style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#E2E8F0' }} 
                     />
                 ) : (
-                    <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#9ca3af' }}>
                             {getInitials(item.name)}
                         </Text>
                     </View>
                 )}
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{item.name}</Text>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{item.name}</Text>
                     {item.type === 'Page' && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                            <View style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }}>
-                                <Text style={{ fontSize: 11, color: '#4b5563', fontWeight: 'bold' }}>Page</Text>
+                            <View style={{ backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }}>
+                                <Text style={{ fontSize: 11, color: '#64748B', fontWeight: 'bold' }}>Page</Text>
                             </View>
                         </View>
                     )}
@@ -200,7 +200,7 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                     {loading || switching ? (
                         <View style={{ padding: 40, alignItems: 'center' }}>
                             <ActivityIndicator size="large" color="#0064e0" />
-                            <Text style={{ marginTop: 12, color: '#6b7280' }}>{switching ? 'Switching...' : 'Loading...'}</Text>
+                            <Text style={{ marginTop: 12, color: '#64748B' }}>{switching ? 'Switching...' : 'Loading...'}</Text>
                         </View>
                     ) : (
                         <ScrollView style={{ marginTop: 10 }} contentContainerStyle={{ paddingBottom: 20 }}>
@@ -220,10 +220,10 @@ const ProfileSwitcherModal = ({ visible, onClose, onProfileSwitched }: ProfileSw
                                     marginTop: 4
                                 }}
                             >
-                                <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Ionicons name="add" size={24} color="#111827" />
+                                <View style={{ width: 44, height: 44, borderRadius: 22, marginRight: 16, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="add" size={24} color="#172554" />
                                 </View>
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>Create Business Page</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>Create Business Page</Text>
                             </TouchableOpacity>
                         </ScrollView>
                     )}

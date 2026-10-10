@@ -125,20 +125,20 @@ const CreateGroupScreen = ({ navigation }: any) => {
         const isSelected = selectedFriends.includes(item.partner_id);
         return (
             <TouchableOpacity 
-                className={`flex-row items-center p-3 mb-2 rounded-lg border ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'}`}
+                className={`flex-row items-center p-3 mb-2 rounded-lg border ${isSelected ? 'border-orange-500 bg-blue-50' : 'border-slate-200 bg-white'}`}
                 onPress={() => toggleFriendSelection(item.partner_id)}
             >
                 <View className="relative mr-3">
                     <Image
                         source={{ uri: item.profile_photo ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                        className="w-10 h-10 rounded-full bg-gray-200"
+                        className="w-10 h-10 rounded-full bg-slate-200"
                     />
                     <View 
                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
                     />
                 </View>
                 <Text className="flex-1 text-base font-medium">{item.full_name}</Text>
-                {isSelected && <Ionicons name="checkmark-circle" size={24} color="#ea580c" />}
+                {isSelected && <Ionicons name="checkmark-circle" size={24} color="#2563EB" />}
             </TouchableOpacity>
         );
     };
@@ -151,21 +151,21 @@ const CreateGroupScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
                 <Text className="text-xl font-bold flex-1">Create Group</Text>
                 <TouchableOpacity onPress={createGroup} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#ea580c" /> : <Text className="text-orange-600 font-bold text-base">Create</Text>}
+                    {loading ? <ActivityIndicator color="#2563EB" /> : <Text className="text-blue-600 font-bold text-base">Create</Text>}
                 </TouchableOpacity>
             </View>
 
             <View className="p-4 flex-1">
                 <View className="items-center mb-6">
                     <TouchableOpacity onPress={pickImage} className="relative">
-                        <View className="w-24 h-24 rounded-full bg-gray-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
+                        <View className="w-24 h-24 rounded-full bg-slate-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
                             {groupIcon ? (
                                 <Image source={{ uri: groupIcon.uri }} className="w-full h-full" />
                             ) : (
                                 <Ionicons name="camera-outline" size={40} color="#9ca3af" />
                             )}
                         </View>
-                        <View className="absolute bottom-0 right-0 bg-orange-600 rounded-full p-2 border-2 border-white">
+                        <View className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 border-2 border-white">
                             <Ionicons name="add" size={16} color="white" />
                         </View>
                     </TouchableOpacity>
@@ -173,15 +173,15 @@ const CreateGroupScreen = ({ navigation }: any) => {
 
                 <TextInput
                     placeholder="Group Name"
-                    className="border border-gray-300 rounded-lg p-3 mb-4 text-base"
+                    className="border border-slate-300 rounded-lg p-3 mb-4 text-base"
                     value={groupName}
                     onChangeText={setGroupName}
                 />
                 
                 <View className="mb-4">
-                    <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Search Members</Text>
-                    <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-1">
-                        <Ionicons name="search" size={18} color="#6b7280" />
+                    <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Search Members</Text>
+                    <View className="flex-row items-center bg-slate-100 rounded-lg px-3 py-1">
+                        <Ionicons name="search" size={18} color="#64748B" />
                         <TextInput
                             className="flex-1 ml-2 text-base p-1"
                             placeholder="Type name to search..."
@@ -196,17 +196,17 @@ const CreateGroupScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Select Members ({selectedFriends.length} selected)</Text>
+                <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Select Members ({selectedFriends.length} selected)</Text>
                 
                 {fetching ? (
-                    <ActivityIndicator color="#ea580c" className="mt-4" />
+                    <ActivityIndicator color="#2563EB" className="mt-4" />
                 ) : (
                     <FlashList
                         data={filteredUsers}
                         renderItem={renderFriend}
                         keyExtractor={(item, index) => item.partner_id ? `user_${item.partner_id}` : index.toString()}
                         contentContainerStyle={{ paddingBottom: 100 }}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-4">No connected members found.</Text>}
+                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-4">No connected members found.</Text>}
                     />
                 )}
             </View>

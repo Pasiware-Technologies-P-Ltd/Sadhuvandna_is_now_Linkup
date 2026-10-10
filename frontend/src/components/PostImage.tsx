@@ -54,7 +54,7 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) =>
 
     if (!uri || error) {
         return (
-            <View className="w-full h-64 bg-gray-100 rounded-xl justify-center items-center">
+            <View className="w-full h-64 bg-slate-100 rounded-xl justify-center items-center">
                 <Text className="text-gray-400 text-xs">Image not available</Text>
             </View>
         );
@@ -70,7 +70,7 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) =>
     const optimizedUri = isDetail ? ImageService.getDetailImageUrl(uri) : ImageService.getFeedImageUrl(uri);
 
     return (
-        <View className="w-full bg-gray-50 rounded-xl overflow-hidden relative">
+        <View className="w-full bg-slate-50 rounded-xl overflow-hidden relative">
             <Image
                 source={{ uri: optimizedUri }}
                 style={{ width: '100%', aspectRatio: aspect }}
@@ -84,8 +84,8 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) =>
                 }}
             />
             {loading && (
-                <View className="absolute inset-0 justify-center items-center bg-gray-100">
-                    <ActivityIndicator color="#ea580c" size="small" />
+                <View className="absolute inset-0 justify-center items-center bg-slate-100">
+                    <ActivityIndicator color="#2563EB" size="small" />
                 </View>
             )}
         </View>

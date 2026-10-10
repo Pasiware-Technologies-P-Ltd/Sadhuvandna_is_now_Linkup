@@ -255,12 +255,12 @@ const CreateReelScreen = () => {
         setMusicModalVisible(false);
     };
 
-    if (!permission || !micPermission) return <View style={styles.loading}><ActivityIndicator size="large" color="#ea580c" /></View>;
+    if (!permission || !micPermission) return <View style={styles.loading}><ActivityIndicator size="large" color="#2563EB" /></View>;
 
     if (!permission.granted || !micPermission.granted) {
         return (
             <View style={styles.container}>
-                <Ionicons name="videocam-off-outline" size={64} color="#ea580c" style={{ marginBottom: 20 }} />
+                <Ionicons name="videocam-off-outline" size={64} color="#2563EB" style={{ marginBottom: 20 }} />
                 <Text style={styles.text}>Camera and Microphone access are required to make Reels</Text>
                 <TouchableOpacity onPress={handleGrantPermissions} style={styles.button}>
                     <Text style={styles.buttonText}>Grant Permissions</Text>
@@ -346,7 +346,7 @@ const CreateReelScreen = () => {
                             setShowFilters(false);
                         }}
                     >
-                        <Ionicons name="speedometer-outline" size={26} color={showSpeedSelector ? "#ea580c" : "white"} />
+                        <Ionicons name="speedometer-outline" size={26} color={showSpeedSelector ? "#2563EB" : "white"} />
                         <Text style={styles.sideText}>{selectedSpeed}x</Text>
                     </TouchableOpacity>
 
@@ -354,7 +354,7 @@ const CreateReelScreen = () => {
                         style={styles.sideBtn}
                         onPress={() => setFlash((f: string) => f === 'off' ? 'on' : 'off')}
                     >
-                        <Ionicons name={flash === 'off' ? "flash-off" : "flash"} size={26} color={flash === 'on' ? "#ea580c" : "white"} />
+                        <Ionicons name={flash === 'off' ? "flash-off" : "flash"} size={26} color={flash === 'on' ? "#2563EB" : "white"} />
                         <Text style={styles.sideText}>{flash === 'on' ? 'FLASH ON' : 'FLASH OFF'}</Text>
                     </TouchableOpacity>
 
@@ -362,7 +362,7 @@ const CreateReelScreen = () => {
                         style={styles.sideBtn}
                         onPress={() => setTimer(t => t === 0 ? 3 : t === 3 ? 10 : 0)}
                     >
-                        <Ionicons name="stopwatch-outline" size={26} color={timer > 0 ? "#ea580c" : "white"} />
+                        <Ionicons name="stopwatch-outline" size={26} color={timer > 0 ? "#2563EB" : "white"} />
                         <Text style={styles.sideText}>{timer > 0 ? `${timer}s` : 'Off'}</Text>
                     </TouchableOpacity>
 
@@ -378,7 +378,7 @@ const CreateReelScreen = () => {
                         style={styles.sideBtn}
                         onPress={() => setShowGrid(!showGrid)}
                     >
-                        <Ionicons name="grid-outline" size={26} color={showGrid ? "#ea580c" : "white"} />
+                        <Ionicons name="grid-outline" size={26} color={showGrid ? "#2563EB" : "white"} />
                         <Text style={styles.sideText}>Grid</Text>
                     </TouchableOpacity>
                 </View>
@@ -491,17 +491,17 @@ const CreateReelScreen = () => {
                             </View>
 
                             {searching ? (
-                                <ActivityIndicator color="#ea580c" style={{ marginTop: 50 }} />
+                                <ActivityIndicator color="#2563EB" style={{ marginTop: 50 }} />
                             ) : (
                                 <ScrollView style={{ flex: 1, padding: 20 }}>
                                     {searchResults.map(item => (
                                         <TouchableOpacity key={item.id} style={styles.musicItem} onPress={() => selectMusic(item)}>
-                                            <Image source={require('../../../assets/logo.png')} style={styles.musicThumb} />
+                                            <Image source={require('../../../assets/icon.png')} style={styles.musicThumb} />
                                             <View style={{ flex: 1, marginLeft: 15 }}>
                                                 <Text style={styles.musicTitle}>{item.title}</Text>
                                                 <Text style={styles.musicArtist}>{item.artist}</Text>
                                             </View>
-                                            <Ionicons name="add-circle" size={28} color="#ea580c" />
+                                            <Ionicons name="add-circle" size={28} color="#2563EB" />
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     camera: { flex: 1 },
     loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' },
     text: { color: 'white', textAlign: 'center', marginBottom: 20 },
-    button: { backgroundColor: '#ea580c', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 25 },
+    button: { backgroundColor: '#2563EB', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 25 },
     buttonText: { color: 'white', fontWeight: 'bold' },
     topControls: {
         position: 'absolute',
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     },
     progressBar: {
         height: '100%',
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
         borderRadius: 2,
     },
     musicSelector: {
@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
     },
     recordingActive: { transform: [{ scale: 1.25 }] },
     innerRecordBtn: { width: 62, height: 62, borderRadius: 31, backgroundColor: 'white' },
-    progressRing: { position: 'absolute', borderWidth: 4, borderColor: '#ea580c', borderRadius: 100 },
+    progressRing: { position: 'absolute', borderWidth: 4, borderColor: '#2563EB', borderRadius: 100 },
     hintText: { color: 'white', fontSize: 12, fontWeight: 'bold', marginTop: 12, letterSpacing: 1 },
     speedPanel: {
         position: 'absolute',
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 2,
     },
     speedBadgeActive: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
     },
     speedBadgeText: {
         color: '#ccc',

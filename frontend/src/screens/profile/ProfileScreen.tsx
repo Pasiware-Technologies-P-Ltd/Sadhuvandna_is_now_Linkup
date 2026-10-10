@@ -121,11 +121,11 @@ const ProfileScreen = ({ navigation }: any) => {
     if (!user) return <View style={{ flex: 1, backgroundColor: 'white' }} />;
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+        <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
             <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
             <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
                 {/* Banner Cover Image Backdrop */}
-                <View style={{ height: 145, backgroundColor: '#ea580c', position: 'relative', overflow: 'hidden' }}>
+                <View style={{ height: 145, backgroundColor: '#2563EB', position: 'relative', overflow: 'hidden' }}>
                     {user.cover_photo ? (
                         <Image
                             source={{ uri: `${PHOTO_URL}${user.cover_photo}` }}
@@ -163,10 +163,10 @@ const ProfileScreen = ({ navigation }: any) => {
                             {user.profile_photo ? (
                                 <Image
                                     source={{ uri: `${PHOTO_URL}${user.profile_photo}` }}
-                                    style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#f3f4f6' }}
+                                    style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0' }}
                                 />
                             ) : (
-                                <View style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}>
                                     <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#9ca3af' }}>
                                         {getInitials(user.name)}
                                     </Text>
@@ -177,7 +177,7 @@ const ProfileScreen = ({ navigation }: any) => {
                         {/* Stats Bar */}
                         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                             <View style={{ alignItems: 'center' }}>
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.posts || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.posts || 0}</Text>
                                 <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                             </View>
                             <TouchableOpacity
@@ -185,7 +185,7 @@ const ProfileScreen = ({ navigation }: any) => {
                                 style={{ alignItems: 'center' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.followers || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.followers || 0}</Text>
                                 <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -193,7 +193,7 @@ const ProfileScreen = ({ navigation }: any) => {
                                 style={{ alignItems: 'center' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{followStats.following || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.following || 0}</Text>
                                 <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -202,7 +202,7 @@ const ProfileScreen = ({ navigation }: any) => {
                     {/* User Profile Details */}
                     <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 22, fontWeight: '900', color: '#111827' }}>
+                            <Text style={{ fontSize: 22, fontWeight: '900', color: '#172554' }}>
                                 {user.name} {user.is_business == 1 && <Ionicons name="checkmark-circle" size={18} color="#0064e0" />}
                             </Text>
                             
@@ -218,8 +218,8 @@ const ProfileScreen = ({ navigation }: any) => {
                                         )}
                                         {user.city && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="location-outline" size={14} color="#6b7280" />
-                                                <Text style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>{user.city}</Text>
+                                                <Ionicons name="location-outline" size={14} color="#64748B" />
+                                                <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 6 }}>{user.city}</Text>
                                             </View>
                                         )}
                                     </>
@@ -227,14 +227,14 @@ const ProfileScreen = ({ navigation }: any) => {
                                     <>
                                         {user.cast && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="people-outline" size={14} color="#ea580c" />
-                                                <Text style={{ fontSize: 13, color: '#ea580c', fontWeight: 'bold', marginLeft: 6 }}>Caste: {user.cast}</Text>
+                                                <Ionicons name="people-outline" size={14} color="#2563EB" />
+                                                <Text style={{ fontSize: 13, color: '#2563EB', fontWeight: 'bold', marginLeft: 6 }}>Caste: {user.cast}</Text>
                                             </View>
                                         )}
                                         {user.city && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="location-outline" size={14} color="#6b7280" />
-                                                <Text style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>{user.city}</Text>
+                                                <Ionicons name="location-outline" size={14} color="#64748B" />
+                                                <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 6 }}>{user.city}</Text>
                                             </View>
                                         )}
                                     </>
@@ -245,10 +245,10 @@ const ProfileScreen = ({ navigation }: any) => {
                         {/* Switch Profile Button */}
                         <TouchableOpacity 
                             onPress={() => setSwitcherVisible(true)} 
-                            style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
+                            style={{ backgroundColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
                         >
-                            <Ionicons name="swap-horizontal" size={16} color="#4b5563" />
-                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#4b5563' }}>{t('switchProfile')}</Text>
+                            <Ionicons name="swap-horizontal" size={16} color="#64748B" />
+                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#64748B' }}>{t('switchProfile')}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -256,7 +256,7 @@ const ProfileScreen = ({ navigation }: any) => {
                     <View style={{ flexDirection: 'row', gap: 12, marginVertical: 18 }}>
                         <TouchableOpacity
                             onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
-                            style={{ flex: 1, backgroundColor: '#f3f4f6', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
+                            style={{ flex: 1, backgroundColor: '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
                           <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
@@ -264,10 +264,10 @@ const ProfileScreen = ({ navigation }: any) => {
                         
                         <TouchableOpacity
                             onPress={() => navigation.navigate('PublicProfile', { userId: user.id })}
-                            style={{ flex: 1, backgroundColor: '#fff7ed', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffedd5' }}
+                            style={{ flex: 1, backgroundColor: '#EFF6FF', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DBEAFE' }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ea580c' }}>{t('publicFeed')}</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#2563EB' }}>{t('publicFeed')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -279,18 +279,18 @@ const ProfileScreen = ({ navigation }: any) => {
                         {user.is_business == 1 ? t('businessTools') : t('explore')}
                     </Text>
                     
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         {(user.is_business == 1 ? [
                             { label: t('myPosts'), icon: "grid-outline", route: "MyPosts", color: "#3b82f6" },
-                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#ea580c" },
+                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#2563EB" },
                             { label: t('gallery'), icon: "images-outline", route: "Gallery", color: "#eab308" },
                             { label: t('festivalPoster'), icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
                             { label: t('addManager'), icon: "people-outline", route: "ComingSoon", color: "#10b981" },
                             { label: t('smartCard'), icon: "id-card-outline", route: "SmartCard", color: "#8b5cf6" },
                         ] : [
-                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#ea580c" },
+                            { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#2563EB" },
                             { label: t('jobs'), icon: "briefcase-outline", route: "Jobs", color: "#10b981" },
-                            { label: t('shokSandesh'), icon: "reader-outline", route: "ShokSanvedana", color: "#6b7280" },
+                            { label: t('shokSandesh'), icon: "reader-outline", route: "ShokSanvedana", color: "#64748B" },
                             { label: t('gallery'), icon: "images-outline", route: "Gallery", color: "#eab308" },
                             { label: t('festivalPoster'), icon: "brush-outline", route: "FestivalPoster", color: "#f43f5e" },
                             { label: t('smartCard'), icon: "id-card-outline", route: "SmartCard", color: "#3b82f6" },
@@ -317,8 +317,8 @@ const ProfileScreen = ({ navigation }: any) => {
                         {t('general')}
                     </Text>
                     
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
-                        <MenuItem label={t('settings')} icon="settings-outline" iconColor="#4b5563" onPress={() => navigation.navigate('Settings')} />
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
+                        <MenuItem label={t('settings')} icon="settings-outline" iconColor="#64748B" onPress={() => navigation.navigate('Settings')} />
                         <MenuItem label={t('linkoSupport')} icon="chatbubble-ellipses-outline" iconColor="#3b82f6" onPress={() => navigation.navigate('SupportChat')} isLast />
                     </View>
 
@@ -372,12 +372,12 @@ const MenuItem = ({ label, icon, iconColor, onPress, isLast }: any) => (
             alignItems: 'center', 
             padding: 16, 
             borderBottomWidth: isLast ? 0 : 1, 
-            borderColor: '#f9fafb' 
+            borderColor: '#F8FAFC' 
         }}
         activeOpacity={0.7}
     >
-        <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14, backgroundColor: '#f9fafb' }}>
-            <Ionicons name={icon} size={18} color={iconColor || '#6b7280'} />
+        <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14, backgroundColor: '#F8FAFC' }}>
+            <Ionicons name={icon} size={18} color={iconColor || '#64748B'} />
         </View>
         <Text style={{ flex: 1, fontSize: 14, fontWeight: 'bold', color: '#374151' }}>{label}</Text>
         <Ionicons name="chevron-forward" size={18} color="#d1d5db" />

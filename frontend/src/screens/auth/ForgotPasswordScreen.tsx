@@ -84,11 +84,11 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep1 = () => (
         <View className="w-full">
-            <Text className="text-gray-500 text-center mb-6">Enter your registered email to receive an OTP.</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6">
+            <Text className="text-slate-500 text-center mb-6">Enter your registered email to receive an OTP.</Text>
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
                 <Ionicons name="mail-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Email Address"
                     value={email}
                     onChangeText={setEmail}
@@ -97,7 +97,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 />
             </View>
             <TouchableOpacity
-                className="w-full bg-orange-600 py-4 rounded-xl items-center shadow-lg shadow-orange-200"
+                className="w-full bg-blue-600 py-4 rounded-xl items-center shadow-lg shadow-orange-200"
                 onPress={handleSendOtp}
                 disabled={loading}
             >
@@ -108,11 +108,11 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep2 = () => (
         <View className="w-full">
-            <Text className="text-gray-500 text-center mb-6">Enter the 6-digit OTP sent to {email}</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6">
+            <Text className="text-slate-500 text-center mb-6">Enter the 6-digit OTP sent to {email}</Text>
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
                 <Ionicons name="key-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Enter OTP"
                     value={otp}
                     onChangeText={setOtp}
@@ -132,21 +132,21 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep3 = () => (
         <View className="w-full">
-            <Text className="text-gray-500 text-center mb-6">Create a new password for your account.</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4">
+            <Text className="text-slate-500 text-center mb-6">Create a new password for your account.</Text>
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-4">
                 <Ionicons name="lock-closed-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="New Password"
                     value={newPassword}
                     onChangeText={setNewPassword}
                     secureTextEntry
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
                 <Ionicons name="lock-closed-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -154,7 +154,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 />
             </View>
             <TouchableOpacity
-                className="w-full bg-orange-600 py-4 rounded-xl items-center shadow-lg shadow-orange-200"
+                className="w-full bg-blue-600 py-4 rounded-xl items-center shadow-lg shadow-orange-200"
                 onPress={handleResetPassword}
                 disabled={loading}
             >
@@ -166,14 +166,14 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView className="flex-1 bg-white px-6 py-10">
             <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} className="absolute top-12 left-6 z-10 p-2">
-                <Ionicons name="arrow-back" size={24} color="#4b5563" />
+                <Ionicons name="arrow-back" size={24} color="#64748B" />
             </TouchableOpacity>
 
             <View className="items-center mt-10 mb-8">
-                <View className="w-20 h-20 bg-orange-100 rounded-full items-center justify-center mb-4">
-                    <Ionicons name={step === 3 ? "lock-open" : "shield-checkmark-outline"} size={40} color="#ea580c" />
+                <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mb-4">
+                    <Ionicons name={step === 3 ? "lock-open" : "shield-checkmark-outline"} size={40} color="#2563EB" />
                 </View>
-                <Text className="text-2xl font-bold text-gray-800">
+                <Text className="text-2xl font-bold text-blue-900">
                     {step === 1 ? 'Forgot Password?' : step === 2 ? 'Verify Identity' : 'Reset Password'}
                 </Text>
             </View>

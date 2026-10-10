@@ -101,16 +101,16 @@ const SearchScreen = ({ navigation }: any) => {
         >
             <Image
                 source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/100' }}
-                className="w-14 h-14 rounded-full bg-gray-200"
+                className="w-14 h-14 rounded-full bg-slate-200"
             />
             <View className="ml-4 flex-1">
-                <Text className="font-bold text-gray-900 text-base">{item.name}</Text>
+                <Text className="font-bold text-blue-950 text-base">{item.name}</Text>
                 <View className="flex-row items-center mt-1">
-                    <Ionicons name="location-outline" size={14} color="#6b7280" />
-                    <Text className="text-gray-500 text-sm ml-1">{item.city || 'No City'}</Text>
+                    <Ionicons name="location-outline" size={14} color="#64748B" />
+                    <Text className="text-slate-500 text-sm ml-1">{item.city || 'No City'}</Text>
                 </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#e5e7eb" />
+            <Ionicons name="chevron-forward" size={20} color="#E2E8F0" />
         </TouchableOpacity>
     );
 
@@ -150,18 +150,18 @@ const SearchScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['top']}>
             {/* Header / Search Bar */}
             <View className="bg-white px-4 pt-2 pb-4 shadow-sm">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
                         <Ionicons name="arrow-back" size={24} color="#374151" />
                     </TouchableOpacity>
-                    <View className="flex-1 bg-gray-100 flex-row items-center px-4 rounded-full border border-gray-200">
+                    <View className="flex-1 bg-slate-100 flex-row items-center px-4 rounded-full border border-slate-200">
                         <Ionicons name="search" size={20} color="#9ca3af" />
                         <TextInput
                             placeholder="Search people, posts..."
-                            className="flex-1 py-2.5 ml-2 text-gray-900"
+                            className="flex-1 py-2.5 ml-2 text-blue-950"
                             value={query}
                             onChangeText={setQuery}
                             autoFocus
@@ -183,14 +183,14 @@ const SearchScreen = ({ navigation }: any) => {
                         onPress={() => setActiveTab(tab as any)}
                         className={`py-3 px-4 mr-2 ${activeTab === tab ? 'border-b-2 border-orange-500' : ''}`}
                     >
-                        <Text className={`font-bold ${activeTab === tab ? 'text-orange-600' : 'text-gray-500'}`}>{tab}</Text>
+                        <Text className={`font-bold ${activeTab === tab ? 'text-blue-600' : 'text-slate-500'}`}>{tab}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             {loading ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                 </View>
             ) : (
                 <FlashList
@@ -212,19 +212,19 @@ const SearchScreen = ({ navigation }: any) => {
                     ListFooterComponent={
                         loadingMore ? (
                             <View className="py-4 items-center">
-                                <ActivityIndicator size="small" color="#ea580c" />
+                                <ActivityIndicator size="small" color="#2563EB" />
                             </View>
                         ) : null
                     }
                     ListEmptyComponent={
                         query.length > 0 ? (
                             <View className="flex-1 items-center justify-center pt-20">
-                                <Ionicons name="search-outline" size={64} color="#e5e7eb" />
-                                <Text className="text-gray-500 mt-4 font-medium">No results found for "{query}"</Text>
+                                <Ionicons name="search-outline" size={64} color="#E2E8F0" />
+                                <Text className="text-slate-500 mt-4 font-medium">No results found for "{query}"</Text>
                             </View>
                         ) : (
                             <View className="flex-1 items-center justify-center pt-20">
-                                <Ionicons name="people-outline" size={64} color="#e5e7eb" />
+                                <Ionicons name="people-outline" size={64} color="#E2E8F0" />
                                 <Text className="text-gray-400 mt-4 text-center px-10">Search for friends or community posts to stay connected</Text>
                             </View>
                         )

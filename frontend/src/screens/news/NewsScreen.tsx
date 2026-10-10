@@ -115,7 +115,7 @@ const ProfessionalVideoPlayer = ({
                         backgroundColor: 'rgba(0,0,0,0.4)'
                     }}
                 >
-                    <View style={{ backgroundColor: '#ea580c', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="videocam" size={11} color="white" style={{ marginRight: 4 }} />
                         <Text style={{ color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>VIDEO NEWS</Text>
                     </View>
@@ -182,7 +182,7 @@ const ProfessionalVideoPlayer = ({
                     }}
                 >
                     <View style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, marginBottom: 6, overflow: 'hidden' }}>
-                        <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ea580c' }} />
+                        <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#2563EB' }} />
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -236,8 +236,8 @@ const NewsTicker = ({ tickerData }: { tickerData: string[] }) => {
     const itemsToRender = [...tickerData, ...tickerData];
 
     return (
-        <View style={{ backgroundColor: '#dc2626', flexDirection: 'row', alignItems: 'center', height: 36, overflow: 'hidden', width: '100%' }}>
-            <View style={{ backgroundColor: '#b91c1c', height: '100%', justifyContent: 'center', paddingHorizontal: 10, borderRightWidth: 1.5, borderRightColor: 'rgba(255,255,255,0.25)', zIndex: 10 }}>
+        <View style={{ backgroundColor: '#2563EB', flexDirection: 'row', alignItems: 'center', height: 36, overflow: 'hidden', width: '100%' }}>
+            <View style={{ backgroundColor: '#1e40af', height: '100%', justifyContent: 'center', paddingHorizontal: 10, borderRightWidth: 1.5, borderRightColor: 'rgba(255,255,255,0.25)', zIndex: 10 }}>
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>BREAKING</Text>
             </View>
             <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center' }}>
@@ -488,26 +488,26 @@ const NewsScreen = ({ navigation }: any) => {
                     backgroundColor: 'white',
                     borderRadius: 16,
                     borderWidth: 1,
-                    borderColor: '#f3f4f6',
+                    borderColor: '#E2E8F0',
                     marginHorizontal: 16,
                     marginBottom: 16,
                     padding: 16,
                     opacity: shimmerAnim
                 }}
             >
-                <View style={{ width: '80%', height: 16, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-                <View style={{ width: '40%', height: 10, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 12 }} />
+                <View style={{ width: '80%', height: 16, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 8 }} />
+                <View style={{ width: '40%', height: 10, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 12 }} />
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                     <View style={{ flex: 1 }}>
-                        <View style={{ width: '100%', height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
-                        <View style={{ width: '90%', height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
-                        <View style={{ width: '95%', height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 12 }} />
+                        <View style={{ width: '100%', height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 6 }} />
+                        <View style={{ width: '90%', height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 6 }} />
+                        <View style={{ width: '95%', height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 12 }} />
                         <View style={{ flexDirection: 'row', gap: 16 }}>
-                            <View style={{ width: 50, height: 10, backgroundColor: '#e5e7eb', borderRadius: 4 }} />
-                            <View style={{ width: 40, height: 10, backgroundColor: '#e5e7eb', borderRadius: 4 }} />
+                            <View style={{ width: 50, height: 10, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+                            <View style={{ width: 40, height: 10, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
                         </View>
                     </View>
-                    <View style={{ width: 112, height: 80, backgroundColor: '#e5e7eb', borderRadius: 12 }} />
+                    <View style={{ width: 112, height: 80, backgroundColor: '#E2E8F0', borderRadius: 12 }} />
                 </View>
             </Animated.View>
         );
@@ -520,21 +520,21 @@ const NewsScreen = ({ navigation }: any) => {
                     backgroundColor: 'white',
                     borderRadius: 16,
                     borderWidth: 1,
-                    borderColor: '#f3f4f6',
+                    borderColor: '#E2E8F0',
                     marginHorizontal: 16,
                     marginBottom: 16,
                     opacity: shimmerAnim
                 }}
             >
-                <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }}>
                     <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#d1d5db' }} />
                 </View>
                 <View style={{ padding: 16 }}>
-                    <View style={{ width: '90%', height: 12, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-                    <View style={{ width: '70%', height: 12, backgroundColor: '#e5e7eb', borderRadius: 4, marginBottom: 12 }} />
+                    <View style={{ width: '90%', height: 12, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 8 }} />
+                    <View style={{ width: '70%', height: 12, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 12 }} />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <View style={{ width: 60, height: 10, backgroundColor: '#e5e7eb', borderRadius: 4 }} />
-                        <View style={{ width: 50, height: 24, backgroundColor: '#e5e7eb', borderRadius: 12 }} />
+                        <View style={{ width: 60, height: 10, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+                        <View style={{ width: 50, height: 24, backgroundColor: '#E2E8F0', borderRadius: 12 }} />
                     </View>
                 </View>
             </Animated.View>
@@ -772,14 +772,14 @@ const NewsScreen = ({ navigation }: any) => {
                             {item.title}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ color: '#e5e7eb', fontSize: 13, fontWeight: '600' }}>
+                            <Text style={{ color: '#E2E8F0', fontSize: 13, fontWeight: '600' }}>
                                 {item.created_at?.split(' ')[0] || 'Recently'} | {item.district || item.state || 'न्यूज़'}
                             </Text>
                         </View>
                     </View>
                     
                     {item.category && (
-                        <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: '#dc2626', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 }}>
+                        <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 }}>
                             <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>{item.category}</Text>
                         </View>
                     )}
@@ -795,10 +795,10 @@ const NewsScreen = ({ navigation }: any) => {
                 <TouchableOpacity 
                     activeOpacity={0.8}
                     onPress={() => navigation.navigate('NewsDetail', { news: item })}
-                    style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                    style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}
                 >
                     {/* Left side: Image */}
-                    <View style={{ width: 130, height: 85, borderRadius: 8, overflow: 'hidden', backgroundColor: '#f3f4f6', marginRight: 14 }}>
+                    <View style={{ width: 130, height: 85, borderRadius: 8, overflow: 'hidden', backgroundColor: '#E2E8F0', marginRight: 14 }}>
                         {images.length > 0 && isVideo(images[0]) ? (
                             <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
                                 <Ionicons name="play-circle" size={32} color="white" />
@@ -810,12 +810,12 @@ const NewsScreen = ({ navigation }: any) => {
                     
                     {/* Right side: Content */}
                     <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', lineHeight: 22 }} numberOfLines={3}>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#172554', lineHeight: 22 }} numberOfLines={3}>
                             {item.title}
                         </Text>
                         
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                            <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '500' }}>
+                            <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>
                                 {item.created_at?.split(' ')[0] || 'Recently'}
                                 {item.district || item.state ? `  |  ${item.district || item.state}` : ''}
                             </Text>
@@ -824,7 +824,7 @@ const NewsScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
 
                 {index !== undefined && index > 0 && index % 5 === 0 && (
-                    <View style={{ alignItems: 'center', paddingVertical: 12, backgroundColor: '#f9fafb', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                    <View style={{ alignItems: 'center', paddingVertical: 12, backgroundColor: '#F8FAFC', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                         <BannerAd
                             unitId="ca-app-pub-3506685647762869/7649518863"
                             size={BannerAdSize.BANNER}
@@ -852,11 +852,11 @@ const NewsScreen = ({ navigation }: any) => {
         };
 
         return (
-            <View style={{ marginHorizontal: 16, marginBottom: 16, borderRadius: 16, backgroundColor: 'white', overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+            <View style={{ marginHorizontal: 16, marginBottom: 16, borderRadius: 16, backgroundColor: 'white', overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
                 <TouchableOpacity 
                     activeOpacity={0.9} 
                     onPress={() => setSelectedVideoId(videoId)}
-                    style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#e5e7eb', position: 'relative' }}
+                    style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#E2E8F0', position: 'relative' }}
                 >
                     <Image
                         source={{ uri: thumbnailUrl }}
@@ -865,27 +865,27 @@ const NewsScreen = ({ navigation }: any) => {
                     />
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ backgroundColor: 'rgba(255,255,255,0.95)', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 }}>
-                            <Ionicons name="play" size={24} color="#ea580c" style={{ marginLeft: 4 }} />
+                            <Ionicons name="play" size={24} color="#2563EB" style={{ marginLeft: 4 }} />
                         </View>
                     </View>
                 </TouchableOpacity>
 
                 <View style={{ padding: 16 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#111827', lineHeight: 20, marginBottom: 8 }} numberOfLines={2}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554', lineHeight: 20, marginBottom: 8 }} numberOfLines={2}>
                         {item.title}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             {item.isLive && (
-                                <View style={{ backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginRight: 8 }}>
+                                <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginRight: 8 }}>
                                     <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>LIVE</Text>
                                 </View>
                             )}
                             <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: '500' }}>{item.pubDate}</Text>
                         </View>
-                        <TouchableOpacity onPress={handleShareYT} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb' }}>
-                            <Ionicons name="share-social" size={14} color="#4b5563" />
-                            <Text style={{ color: '#4b5563', fontSize: 12, fontWeight: 'bold', marginLeft: 6 }}>{t('share')}</Text>
+                        <TouchableOpacity onPress={handleShareYT} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Ionicons name="share-social" size={14} color="#64748B" />
+                            <Text style={{ color: '#64748B', fontSize: 12, fontWeight: 'bold', marginLeft: 6 }}>{t('share')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -894,7 +894,7 @@ const NewsScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#f9fafb]" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
             {/* Header & Tabs */}
             <Animated.View 
                 onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
@@ -907,7 +907,7 @@ const NewsScreen = ({ navigation }: any) => {
                     transform: [{ translateY: headerTranslateY }],
                     backgroundColor: 'white',
                     borderBottomWidth: 1,
-                    borderBottomColor: '#f3f4f6',
+                    borderBottomColor: '#E2E8F0',
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.05,
@@ -917,12 +917,12 @@ const NewsScreen = ({ navigation }: any) => {
                 }}
             >
                 <View className="flex-row justify-between items-center px-5 mb-4">
-                    <Text className="text-xl font-extrabold text-gray-900">{t('newsUpdates')}</Text>
+                    <Text className="text-xl font-extrabold text-blue-950">{t('newsUpdates')}</Text>
                     {anchorStatus === 'Approved' ? (
                         <View className="flex-row items-center gap-2">
                             <TouchableOpacity 
                                 onPress={() => navigation.navigate('PostBreakingNews')}
-                                className="bg-red-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
+                                className="bg-blue-700 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
                                 activeOpacity={0.7}
                             >
                                 <Ionicons name="flash-outline" size={14} color="white" />
@@ -930,7 +930,7 @@ const NewsScreen = ({ navigation }: any) => {
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 onPress={() => navigation.navigate('CreateNews')}
-                                className="bg-orange-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
+                                className="bg-blue-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
                                 activeOpacity={0.7}
                             >
                                 <Ionicons name="create-outline" size={14} color="white" />
@@ -971,7 +971,7 @@ const NewsScreen = ({ navigation }: any) => {
                                     );
                                 }
                             }}
-                            className="bg-orange-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
+                            className="bg-blue-600 px-3.5 py-1.5 rounded-full flex-row items-center shadow-sm"
                             activeOpacity={0.7}
                         >
                             <Ionicons name="mic-outline" size={14} color="white" />
@@ -981,10 +981,10 @@ const NewsScreen = ({ navigation }: any) => {
                 </View>
                 
                 {isSearchActive ? (
-                    <View className="flex-row items-center bg-white p-1 rounded-2xl mx-5 mb-4 border border-gray-200" style={{ height: 44 }}>
+                    <View className="flex-row items-center bg-white p-1 rounded-2xl mx-5 mb-4 border border-slate-200" style={{ height: 44 }}>
                         <Ionicons name="search" size={18} color="#9ca3af" style={{ marginHorizontal: 10 }} />
                         <TextInput 
-                            style={{ flex: 1, fontSize: 13, color: '#1f2937', padding: 0 }}
+                            style={{ flex: 1, fontSize: 13, color: '#172554', padding: 0 }}
                             placeholder={t('searchNewsUpdates')}
                             placeholderTextColor="#9ca3af"
                             value={searchQuery}
@@ -999,15 +999,15 @@ const NewsScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    <View className="flex-row bg-gray-100 p-1 rounded-2xl mx-5 mb-4 border border-gray-200">
+                    <View className="flex-row bg-slate-100 p-1 rounded-2xl mx-5 mb-4 border border-slate-200">
                         <TouchableOpacity 
                             onPress={() => setActiveTab('apna')}
                             className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
                             style={activeTab === 'apna' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="newspaper-outline" size={15} color={activeTab === 'apna' ? '#ea580c' : '#6b7280'} />
-                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-gray-900' : 'text-gray-500'}`}>{t('apnaNews')}</Text>
+                            <Ionicons name="newspaper-outline" size={15} color={activeTab === 'apna' ? '#2563EB' : '#64748B'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'apna' ? 'text-blue-950' : 'text-slate-500'}`}>{t('apnaNews')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
@@ -1016,8 +1016,8 @@ const NewsScreen = ({ navigation }: any) => {
                             style={activeTab === 'ddnews' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="logo-youtube" size={15} color={activeTab === 'ddnews' ? '#dc2626' : '#6b7280'} />
-                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-gray-900' : 'text-gray-500'}`}>{t('ddNews')}</Text>
+                            <Ionicons name="logo-youtube" size={15} color={activeTab === 'ddnews' ? '#dc2626' : '#64748B'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'ddnews' ? 'text-blue-950' : 'text-slate-500'}`}>{t('ddNews')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
@@ -1026,8 +1026,8 @@ const NewsScreen = ({ navigation }: any) => {
                             style={activeTab === 'aastha' ? { backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 } : null}
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="flower-outline" size={15} color={activeTab === 'aastha' ? '#d97706' : '#6b7280'} />
-                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-gray-900' : 'text-gray-500'}`}>{t('aastha')}</Text>
+                            <Ionicons name="flower-outline" size={15} color={activeTab === 'aastha' ? '#d97706' : '#64748B'} />
+                            <Text className={`ml-1.5 font-bold text-xs ${activeTab === 'aastha' ? 'text-blue-950' : 'text-slate-500'}`}>{t('aastha')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
@@ -1035,7 +1035,7 @@ const NewsScreen = ({ navigation }: any) => {
                             className="flex-row items-center justify-center px-3 rounded-xl ml-1"
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="search" size={18} color="#6b7280" />
+                            <Ionicons name="search" size={18} color="#64748B" />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -1067,9 +1067,9 @@ const NewsScreen = ({ navigation }: any) => {
                                     className="flex-row items-center rounded-full px-3.5 py-1.5 mr-2 border"
                                     activeOpacity={0.8}
                                     style={{
-                                        backgroundColor: isSelected ? '#ea580c' : '#f9fafb',
-                                        borderColor: isSelected ? '#ea580c' : '#f3f4f6',
-                                        shadowColor: isSelected ? '#f97316' : '#000',
+                                        backgroundColor: isSelected ? '#2563EB' : '#F8FAFC',
+                                        borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                                        shadowColor: isSelected ? '#93C5FD' : '#000',
                                         shadowOffset: { width: 0, height: 4 },
                                         shadowOpacity: isSelected ? 0.2 : 0.02,
                                         shadowRadius: 5,
@@ -1079,7 +1079,7 @@ const NewsScreen = ({ navigation }: any) => {
                                     <Text className="mr-1.5 text-sm">{cat.icon}</Text>
                                     <Text
                                         className={`text-xs font-bold tracking-wide ${
-                                            isSelected ? 'text-white' : 'text-gray-700'
+                                            isSelected ? 'text-white' : 'text-slate-600'
                                         }`}
                                     >
                                         {label}
@@ -1094,7 +1094,7 @@ const NewsScreen = ({ navigation }: any) => {
                 {(selectedCategory === 'State' || selectedCategory === 'राज्य' || selectedCategory === 'District' || selectedCategory === 'जिला') && activeTab === 'apna' && (
                     <View style={{ paddingHorizontal: 20, paddingBottom: 12, paddingTop: 4 }}>
                         <View style={{ flexDirection: 'row', gap: 10 }}>
-                            <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 50, justifyContent: 'center' }}>
+                            <View style={{ flex: 1, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, backgroundColor: '#F8FAFC', height: 50, justifyContent: 'center' }}>
                                 <Picker
                                     selectedValue={selectedState}
                                     onValueChange={(itemValue, itemIndex) => {
@@ -1115,7 +1115,7 @@ const NewsScreen = ({ navigation }: any) => {
                             </View>
 
                             {(selectedCategory === 'District' || selectedCategory === 'जिला') && (
-                                <View style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#f9fafb', height: 50, justifyContent: 'center' }}>
+                                <View style={{ flex: 1, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, backgroundColor: '#F8FAFC', height: 50, justifyContent: 'center' }}>
                                     <Picker
                                         selectedValue={selectedDistrict}
                                         onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
@@ -1172,18 +1172,18 @@ const NewsScreen = ({ navigation }: any) => {
                         data={Array.isArray(filteredNews) ? filteredNews : []}
                         keyExtractor={(item: any, index: number) => item?.id?.toString() || index.toString()}
                         contentContainerStyle={{ paddingTop: headerHeight + 12, paddingBottom: 12 }}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#ea580c']} tintColor="#ea580c" progressViewOffset={headerHeight} />}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshApna} colors={['#2563EB']} tintColor="#2563EB" progressViewOffset={headerHeight} />}
                         renderItem={renderNewsItem}
                         onEndReached={() => fetchNews(true)}
                         onEndReachedThreshold={0.5}
                         ListFooterComponent={
                             isFetchingMore ? (
                                 <View style={{ paddingVertical: 20 }}>
-                                    <ActivityIndicator color="#ea580c" />
+                                    <ActivityIndicator color="#2563EB" />
                                 </View>
                             ) : null
                         }
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noNewsAvailable')}</Text>}
+                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-10">{t('noNewsAvailable')}</Text>}
                         onScroll={Animated.event(
                             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
                             { useNativeDriver: true }
@@ -1210,7 +1210,7 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingVertical: 12 }}
                         refreshControl={<RefreshControl refreshing={ytRefreshing} onRefresh={onRefreshYT} colors={['#dc2626']} tintColor="#dc2626" />}
                         renderItem={renderYTNewsItem}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noVideosAvailable')}</Text>}
+                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-10">{t('noVideosAvailable')}</Text>}
                     />
                 )
             )}
@@ -1230,7 +1230,7 @@ const NewsScreen = ({ navigation }: any) => {
                         contentContainerStyle={{ paddingVertical: 12 }}
                         refreshControl={<RefreshControl refreshing={aasthaRefreshing} onRefresh={onRefreshAastha} colors={['#d97706']} tintColor="#d97706" />}
                         renderItem={renderYTNewsItem}
-                        ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">{t('noStreamsAvailable')}</Text>}
+                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-10">{t('noStreamsAvailable')}</Text>}
                     />
                 )
             )}

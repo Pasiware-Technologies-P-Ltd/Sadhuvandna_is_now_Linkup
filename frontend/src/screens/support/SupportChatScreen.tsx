@@ -102,18 +102,18 @@ const SupportChatScreen = ({ navigation }: any) => {
         return (
             <View className={`flex-row mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 {!isUser && (
-                    <View className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center mr-2 self-end shadow-sm">
-                        <Text className="text-orange-600 text-xs font-bold">L</Text>
+                    <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2 self-end shadow-sm">
+                        <Text className="text-blue-600 text-xs font-bold">L</Text>
                     </View>
                 )}
                 <View 
                     className={`max-w-[78%] p-3.5 rounded-2xl shadow-sm ${
                         isUser 
-                            ? 'bg-orange-500 rounded-tr-none' 
+                            ? 'bg-blue-500 rounded-tr-none' 
                             : 'bg-white border border-gray-100 rounded-tl-none'
                     }`}
                 >
-                    <Text className={`text-[14px] leading-5 font-medium ${isUser ? 'text-white' : 'text-gray-800'}`}>
+                    <Text className={`text-[14px] leading-5 font-medium ${isUser ? 'text-white' : 'text-blue-900'}`}>
                         {item.text}
                     </Text>
                     <Text className={`text-[9px] mt-1 self-end ${isUser ? 'text-orange-100' : 'text-gray-400'}`}>
@@ -125,20 +125,20 @@ const SupportChatScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'bottom']}>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'bottom']}>
             {/* Header */}
-            <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-200 shadow-sm z-10">
+            <View className="flex-row items-center px-4 py-3 bg-white border-b border-slate-200 shadow-sm z-10">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="p-1 mr-2">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <View className="w-10 h-10 rounded-full bg-orange-100 items-center justify-center mr-3 shadow-sm">
-                    <Text className="text-orange-600 text-base font-extrabold">LK</Text>
+                <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3 shadow-sm">
+                    <Text className="text-blue-600 text-base font-extrabold">LK</Text>
                 </View>
                 <View className="flex-1">
-                    <Text className="text-base font-bold text-gray-900">Linko</Text>
+                    <Text className="text-base font-bold text-blue-950">Linko</Text>
                     <View className="flex-row items-center">
                         <View className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />
-                        <Text className="text-[10px] text-gray-500 font-semibold">AI Support Assistant</Text>
+                        <Text className="text-[10px] text-slate-500 font-semibold">AI Support Assistant</Text>
                     </View>
                 </View>
             </View>
@@ -157,12 +157,12 @@ const SupportChatScreen = ({ navigation }: any) => {
                     contentContainerStyle={{ padding: 16, paddingBottom: 10 }}
                     ListFooterComponent={loading ? (
                         <View className="flex-row mb-4 justify-start items-center">
-                            <View className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center mr-2 self-end shadow-sm">
-                                <Text className="text-orange-600 text-xs font-bold">L</Text>
+                            <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2 self-end shadow-sm">
+                                <Text className="text-blue-600 text-xs font-bold">L</Text>
                             </View>
                             <View className="bg-white border border-gray-100 rounded-2xl rounded-tl-none p-3.5 shadow-sm">
                                 <View className="flex-row items-center px-1.5 py-0.5">
-                                    <ActivityIndicator size="small" color="#ea580c" />
+                                    <ActivityIndicator size="small" color="#2563EB" />
                                     <Text className="text-gray-400 text-xs ml-2 font-medium">Linko is typing...</Text>
                                 </View>
                             </View>
@@ -185,7 +185,7 @@ const SupportChatScreen = ({ navigation }: any) => {
                                     className="bg-white rounded-full border border-orange-100 px-4 py-2 mr-2.5 shadow-sm flex-row items-center"
                                     activeOpacity={0.8}
                                 >
-                                    <Text className="text-xs font-bold text-orange-600">{item.title}</Text>
+                                    <Text className="text-xs font-bold text-blue-600">{item.title}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
@@ -193,9 +193,9 @@ const SupportChatScreen = ({ navigation }: any) => {
                 )}
 
                 {/* Input Area */}
-                <View className="p-3 bg-white border-t border-gray-200 flex-row items-center">
+                <View className="p-3 bg-white border-t border-slate-200 flex-row items-center">
                     <TextInput
-                        className="flex-1 bg-gray-100 border border-gray-200 rounded-full px-4 py-2.5 mr-2 text-sm text-gray-800"
+                        className="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 mr-2 text-sm text-blue-900"
                         placeholder="अपनी समस्या यहाँ लिखें..."
                         placeholderTextColor="#9ca3af"
                         value={inputText}
@@ -207,7 +207,7 @@ const SupportChatScreen = ({ navigation }: any) => {
                         onPress={() => handleSendMessage(inputText)}
                         disabled={!inputText.trim()}
                         className={`w-10 h-10 rounded-full items-center justify-center shadow-sm ${
-                            inputText.trim() ? 'bg-orange-500' : 'bg-gray-200'
+                            inputText.trim() ? 'bg-blue-500' : 'bg-slate-200'
                         }`}
                         activeOpacity={0.8}
                     >

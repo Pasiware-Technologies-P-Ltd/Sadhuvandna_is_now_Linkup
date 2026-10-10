@@ -90,14 +90,14 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
     };
 
     const renderInput = (icon: any, placeholder: string, value: string, onChangeText: (t:string)=>void, options: any = {}) => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 12, paddingHorizontal: 14, marginBottom: 14, borderWidth: 1, borderColor: '#f3f4f6' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 14, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
             <Ionicons name={icon} size={20} color="#9ca3af" style={{ marginRight: 10 }} />
             <TextInput
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={placeholder}
                 placeholderTextColor="#9ca3af"
-                style={{ flex: 1, paddingVertical: 14, fontSize: 15, color: '#1f2937', ...(options.multiline ? { minHeight: 80, textAlignVertical: 'top' } : {}) }}
+                style={{ flex: 1, paddingVertical: 14, fontSize: 15, color: '#172554', ...(options.multiline ? { minHeight: 80, textAlignVertical: 'top' } : {}) }}
                 {...options}
             />
         </View>
@@ -107,12 +107,12 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
         <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
             {/* Custom Header with Shadow */}
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16, backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4, zIndex: 10 }}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, backgroundColor: '#f3f4f6', borderRadius: 20 }}>
-                    <Ionicons name="arrow-back" size={22} color="#111827" />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8, backgroundColor: '#E2E8F0', borderRadius: 20 }}>
+                    <Ionicons name="arrow-back" size={22} color="#172554" />
                 </TouchableOpacity>
                 <View style={{ marginLeft: 16 }}>
-                    <Text style={{ fontSize: 19, fontWeight: '900', color: '#111827', letterSpacing: 0.5 }}>Create Page</Text>
-                    <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Expand your business reach</Text>
+                    <Text style={{ fontSize: 19, fontWeight: '900', color: '#172554', letterSpacing: 0.5 }}>Create Page</Text>
+                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Expand your business reach</Text>
                 </View>
             </View>
 
@@ -129,21 +129,21 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                     {/* 1. Basic Info Section */}
                     <View style={{ marginBottom: 30 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                                <Ionicons name="briefcase" size={16} color="#ea580c" />
+                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                                <Ionicons name="briefcase" size={16} color="#2563EB" />
                             </View>
-                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Basic Details</Text>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#172554' }}>Basic Details</Text>
                         </View>
 
                         {renderInput("business", "Business Name (e.g. Sharma Sweets) *", businessName, setBusinessName)}
 
-                        <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#f3f4f6', overflow: 'hidden', marginBottom: 14 }}>
+                        <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', marginBottom: 14 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 14 }}>
                                 <Ionicons name="grid" size={20} color="#9ca3af" />
                                 <Picker
                                     selectedValue={selectedCategory}
                                     onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                                    style={{ flex: 1, height: 50, color: '#1f2937' }}
+                                    style={{ flex: 1, height: 50, color: '#172554' }}
                                 >
                                     {categories.map((cat, idx) => (
                                         <Picker.Item key={idx} label={cat} value={cat} />
@@ -161,7 +161,7 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                                 <Ionicons name="call" size={16} color="#3b82f6" />
                             </View>
-                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Contact Info</Text>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#172554' }}>Contact Info</Text>
                         </View>
 
                         {renderInput("call-outline", "Phone Number", phoneNo, setPhoneNo, { keyboardType: "phone-pad" })}
@@ -176,7 +176,7 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                                 <Ionicons name="location" size={16} color="#22c55e" />
                             </View>
-                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Location & Address</Text>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#172554' }}>Location & Address</Text>
                         </View>
 
                         {renderInput("map-outline", "Full Address (Street, Building, Area)", fullAddress, setFullAddress, { multiline: true })}
@@ -206,7 +206,7 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
                             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                                 <Ionicons name="time" size={16} color="#d97706" />
                             </View>
-                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#1f2937' }}>Operations</Text>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: '#172554' }}>Operations</Text>
                         </View>
 
                         {renderInput("time-outline", "Opening Hours (e.g. 9 AM - 8 PM)", openingHours, setOpeningHours)}
@@ -216,16 +216,16 @@ const CreateBusinessPageScreen = ({ navigation }: any) => {
             </KeyboardAwareScrollView>
 
             {/* Floating Submit Button */}
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#f3f4f6' }}>
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(255,255,255,0.9)', borderTopWidth: 1, borderColor: '#E2E8F0' }}>
                 <TouchableOpacity
                     onPress={handleSubmit}
                     disabled={loading}
                     style={{ 
-                        backgroundColor: '#ea580c', 
+                        backgroundColor: '#2563EB', 
                         paddingVertical: 18, 
                         borderRadius: 16, 
                         alignItems: 'center',
-                        shadowColor: '#ea580c',
+                        shadowColor: '#2563EB',
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: 0.3,
                         shadowRadius: 12,

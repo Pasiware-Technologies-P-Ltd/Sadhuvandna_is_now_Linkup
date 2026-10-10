@@ -195,7 +195,7 @@ export default function LoginScreen({ navigation }: any) {
                                 <Ionicons name="people" size={48} color="#ff6b00" />
                             </View>
                             <Text className="text-4xl font-black text-[#1a2b4c] text-center tracking-tight">{t('welcomeLogin')}</Text>
-                            <Text className="text-gray-500 font-medium mt-3 text-center text-base">{t('enterDetailsLogin')}</Text>
+                            <Text className="text-slate-500 font-medium mt-3 text-center text-base">{t('enterDetailsLogin')}</Text>
                         </View>
 
                         <View className="space-y-6 px-2">
@@ -240,7 +240,7 @@ export default function LoginScreen({ navigation }: any) {
                             <Ionicons name="chatbubble-ellipses" size={56} color="#ff6b00" />
                         </View>
                         <Text className="text-3xl font-black text-[#1a2b4c] mb-3 text-center tracking-tight">{t('verifyOtp')}</Text>
-                        <Text className="text-gray-500 text-center mb-10 px-4 text-base leading-relaxed">
+                        <Text className="text-slate-500 text-center mb-10 px-4 text-base leading-relaxed">
                             {t('sentCodeTo')} <Text className="font-bold text-[#1a2b4c]">+91 {mobile}</Text>
                         </Text>
 

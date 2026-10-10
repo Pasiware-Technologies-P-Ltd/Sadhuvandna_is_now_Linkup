@@ -28,7 +28,7 @@ const IncomingCallModal: React.FC<IncomingCallModalProps> = ({ visible, callerNa
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1f2937',
+        backgroundColor: '#172554',
     },
     background: {
         ...StyleSheet.absoluteFillObject,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
         borderColor: 'white',
     },
     placeholderAvatar: {
-        backgroundColor: '#6b7280',
+        backgroundColor: '#64748B',
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -116,20 +116,20 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep1 = () => (
         <View className="space-y-4">
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="person-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Full Name"
                     value={name}
                     onChangeText={setName}
                     placeholderTextColor="#9ca3af"
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="mail-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Email Address"
                     value={email}
                     onChangeText={setEmail}
@@ -138,7 +138,7 @@ const RegisterScreen = ({ navigation }: any) => {
                 />
             </View>
             <TouchableOpacity
-                className="bg-orange-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
+                className="bg-blue-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
                 onPress={handleSendOtp}
                 disabled={loading}
             >
@@ -149,11 +149,11 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep2 = () => (
         <View className="space-y-4">
-            <Text className="text-center text-gray-500 mb-4">OTP sent to {email}</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <Text className="text-center text-slate-500 mb-4">OTP sent to {email}</Text>
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="key-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Enter OTP"
                     value={otp}
                     onChangeText={setOtp}
@@ -162,7 +162,7 @@ const RegisterScreen = ({ navigation }: any) => {
                 />
             </View>
             <TouchableOpacity
-                className="bg-orange-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
+                className="bg-blue-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
                 onPress={handleVerifyOtp}
             >
                 <Text className="text-white font-bold text-lg">Verify & Proceed</Text>
@@ -172,10 +172,10 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep3 = () => (
         <View className="space-y-4">
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="call-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Mobile Number"
                     value={mobile}
                     onChangeText={setMobile}
@@ -183,30 +183,30 @@ const RegisterScreen = ({ navigation }: any) => {
                     placeholderTextColor="#9ca3af"
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="business-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="City"
                     value={city}
                     onChangeText={setCity}
                     placeholderTextColor="#9ca3af"
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="people-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Community / Cast"
                     value={cast}
                     onChangeText={setCast}
                     placeholderTextColor="#9ca3af"
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="calendar-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Date of Birth (DD-MM-YYYY)"
                     value={dob}
                     onChangeText={setDob}
@@ -220,17 +220,17 @@ const RegisterScreen = ({ navigation }: any) => {
                     <TouchableOpacity
                         key={g}
                         onPress={() => setGender(g)}
-                        className={`flex-1 p-3 rounded-xl border items-center mx-1 ${gender === g ? 'bg-orange-100 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
+                        className={`flex-1 p-3 rounded-xl border items-center mx-1 ${gender === g ? 'bg-blue-100 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
                     >
-                        <Text className={gender === g ? 'text-orange-600 font-bold' : 'text-gray-600'}>{g}</Text>
+                        <Text className={gender === g ? 'text-blue-600 font-bold' : 'text-slate-500'}>{g}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="lock-closed-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Create Password"
                     value={password}
                     onChangeText={setPassword}
@@ -238,10 +238,10 @@ const RegisterScreen = ({ navigation }: any) => {
                     placeholderTextColor="#9ca3af"
                 />
             </View>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
                 <Ionicons name="lock-closed-outline" size={20} color="gray" />
                 <TextInput
-                    className="flex-1 ml-3 text-gray-700 text-base"
+                    className="flex-1 ml-3 text-slate-600 text-base"
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -251,7 +251,7 @@ const RegisterScreen = ({ navigation }: any) => {
             </View>
 
             <TouchableOpacity
-                className="bg-orange-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
+                className="bg-blue-600 p-4 rounded-xl items-center shadow-lg shadow-orange-200 mt-6"
                 onPress={handleRegister}
                 disabled={loading}
             >
@@ -265,12 +265,12 @@ const RegisterScreen = ({ navigation }: any) => {
             <ScrollView contentContainerStyle={{ padding: 24 }}>
                 <View className="mb-8 mt-4">
                     <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} className="mb-4">
-                        <Ionicons name="arrow-back" size={24} color="#4b5563" />
+                        <Ionicons name="arrow-back" size={24} color="#64748B" />
                     </TouchableOpacity>
-                    <Text className="text-3xl font-extrabold text-gray-800">
+                    <Text className="text-3xl font-extrabold text-blue-900">
                         {step === 1 ? 'Create Account' : step === 2 ? 'Verify Email' : 'Personal Details'}
                     </Text>
-                    <Text className="text-gray-500 mt-2 font-medium">Step {step} of 3</Text>
+                    <Text className="text-slate-500 mt-2 font-medium">Step {step} of 3</Text>
                 </View>
 
                 {step === 1 && renderStep1()}
@@ -279,9 +279,9 @@ const RegisterScreen = ({ navigation }: any) => {
 
                 {step === 1 && (
                     <View className="flex-row justify-center mt-8 mb-10">
-                        <Text className="text-gray-500">Already have an account? </Text>
+                        <Text className="text-slate-500">Already have an account? </Text>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Text className="text-orange-600 font-bold">Login</Text>
+                            <Text className="text-blue-600 font-bold">Login</Text>
                         </TouchableOpacity>
                     </View>
                 )}

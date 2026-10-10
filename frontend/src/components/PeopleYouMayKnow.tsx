@@ -76,21 +76,21 @@ const PeopleYouMayKnow = ({ profiles, userId, navigation, onStatusChange }: Prop
                     {item.photo ? (
                         <Image
                             source={{ uri: `${PHOTO_URL}${item.photo}` }}
-                            className="w-20 h-20 rounded-full bg-gray-50 mb-3 border-2 border-orange-50"
+                            className="w-20 h-20 rounded-full bg-slate-50 mb-3 border-2 border-orange-50"
                         />
                     ) : (
-                        <View className="w-20 h-20 rounded-full bg-orange-50 items-center justify-center mb-3 border-2 border-orange-100">
-                            <Text className="text-orange-600 font-black text-2xl">
+                        <View className="w-20 h-20 rounded-full bg-blue-50 items-center justify-center mb-3 border-2 border-orange-100">
+                            <Text className="text-blue-600 font-black text-2xl">
                                 {item.full_name ? item.full_name[0].toUpperCase() : 'U'}
                             </Text>
                         </View>
                     )}
                     <View className="absolute bottom-2 right-0 bg-white rounded-full p-1 shadow-sm border border-gray-100">
-                        <Ionicons name="sparkles" size={12} color="#ea580c" />
+                        <Ionicons name="sparkles" size={12} color="#2563EB" />
                     </View>
                 </TouchableOpacity>
 
-                <Text className="font-extrabold text-gray-900 text-sm text-center mb-0.5" numberOfLines={1}>
+                <Text className="font-extrabold text-blue-950 text-sm text-center mb-0.5" numberOfLines={1}>
                     {item.full_name || "Member"}
                 </Text>
                 <View className="flex-row items-center mb-4">
@@ -101,16 +101,16 @@ const PeopleYouMayKnow = ({ profiles, userId, navigation, onStatusChange }: Prop
                 {isRequested ? (
                     <TouchableOpacity 
                         activeOpacity={0.7}
-                        className="bg-gray-100 w-full py-2.5 rounded-2xl flex-row items-center justify-center border border-gray-200"
+                        className="bg-slate-100 w-full py-2.5 rounded-2xl flex-row items-center justify-center border border-slate-200"
                         onPress={() => handleAction(item.id, 'unfollow')}
                     >
-                        <Ionicons name="time" size={12} color="#6b7280" style={{ marginRight: 4 }} />
-                        <Text className="text-gray-500 font-black text-center text-[10px] uppercase tracking-wider">Requested</Text>
+                        <Ionicons name="time" size={12} color="#64748B" style={{ marginRight: 4 }} />
+                        <Text className="text-slate-500 font-black text-center text-[10px] uppercase tracking-wider">Requested</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity 
                         activeOpacity={0.7}
-                        className="bg-orange-600 w-full py-2.5 rounded-2xl flex-row items-center justify-center shadow-sm border border-orange-700"
+                        className="bg-blue-600 w-full py-2.5 rounded-2xl flex-row items-center justify-center shadow-sm border border-orange-700"
                         onPress={() => handleAction(item.id, 'follow')}
                     >
                         <Ionicons name="person-add" size={12} color="white" style={{ marginRight: 4 }} />
@@ -136,15 +136,15 @@ const PeopleYouMayKnow = ({ profiles, userId, navigation, onStatusChange }: Prop
         <View className="bg-white my-3 py-6 px-4 border-y border-gray-50">
             <View className="flex-row justify-between items-end mb-5 px-1">
                 <View>
-                    <Text className="text-[10px] text-orange-500 font-black uppercase tracking-[3px] mb-1">Discovery</Text>
-                    <Text className="font-black text-gray-900 text-xl tracking-tight leading-tight">People You May Know</Text>
+                    <Text className="text-[10px] text-blue-500 font-black uppercase tracking-[3px] mb-1">Discovery</Text>
+                    <Text className="font-black text-blue-950 text-xl tracking-tight leading-tight">People You May Know</Text>
                 </View>
                 <TouchableOpacity 
                     activeOpacity={0.6}
                     onPress={() => navigation.navigate('FollowList', { userId: userId, action: 'fetch_all_members', title: 'Connect with People' })}
-                    className="bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100"
+                    className="bg-blue-50 px-3 py-1.5 rounded-full border border-orange-100"
                 >
-                    <Text className="text-orange-600 font-black text-[10px] uppercase tracking-wider">View All</Text>
+                    <Text className="text-blue-600 font-black text-[10px] uppercase tracking-wider">View All</Text>
                 </TouchableOpacity>
             </View>
 

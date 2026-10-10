@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff', padding: 15, borderRadius: 10,
         elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 5
     },
-    toastTitle: { color: '#1f2937', fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
-    toastBody: { color: '#4b5563', fontSize: 14 },
+    toastTitle: { color: '#172554', fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
+    toastBody: { color: '#64748B', fontSize: 14 },
     container: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.7)',

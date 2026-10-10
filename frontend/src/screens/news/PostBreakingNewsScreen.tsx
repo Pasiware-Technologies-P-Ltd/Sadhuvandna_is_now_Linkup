@@ -85,7 +85,7 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#E2E8F0' }} edges={['top']}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -123,7 +123,7 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
                 <View style={styles.listContainer}>
                     <Text style={styles.listHeader}>My Breaking News</Text>
                     {fetching ? (
-                        <ActivityIndicator size="large" color="#ea580c" style={{ marginTop: 20 }} />
+                        <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
                     ) : (
                         <FlashList
                             data={myNews}
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         justifyContent: 'space-between',
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: '#E2E8F0',
     },
     backBtn: {
         padding: 4,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: '#172554',
     },
     formContainer: {
         backgroundColor: 'white',
@@ -177,13 +177,13 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 12,
         fontSize: 15,
-        color: '#111827',
-        backgroundColor: '#f9fafb',
+        color: '#172554',
+        backgroundColor: '#F8FAFC',
         height: 80,
         marginBottom: 16,
     },
     submitBtn: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     },
     newsTitle: {
         fontSize: 15,
-        color: '#1f2937',
+        color: '#172554',
         marginBottom: 8,
         fontWeight: '500',
     },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     },
     newsDate: {
         fontSize: 12,
-        color: '#6b7280',
+        color: '#64748B',
     },
     statusBadge: {
         paddingHorizontal: 10,
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         textAlign: 'center',
-        color: '#6b7280',
+        color: '#64748B',
         marginTop: 40,
         fontSize: 14,
     }

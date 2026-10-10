@@ -49,7 +49,7 @@ const BranchScreen = ({ navigation }: any) => {
     const renderItem = ({ item }: { item: any }) => <BranchCard item={item} t={t} />;
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#ea580c" /></View>;
+        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
@@ -58,7 +58,7 @@ const BranchScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">{t('branches')}</Text>
+                <Text className="text-xl font-bold text-blue-900">{t('branches')}</Text>
             </View>
 
             <FlashList
@@ -68,7 +68,7 @@ const BranchScreen = ({ navigation }: any) => {
                 contentContainerStyle={{ paddingVertical: 10 }}
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
-                        <Text className="text-gray-500 text-center text-lg">No branches found.</Text>
+                        <Text className="text-slate-500 text-center text-lg">No branches found.</Text>
                     </View>
                 }
             />
@@ -85,29 +85,29 @@ const BranchCard = ({ item, t }: { item: any, t: any }) => {
             {item.photo && (
                 <Image
                     source={{ uri: `${BRANCH_IMAGE_URL}${item.photo}` }}
-                    className="w-full h-72 bg-gray-50"
+                    className="w-full h-72 bg-slate-50"
                     contentFit="contain"
                 />
             )}
             <View className="p-4">
-                <Text className="text-xl font-bold text-gray-900 mb-1">{item.branch_name}</Text>
-                <Text className="text-md text-orange-600 font-semibold mb-2">{item.mahant_name}</Text>
-                <Text className="text-sm text-gray-600 mb-2">
+                <Text className="text-xl font-bold text-blue-950 mb-1">{item.branch_name}</Text>
+                <Text className="text-md text-blue-600 font-semibold mb-2">{item.mahant_name}</Text>
+                <Text className="text-sm text-slate-500 mb-2">
                     <Ionicons name="call" size={14} color="gray" /> {item.mahant_mobile}
                 </Text>
-                <Text className="text-xs text-gray-500 mb-2">{t('location')}: {item.branch_village}</Text>
+                <Text className="text-xs text-slate-500 mb-2">{t('location')}: {item.branch_village}</Text>
 
                 {item.details && (
                     <View>
                         <Text
-                            className="text-gray-700 text-sm leading-5"
+                            className="text-slate-600 text-sm leading-5"
                             numberOfLines={expanded ? undefined : 3}
                         >
                             {item.details}
                         </Text>
                         {hasLongText && (
                             <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mt-1">
-                                <Text className="text-orange-600 font-bold text-xs">
+                                <Text className="text-blue-600 font-bold text-xs">
                                     {expanded ? t('seeLess') : t('seeMore')}
                                 </Text>
                             </TouchableOpacity>

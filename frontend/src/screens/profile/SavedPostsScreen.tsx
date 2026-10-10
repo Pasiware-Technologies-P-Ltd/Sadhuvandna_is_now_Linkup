@@ -116,7 +116,7 @@ const SavedPostsScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }} edges={['top', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={['top', 'bottom']}>
             {/* Header */}
             <View style={{
                 flexDirection: 'row',
@@ -125,7 +125,7 @@ const SavedPostsScreen = ({ navigation }: any) => {
                 paddingVertical: 12,
                 backgroundColor: 'white',
                 borderBottomWidth: 1,
-                borderBottomColor: '#f3f4f6',
+                borderBottomColor: '#E2E8F0',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.05,
@@ -134,21 +134,21 @@ const SavedPostsScreen = ({ navigation }: any) => {
                 zIndex: 10
             }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 6, marginRight: 12 }} activeOpacity={0.7}>
-                    <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                    <Ionicons name="arrow-back" size={24} color="#172554" />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
                         {t('saved')} {t('posts')}
                     </Text>
                 </View>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="bookmark" size={20} color="#ea580c" />
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="bookmark" size={20} color="#2563EB" />
                 </View>
             </View>
 
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                     <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>{t('loading')}...</Text>
                 </View>
             ) : (
@@ -164,22 +164,22 @@ const SavedPostsScreen = ({ navigation }: any) => {
                     viewabilityConfig={viewabilityConfig}
                     contentContainerStyle={posts.length === 0 ? { flex: 1, justifyContent: 'center', alignItems: 'center' } : { paddingVertical: 10 }}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />
                     }
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
-                            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                <Ionicons name="bookmark-outline" size={40} color="#ea580c" />
+                            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                <Ionicons name="bookmark-outline" size={40} color="#2563EB" />
                             </View>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1f2937', marginBottom: 6, textAlign: 'center' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554', marginBottom: 6, textAlign: 'center' }}>
                                 {t('noSavedPosts') || 'No Saved Posts'}
                             </Text>
-                            <Text style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 20 }}>
+                            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 }}>
                                 You haven't bookmarked any posts yet. Tap the bookmark icon on any post to save it here!
                             </Text>
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
-                                style={{ marginTop: 20, backgroundColor: '#ea580c', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
+                                style={{ marginTop: 20, backgroundColor: '#2563EB', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
                                 activeOpacity={0.8}
                             >
                                 <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Explore Posts</Text>

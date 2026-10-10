@@ -361,20 +361,20 @@ const MarriageScreen = ({ navigation }: any) => {
           margin: 6,
           borderRadius: 20,
           borderWidth: 1,
-          borderColor: "#f3f4f6",
+          borderColor: "#E2E8F0",
           overflow: "hidden",
           opacity: shimmerAnim,
         }}
       >
         <View
-          style={{ width: "100%", height: 160, backgroundColor: "#e5e7eb" }}
+          style={{ width: "100%", height: 160, backgroundColor: "#E2E8F0" }}
         />
         <View style={{ padding: 12 }}>
           <View
             style={{
               width: "70%",
               height: 14,
-              backgroundColor: "#e5e7eb",
+              backgroundColor: "#E2E8F0",
               borderRadius: 4,
               marginBottom: 8,
             }}
@@ -383,7 +383,7 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               width: "90%",
               height: 10,
-              backgroundColor: "#e5e7eb",
+              backgroundColor: "#E2E8F0",
               borderRadius: 4,
             }}
           />
@@ -392,9 +392,9 @@ const MarriageScreen = ({ navigation }: any) => {
           style={{
             width: "100%",
             height: 36,
-            backgroundColor: "#f9fafb",
+            backgroundColor: "#F8FAFC",
             borderTopWidth: 1,
-            borderColor: "#f3f4f6",
+            borderColor: "#E2E8F0",
           }}
         />
       </Animated.View>
@@ -459,7 +459,7 @@ const MarriageScreen = ({ navigation }: any) => {
           margin: 6,
           borderRadius: 20,
           borderWidth: 1,
-          borderColor: "#f3f4f6",
+          borderColor: "#E2E8F0",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.03,
@@ -475,7 +475,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 ? ImageService.getFeedImageUrl(`${PHOTO_URL}${item.photo}`, 300)
                 : "https://via.placeholder.com/150",
             }}
-            style={{ width: "100%", height: 160, backgroundColor: "#f9fafb" }}
+            style={{ width: "100%", height: 160, backgroundColor: "#F8FAFC" }}
             contentFit="cover"
           />
           {/* Flame compatibility score badge */}
@@ -493,7 +493,7 @@ const MarriageScreen = ({ navigation }: any) => {
               gap: 2,
             }}
           >
-            <Text style={{ fontSize: 9, fontWeight: "900", color: "#ea580c" }}>
+            <Text style={{ fontSize: 9, fontWeight: "900", color: "#2563EB" }}>
               🔥 {compatibilityScore}%
             </Text>
           </View>
@@ -510,7 +510,7 @@ const MarriageScreen = ({ navigation }: any) => {
           >
             <Text
               style={{
-                color: "#ea580c",
+                color: "#2563EB",
                 fontSize: 8,
                 fontWeight: "bold",
                 textTransform: "uppercase",
@@ -524,7 +524,7 @@ const MarriageScreen = ({ navigation }: any) => {
 
         <View style={{ padding: 12 }}>
           <Text
-            style={{ fontSize: 14, fontWeight: "bold", color: "#1f2937" }}
+            style={{ fontSize: 14, fontWeight: "bold", color: "#172554" }}
             numberOfLines={1}
           >
             {item.full_name}, {item.age}
@@ -533,7 +533,7 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               fontSize: 11,
               fontWeight: "500",
-              color: "#6b7280",
+              color: "#64748B",
               marginTop: 4,
             }}
             numberOfLines={1}
@@ -548,17 +548,17 @@ const MarriageScreen = ({ navigation }: any) => {
             <View
               style={{
                 width: "100%",
-                backgroundColor: "#fff7ed",
+                backgroundColor: "#EFF6FF",
                 paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
                 borderTopWidth: 1,
-                borderTopColor: "#ffedd5",
+                borderTopColor: "#DBEAFE",
               }}
             >
               <Text
                 style={{
-                  color: "#ea580c",
+                  color: "#2563EB",
                   fontWeight: "bold",
                   fontSize: 11,
                   letterSpacing: 0.3,
@@ -573,17 +573,17 @@ const MarriageScreen = ({ navigation }: any) => {
             <View
               style={{
                 width: "100%",
-                backgroundColor: "#fff7ed",
+                backgroundColor: "#EFF6FF",
                 paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
                 borderTopWidth: 1,
-                borderTopColor: "#ffedd5",
+                borderTopColor: "#DBEAFE",
               }}
             >
               <Text
                 style={{
-                  color: "#ea580c",
+                  color: "#2563EB",
                   fontWeight: "bold",
                   fontSize: 11,
                   letterSpacing: 0.3,
@@ -630,7 +630,7 @@ const MarriageScreen = ({ navigation }: any) => {
     );
   };
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-slate-50">
       <View className="px-4 py-3 bg-white border-b border-gray-100 shadow-sm z-10">
         {/* Top Row: Logo, Search, Chat, Bell */}
         <View
@@ -645,7 +645,7 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 fontSize: 22,
                 fontWeight: "900",
-                color: "#ea580c",
+                color: "#2563EB",
                 letterSpacing: -0.5,
               }}
             >
@@ -660,18 +660,18 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: "#f9fafb",
+                backgroundColor: "#F8FAFC",
                 paddingHorizontal: 8,
                 paddingVertical: 6,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: "#e5e7eb",
+                borderColor: "#E2E8F0",
               }}
               activeOpacity={0.7}
             >
               <Text
                 style={{
-                  color: "#6B7280",
+                  color: "#64748B",
                   fontSize: 10,
                   fontWeight: "600",
                   marginRight: 4,
@@ -679,7 +679,7 @@ const MarriageScreen = ({ navigation }: any) => {
               >
                 Search
               </Text>
-              <Ionicons name="funnel-outline" size={11} color="#ea580c" />
+              <Ionicons name="funnel-outline" size={11} color="#2563EB" />
             </TouchableOpacity>
 
             {/* Bell (Requests) Icon -> Changed to People Icon */}
@@ -691,7 +691,7 @@ const MarriageScreen = ({ navigation }: any) => {
               <Ionicons
                 name="people"
                 size={20}
-                color="#ea580c"
+                color="#2563EB"
               />
               {requestCount > 0 && (
                 <View
@@ -762,7 +762,7 @@ const MarriageScreen = ({ navigation }: any) => {
       </View>
 
       {loading && myProfileId === 0 ? (
-        <View style={{ flex: 1, backgroundColor: "#f9fafb", paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: "#F8FAFC", paddingTop: 16 }}>
           <FlashList
             data={[1, 2, 3, 4, 5, 6]}
             renderItem={renderSkeletonCard}
@@ -773,22 +773,22 @@ const MarriageScreen = ({ navigation }: any) => {
         </View>
       ) : !myProfileId ? (
         // Gate: No profile created yet
-        <View className="flex-1 items-center justify-center px-8 bg-gray-50">
+        <View className="flex-1 items-center justify-center px-8 bg-slate-50">
           <View className="bg-white rounded-3xl p-8 items-center shadow-md border border-gray-100 w-full">
-            <View className="bg-orange-100 p-5 rounded-full mb-5">
-              <Ionicons name="heart-circle-outline" size={52} color="#ea580c" />
+            <View className="bg-blue-100 p-5 rounded-full mb-5">
+              <Ionicons name="heart-circle-outline" size={52} color="#2563EB" />
             </View>
-            <Text className="text-xl font-extrabold text-gray-800 mb-2 text-center">
+            <Text className="text-xl font-extrabold text-blue-900 mb-2 text-center">
               {t("welcomeMatrimony")}
             </Text>
-            <Text className="text-gray-500 text-sm text-center leading-5 mb-6">
+            <Text className="text-slate-500 text-sm text-center leading-5 mb-6">
               {t("browseProfilesMsg")}
             </Text>
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("CreateMarriageProfile", { profile: null })
               }
-              className="bg-orange-600 w-full py-3.5 rounded-2xl items-center shadow-sm mb-3"
+              className="bg-blue-600 w-full py-3.5 rounded-2xl items-center shadow-sm mb-3"
             >
               <Text className="text-white font-extrabold text-base">
                 {t("createMyProfile")}
@@ -818,7 +818,7 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 flex: 1,
                 flexDirection: "row",
-                backgroundColor: "#f3f4f6",
+                backgroundColor: "#E2E8F0",
                 borderRadius: 24,
                 padding: 3,
               }}
@@ -844,7 +844,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 10,
                     fontWeight: "bold",
-                    color: gender === "" ? "#ea580c" : "#4b5563",
+                    color: gender === "" ? "#2563EB" : "#64748B",
                   }}
                 >
                   {t("allMatches") || "All Matches"}
@@ -871,7 +871,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 10,
                     fontWeight: "bold",
-                    color: gender === "Male" ? "#ea580c" : "#4b5563",
+                    color: gender === "Male" ? "#2563EB" : "#64748B",
                   }}
                 >
                   {t("grooms") || "Grooms"}
@@ -899,7 +899,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 10,
                     fontWeight: "bold",
-                    color: gender === "Female" ? "#ea580c" : "#4b5563",
+                    color: gender === "Female" ? "#2563EB" : "#64748B",
                   }}
                 >
                   {t("brides") || "Brides"}
@@ -923,8 +923,8 @@ const MarriageScreen = ({ navigation }: any) => {
                 paddingVertical: 2,
                 borderRadius: 24,
                 borderWidth: 1,
-                borderColor: "#ea580c",
-                shadowColor: "#ea580c",
+                borderColor: "#2563EB",
+                shadowColor: "#2563EB",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.15,
                 shadowRadius: 4,
@@ -934,7 +934,7 @@ const MarriageScreen = ({ navigation }: any) => {
             >
               <Text
                 style={{
-                  color: "#ea580c",
+                  color: "#2563EB",
                   fontSize: 9,
                   fontWeight: "bold",
                   marginRight: 4,
@@ -953,7 +953,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   width: 20,
                   height: 20,
                   borderRadius: 10,
-                  backgroundColor: "#f3f4f6",
+                  backgroundColor: "#E2E8F0",
                 }}
               />
             </TouchableOpacity>
@@ -979,10 +979,10 @@ const MarriageScreen = ({ navigation }: any) => {
                     paddingVertical: 6,
                     borderRadius: 20,
                     backgroundColor:
-                      activeTag === tag ? "#ea580c" : "transparent",
+                      activeTag === tag ? "#2563EB" : "transparent",
                     borderWidth: 1,
-                    borderColor: activeTag === tag ? "#ea580c" : "#e5e7eb",
-                    shadowColor: activeTag === tag ? "#ea580c" : "transparent",
+                    borderColor: activeTag === tag ? "#2563EB" : "#E2E8F0",
+                    shadowColor: activeTag === tag ? "#2563EB" : "transparent",
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.2,
                     shadowRadius: 4,
@@ -994,7 +994,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     style={{
                       fontSize: 12,
                       fontWeight: "bold",
-                      color: activeTag === tag ? "white" : "#6b7280",
+                      color: activeTag === tag ? "white" : "#64748B",
                     }}
                   >
                     {tag}
@@ -1028,12 +1028,12 @@ const MarriageScreen = ({ navigation }: any) => {
               onEndReached={() => fetchProfiles(true)}
               onEndReachedThreshold={0.5}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />
               }
               ListFooterComponent={
                 isLoadMoreLoading ? (
                   <View className="py-4">
-                    <ActivityIndicator color="#ea580c" />
+                    <ActivityIndicator color="#2563EB" />
                   </View>
                 ) : null
               }
@@ -1042,7 +1042,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 paddingVertical: 10,
                 paddingBottom: 80,
               }}
-              className="bg-gray-50"
+              className="bg-slate-50"
               ListEmptyComponent={
                 <View className="items-center justify-center py-20">
                   <Image
@@ -1051,7 +1051,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     }}
                     className="w-20 h-20 opacity-30 mb-4"
                   />
-                  <Text className="text-gray-500 font-bold text-lg">
+                  <Text className="text-slate-500 font-bold text-lg">
                     {t("noProfilesFound")}
                   </Text>
                   <Text className="text-gray-400 text-xs mt-1 text-center w-64">
@@ -1059,9 +1059,9 @@ const MarriageScreen = ({ navigation }: any) => {
                   </Text>
                   <TouchableOpacity
                     onPress={() => fetchProfiles()}
-                    className="mt-6 bg-orange-100 px-6 py-2 rounded-full"
+                    className="mt-6 bg-blue-100 px-6 py-2 rounded-full"
                   >
-                    <Text className="text-orange-600 font-bold text-xs">
+                    <Text className="text-blue-600 font-bold text-xs">
                       {t("refresh")}
                     </Text>
                   </TouchableOpacity>
@@ -1103,7 +1103,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   padding: 20,
                   borderRadius: 24,
                   borderWidth: 1,
-                  borderColor: "#f3f4f6",
+                  borderColor: "#E2E8F0",
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 10 },
                   shadowOpacity: 0.15,
@@ -1148,9 +1148,9 @@ const MarriageScreen = ({ navigation }: any) => {
                       flex: 1,
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: gender === "Male" ? "#ea580c" : "#e5e7eb",
+                      borderColor: gender === "Male" ? "#2563EB" : "#E2E8F0",
                       backgroundColor:
-                        gender === "Male" ? "#ea580c" : "#f9fafb",
+                        gender === "Male" ? "#2563EB" : "#F8FAFC",
                       paddingVertical: 12,
                       alignItems: "center",
                     }}
@@ -1160,7 +1160,7 @@ const MarriageScreen = ({ navigation }: any) => {
                       style={{
                         fontSize: 13,
                         fontWeight: "bold",
-                        color: gender === "Male" ? "white" : "#4b5563",
+                        color: gender === "Male" ? "white" : "#64748B",
                       }}
                     >
                       {t("groomMale")}
@@ -1172,9 +1172,9 @@ const MarriageScreen = ({ navigation }: any) => {
                       flex: 1,
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: gender === "Female" ? "#db2777" : "#e5e7eb",
+                      borderColor: gender === "Female" ? "#db2777" : "#E2E8F0",
                       backgroundColor:
-                        gender === "Female" ? "#db2777" : "#f9fafb",
+                        gender === "Female" ? "#db2777" : "#F8FAFC",
                       paddingVertical: 12,
                       alignItems: "center",
                     }}
@@ -1184,7 +1184,7 @@ const MarriageScreen = ({ navigation }: any) => {
                       style={{
                         fontSize: 13,
                         fontWeight: "bold",
-                        color: gender === "Female" ? "white" : "#4b5563",
+                        color: gender === "Female" ? "white" : "#64748B",
                       }}
                     >
                       {t("brideFemale")}
@@ -1210,10 +1210,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#f9fafb",
+                      backgroundColor: "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: "#E2E8F0",
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1228,7 +1228,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#111827",
+                        color: "#172554",
                       }}
                       placeholderTextColor="#9ca3af"
                     />
@@ -1236,10 +1236,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#f9fafb",
+                      backgroundColor: "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: "#E2E8F0",
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1254,7 +1254,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#111827",
+                        color: "#172554",
                       }}
                       placeholderTextColor="#9ca3af"
                     />
@@ -1279,10 +1279,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#f9fafb",
+                      backgroundColor: "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: "#E2E8F0",
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1302,7 +1302,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#111827",
+                        color: "#172554",
                       }}
                       placeholderTextColor="#9ca3af"
                     />
@@ -1310,10 +1310,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#f9fafb",
+                      backgroundColor: "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: "#E2E8F0",
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1333,7 +1333,7 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#111827",
+                        color: "#172554",
                       }}
                       placeholderTextColor="#9ca3af"
                     />
@@ -1347,7 +1347,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     alignItems: "center",
                     paddingTop: 12,
                     borderTopWidth: 1,
-                    borderColor: "#f3f4f6",
+                    borderColor: "#E2E8F0",
                   }}
                 >
                   <TouchableOpacity
@@ -1363,7 +1363,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   >
                     <Text
                       style={{
-                        color: "#ea580c",
+                        color: "#2563EB",
                         fontSize: 13,
                         fontWeight: "bold",
                       }}
@@ -1377,11 +1377,11 @@ const MarriageScreen = ({ navigation }: any) => {
                       fetchProfiles();
                     }}
                     style={{
-                      backgroundColor: "#ea580c",
+                      backgroundColor: "#2563EB",
                       paddingHorizontal: 24,
                       paddingVertical: 10,
                       borderRadius: 24,
-                      shadowColor: "#ea580c",
+                      shadowColor: "#2563EB",
                       shadowOffset: { width: 0, height: 4 },
                       shadowOpacity: 0.15,
                       shadowRadius: 6,

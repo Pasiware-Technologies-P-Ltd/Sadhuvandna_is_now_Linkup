@@ -269,14 +269,14 @@ const ChatListScreen = ({ navigation, route }: any) => {
 
         return (
             <TouchableOpacity
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f9fafb' }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}
                 onPress={() => navigation.navigate('Chat', { receiver: receiverObj, platform: activePlatform, isGroup: item.isGroup })}
                 activeOpacity={0.7}
             >
                 <View style={{ position: 'relative', marginRight: 14 }}>
                     <Image
                         source={{ uri: (item.profile_photo) ? `${currentPhotoUrl}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                        style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#f3f4f6' }}
+                        style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: '#E2E8F0' }}
                     />
                     {isOnline && (
                         <View 
@@ -286,7 +286,7 @@ const ChatListScreen = ({ navigation, route }: any) => {
                 </View>
                 <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }} numberOfLines={1}>
+                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#172554' }} numberOfLines={1}>
                             {item.full_name}
                         </Text>
                         <Text style={{ fontSize: 11, fontWeight: '500', color: '#9ca3af' }}>
@@ -303,12 +303,12 @@ const ChatListScreen = ({ navigation, route }: any) => {
                                     style={{ marginRight: 4 }}
                                 />
                             )}
-                            <Text style={{ fontSize: 13, color: '#6b7280', flex: 1 }} numberOfLines={1}>
+                            <Text style={{ fontSize: 13, color: '#64748B', flex: 1 }} numberOfLines={1}>
                                 {item.last_message || 'Media'}
                             </Text>
                         </View>
                         {item.unread > 0 && (
-                            <View style={{ backgroundColor: '#ea580c', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, shadowColor: '#ea580c', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 1 }}>
+                            <View style={{ backgroundColor: '#2563EB', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, shadowColor: '#2563EB', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 1 }}>
                                 <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>{item.unread}</Text>
                             </View>
                         )}
@@ -336,9 +336,9 @@ const ChatListScreen = ({ navigation, route }: any) => {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: 'white', zIndex: 50 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 8 }} activeOpacity={0.7}>
-                        <Ionicons name="arrow-back" size={24} color="#111827" />
+                        <Ionicons name="arrow-back" size={24} color="#172554" />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#172554', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
                 </View>
                 {activePlatform !== 'marriage' && (
                     <TouchableOpacity onPress={toggleMenu} style={{ padding: 4 }} activeOpacity={0.7}>
@@ -346,15 +346,15 @@ const ChatListScreen = ({ navigation, route }: any) => {
                     </TouchableOpacity>
                 )}
                 {showMenu && activePlatform !== 'marriage' && (
-                    <View style={{ position: 'absolute', top: 48, right: 16, backgroundColor: 'white', borderRadius: 16, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 5, paddingVertical: 6, width: 150, zIndex: 100 }}>
+                    <View style={{ position: 'absolute', top: 48, right: 16, backgroundColor: 'white', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 5, paddingVertical: 6, width: 150, zIndex: 100 }}>
                         <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9fafb' }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}
                             onPress={() => {
                                 toggleMenu();
                                 navigation.navigate('CreateGroup');
                             }}
                         >
-                            <Ionicons name="add-circle-outline" size={18} color="#ea580c" style={{ marginRight: 8 }} />
+                            <Ionicons name="add-circle-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
                             <Text style={{ color: '#374151', fontSize: 13, fontWeight: '600' }}>Create Group</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
@@ -364,7 +364,7 @@ const ChatListScreen = ({ navigation, route }: any) => {
                                 setJoinModalVisible(true);
                             }}
                         >
-                            <Ionicons name="enter-outline" size={18} color="#ea580c" style={{ marginRight: 8 }} />
+                            <Ionicons name="enter-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
                             <Text style={{ color: '#374151', fontSize: 13, fontWeight: '600' }}>Join Group</Text>
                         </TouchableOpacity>
                     </View>
@@ -372,8 +372,8 @@ const ChatListScreen = ({ navigation, route }: any) => {
             </View>
 
             {/* Search Filter Bar */}
-            <View style={{ paddingHorizontal: 16, paddingBottom: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 12, height: 38 }}>
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 12, height: 38 }}>
                     <Ionicons name="search" size={16} color="#9ca3af" style={{ marginRight: 8 }} />
                     <TextInput
                         style={{ flex: 1, fontSize: 13, color: '#374151', padding: 0 }}
@@ -399,7 +399,7 @@ const ChatListScreen = ({ navigation, route }: any) => {
                 ListFooterComponent={
                     searchingContacts ? (
                         <View style={{ paddingVertical: 12, alignItems: 'center' }}>
-                            <ActivityIndicator size="small" color="#ea580c" />
+                            <ActivityIndicator size="small" color="#2563EB" />
                         </View>
                     ) : null
                 }
@@ -419,19 +419,19 @@ const ChatListScreen = ({ navigation, route }: any) => {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}>
                     <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Join Group</Text>
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#172554' }}>Join Group</Text>
                             <TouchableOpacity onPress={() => setJoinModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#6b7280" />
+                                <Ionicons name="close" size={24} color="#64748B" />
                             </TouchableOpacity>
                         </View>
                         
-                        <Text style={{ color: '#6b7280', fontSize: 13, fontWeight: '500', marginBottom: 16 }}>
+                        <Text style={{ color: '#64748B', fontSize: 13, fontWeight: '500', marginBottom: 16 }}>
                             Enter the 8-character invite code to join a group.
                         </Text>
                         
-                        <View style={{ backgroundColor: '#f9fafb', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 20 }}>
+                        <View style={{ backgroundColor: '#F8FAFC', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 20 }}>
                             <TextInput
-                                style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center', letterSpacing: 4, color: '#ea580c' }}
+                                style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center', letterSpacing: 4, color: '#2563EB' }}
                                 placeholder="8A2B3C..."
                                 placeholderTextColor="#fed7aa"
                                 value={joinCode}
@@ -443,7 +443,7 @@ const ChatListScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <TouchableOpacity 
-                            style={{ backgroundColor: joinCode.length === 8 ? '#ea580c' : '#e5e7eb', paddingVertical: 14, borderRadius: 24, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}
+                            style={{ backgroundColor: joinCode.length === 8 ? '#2563EB' : '#E2E8F0', paddingVertical: 14, borderRadius: 24, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}
                             disabled={joinCode.length !== 8 || joining}
                             onPress={handleJoinGroup}
                         >

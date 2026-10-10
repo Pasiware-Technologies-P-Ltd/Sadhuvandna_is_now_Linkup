@@ -8,8 +8,9 @@ import { useFont, FONT_CATALOG } from '../../context/FontContext';
 
 const SettingsScreen = ({ navigation }: any) => {
     const { language, setLanguage, t } = useLanguage();
-    const { fontFamily, setFontFamily } = useFont();
+    const { fontFamily, setFontFamily, fontScale, setFontScale } = useFont();
     const [fontModalVisible, setFontModalVisible] = useState(false);
+    const [fontScaleModalVisible, setFontScaleModalVisible] = useState(false);
     const [langModalVisible, setLangModalVisible] = useState(false);
     const [user, setUser] = useState<any>(null);
 
@@ -48,6 +49,10 @@ const SettingsScreen = ({ navigation }: any) => {
         setFontModalVisible(true);
     };
 
+    const handleChangeFontScale = () => {
+        setFontScaleModalVisible(true);
+    };
+
     const getFontLabel = (font: string) => {
         const opt = FONT_CATALOG[font];
         if (!opt) return font;
@@ -57,6 +62,17 @@ const SettingsScreen = ({ navigation }: any) => {
 
     const openLink = (url: string) => {
         Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
+    };
+
+    const FONT_SCALE_OPTIONS = [
+        { label: 'Small', value: 0.85 },
+        { label: 'Medium (Default)', value: 1 },
+        { label: 'Large', value: 1.15 },
+        { label: 'Extra Large', value: 1.3 }
+    ];
+
+    const getFontScaleLabel = (scale: number) => {
+        return FONT_SCALE_OPTIONS.find(o => o.value === scale)?.label || 'Medium (Default)';
     };
 
     interface MenuItem {
@@ -107,6 +123,12 @@ const SettingsScreen = ({ navigation }: any) => {
                     icon: "text-outline",
                     action: handleChangeFont,
                     value: getFontLabel(fontFamily)
+                },
+                {
+                    label: 'Font Size',
+                    icon: "resize-outline",
+                    action: handleChangeFontScale,
+                    value: getFontScaleLabel(fontScale)
                 }
             ]
         },
@@ -135,7 +157,7 @@ const SettingsScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
@@ -148,7 +170,7 @@ const SettingsScreen = ({ navigation }: any) => {
                         <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#9ca3af', marginBottom: 8, textTransform: 'uppercase' }}>
                             {section.title}
                         </Text>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0' }}>
                             {section.items.map((item, i) => (
                                 <TouchableOpacity
                                     key={i}
@@ -156,16 +178,16 @@ const SettingsScreen = ({ navigation }: any) => {
                                     style={{
                                         flexDirection: 'row', alignItems: 'center', padding: 16,
                                         borderBottomWidth: i === section.items.length - 1 ? 0 : 1,
-                                        borderBottomColor: '#f3f4f6'
+                                        borderBottomColor: '#E2E8F0'
                                     }}
                                 >
                                     <View style={{ width: 32, alignItems: 'center', marginRight: 12 }}>
-                                        <Ionicons name={item.icon as any} size={22} color={item.color || '#4b5563'} />
+                                        <Ionicons name={item.icon as any} size={22} color={item.color || '#64748B'} />
                                     </View>
-                                    <Text style={{ fontSize: 16, color: item.color || '#1f2937', flex: 1 }}>{item.label}</Text>
+                                    <Text style={{ fontSize: 16, color: item.color || '#172554', flex: 1 }}>{item.label}</Text>
 
                                     {item.value && (
-                                        <Text style={{ marginRight: 8, color: '#ea580c', fontWeight: 'bold' }}>{item.value}</Text>
+                                        <Text style={{ marginRight: 8, color: '#2563EB', fontWeight: 'bold' }}>{item.value}</Text>
                                     )}
 
                                     <Ionicons name="chevron-forward" size={20} color="#d1d5db" />
@@ -190,11 +212,11 @@ const SettingsScreen = ({ navigation }: any) => {
                 >
                     <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
                         {/* Handle bar */}
-                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
+                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 16 }} />
                         
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
                                 {t('changeFontFamily')}
                             </Text>
                             <TouchableOpacity onPress={() => setFontModalVisible(false)}>
@@ -223,8 +245,8 @@ const SettingsScreen = ({ navigation }: any) => {
                                                 padding: 14,
                                                 borderRadius: 16,
                                                 borderWidth: 1,
-                                                borderColor: isSelected ? '#ea580c' : '#f3f4f6',
-                                                backgroundColor: isSelected ? '#fff7ed' : 'white',
+                                                borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                                                backgroundColor: isSelected ? '#EFF6FF' : 'white',
                                             }}
                                             activeOpacity={0.7}
                                         >
@@ -232,7 +254,7 @@ const SettingsScreen = ({ navigation }: any) => {
                                                 <Text style={{
                                                     fontSize: 16,
                                                     fontWeight: 'bold',
-                                                    color: isSelected ? '#ea580c' : '#1f2937',
+                                                    color: isSelected ? '#2563EB' : '#172554',
                                                     fontFamily: fontStyle
                                                 }}>
                                                     {label}
@@ -242,7 +264,7 @@ const SettingsScreen = ({ navigation }: any) => {
                                                 </Text>
                                             </View>
                                             {isSelected && (
-                                                <Ionicons name="checkmark-circle" size={22} color="#ea580c" />
+                                                <Ionicons name="checkmark-circle" size={22} color="#2563EB" />
                                             )}
                                         </TouchableOpacity>
                                     );
@@ -266,11 +288,11 @@ const SettingsScreen = ({ navigation }: any) => {
                 >
                     <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
                         {/* Handle bar */}
-                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
+                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 16 }} />
                         
                         {/* Header */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
                                 {t('changeLanguage')}
                             </Text>
                             <TouchableOpacity onPress={() => setLangModalVisible(false)}>
@@ -295,8 +317,8 @@ const SettingsScreen = ({ navigation }: any) => {
                                                 padding: 16,
                                                 borderRadius: 16,
                                                 borderWidth: 1,
-                                                borderColor: isSelected ? '#ea580c' : '#f3f4f6',
-                                                backgroundColor: isSelected ? '#fff7ed' : 'white',
+                                                borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                                                backgroundColor: isSelected ? '#EFF6FF' : 'white',
                                             }}
                                             activeOpacity={0.7}
                                         >
@@ -304,16 +326,82 @@ const SettingsScreen = ({ navigation }: any) => {
                                                 <Text style={{
                                                     fontSize: 16,
                                                     fontWeight: 'bold',
-                                                    color: isSelected ? '#ea580c' : '#1f2937'
+                                                    color: isSelected ? '#2563EB' : '#172554'
                                                 }}>
-                                                    {opt.label} <Text style={{ fontSize: 12, fontWeight: 'normal', color: '#6b7280' }}>({opt.nativeLabel})</Text>
+                                                    {opt.label} <Text style={{ fontSize: 12, fontWeight: 'normal', color: '#64748B' }}>({opt.nativeLabel})</Text>
                                                 </Text>
                                                 <Text style={{ fontSize: 11, color: isSelected ? '#c2410c' : '#9ca3af', marginTop: 2 }}>
                                                     {opt.desc}
                                                 </Text>
                                             </View>
                                             {isSelected && (
-                                                <Ionicons name="checkmark-circle" size={22} color="#ea580c" />
+                                                <Ionicons name="checkmark-circle" size={22} color="#2563EB" />
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </ScrollView>
+                    </View>
+                </Pressable>
+            </Modal>
+
+            {/* Font Size Selector Bottom Sheet Modal */}
+            <Modal
+                visible={fontScaleModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setFontScaleModalVisible(false)}
+            >
+                <Pressable 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                    onPress={() => setFontScaleModalVisible(false)}
+                >
+                    <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
+                        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 16 }} />
+                        
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
+                                Font Size
+                            </Text>
+                            <TouchableOpacity onPress={() => setFontScaleModalVisible(false)}>
+                                <Ionicons name="close-circle" size={24} color="#9ca3af" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <View style={{ gap: 10 }}>
+                                {FONT_SCALE_OPTIONS.map((opt) => {
+                                    const isSelected = fontScale === opt.value;
+                                    return (
+                                        <TouchableOpacity
+                                            key={opt.value}
+                                            onPress={() => {
+                                                setFontScale(opt.value);
+                                                setFontScaleModalVisible(false);
+                                            }}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                padding: 16,
+                                                borderRadius: 16,
+                                                borderWidth: 1,
+                                                borderColor: isSelected ? '#2563EB' : '#E2E8F0',
+                                                backgroundColor: isSelected ? '#EFF6FF' : 'white',
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={{
+                                                    fontSize: 16 * opt.value,
+                                                    fontWeight: 'bold',
+                                                    color: isSelected ? '#2563EB' : '#172554'
+                                                }}>
+                                                    {opt.label}
+                                                </Text>
+                                            </View>
+                                            {isSelected && (
+                                                <Ionicons name="checkmark-circle" size={22} color="#2563EB" />
                                             )}
                                         </TouchableOpacity>
                                     );

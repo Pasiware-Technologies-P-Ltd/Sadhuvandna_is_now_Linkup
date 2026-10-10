@@ -113,7 +113,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
                     channelId,
                     asForegroundService: true,
                     ongoing: true,
-                    color: '#ea580c',
+                    color: '#2563EB',
                     foregroundServiceTypes: [AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE],
                     showChronometer: true,
                     chronometerDirection: 'up',
@@ -401,7 +401,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
     if (!isJoined) {
         return (
             <View style={styles.container}>
-                <ActivityIndicator size="large" color="#ea580c" />
+                <ActivityIndicator size="large" color="#2563EB" />
                 <Text style={styles.text}>Connecting...</Text>
             </View>
         );
@@ -473,7 +473,7 @@ const AgoraCallScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1f2937', justifyContent: 'center', alignItems: 'center' },
+    container: { flex: 1, backgroundColor: '#172554', justifyContent: 'center', alignItems: 'center' },
     text: { color: 'white' },
     remoteVideo: { width: '100%', height: '100%' },
     remoteVideoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center' },

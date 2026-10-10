@@ -109,14 +109,14 @@ export const CustomAlertProvider = () => {
                     className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl"
                 >
                     <View className="items-center mb-4">
-                        <View className="bg-orange-100 w-12 h-12 rounded-full items-center justify-center mb-3">
-                            <Text className="text-orange-600 text-xl font-bold">!</Text>
+                        <View className="bg-blue-100 w-12 h-12 rounded-full items-center justify-center mb-3">
+                            <Text className="text-blue-600 text-xl font-bold">!</Text>
                         </View>
-                        <Text className="text-xl font-extrabold text-gray-900 text-center mb-2">
+                        <Text className="text-xl font-extrabold text-blue-950 text-center mb-2">
                             {config.title}
                         </Text>
                         {config.message ? (
-                            <Text className="text-sm text-gray-500 text-center leading-relaxed">
+                            <Text className="text-sm text-slate-500 text-center leading-relaxed">
                                 {config.message}
                             </Text>
                         ) : null}
@@ -132,14 +132,14 @@ export const CustomAlertProvider = () => {
                             let textClass = "font-bold text-center ";
                             
                             if (isPrimary) {
-                                btnClass += "bg-orange-600 flex-1";
+                                btnClass += "bg-blue-600 flex-1";
                                 textClass += "text-white";
                             } else if (isDestructive) {
                                 btnClass += "bg-red-500 flex-1";
                                 textClass += "text-white";
                             } else {
-                                btnClass += "bg-gray-100 flex-1";
-                                textClass += "text-gray-700";
+                                btnClass += "bg-slate-100 flex-1";
+                                textClass += "text-slate-600";
                             }
 
                             if (buttons.length > 2) {

@@ -91,7 +91,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
 
     if (loading) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#1b3b64" />
             </SafeAreaView>
         );
@@ -99,7 +99,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
 
     if (!user) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }}>
                 <Text>User not found</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20, padding: 10, backgroundColor: '#1b3b64', borderRadius: 8 }}>
                     <Text style={{ color: 'white' }}>Go Back</Text>
@@ -140,7 +140,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
         <SafeAreaView style={styles.container}>
             <View style={styles.topBar}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 10 }}>
-                    <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                    <Ionicons name="arrow-back" size={24} color="#172554" />
                 </TouchableOpacity>
                 <Text style={styles.topBarTitle}>Press Card</Text>
                 <View style={{ width: 44 }} />
@@ -166,7 +166,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
                                 {/* Logo */}
                                 <View style={styles.logoWrapper}>
                                     <View style={styles.logoCircle}>
-                                        <Image source={require('../../../assets/logo.png')} style={styles.actualLogo} />
+                                        <Image source={require('../../../assets/icon.png')} style={styles.actualLogo} />
                                     </View>
                                 </View>
                                 
@@ -303,7 +303,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: '#E2E8F0',
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     topBar: {
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     topBarTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1f2937',
+        color: '#172554',
     },
     scrollContent: {
         padding: 20,
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
         height: 125, // Restored good size for profile image
         backgroundColor: 'white',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: '#E2E8F0',
         borderRadius: 4,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#E2E8F0',
     },
     profileImage: {
         width: '100%',

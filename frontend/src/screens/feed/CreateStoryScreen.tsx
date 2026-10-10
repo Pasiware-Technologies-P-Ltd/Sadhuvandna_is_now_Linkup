@@ -230,7 +230,7 @@ const CreateStoryScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', gap: 15 }}>
                     <TouchableOpacity onPress={() => { setShowMusicPicker(true); fetchMusic(); }} style={styles.iconBtn}>
-                        <Ionicons name="musical-notes-outline" size={24} color={selectedMusic ? "#ea580c" : "white"} />
+                        <Ionicons name="musical-notes-outline" size={24} color={selectedMusic ? "#2563EB" : "white"} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={toggleFitMode} style={styles.iconBtn}>
                         <Ionicons name={fitMode === 'cover' ? "resize" : "expand"} size={24} color="white" />
@@ -332,7 +332,7 @@ const CreateStoryScreen = ({ navigation }: any) => {
                             />
                         </View>
 
-                        {musicLoading ? <ActivityIndicator style={{ marginTop: 20 }} color="#ea580c" /> : (
+                        {musicLoading ? <ActivityIndicator style={{ marginTop: 20 }} color="#2563EB" /> : (
                             <FlashList
                                 data={musicList}
                                 keyExtractor={(item) => item.id.toString()}
@@ -342,13 +342,13 @@ const CreateStoryScreen = ({ navigation }: any) => {
                                         onPress={() => playPreview(item)}
                                     >
                                         <View style={styles.musicIconCircle}>
-                                            <Ionicons name="musical-note" size={20} color="#ea580c" />
+                                            <Ionicons name="musical-note" size={20} color="#2563EB" />
                                         </View>
                                         <View style={{ flex: 1, marginLeft: 12 }}>
                                             <Text style={styles.musicTitle}>{item.title}</Text>
                                             <Text style={styles.musicArtist}>{item.artist}</Text>
                                         </View>
-                                        {selectedMusic?.id === item.id && <Ionicons name="checkmark-circle" size={24} color="#ea580c" />}
+                                        {selectedMusic?.id === item.id && <Ionicons name="checkmark-circle" size={24} color="#2563EB" />}
                                     </TouchableOpacity>
                                 )}
                                 ListEmptyComponent={<Text style={styles.emptyText}>No music found</Text>}
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
         borderRadius: 15,
     },
     activeDurationItem: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
     },
     durationText: { color: 'white', fontSize: 11, fontWeight: 'bold' },
     activeDurationText: { color: 'white' },
@@ -460,12 +460,12 @@ const styles = StyleSheet.create({
     searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 10, paddingHorizontal: 12, marginBottom: 15 },
     searchInput: { flex: 1, paddingVertical: 10, marginLeft: 8, fontSize: 16 },
     musicItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-    selectedMusicItem: { backgroundColor: '#fff7ed' },
-    musicIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center' },
+    selectedMusicItem: { backgroundColor: '#EFF6FF' },
+    musicIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center' },
     musicTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
     musicArtist: { fontSize: 13, color: '#666' },
     emptyText: { textAlign: 'center', marginTop: 30, color: '#999' },
-    doneBtn: { backgroundColor: '#ea580c', paddingVertical: 15, borderRadius: 15, alignItems: 'center', marginTop: 10 },
+    doneBtn: { backgroundColor: '#2563EB', paddingVertical: 15, borderRadius: 15, alignItems: 'center', marginTop: 10 },
     doneBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
 });
 

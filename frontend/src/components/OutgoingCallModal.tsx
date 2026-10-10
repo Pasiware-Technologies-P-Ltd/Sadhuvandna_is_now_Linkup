@@ -259,7 +259,7 @@ const OutgoingCallModal: React.FC<OutgoingCallModalProps> = ({ visible, receiver
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1f2937' },
+    container: { flex: 1, backgroundColor: '#172554' },
     background: { ...StyleSheet.absoluteFillObject },
     backgroundImage: { flex: 1, width: '100%', height: '100%', resizeMode: 'cover' },
     overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     userInfo: { alignItems: 'center' },
     avatarContainer: { marginBottom: 20, elevation: 8 },
     avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: 'white' },
-    placeholderAvatar: { backgroundColor: '#6b7280', alignItems: 'center', justifyContent: 'center' },
+    placeholderAvatar: { backgroundColor: '#64748B', alignItems: 'center', justifyContent: 'center' },
     callerName: { fontSize: 28, fontWeight: 'bold', color: 'white', marginBottom: 8, textAlign: 'center' },
     callType: { fontSize: 18, color: '#d1d5db', letterSpacing: 1, fontWeight: '500' },
     actions: { alignItems: 'center', width: '100%', paddingBottom: 40 },

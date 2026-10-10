@@ -102,8 +102,8 @@ const JoinGroupScreen = ({ route, navigation }: any) => {
     if (loading) {
         return (
             <View className="flex-1 bg-white justify-center items-center">
-                <ActivityIndicator size="large" color="#ea580c" />
-                <Text className="mt-4 text-gray-500 font-medium">Fetching group details...</Text>
+                <ActivityIndicator size="large" color="#2563EB" />
+                <Text className="mt-4 text-slate-500 font-medium">Fetching group details...</Text>
             </View>
         );
     }
@@ -114,41 +114,41 @@ const JoinGroupScreen = ({ route, navigation }: any) => {
         <SafeAreaView className="flex-1 bg-white">
             <View className="p-4 flex-row items-center">
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#ea580c" />
+                    <Ionicons name="arrow-back" size={24} color="#2563EB" />
                 </TouchableOpacity>
             </View>
 
             <View className="flex-1 px-8 pt-10 items-center">
-                <View className="w-40 h-40 rounded-full bg-orange-50 border-4 border-orange-100 items-center justify-center overflow-hidden mb-8 shadow-xl">
+                <View className="w-40 h-40 rounded-full bg-blue-50 border-4 border-orange-100 items-center justify-center overflow-hidden mb-8 shadow-xl">
                     {group.photo ? (
                         <Image 
                             source={{ uri: `${PHOTO_URL}${encodeURIComponent(group.photo)}` }} 
                             className="w-full h-full"
                         />
                     ) : (
-                        <Ionicons name="people" size={80} color="#ea580c" />
+                        <Ionicons name="people" size={80} color="#2563EB" />
                     )}
                 </View>
 
-                <Text className="text-3xl font-black text-gray-900 text-center mb-2">{group.name}</Text>
+                <Text className="text-3xl font-black text-blue-950 text-center mb-2">{group.name}</Text>
                 
-                <View className="bg-orange-50 px-4 py-1.5 rounded-full mb-6">
-                    <Text className="text-orange-600 font-bold text-sm uppercase tracking-widest">Group Invite</Text>
+                <View className="bg-blue-50 px-4 py-1.5 rounded-full mb-6">
+                    <Text className="text-blue-600 font-bold text-sm uppercase tracking-widest">Group Invite</Text>
                 </View>
 
                 {group.description ? (
-                    <View className="bg-gray-50 p-6 rounded-3xl border border-gray-100 w-full mb-10">
+                    <View className="bg-slate-50 p-6 rounded-3xl border border-gray-100 w-full mb-10">
                         <Text className="text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">About this group</Text>
-                        <Text className="text-gray-700 text-base leading-6 italic">"{group.description}"</Text>
+                        <Text className="text-slate-600 text-base leading-6 italic">"{group.description}"</Text>
                     </View>
                 ) : (
-                    <Text className="text-gray-500 text-center mb-10 text-base">You've been invited to join this group.</Text>
+                    <Text className="text-slate-500 text-center mb-10 text-base">You've been invited to join this group.</Text>
                 )}
 
                 <TouchableOpacity 
                     onPress={handleJoin}
                     disabled={joining}
-                    className="bg-orange-600 w-full py-5 rounded-2xl flex-row justify-center items-center shadow-lg active:bg-orange-700"
+                    className="bg-blue-600 w-full py-5 rounded-2xl flex-row justify-center items-center shadow-lg active:bg-orange-700"
                 >
                     {joining ? (
                         <ActivityIndicator color="white" />

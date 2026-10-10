@@ -27,24 +27,52 @@ const fontListeners = new Set<any>();
   });
 };
 
+const fontScaleListeners = new Set<any>();
+(global as any).notifyFontScaleChange = (scale: number) => {
+  fontScaleListeners.forEach(listener => {
+    try {
+      listener(scale);
+    } catch (e) {
+      console.warn("Font scale listener update failed", e);
+    }
+  });
+};
+
 const CustomText = React.forwardRef((props: any, ref: any) => {
   const [activeFont, setActiveFont] = React.useState((global as any).activeFontFamily);
+  const [activeScale, setActiveScale] = React.useState((global as any).activeFontScale || 1);
 
   React.useEffect(() => {
-    const listener = (font: string | undefined) => {
+    const fontListener = (font: string | undefined) => {
       setActiveFont(font);
     };
-    fontListeners.add(listener);
+    const scaleListener = (scale: number) => {
+      setActiveScale(scale);
+    };
+    fontListeners.add(fontListener);
+    fontScaleListeners.add(scaleListener);
     return () => {
-      fontListeners.delete(listener);
+      fontListeners.delete(fontListener);
+      fontScaleListeners.delete(scaleListener);
     };
   }, []);
 
-  const mergedStyle = activeFont ? [{ fontFamily: activeFont }, props.style] : props.style;
+  let finalStyle = props.style;
+  if (activeFont || activeScale !== 1) {
+    const flatStyle = activeScale !== 1 ? (ReactNative.StyleSheet.flatten(props.style) || {}) : null;
+    const fontSize = flatStyle && flatStyle.fontSize ? flatStyle.fontSize * activeScale : undefined;
+    
+    finalStyle = [
+      props.style,
+      activeFont ? { fontFamily: activeFont } : {},
+      fontSize ? { fontSize } : {}
+    ];
+  }
+
   return React.createElement(OriginalText, {
     ...props,
     ref,
-    style: mergedStyle
+    style: finalStyle
   });
 });
 

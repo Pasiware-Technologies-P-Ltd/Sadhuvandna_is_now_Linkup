@@ -311,7 +311,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 20, color: '#111827', fontWeight: '400' }}>Create Post</Text>
+                    <Text style={{ fontSize: 20, color: '#172554', fontWeight: '400' }}>Create Post</Text>
                 </View>
                 <TouchableOpacity
                     style={[styles.postButton, (content || images.length > 0 || selectedMusic || params.filterId) ? styles.postButtonActive : styles.postButtonDisabled]}
@@ -319,7 +319,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                     onPress={handlePost}
                 >
                     {loading ? <ActivityIndicator size="small" color="#fff" /> :
-                        <Text style={[styles.postButtonText, (content || images.length > 0 || selectedMusic || params.filterId) ? { color: 'white' } : { color: '#6b7280' }]}>POST</Text>}
+                        <Text style={[styles.postButtonText, (content || images.length > 0 || selectedMusic || params.filterId) ? { color: 'white' } : { color: '#64748B' }]}>POST</Text>}
                 </TouchableOpacity>
             </View>
 
@@ -334,7 +334,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                         )}
                     </View>
                     <View>
-                        <Text style={{ fontWeight: 'bold', color: '#111827', fontSize: 18 }}>{user?.name || 'User'}</Text>
+                        <Text style={{ fontWeight: 'bold', color: '#172554', fontSize: 18 }}>{user?.name || 'User'}</Text>
                         <View style={styles.publicBadge}><Ionicons name="earth" size={12} color="gray" /><Text style={styles.publicBadgeText}>Public</Text></View>
                     </View>
                 </View>
@@ -352,10 +352,10 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 {selectedMusic && !params.isReel && (
                     <View style={{ marginBottom: 24 }}>
                         <View style={styles.musicCard}>
-                            <Image source={require('../../../assets/logo.png')} style={styles.musicThumbnail} />
+                            <Image source={require('../../../assets/icon.png')} style={styles.musicThumbnail} />
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontWeight: 'bold', color: '#111827' }} numberOfLines={1}>{selectedMusic.title}</Text>
-                                <Text style={{ color: '#6b7280', fontSize: 12 }}>{selectedMusic.artist}</Text>
+                                <Text style={{ fontWeight: 'bold', color: '#172554' }} numberOfLines={1}>{selectedMusic.title}</Text>
+                                <Text style={{ color: '#64748B', fontSize: 12 }}>{selectedMusic.artist}</Text>
                             </View>
                             <TouchableOpacity onPress={() => { setSelectedMusic(null); setStartTime(0); setPlaybackTime(0); }}><Ionicons name="close-circle" size={24} color="gray" /></TouchableOpacity>
                         </View>
@@ -363,8 +363,8 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                         <View style={styles.trimmerContainer}>
                             <View style={styles.trimmerHeader}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 16 }}>
-                                    <View style={{ backgroundColor: '#1f2937', padding: 2, borderRadius: 10 }}>
-                                        <Image source={require('../../../assets/logo.png')} style={{ width: 40, height: 40, borderRadius: 8 }} />
+                                    <View style={{ backgroundColor: '#172554', padding: 2, borderRadius: 10 }}>
+                                        <Image source={require('../../../assets/icon.png')} style={{ width: 40, height: 40, borderRadius: 8 }} />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
                                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }} numberOfLines={1}>{selectedMusic.title}</Text>
@@ -414,10 +414,10 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 
                                         if (isInSegment) {
                                             if (isAlreadyPlayed) {
-                                                barColor = '#4b5563'; // Dimmed gray for played segment
+                                                barColor = '#64748B'; // Dimmed gray for played segment
                                                 barOpacity = 0.5;
                                             } else {
-                                                barColor = '#f97316'; // Vivid orange for upcoming segment
+                                                barColor = '#93C5FD'; // Vivid orange for upcoming segment
                                                 barOpacity = 1;
                                             }
                                         }
@@ -444,7 +444,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                                                 <TouchableOpacity
                                                     key={d}
                                                     onPress={() => setMusicDuration(d)}
-                                                    style={[styles.durationBadge, musicDuration === d ? { backgroundColor: '#ea580c' } : { backgroundColor: '#1f2937' }]}
+                                                    style={[styles.durationBadge, musicDuration === d ? { backgroundColor: '#2563EB' } : { backgroundColor: '#172554' }]}
                                                 >
                                                     <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 11 }}>{d}s</Text>
                                                 </TouchableOpacity>
@@ -453,7 +453,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                                     </View>
 
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                        <TouchableOpacity onPress={() => setIsPreviewPlaying(!isPreviewPlaying)} style={[styles.playButton, isPreviewPlaying ? { backgroundColor: '#ea580c' } : { backgroundColor: '#374151' }]}>
+                                        <TouchableOpacity onPress={() => setIsPreviewPlaying(!isPreviewPlaying)} style={[styles.playButton, isPreviewPlaying ? { backgroundColor: '#2563EB' } : { backgroundColor: '#374151' }]}>
                                             <Ionicons name={isPreviewPlaying ? "pause" : "play"} size={22} color="white" />
                                         </TouchableOpacity>
                                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1, marginLeft: 16 }}>
@@ -473,7 +473,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                             </View>
 
                             <View style={styles.hiddenPreview}>
-                                {isAudioLoading && <ActivityIndicator size="large" color="#ea580c" />}
+                                {isAudioLoading && <ActivityIndicator size="large" color="#2563EB" />}
                             </View>
                         </View>
                     </View>
@@ -508,22 +508,22 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                         </ScrollView>
 
                         <View style={{ marginTop: 16 }}>
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#6b7280', marginBottom: 8 }}>FRAME & ASPECT RATIO</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#64748B', marginBottom: 8 }}>FRAME & ASPECT RATIO</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(1)} style={[styles.frameBtn, postAspectRatio === 1 ? styles.frameBtnActive : null]}>
-                                    <Ionicons name="square-outline" size={20} color={postAspectRatio === 1 ? 'white' : '#4b5563'} />
+                                    <Ionicons name="square-outline" size={20} color={postAspectRatio === 1 ? 'white' : '#64748B'} />
                                     <Text style={[styles.frameBtnText, postAspectRatio === 1 ? {color: 'white'} : null]}>1:1</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(0.8)} style={[styles.frameBtn, postAspectRatio === 0.8 ? styles.frameBtnActive : null]}>
-                                    <Ionicons name="tablet-portrait-outline" size={20} color={postAspectRatio === 0.8 ? 'white' : '#4b5563'} />
+                                    <Ionicons name="tablet-portrait-outline" size={20} color={postAspectRatio === 0.8 ? 'white' : '#64748B'} />
                                     <Text style={[styles.frameBtnText, postAspectRatio === 0.8 ? {color: 'white'} : null]}>4:5</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(1.777)} style={[styles.frameBtn, postAspectRatio === 1.777 ? styles.frameBtnActive : null]}>
-                                    <Ionicons name="tablet-landscape-outline" size={20} color={postAspectRatio === 1.777 ? 'white' : '#4b5563'} />
+                                    <Ionicons name="tablet-landscape-outline" size={20} color={postAspectRatio === 1.777 ? 'white' : '#64748B'} />
                                     <Text style={[styles.frameBtnText, postAspectRatio === 1.777 ? {color: 'white'} : null]}>16:9</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setPostAspectRatio(null)} style={[styles.frameBtn, postAspectRatio === null ? styles.frameBtnActive : null]}>
-                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? 'white' : '#4b5563'} />
+                                    <Ionicons name="image-outline" size={20} color={postAspectRatio === null ? 'white' : '#64748B'} />
                                     <Text style={[styles.frameBtnText, postAspectRatio === null ? {color: 'white'} : null]}>Original</Text>
                                 </TouchableOpacity>
                             </ScrollView>
@@ -534,26 +534,26 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 
                 <View style={styles.bottomActions}>
                     <TouchableOpacity style={styles.actionItem} onPress={pickImage}><Ionicons name="images" size={28} color="#45bd62" /><Text style={styles.actionText}>Photo/Video</Text></TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionItem, { borderTopWidth: 1, borderTopColor: '#f9fafb' }]} onPress={() => setMusicModalVisible(true)}><Ionicons name="musical-notes" size={28} color="#ea580c" /><Text style={styles.actionText}>Music Library</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionItem, { borderTopWidth: 1, borderTopColor: '#F8FAFC' }]} onPress={() => setMusicModalVisible(true)}><Ionicons name="musical-notes" size={28} color="#2563EB" /><Text style={styles.actionText}>Music Library</Text></TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
 
             <Modal visible={musicModalVisible} animationType="slide">
                 <View style={{ flex: 1, backgroundColor: 'white' }}>
-                    <View style={styles.modalHeader}><Text style={{ fontSize: 20, fontWeight: 'bold' }}>Search Music</Text><TouchableOpacity onPress={() => setMusicModalVisible(false)}><Text style={{ color: '#6b7280', fontWeight: 'bold' }}>Cancel</Text></TouchableOpacity></View>
+                    <View style={styles.modalHeader}><Text style={{ fontSize: 20, fontWeight: 'bold' }}>Search Music</Text><TouchableOpacity onPress={() => setMusicModalVisible(false)}><Text style={{ color: '#64748B', fontWeight: 'bold' }}>Cancel</Text></TouchableOpacity></View>
                     <View style={styles.searchBarContainer}>
                         <TextInput style={styles.searchInput} placeholder="Search songs..." placeholderTextColor="#666" value={searchQuery} onChangeText={setSearchQuery} onSubmitEditing={() => searchMusic()} />
                         <TouchableOpacity style={styles.searchBtn} onPress={() => searchMusic()}><Ionicons name="search" size={20} color="white" /></TouchableOpacity>
                     </View>
                     <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
-                        {searching ? (<ActivityIndicator size="large" color="#ea580c" style={{ marginTop: 40 }} />) : (
+                        {searching ? (<ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />) : (
                             searchResults.map((song) => (
                                 <View key={song.id} style={styles.searchItem}>
-                                    <Image source={require('../../../assets/logo.png')} style={styles.searchThumbnail} />
-                                    <View style={{ flex: 1 }}><Text style={{ fontWeight: 'bold', color: '#111827' }} numberOfLines={1}>{song.title}</Text><Text style={{ color: '#6b7280', fontSize: 12 }}>{song.artist}</Text></View>
+                                    <Image source={require('../../../assets/icon.png')} style={styles.searchThumbnail} />
+                                    <View style={{ flex: 1 }}><Text style={{ fontWeight: 'bold', color: '#172554' }} numberOfLines={1}>{song.title}</Text><Text style={{ color: '#64748B', fontSize: 12 }}>{song.artist}</Text></View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <TouchableOpacity
-                                            style={[styles.previewBtn, playingId === song.id ? { backgroundColor: '#ffedd5' } : { backgroundColor: '#f3f4f6' }]}
+                                            style={[styles.previewBtn, playingId === song.id ? { backgroundColor: '#DBEAFE' } : { backgroundColor: '#E2E8F0' }]}
                                             onPress={async () => {
                                                 if (playingId === song.id) {
                                                     setPlayingId(null);
@@ -564,14 +564,14 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                                                 }
                                             }}
                                         >
-                                            <Ionicons name={playingId === song.id ? "stop-circle" : "play"} size={24} color="#ea580c" />
+                                            <Ionicons name={playingId === song.id ? "stop-circle" : "play"} size={24} color="#2563EB" />
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={() => {
                                             setSelectedMusic(song);
                                             setPlayingId(null);
                                             setMusicModalVisible(false);
                                         }}>
-                                            <Ionicons name="add-circle" size={32} color="#ea580c" />
+                                            <Ionicons name="add-circle" size={32} color="#2563EB" />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -585,50 +585,50 @@ const CreatePostScreen = ({ navigation, route }: any) => {
 };
 
 const styles = StyleSheet.create({
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
     postButton: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8 },
-    postButtonActive: { backgroundColor: '#ea580c' },
-    postButtonDisabled: { backgroundColor: '#f3f4f6' },
+    postButtonActive: { backgroundColor: '#2563EB' },
+    postButtonDisabled: { backgroundColor: '#E2E8F0' },
     postButtonText: { fontWeight: 'bold', fontSize: 16 },
-    userAvatar: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', backgroundColor: '#f3f4f6', marginRight: 12 },
-    userAvatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffedd5' },
-    userAvatarText: { color: '#9a3412', fontWeight: 'bold', fontSize: 18 },
-    publicBadge: { backgroundColor: '#f3f4f6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
-    publicBadgeText: { fontSize: 12, color: '#4b5563', marginLeft: 4 },
-    contentInput: { fontSize: 20, color: '#111827', marginBottom: 24, minHeight: height * 0.15 },
-    musicCard: { padding: 12, backgroundColor: '#f9fafb', borderRadius: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 12 },
+    userAvatar: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', backgroundColor: '#E2E8F0', marginRight: 12 },
+    userAvatarPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#DBEAFE' },
+    userAvatarText: { color: '#172554', fontWeight: 'bold', fontSize: 18 },
+    publicBadge: { backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+    publicBadgeText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
+    contentInput: { fontSize: 20, color: '#172554', marginBottom: 24, minHeight: height * 0.15 },
+    musicCard: { padding: 12, backgroundColor: '#F8FAFC', borderRadius: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
     musicThumbnail: { width: 48, height: 48, borderRadius: 12, marginRight: 12 },
-    trimmerContainer: { backgroundColor: '#111827', borderRadius: 24, overflow: 'hidden', elevation: 10 },
-    trimmerHeader: { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#1f2937', backgroundColor: 'rgba(31, 41, 55, 0.5)' },
-    timeBadge: { backgroundColor: '#ea580c', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    trimmerContainer: { backgroundColor: '#172554', borderRadius: 24, overflow: 'hidden', elevation: 10 },
+    trimmerHeader: { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#172554', backgroundColor: 'rgba(31, 41, 55, 0.5)' },
+    timeBadge: { backgroundColor: '#2563EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
     timeBadgeText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
     waveformArea: { paddingVertical: 40, backgroundColor: 'black', position: 'relative', alignItems: 'center', justifyContent: 'center' },
     centerCursor: { position: 'absolute', left: '50%', top: 20, bottom: 20, width: 2, backgroundColor: 'white', borderRadius: 1, marginLeft: -1, zIndex: 20 },
-    cursorDotTop: { position: 'absolute', top: -6, left: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: 'white', borderWidth: 2, borderColor: '#ea580c' },
-    cursorDotBottom: { position: 'absolute', bottom: -6, left: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: 'white', borderWidth: 2, borderColor: '#ea580c' },
-    trimmerFooter: { backgroundColor: '#111827', padding: 12, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#1f2937' },
+    cursorDotTop: { position: 'absolute', top: -6, left: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: 'white', borderWidth: 2, borderColor: '#2563EB' },
+    cursorDotBottom: { position: 'absolute', bottom: -6, left: -5, width: 12, height: 12, borderRadius: 6, backgroundColor: 'white', borderWidth: 2, borderColor: '#2563EB' },
+    trimmerFooter: { backgroundColor: '#172554', padding: 12, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#172554' },
     playButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     presetButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, marginRight: 8 },
-    presetButtonActive: { backgroundColor: '#ea580c' },
-    presetButtonInactive: { backgroundColor: '#1f2937' },
+    presetButtonActive: { backgroundColor: '#2563EB' },
+    presetButtonInactive: { backgroundColor: '#172554' },
     presetText: { fontWeight: 'bold', fontSize: 11 },
     durationBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, marginRight: 8 },
-    imageItemContainer: { width: 256, height: 192, marginRight: 12, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e7eb', position: 'relative' },
+    imageItemContainer: { width: 256, height: 192, marginRight: 12, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0', position: 'relative' },
     removeImageBtn: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', padding: 6, borderRadius: 20, zIndex: 10 },
-    bottomActions: { borderTopWidth: 1, borderTopColor: '#f3f4f6', padding: 8, backgroundColor: 'white' },
+    bottomActions: { borderTopWidth: 1, borderTopColor: '#E2E8F0', padding: 8, backgroundColor: 'white' },
     actionItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 12 },
     actionText: { marginLeft: 16, fontWeight: '500', color: '#374151', fontSize: 16 },
-    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
     searchBarContainer: { padding: 16, flexDirection: 'row' },
-    searchInput: { flex: 1, backgroundColor: '#f3f4f6', padding: 12, borderRadius: 12, marginRight: 8, color: '#111827' },
-    searchBtn: { backgroundColor: '#ea580c', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    searchItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
-    searchThumbnail: { width: 56, height: 56, borderRadius: 12, marginRight: 16, backgroundColor: '#f3f4f6' },
+    searchInput: { flex: 1, backgroundColor: '#E2E8F0', padding: 12, borderRadius: 12, marginRight: 8, color: '#172554' },
+    searchBtn: { backgroundColor: '#2563EB', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    searchItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+    searchThumbnail: { width: 56, height: 56, borderRadius: 12, marginRight: 16, backgroundColor: '#E2E8F0' },
     previewBtn: { marginRight: 12, padding: 8, borderRadius: 24 },
     hiddenPreview: { height: 10, width: 10, position: 'absolute', bottom: -100, right: -100, zIndex: -1, opacity: 0.1 },
-    frameBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#e5e7eb' },
-    frameBtnActive: { backgroundColor: '#ea580c', borderColor: '#c2410c' },
-    frameBtnText: { marginLeft: 6, fontWeight: 'bold', color: '#4b5563', fontSize: 13 },
+    frameBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+    frameBtnActive: { backgroundColor: '#2563EB', borderColor: '#c2410c' },
+    frameBtnText: { marginLeft: 6, fontWeight: 'bold', color: '#64748B', fontSize: 13 },
 });
 
 export default CreatePostScreen;

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal, Keyboard, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
@@ -9,6 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+
+// Global cache for GIFs to make it fast
+const gifCache: Record<string, any[]> = {};
 
 const CommentsScreen = ({ route, navigation }: any) => {
     const { postId } = route.params;
@@ -20,6 +23,41 @@ const CommentsScreen = ({ route, navigation }: any) => {
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
     const [optionsModalVisible, setOptionsModalVisible] = useState(false);
     const [selectedComment, setSelectedComment] = useState<any>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showGifPicker, setShowGifPicker] = useState(false);
+    const [gifs, setGifs] = useState<any[]>([]);
+    const [gifQuery, setGifQuery] = useState('');
+    const [loadingGifs, setLoadingGifs] = useState(false);
+
+    useEffect(() => {
+        if (showGifPicker && gifs.length === 0) {
+            fetchGifs();
+        }
+    }, [showGifPicker]);
+
+    const fetchGifs = async (query = '') => {
+        const cacheKey = query.trim().toLowerCase() || 'trending';
+        if (gifCache[cacheKey]) {
+            setGifs(gifCache[cacheKey]);
+            return;
+        }
+
+        setLoadingGifs(true);
+        try {
+            const url = query 
+                ? `https://api.giphy.com/v1/gifs/search?api_key=DThQZEbYuZK5ZL0OXdM3de2gZ5vSBrDi&q=${encodeURIComponent(query)}&limit=21`
+                : `https://api.giphy.com/v1/gifs/trending?api_key=DThQZEbYuZK5ZL0OXdM3de2gZ5vSBrDi&limit=21`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.data) {
+                gifCache[cacheKey] = data.data;
+                setGifs(data.data);
+            }
+        } catch(e) {
+            console.error("GIF Fetch Error:", e);
+        }
+        setLoadingGifs(false);
+    };
 
     useEffect(() => {
         loadUser();
@@ -192,13 +230,13 @@ const CommentsScreen = ({ route, navigation }: any) => {
             <View className="flex-row mb-4">
                 <Image
                     source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
-                    className="w-10 h-10 rounded-full bg-gray-200 mr-3"
+                    className="w-10 h-10 rounded-full bg-slate-200 mr-3"
                 />
-                <View className="flex-1 bg-gray-100 rounded-xl p-3">
+                <View className="flex-1 bg-slate-100 rounded-xl p-3">
                     <View className="flex-row justify-between items-start mb-1">
                         <View className="flex-1">
-                            <Text className="font-bold text-gray-800 text-sm">{item.name}</Text>
-                            <Text className="text-xs text-gray-500">{item.date}</Text>
+                            <Text className="font-bold text-blue-900 text-sm">{item.name}</Text>
+                            <Text className="text-xs text-slate-500">{item.date}</Text>
                         </View>
                         {isOwner && (
                             <TouchableOpacity onPress={() => handleOptions(item)} className="p-1 -mr-1 -mt-1">
@@ -206,7 +244,11 @@ const CommentsScreen = ({ route, navigation }: any) => {
                             </TouchableOpacity>
                         )}
                     </View>
-                    <Text className="text-gray-700 leading-5">{item.comment}</Text>
+                    {(item.comment && item.comment.startsWith('http') && (item.comment.includes('giphy.com') || item.comment.includes('tenor.com') || item.comment.endsWith('.gif'))) ? (
+                        <Image source={{ uri: item.comment }} style={{ width: 120, height: 120, borderRadius: 8, marginTop: 4, backgroundColor: '#E2E8F0' }} contentFit="cover" />
+                    ) : (
+                        <Text className="text-slate-600 leading-5">{item.comment}</Text>
+                    )}
                 </View>
             </View>
         );
@@ -218,7 +260,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-lg font-bold text-gray-800">Comments</Text>
+                <Text className="text-lg font-bold text-blue-900">Comments</Text>
             </View>
 
             <KeyboardAvoidingView
@@ -228,7 +270,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                 enabled={true}
             >
                 {loading ? (
-                    <ActivityIndicator size="large" color="#ea580c" className="mt-10" />
+                    <ActivityIndicator size="large" color="#2563EB" className="mt-10" />
                 ) : (
                     <FlashList
                         data={comments}
@@ -243,27 +285,152 @@ const CommentsScreen = ({ route, navigation }: any) => {
                     />
                 )}
 
-                <View className="p-3 bg-white border-t border-gray-100 flex-row items-center">
-                    <TextInput
-                        className="flex-1 bg-gray-100 rounded-full px-4 py-3 mr-2 text-base text-gray-800"
-                        placeholder="Write a comment..."
-                        placeholderTextColor="#9ca3af"
-                        value={newComment}
-                        onChangeText={setNewComment}
-                        returnKeyType="send"
-                        onSubmitEditing={handleSend}
-                    />
-                    <TouchableOpacity
-                        onPress={handleSend}
-                        disabled={!newComment.trim() || sending}
-                        className={`p-3 rounded-full ${newComment.trim() ? "bg-orange-600" : "bg-gray-200"}`}
-                    >
-                        {sending ? (
-                            <ActivityIndicator color="white" size="small" />
-                        ) : (
-                            <Ionicons name="send" size={20} color={newComment.trim() ? "white" : "gray"} />
-                        )}
-                    </TouchableOpacity>
+                <View className="bg-white">
+                    <View className="p-3 border-t border-gray-100 flex-row items-center">
+                        <View className="flex-1 bg-slate-100 rounded-full px-4 py-1 mr-2 flex-row items-center min-h-[48px]">
+                            <TextInput
+                                className="flex-1 text-base text-blue-900 py-2"
+                                placeholder="Write a comment..."
+                                placeholderTextColor="#9ca3af"
+                                value={newComment}
+                                onChangeText={setNewComment}
+                                returnKeyType="send"
+                                onSubmitEditing={handleSend}
+                                onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false); }}
+                            />
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Keyboard.dismiss();
+                                    setShowEmojiPicker(false);
+                                    setShowGifPicker(prev => !prev);
+                                }}
+                                className="p-2"
+                            >
+                                <View className={`px-2 py-0.5 rounded ${showGifPicker ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                                    <Text className={`text-[10px] font-bold ${showGifPicker ? 'text-white' : 'text-slate-500'}`}>GIF</Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Keyboard.dismiss();
+                                    setShowGifPicker(false);
+                                    setShowEmojiPicker(prev => !prev);
+                                }}
+                                className="p-2 -mr-2"
+                            >
+                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : "#9ca3af"} />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity
+                            onPress={handleSend}
+                            disabled={!newComment.trim() || sending}
+                            className={`w-12 h-12 rounded-full items-center justify-center ${newComment.trim() ? "bg-blue-600" : "bg-slate-200"}`}
+                        >
+                            {sending ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <Ionicons name="send" size={20} color={newComment.trim() ? "white" : "gray"} style={{ marginLeft: 2 }} />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {showEmojiPicker && (() => {
+                        const emojiRows = [
+                            ['😀', '😂', '🤣', '😊', '😍', '🥰', '😘', '😎', '🤩', '🥳', '😜', '😝', '🤑', '🤗', '😇'],
+                            ['😢', '😭', '😤', '😠', '🤪', '😱', '😨', '😰', '😥', '😓', '🙄', '😬', '🤥', '😶', '😐'],
+                            ['👍', '👎', '👏', '🙌', '🤝', '✊', '👊', '🤲', '🙏', '💪', '👌', '✌️', '🤞', '🖐️', '👋'],
+                            ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '💕', '💞', '💓', '💗', '💖'],
+                            ['🔥', '💯', '⭐', '🌟', '✨', '💫', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🎯', '💎', '🚨']
+                        ];
+                        return (
+                            <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingBottom: 10 }}>
+                                {emojiRows.map((row, rowIndex) => (
+                                    <ScrollView key={rowIndex} horizontal showsHorizontalScrollIndicator={false}>
+                                        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 }}>
+                                            {row.map((emoji, index) => (
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    onPress={() => setNewComment(prev => prev + emoji)}
+                                                    style={{ padding: 8, marginHorizontal: 2 }}
+                                                >
+                                                    <Text style={{ fontSize: 24 }}>{emoji}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    </ScrollView>
+                                ))}
+                            </View>
+                        );
+                    })()}
+
+                    {showGifPicker && (
+                        <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', height: 250 }}>
+                            <View className="flex-row items-center px-3 py-2 bg-slate-50 border-b border-slate-200">
+                                <Ionicons name="search" size={16} color="#9ca3af" />
+                                <TextInput
+                                    className="flex-1 ml-2 text-sm text-blue-900 py-1"
+                                    placeholder="Search GIFs..."
+                                    value={gifQuery}
+                                    onChangeText={(t) => { setGifQuery(t); fetchGifs(t); }}
+                                    returnKeyType="search"
+                                />
+                                {gifQuery.length > 0 && (
+                                    <TouchableOpacity onPress={() => { setGifQuery(''); fetchGifs(''); }}>
+                                        <Ionicons name="close-circle" size={16} color="#9ca3af" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                            {loadingGifs ? (
+                                <ActivityIndicator size="small" color="#2563EB" style={{ marginTop: 20 }} />
+                            ) : (
+                                <View style={{ flex: 1 }}>
+                                    <FlashList
+                                        data={gifs}
+                                        numColumns={3}
+                                        keyExtractor={(item: any, index: number) => item.id || String(index)}
+                                        keyboardShouldPersistTaps="handled"
+                                        renderItem={({ item }: { item: any }) => (
+                                            <TouchableOpacity
+                                                onPress={async () => {
+                                                    const gifUrl = item.images?.fixed_height?.url;
+                                                    if(gifUrl) {
+                                                        const payload = {
+                                                            action: 'comment',
+                                                            id: postId,
+                                                            user_id: user.id,
+                                                            comment: gifUrl
+                                                        };
+                                                        setSending(true);
+                                                        try {
+                                                            const res = await api.post('like_comment_action.php', payload);
+                                                            if (res.data.ok || res.data.status === 'success' || res.data.ok === true) {
+                                                                setShowGifPicker(false);
+                                                                setGifQuery('');
+                                                                await fetchComments();
+                                                            } else {
+                                                                Alert.alert("Error", "Failed to post GIF");
+                                                            }
+                                                        } catch(e) {
+                                                            Alert.alert("Error", "Network request failed");
+                                                        }
+                                                        setSending(false);
+                                                    }
+                                                }}
+                                                style={{ flex: 1/3, aspectRatio: 1, padding: 2 }}
+                                            >
+                                                <Image 
+                                                    source={{ uri: item.images?.fixed_height_small?.url || item.images?.fixed_height?.url }} 
+                                                    style={{ flex: 1, borderRadius: 4, backgroundColor: '#E2E8F0' }} 
+                                                    contentFit="cover" 
+                                                />
+                                            </TouchableOpacity>
+                                        )}
+                                        {...({ estimatedItemSize: 100 } as any)}
+                                    />
+                                </View>
+                            )}
+                        </View>
+                    )}
                 </View>
             </KeyboardAvoidingView>
 
@@ -284,7 +451,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                         
                         <TouchableOpacity onPress={handleEditCommentInit} className="flex-row items-center py-4 px-2 border-b border-gray-100">
                             <Ionicons name="pencil-outline" size={24} color="#374151" />
-                            <Text className="text-gray-800 text-base font-semibold ml-4">Edit Comment</Text>
+                            <Text className="text-blue-900 text-base font-semibold ml-4">Edit Comment</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={handleDeleteCommentPrompt} className="flex-row items-center py-4 px-2">

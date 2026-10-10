@@ -250,7 +250,7 @@ const NotificationScreen = ({ navigation }: any) => {
 
     const renderItem = ({ item }: { item: any }) => {
         const isUnread = item.seen === "0" || item.seen === 0;
-        const isLogo = item.image?.endsWith('logo.png') || item.image?.includes('via.placeholder.com');
+        const isLogo = item.image?.endsWith('icon.png') || item.image?.includes('via.placeholder.com');
         const isSystem = item.type === 'news' || (item.type === 'system' && item.title === 'System');
         
         return (
@@ -273,8 +273,8 @@ const NotificationScreen = ({ navigation }: any) => {
                     ) : (
                         <Image
                             source={
-                                item.image?.endsWith('logo.png')
-                                    ? require('../../../assets/logo.png')
+                                item.image?.endsWith('icon.png')
+                                    ? require('../../../assets/icon.png')
                                     : { 
                                         uri: item.image?.startsWith('http') 
                                             ? item.image 
@@ -300,8 +300,8 @@ const NotificationScreen = ({ navigation }: any) => {
                     <Text style={styles.body} numberOfLines={2}>
                         {item.type === 'post' && item.title === 'New Post' ? (
                             item._groupCount && item._groupCount > 1
-                                ? <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#ea580c'}}>LinkUp</Text> shared {item._groupCount} new posts.</Text>
-                                : <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#ea580c'}}>LinkUp</Text> shared a new post.</Text>
+                                ? <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#2563EB'}}>LinkUp</Text> shared {item._groupCount} new posts.</Text>
+                                : <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#2563EB'}}>LinkUp</Text> shared a new post.</Text>
                         ) : item.type === 'incoming_call' ? (
                             item._groupCount && item._groupCount > 1
                                 ? `${(item.body || item.message)} (${item._groupCount} calls)`
@@ -333,7 +333,7 @@ const NotificationScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
                     <Ionicons name="arrow-back" size={24} color="black" />
@@ -344,7 +344,7 @@ const NotificationScreen = ({ navigation }: any) => {
 
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator color="#ea580c" size="large" />
+                    <ActivityIndicator color="#2563EB" size="large" />
                 </View>
             ) : (
                 <FlashList
@@ -352,10 +352,10 @@ const NotificationScreen = ({ navigation }: any) => {
                     renderItem={renderItem}
                     keyExtractor={item => item.id?.toString() || Math.random().toString()}
                     contentContainerStyle={{ paddingBottom: 20 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchNotifications(); }} colors={['#ea580c']} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchNotifications(); }} colors={['#2563EB']} />}
                     onEndReached={fetchMoreNotifications}
                     onEndReachedThreshold={0.5}
-                    ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#ea580c" style={{ margin: 20 }} /> : null}
+                    ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#2563EB" style={{ margin: 20 }} /> : null}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 50 }}>
                             <Text style={{ color: 'gray' }}>No notifications yet.</Text>
@@ -370,29 +370,29 @@ const NotificationScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     header: { 
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
-        paddingHorizontal: 8, paddingVertical: 12, backgroundColor: '#f9fafb' 
+        paddingHorizontal: 8, paddingVertical: 12, backgroundColor: '#F8FAFC' 
     },
-    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827' },
+    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#172554' },
     itemContainer: { 
         flexDirection: 'row', paddingVertical: 12, paddingRight: 16, 
-        backgroundColor: '#f9fafb', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e5e7eb' 
+        backgroundColor: '#F8FAFC', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E2E8F0' 
     },
     unreadContainer: { backgroundColor: '#eff6ff' },
     unreadDotContainer: { width: 20, alignItems: 'center', justifyContent: 'center' },
     unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' },
     avatarContainer: { position: 'relative', marginRight: 12 },
-    avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#e5e7eb' },
+    avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0' },
     badge: { 
         position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, 
         borderRadius: 12, justifyContent: 'center', alignItems: 'center', 
-        borderWidth: 2, borderColor: '#f9fafb' 
+        borderWidth: 2, borderColor: '#F8FAFC' 
     },
     contentContainer: { flex: 1, justifyContent: 'center' },
     titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-    title: { fontWeight: 'bold', fontSize: 15, color: '#111827', flex: 1, marginRight: 8 },
-    date: { fontSize: 12, color: '#6b7280' },
-    body: { fontSize: 14, color: '#4b5563', lineHeight: 20 },
-    thumbnail: { width: 50, height: 50, borderRadius: 8, marginLeft: 12, backgroundColor: '#e5e7eb' }
+    title: { fontWeight: 'bold', fontSize: 15, color: '#172554', flex: 1, marginRight: 8 },
+    date: { fontSize: 12, color: '#64748B' },
+    body: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+    thumbnail: { width: 50, height: 50, borderRadius: 8, marginLeft: 12, backgroundColor: '#E2E8F0' }
 });
 
 export default NotificationScreen;

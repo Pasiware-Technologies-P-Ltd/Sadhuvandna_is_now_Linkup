@@ -149,8 +149,8 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
     };
 
     const SectionHeader = ({ title, icon }: any) => (
-        <View className="flex-row items-center gap-2 mt-6 mb-3 bg-orange-50 p-2 rounded-lg">
-            <Ionicons name={icon} size={20} color="#ea580c" />
+        <View className="flex-row items-center gap-2 mt-6 mb-3 bg-blue-50 p-2 rounded-lg">
+            <Ionicons name={icon} size={20} color="#2563EB" />
             <Text className="text-lg font-bold text-orange-800">{title}</Text>
         </View>
     );
@@ -163,13 +163,13 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 p-1">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800 flex-1" numberOfLines={1}>{profile.full_name}</Text>
+                <Text className="text-xl font-bold text-blue-900 flex-1" numberOfLines={1}>{profile.full_name}</Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 40 }}>
                 <View className="relative">
                     <Image
                         source={{ uri: profile.photo ? ImageService.getDetailImageUrl(`${PHOTO_URL}${profile.photo}`, 1080) : 'https://via.placeholder.com/300' }}
-                        className="bg-gray-200"
+                        className="bg-slate-200"
                         style={{ width: '100%', height: 320 }}
                         contentFit="cover"
                     />
@@ -178,15 +178,15 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                 <View className="p-6 -mt-10 bg-white rounded-t-3xl shadow-lg min-h-screen">
                     <View className="flex-row justify-between items-start">
                         <View className="flex-1">
-                            <Text className="text-2xl font-bold text-gray-900">{profile.full_name}</Text>
-                            <Text className="text-orange-600 font-medium text-base mb-1">
+                            <Text className="text-2xl font-bold text-blue-950">{profile.full_name}</Text>
+                            <Text className="text-blue-600 font-medium text-base mb-1">
                                 {profile.occupation} {profile.work_place ? `at ${profile.work_place}` : ''}
                             </Text>
-                            <Text className="text-gray-500 text-sm">
+                            <Text className="text-slate-500 text-sm">
                                 <Ionicons name="location" size={12} /> {profile.city}
                             </Text>
                         </View>
-                        <View className="bg-orange-100 px-3 py-1 rounded-full border border-orange-200">
+                        <View className="bg-blue-100 px-3 py-1 rounded-full border border-orange-200">
                             {/* Calculate Age roughly */}
                             <Text className="text-orange-800 font-bold">{new Date().getFullYear() - new Date(profile.dob).getFullYear()} yrs</Text>
                         </View>
@@ -204,14 +204,14 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
-                                className={`p-4 rounded-xl items-center shadow-lg flex-row justify-center gap-2 ${isPending ? 'bg-gray-200' : 'bg-orange-600 shadow-orange-200'}`}
+                                className={`p-4 rounded-xl items-center shadow-lg flex-row justify-center gap-2 ${isPending ? 'bg-slate-200' : 'bg-blue-600 shadow-orange-200'}`}
                                 onPress={handleSendProposal}
                                 disabled={isPending || loading}
                             >
                                 {loading ? <ActivityIndicator color="white" /> : (
                                     <>
                                         <Ionicons name={isPending ? "time" : "heart"} size={20} color={isPending ? "gray" : "white"} />
-                                        <Text className={`font-bold text-lg ${isPending ? 'text-gray-500' : 'text-white'}`}>
+                                        <Text className={`font-bold text-lg ${isPending ? 'text-slate-500' : 'text-white'}`}>
                                             {isPending ? "Requested" : "Send Interest"}
                                         </Text>
                                     </>
@@ -220,7 +220,7 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                         )}
                     </View>
 
-                    <Text className="text-gray-600 italic my-4 leading-5 bg-gray-50 p-3 rounded-lg border border-gray-100 text-center">
+                    <Text className="text-slate-500 italic my-4 leading-5 bg-slate-50 p-3 rounded-lg border border-gray-100 text-center">
                         "{profile.about || "No bio available"}"
                     </Text>
 
@@ -276,8 +276,8 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                         <InfoRow label="Age Range" value={`${profile.partner_age_from} - ${profile.partner_age_to} yrs`} />
                         <InfoRow label="Education" value={profile.partner_education} />
                         <View className="mt-2">
-                            <Text className="text-gray-500 text-xs uppercase mb-1">Expectations</Text>
-                            <Text className="text-gray-800 bg-orange-50 p-2 rounded-lg border border-orange-100">{profile.partner_expectations || 'N/A'}</Text>
+                            <Text className="text-slate-500 text-xs uppercase mb-1">Expectations</Text>
+                            <Text className="text-blue-900 bg-blue-50 p-2 rounded-lg border border-orange-100">{profile.partner_expectations || 'N/A'}</Text>
                         </View>
                     </View>
 
@@ -291,7 +291,7 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
 const InfoRow = ({ label, value }: { label: string, value: string }) => (
     <View className="flex-row border-b border-gray-100 py-2 items-start">
         <Text className="w-32 text-gray-400 text-sm font-medium">{label}</Text>
-        <Text className="flex-1 text-gray-800 text-sm font-semibold">{value || 'N/A'}</Text>
+        <Text className="flex-1 text-blue-900 text-sm font-semibold">{value || 'N/A'}</Text>
     </View>
 );
 

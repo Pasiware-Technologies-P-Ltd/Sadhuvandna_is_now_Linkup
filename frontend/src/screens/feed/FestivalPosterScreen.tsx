@@ -14,7 +14,7 @@ import api, { WEBSITE_URL } from '../../services/api';
 import { Asset } from 'expo-asset';
 
 const { width } = Dimensions.get('window');
-const LOGO_ASSET = require('../../../assets/Linkup.png');
+const LOGO_ASSET = require('../../../assets/icon.png');
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const FRAME_URL = `${WEBSITE_URL}/uploads/festival_frames/`;
 
@@ -329,7 +329,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                     } else {
                         // Layout 6: Classic Blue
                         ctx.fillStyle = "#1e40af"; ctx.fillRect(0, 880, 1080, 200);
-                        ctx.fillStyle = "#ea580c"; ctx.fillRect(0, 880, 540, 12); ctx.fillStyle = "#f97316"; ctx.fillRect(540, 880, 540, 12);
+                        ctx.fillStyle = "#2563EB"; ctx.fillRect(0, 880, 540, 12); ctx.fillStyle = "#93C5FD"; ctx.fillRect(540, 880, 540, 12);
                         let nY = drawWrapped(name, 1040, 960, 700, 1, 70, 'right');
                         ctx.font = "400 32px sans-serif"; ctx.fillStyle = "#dbeafe"; ctx.textAlign = "right";
                         ctx.fillText(mobile + "  \u2022  " + address, 1040, 1020);
@@ -353,8 +353,8 @@ const FestivalPosterScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-white">
-                <ActivityIndicator size="large" color="#ea580c" />
-                <Text className="mt-4 text-gray-500 font-bold">Opening Studio...</Text>
+                <ActivityIndicator size="large" color="#2563EB" />
+                <Text className="mt-4 text-slate-500 font-bold">Opening Studio...</Text>
             </View>
         );
     }
@@ -371,13 +371,13 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                 {/* Header */}
                 <View className="flex-row items-center px-4 py-4 border-b border-gray-100 justify-between">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
-                        <Ionicons name="close" size={28} color="#1f2937" />
+                        <Ionicons name="close" size={28} color="#172554" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-extrabold text-gray-900 tracking-tight">Poster Designer</Text>
+                    <Text className="text-xl font-extrabold text-blue-950 tracking-tight">Poster Designer</Text>
                     <TouchableOpacity 
                         onPress={handleGenerate} 
                         disabled={isGenerating || isDownloading}
-                        className={`px-4 py-2 rounded-xl flex-row items-center ${isGenerating || isDownloading ? 'bg-gray-200' : 'bg-orange-500 shadow-md'}`}
+                        className={`px-4 py-2 rounded-xl flex-row items-center ${isGenerating || isDownloading ? 'bg-slate-200' : 'bg-blue-500 shadow-md'}`}
                     >
                         {isGenerating ? <ActivityIndicator size="small" color="#fff" /> : (
                             <>
@@ -389,11 +389,11 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                 </View>
 
                 {/* Visual Preview */}
-                    <View className="p-4 bg-gray-50 items-center justify-center">
+                    <View className="p-4 bg-slate-50 items-center justify-center">
                         <View style={styles.shadowBox}>
                              {isDownloading && (
                                  <View className="absolute z-10 w-full h-full items-center justify-center bg-white/50 rounded-[30px]">
-                                     <ActivityIndicator color="#ea580c" />
+                                     <ActivityIndicator color="#2563EB" />
                                  </View>
                              )}
                             <View style={styles.previewFrame}>
@@ -409,8 +409,8 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                             </View>
                         </View>
                         <View className="mt-3 flex-row items-center opacity-40">
-                             <Ionicons name="scan-outline" size={12} color="#4b5563" />
-                             <Text className="text-[10px] ml-1 font-bold text-gray-600 uppercase tracking-widest">Live 1080p Studio Preview</Text>
+                             <Ionicons name="scan-outline" size={12} color="#64748B" />
+                             <Text className="text-[10px] ml-1 font-bold text-slate-500 uppercase tracking-widest">Live 1080p Studio Preview</Text>
                         </View>
                     </View>
 
@@ -418,7 +418,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                     <View className="px-5 pt-6 pb-20">
                         {/* Frame Selection */}
                         <View className="mb-8">
-                            <Text className="text-gray-900 font-extrabold text-lg mb-4">Choose Frame</Text>
+                            <Text className="text-blue-950 font-extrabold text-lg mb-4">Choose Frame</Text>
                             <FlashList
                                 data={[{ id: 'default', title: 'Solid', frame_image: '' }, ...frames]}
                                 horizontal
@@ -433,7 +433,7 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                                         {item.frame_image ? (
                                             <Image source={{ uri: `${FRAME_URL}${item.frame_image}` }} className="w-full h-full rounded-2xl" />
                                         ) : (
-                                            <View className="flex-1 items-center justify-center bg-gray-50 rounded-2xl">
+                                            <View className="flex-1 items-center justify-center bg-slate-50 rounded-2xl">
                                                 <Ionicons name="color-filter-outline" size={28} color="#9ca3af" />
                                                 <Text className="text-[10px] text-gray-400 font-bold mt-1">Plain</Text>
                                             </View>
@@ -445,42 +445,42 @@ const FestivalPosterScreen = ({ navigation }: any) => {
 
                         {/* Styles */}
                         <View className="mb-8">
-                            <Text className="text-gray-900 font-extrabold text-lg mb-4">Branding Style</Text>
+                            <Text className="text-blue-950 font-extrabold text-lg mb-4">Branding Style</Text>
                             <View className="flex-row flex-wrap justify-between">
                                 {[1, 2, 3, 4, 5, 6].map((id) => (
                                     <TouchableOpacity
                                         key={id}
                                         onPress={() => setSelectedLayout(id)}
-                                        className={`w-[48%] py-4 rounded-2xl border-2 mb-3 items-center justify-center ${selectedLayout === id ? 'bg-orange-50 border-orange-500' : 'bg-gray-50 border-gray-100'}`}
+                                        className={`w-[48%] py-4 rounded-2xl border-2 mb-3 items-center justify-center ${selectedLayout === id ? 'bg-blue-50 border-orange-500' : 'bg-slate-50 border-gray-100'}`}
                                     >
-                                        <Text className={`font-bold ${selectedLayout === id ? 'text-orange-700' : 'text-gray-500'}`}>Layout {id}</Text>
+                                        <Text className={`font-bold ${selectedLayout === id ? 'text-blue-950' : 'text-slate-500'}`}>Layout {id}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         </View>
 
                         {/* Text Content */}
-                        <View className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-                             <Text className="text-gray-900 font-extrabold text-lg mb-6">Personalize Poster</Text>
+                        <View className="bg-slate-50 rounded-3xl p-6 border border-gray-100">
+                             <Text className="text-blue-950 font-extrabold text-lg mb-6">Personalize Poster</Text>
                              
                              <View className="space-y-5">
                                  <View>
-                                     <Text className="text-gray-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Message / Festival</Text>
-                                     <TextInput value={festivalName} onChangeText={setFestivalName} className="bg-white p-4 rounded-2xl border border-gray-200 text-gray-800 font-bold" />
+                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Message / Festival</Text>
+                                     <TextInput value={festivalName} onChangeText={setFestivalName} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
                                  </View>
                                  <View>
-                                     <Text className="text-gray-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Your Name</Text>
-                                     <TextInput value={name} onChangeText={setName} className="bg-white p-4 rounded-2xl border border-gray-200 text-gray-800 font-bold" />
+                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Your Name</Text>
+                                     <TextInput value={name} onChangeText={setName} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
                                  </View>
                                  <View>
-                                     <Text className="text-gray-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Mobile Number</Text>
-                                     <TextInput value={mobile} onChangeText={setMobile} keyboardType="phone-pad" className="bg-white p-4 rounded-2xl border border-gray-200 text-gray-800 font-bold" />
+                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Mobile Number</Text>
+                                     <TextInput value={mobile} onChangeText={setMobile} keyboardType="phone-pad" className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
                                  </View>
                                  <View>
-                                     <Text className="text-gray-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Location (City)</Text>
-                                     <TextInput value={address} onChangeText={setAddress} className="bg-white p-4 rounded-2xl border border-gray-200 text-gray-800 font-bold" />
+                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Location (City)</Text>
+                                     <TextInput value={address} onChangeText={setAddress} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
                                  </View>
-                                 <TouchableOpacity onPress={pickImage} className="mt-4 bg-orange-500 p-4 rounded-2xl flex-row items-center justify-center">
+                                 <TouchableOpacity onPress={pickImage} className="mt-4 bg-blue-500 p-4 rounded-2xl flex-row items-center justify-center">
                                       <Ionicons name="image" size={20} color="white" />
                                       <Text className="text-white font-bold ml-2">Update Photo</Text>
                                  </TouchableOpacity>

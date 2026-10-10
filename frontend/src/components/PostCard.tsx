@@ -198,9 +198,9 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
                         minimumValue={0}
                         maximumValue={duration}
                         value={position}
-                        minimumTrackTintColor="#ea580c"
+                        minimumTrackTintColor="#2563EB"
                         maximumTrackTintColor="rgba(255,255,255,0.5)"
-                        thumbTintColor="#ea580c"
+                        thumbTintColor="#2563EB"
                         onSlidingStart={() => {
                             isSliding.current = true;
                         }}
@@ -697,7 +697,7 @@ const BasePostCard = ({
             const index = match.index;
             if (index > lastIndex) {
                 parts.push(
-                    <Text key={`text-${lastIndex}`} style={{ color: '#1f2937' }}>
+                    <Text key={`text-${lastIndex}`} style={{ color: '#172554' }}>
                         {text.substring(lastIndex, index)}
                     </Text>
                 );
@@ -721,7 +721,7 @@ const BasePostCard = ({
         }
         if (lastIndex < text.length) {
             parts.push(
-                <Text key={`text-${lastIndex}`} style={{ color: '#1f2937' }}>
+                <Text key={`text-${lastIndex}`} style={{ color: '#172554' }}>
                     {text.substring(lastIndex)}
                 </Text>
             );
@@ -745,8 +745,8 @@ const BasePostCard = ({
                         cachePolicy="memory-disk"
                     />
                 ) : (
-                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#ffedd5' }]}>
-                        <Text style={{ color: '#ea580c', fontWeight: 'bold', fontSize: 16 }}>
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE' }]}>
+                        <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: 16 }}>
                             {post.user.name ? post.user.name.charAt(0).toUpperCase() : 'U'}
                         </Text>
                     </View>
@@ -774,7 +774,7 @@ const BasePostCard = ({
                     </View>
                 </View>
                 <TouchableOpacity style={styles.optionsButton} onPress={handleOptions}>
-                    <Ionicons name="ellipsis-horizontal" size={18} color="#6b7280" />
+                    <Ionicons name="ellipsis-horizontal" size={18} color="#64748B" />
                 </TouchableOpacity>
             </TouchableOpacity>
 
@@ -794,7 +794,7 @@ const BasePostCard = ({
                                     </Text>
                                     {shouldTruncate && (
                                         <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                                            <Text style={{ color: '#6b7280', marginTop: 4, fontWeight: '500' }}>
+                                            <Text style={{ color: '#64748B', marginTop: 4, fontWeight: '500' }}>
                                                 {isExpanded ? 'view less' : 'view more'}
                                             </Text>
                                         </TouchableOpacity>
@@ -882,10 +882,10 @@ const BasePostCard = ({
                             <Ionicons
                                 name={liked ? "heart" : "heart-outline"}
                                 size={24}
-                                color={liked ? "#ea580c" : "#374151"}
+                                color={liked ? "#2563EB" : "#374151"}
                             />
                         </Animated.View>
-                        <Text style={[styles.actionText, liked && { color: '#ea580c', fontWeight: '600' }]}>
+                        <Text style={[styles.actionText, liked && { color: '#2563EB', fontWeight: '600' }]}>
                             {likeCount}
                         </Text>
                     </TouchableOpacity>
@@ -908,7 +908,7 @@ const BasePostCard = ({
                             <Ionicons
                                 name={musicMuted ? "volume-mute" : "volume-high"}
                                 size={22}
-                                color={musicMuted ? "#6b7280" : "#ea580c"}
+                                color={musicMuted ? "#64748B" : "#2563EB"}
                             />
                         </TouchableOpacity>
                     )}
@@ -919,7 +919,7 @@ const BasePostCard = ({
                         <Ionicons
                             name={saved ? "bookmark" : "bookmark-outline"}
                             size={22}
-                            color={saved ? "#ea580c" : "#374151"}
+                            color={saved ? "#2563EB" : "#374151"}
                         />
                     </Animated.View>
                 </TouchableOpacity>
@@ -940,12 +940,12 @@ const BasePostCard = ({
                     <TouchableOpacity activeOpacity={1} style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
                         <View style={{ width: 40, height: 4, backgroundColor: '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
                         
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#111827' }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#172554' }}>
                             {String(post.user.id) === String(currentUserId) ? 'Manage Post' : 'Post Options'}
                         </Text>
                         
                         <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}
                             onPress={() => {
                                 setOptionsModalVisible(false);
                                 handleDownloadPost();
@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: '#E2E8F0',
         borderWidth: 1.5,
         borderColor: '#fed7aa',
     },
@@ -1083,11 +1083,11 @@ const styles = StyleSheet.create({
     },
     userName: {
         fontWeight: 'bold',
-        color: '#111827',
+        color: '#172554',
         fontSize: 15,
     },
     timeAgo: {
-        color: '#6b7280',
+        color: '#64748B',
         fontSize: 11,
     },
     dotSeparator: {
@@ -1119,7 +1119,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255, 237, 213, 0.6)',
     },
     musicIconContainer: {
-        backgroundColor: '#f97316',
+        backgroundColor: '#93C5FD',
         padding: 6,
         borderRadius: 8,
     },
@@ -1138,7 +1138,7 @@ const styles = StyleSheet.create({
     musicTitleText: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#1f2937',
+        color: '#172554',
     },
     liveBadge: {
         flexDirection: 'row',
@@ -1148,18 +1148,18 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#ffedd5',
+        borderColor: '#DBEAFE',
     },
     liveDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: '#f97316',
+        backgroundColor: '#93C5FD',
     },
     liveText: {
         fontSize: 9,
         fontWeight: '900',
-        color: '#f97316',
+        color: '#93C5FD',
         marginLeft: 4,
         letterSpacing: 1,
     },
@@ -1206,7 +1206,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderTopWidth: 1,
-        borderTopColor: '#f3f4f6',
+        borderTopColor: '#E2E8F0',
         marginTop: 8,
     },
     leftActions: {
@@ -1235,7 +1235,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#ffedd5',
+        borderColor: '#DBEAFE',
     },
     vignettePart: {
         position: 'absolute',
@@ -1264,13 +1264,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: '#E2E8F0',
         paddingBottom: 10,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: '#172554',
     },
     modalSubtitle: {
         fontSize: 14,
@@ -1283,14 +1283,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#d1d5db',
         borderRadius: 8,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
         marginBottom: 12,
         overflow: 'hidden',
     },
     picker: {
         width: '100%',
         height: 50,
-        color: '#111827',
+        color: '#172554',
     },
     textInput: {
         borderWidth: 1,
@@ -1298,8 +1298,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
-        color: '#111827',
-        backgroundColor: '#f9fafb',
+        color: '#172554',
+        backgroundColor: '#F8FAFC',
         textAlignVertical: 'top',
         height: 100,
         marginBottom: 20,
@@ -1318,7 +1318,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cancelButton: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#E2E8F0',
         borderWidth: 1,
         borderColor: '#d1d5db',
     },
@@ -1328,7 +1328,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     submitButton: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
     },
     submitButtonText: {
         color: 'white',
@@ -1381,7 +1381,7 @@ export const PostMediaCarousel = React.memo((props: any) => {
                 scrollEventThrottle={16}
             >
                 {mediaList.map((uri: string, index: number) => (
-                    <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }}>
+                    <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' }}>
                         {isVideo(uri) ? (
                             <TouchableOpacity
                                 activeOpacity={0.95}

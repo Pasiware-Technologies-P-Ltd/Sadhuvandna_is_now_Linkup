@@ -109,7 +109,7 @@ const TempleScreen = ({ navigation }: any) => {
 
     const renderFooter = () => {
         if (!isFetchingMore) return null;
-        return <ActivityIndicator style={{ marginVertical: 20 }} color="#ea580c" />;
+        return <ActivityIndicator style={{ marginVertical: 20 }} color="#2563EB" />;
     };
 
     const renderItem = ({ item }: { item: any }) => (
@@ -117,24 +117,24 @@ const TempleScreen = ({ navigation }: any) => {
             {item.photo && (
                 <Image
                     source={{ uri: ImageService.getFeedImageUrl(`${TEMPLE_IMAGE_URL}${item.photo}`, 800) }}
-                    className="w-full h-72 bg-gray-50"
+                    className="w-full h-72 bg-slate-50"
                     contentFit="contain"
                 />
             )}
             <View className="p-4">
-                <Text className="text-xl font-bold text-gray-900 mb-1">{item.mahant_name}</Text>
-                <Text className="text-sm text-gray-600 mb-2">
+                <Text className="text-xl font-bold text-blue-950 mb-1">{item.mahant_name}</Text>
+                <Text className="text-sm text-slate-500 mb-2">
                     <Ionicons name="call" size={14} color="gray" /> {item.mobile}
                 </Text>
 
                 <View className="space-y-1 mb-3">
-                    <Text className="text-xs text-gray-500">{t('village')}: {item.village}</Text>
-                    <Text className="text-xs text-gray-500">Taluka: {item.taluka}</Text>
-                    <Text className="text-xs text-gray-500">District: {item.district}</Text>
+                    <Text className="text-xs text-slate-500">{t('village')}: {item.village}</Text>
+                    <Text className="text-xs text-slate-500">Taluka: {item.taluka}</Text>
+                    <Text className="text-xs text-slate-500">District: {item.district}</Text>
                 </View>
 
                 {item.description && (
-                    <Text className="text-gray-700 text-sm leading-5" numberOfLines={3}>
+                    <Text className="text-slate-600 text-sm leading-5" numberOfLines={3}>
                         {item.description}
                     </Text>
                 )}
@@ -143,7 +143,7 @@ const TempleScreen = ({ navigation }: any) => {
     );
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#ea580c" /></View>;
+        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
@@ -152,7 +152,7 @@ const TempleScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">{t('temples')}</Text>
+                <Text className="text-xl font-bold text-blue-900">{t('temples')}</Text>
             </View>
 
             <FlashList
@@ -166,11 +166,11 @@ const TempleScreen = ({ navigation }: any) => {
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={renderFooter}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#ea580c']} tintColor="#ea580c" />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />
                 }
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
-                        <Text className="text-gray-500 text-center text-lg">{t('noJobs') ?? "No temples found"}</Text>
+                        <Text className="text-slate-500 text-center text-lg">{t('noJobs') ?? "No temples found"}</Text>
                     </View>
                 }
             />

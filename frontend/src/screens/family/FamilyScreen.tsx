@@ -237,16 +237,16 @@ const FamilyScreen = ({ navigation }: any) => {
         <View className="bg-white mb-4 p-4 rounded-xl border border-orange-100 shadow-sm flex-row items-center gap-4 mx-4">
             <Image
                 source={{ uri: item.photo ? `${FAMILY_PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-gray-200"
+                className="w-16 h-16 rounded-full bg-slate-200"
             />
             <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-900">{item.name}</Text>
+                <Text className="text-lg font-bold text-blue-950">{item.name}</Text>
                 <View className="flex-row flex-wrap gap-2 mt-1">
-                    <Text className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{item.relation}</Text>
-                    <Text className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{item.gender}</Text>
+                    <Text className="text-xs bg-blue-100 text-orange-800 px-2 py-1 rounded-full">{item.relation}</Text>
+                    <Text className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{item.gender}</Text>
                     {item.occupation ? <Text className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">{item.occupation}</Text> : null}
                     {item.marital_status ? <Text className="text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full">{item.marital_status}</Text> : null}
-                    {item.dob && <Text className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">DOB: {item.dob}</Text>}
+                    {item.dob && <Text className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">DOB: {item.dob}</Text>}
                     {item.education ? <Text className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full">{item.education}</Text> : null}
                 </View>
             </View>
@@ -268,15 +268,15 @@ const FamilyScreen = ({ navigation }: any) => {
                     <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-800">Family Members</Text>
+                    <Text className="text-xl font-bold text-blue-900">Family Members</Text>
                 </View>
                 <TouchableOpacity onPress={() => { resetForm(); setModalVisible(true); }}>
-                    <Ionicons name="add-circle" size={30} color="#ea580c" />
+                    <Ionicons name="add-circle" size={30} color="#2563EB" />
                 </TouchableOpacity>
             </View>
 
             {loading ? (
-                <View className="flex-1 justify-center items-center"><ActivityIndicator color="#ea580c" /></View>
+                <View className="flex-1 justify-center items-center"><ActivityIndicator color="#2563EB" /></View>
             ) : (
                 <FlashList
                     data={members}
@@ -285,9 +285,9 @@ const FamilyScreen = ({ navigation }: any) => {
                     contentContainerStyle={{ paddingVertical: 10 }}
                     ListEmptyComponent={
                         <View className="items-center mt-20 p-4">
-                            <Text className="text-gray-500 text-center text-lg">No family members added.</Text>
-                            <TouchableOpacity onPress={() => { resetForm(); setModalVisible(true); }} className="mt-4 bg-orange-100 px-4 py-2 rounded-lg">
-                                <Text className="text-orange-600 font-bold">Add Member</Text>
+                            <Text className="text-slate-500 text-center text-lg">No family members added.</Text>
+                            <TouchableOpacity onPress={() => { resetForm(); setModalVisible(true); }} className="mt-4 bg-blue-100 px-4 py-2 rounded-lg">
+                                <Text className="text-blue-600 font-bold">Add Member</Text>
                             </TouchableOpacity>
                         </View>
                     }
@@ -297,9 +297,9 @@ const FamilyScreen = ({ navigation }: any) => {
             <Modal animationType="slide" visible={modalVisible} onRequestClose={() => setModalVisible(false)} presentationStyle="pageSheet">
                 <View className="flex-1 bg-white">
                     <View className="flex-row items-center justify-between p-4 border-b border-gray-100">
-                        <Text className="text-xl font-bold text-gray-800">{editId ? 'Edit Member' : 'Add Member'}</Text>
+                        <Text className="text-xl font-bold text-blue-900">{editId ? 'Edit Member' : 'Add Member'}</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Text className="text-gray-500 text-lg">Cancel</Text>
+                            <Text className="text-slate-500 text-lg">Cancel</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView className="flex-1 p-5">
@@ -308,9 +308,9 @@ const FamilyScreen = ({ navigation }: any) => {
                                 {photo ? (
                                     <Image source={{ uri: photo }} className="w-24 h-24 rounded-full" />
                                 ) : (
-                                    <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center border border-gray-300">
+                                    <View className="w-24 h-24 rounded-full bg-slate-100 items-center justify-center border border-slate-300">
                                         <Ionicons name="camera" size={24} color="gray" />
-                                        <Text className="text-xs text-gray-500 mt-1">Photo</Text>
+                                        <Text className="text-xs text-slate-500 mt-1">Photo</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -318,45 +318,45 @@ const FamilyScreen = ({ navigation }: any) => {
 
                         <View className="space-y-4 mb-20">
                             <View>
-                                <Text className="mb-1 text-gray-600">Name *</Text>
-                                <TextInput value={name} onChangeText={setName} className="bg-gray-50 p-3 rounded-lg border border-gray-200" />
+                                <Text className="mb-1 text-slate-500">Name *</Text>
+                                <TextInput value={name} onChangeText={setName} className="bg-slate-50 p-3 rounded-lg border border-slate-200" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Relation *</Text>
-                                <TextInput value={relation} onChangeText={setRelation} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="e.g. Brother" />
+                                <Text className="mb-1 text-slate-500">Relation *</Text>
+                                <TextInput value={relation} onChangeText={setRelation} className="bg-slate-50 p-3 rounded-lg border border-slate-200" placeholder="e.g. Brother" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Gender</Text>
+                                <Text className="mb-1 text-slate-500">Gender</Text>
                                 <View className="flex-row gap-4">
                                     {['Male', 'Female', 'Other'].map(g => (
-                                        <TouchableOpacity key={g} onPress={() => setGender(g)} className={`px-4 py-2 rounded-full border ${gender === g ? 'bg-orange-50 border-orange-500' : 'border-gray-200'}`}>
-                                            <Text className={gender === g ? 'text-orange-600' : 'text-gray-600'}>{g}</Text>
+                                        <TouchableOpacity key={g} onPress={() => setGender(g)} className={`px-4 py-2 rounded-full border ${gender === g ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
+                                            <Text className={gender === g ? 'text-blue-600' : 'text-slate-500'}>{g}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Marital Status</Text>
+                                <Text className="mb-1 text-slate-500">Marital Status</Text>
                                 <View className="flex-row gap-2 flex-wrap">
                                     {['Unmarried', 'Married', 'Divorced', 'Widow'].map(s => (
-                                        <TouchableOpacity key={s} onPress={() => setMaritalStatus(s)} className={`px-3 py-1.5 rounded-full border ${maritalStatus === s ? 'bg-orange-50 border-orange-500' : 'border-gray-200'}`}>
-                                            <Text className={`text-xs ${maritalStatus === s ? 'text-orange-600' : 'text-gray-600'}`}>{s}</Text>
+                                        <TouchableOpacity key={s} onPress={() => setMaritalStatus(s)} className={`px-3 py-1.5 rounded-full border ${maritalStatus === s ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
+                                            <Text className={`text-xs ${maritalStatus === s ? 'text-blue-600' : 'text-slate-500'}`}>{s}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Occupation</Text>
-                                <TextInput value={occupation} onChangeText={setOccupation} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="e.g. Engineer" />
+                                <Text className="mb-1 text-slate-500">Occupation</Text>
+                                <TextInput value={occupation} onChangeText={setOccupation} className="bg-slate-50 p-3 rounded-lg border border-slate-200" placeholder="e.g. Engineer" />
                             </View>
                             <View>
-                                <Text className="mb-1 text-gray-600">Date of Birth</Text>
+                                <Text className="mb-1 text-slate-500">Date of Birth</Text>
                                 <TouchableOpacity
                                     onPress={openDatePicker}
-                                    style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                    style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={{ color: dob ? '#111827' : '#9ca3af', fontSize: 15 }}>
+                                    <Text style={{ color: dob ? '#172554' : '#9ca3af', fontSize: 15 }}>
                                         {dob ? formatDisplayDate(dob) : 'Select Date of Birth'}
                                     </Text>
                                     <Text style={{ fontSize: 18 }}>📅</Text>
@@ -365,38 +365,38 @@ const FamilyScreen = ({ navigation }: any) => {
 
                             <View className="flex-row gap-4">
                                 <View className="flex-1">
-                                    <Text className="mb-1 text-gray-600">Height</Text>
-                                    <TextInput value={height} onChangeText={setHeight} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="e.g. 5.9" />
+                                    <Text className="mb-1 text-slate-500">Height</Text>
+                                    <TextInput value={height} onChangeText={setHeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200" placeholder="e.g. 5.9" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="mb-1 text-gray-600">Weight</Text>
-                                    <TextInput value={weight} onChangeText={setWeight} className="bg-gray-50 p-3 rounded-lg border border-gray-200" placeholder="e.g. 70kg" />
+                                    <Text className="mb-1 text-slate-500">Weight</Text>
+                                    <TextInput value={weight} onChangeText={setWeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200" placeholder="e.g. 70kg" />
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Education</Text>
-                                <TextInput value={education} onChangeText={setEducation} className="bg-gray-50 p-3 rounded-lg border border-gray-200" />
+                                <Text className="mb-1 text-slate-500">Education</Text>
+                                <TextInput value={education} onChangeText={setEducation} className="bg-slate-50 p-3 rounded-lg border border-slate-200" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Monthly Income</Text>
-                                <TextInput value={income} onChangeText={setIncome} className="bg-gray-50 p-3 rounded-lg border border-gray-200" keyboardType="numeric" />
+                                <Text className="mb-1 text-slate-500">Monthly Income</Text>
+                                <TextInput value={income} onChangeText={setIncome} className="bg-slate-50 p-3 rounded-lg border border-slate-200" keyboardType="numeric" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Caste / Samaj</Text>
-                                <TextInput value={caste} onChangeText={setCaste} className="bg-gray-50 p-3 rounded-lg border border-gray-200" />
+                                <Text className="mb-1 text-slate-500">Caste / Samaj</Text>
+                                <TextInput value={caste} onChangeText={setCaste} className="bg-slate-50 p-3 rounded-lg border border-slate-200" />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-gray-600">Kuldevi</Text>
-                                <TextInput value={kuldevi} onChangeText={setKuldevi} className="bg-gray-50 p-3 rounded-lg border border-gray-200" />
+                                <Text className="mb-1 text-slate-500">Kuldevi</Text>
+                                <TextInput value={kuldevi} onChangeText={setKuldevi} className="bg-slate-50 p-3 rounded-lg border border-slate-200" />
                             </View>
                         </View>
                     </ScrollView>
                     <View className="p-4 border-t border-gray-100">
-                        <TouchableOpacity onPress={handleAddOrUpdateMember} disabled={submitting} className="bg-orange-600 py-4 rounded-xl items-center">
+                        <TouchableOpacity onPress={handleAddOrUpdateMember} disabled={submitting} className="bg-blue-600 py-4 rounded-xl items-center">
                             {submitting ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">{editId ? 'Update Member' : 'Save Member'}</Text>}
                         </TouchableOpacity>
                     </View>
@@ -413,13 +413,13 @@ const FamilyScreen = ({ navigation }: any) => {
                     <TouchableOpacity activeOpacity={1} onPress={() => {}}>
                         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34 }}>
                             {/* Header */}
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                    <Text style={{ fontSize: 16, color: '#6b7280' }}>Cancel</Text>
+                                    <Text style={{ fontSize: 16, color: '#64748B' }}>Cancel</Text>
                                 </TouchableOpacity>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>Select Date of Birth</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#172554' }}>Select Date of Birth</Text>
                                 <TouchableOpacity onPress={confirmDate}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#ea580c' }}>Done</Text>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#2563EB' }}>Done</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -431,8 +431,8 @@ const FamilyScreen = ({ navigation }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {DAYS.map(d => (
                                             <TouchableOpacity key={d} onPress={() => setPickerDay(d)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#ea580c' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#2563EB' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -443,8 +443,8 @@ const FamilyScreen = ({ navigation }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {MONTHS.map((m, i) => (
                                             <TouchableOpacity key={m} onPress={() => setPickerMonth(i + 1)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#ea580c' : '#374151' }}>{m}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#2563EB' : '#374151' }}>{m}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -455,8 +455,8 @@ const FamilyScreen = ({ navigation }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {YEARS.map(y => (
                                             <TouchableOpacity key={y} onPress={() => setPickerYear(y)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#ea580c' : '#374151' }}>{y}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#2563EB' : '#374151' }}>{y}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>

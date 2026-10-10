@@ -811,7 +811,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         <Ionicons
                             name={saved ? "bookmark" : "bookmark-outline"}
                             size={28}
-                            color={saved ? "#ea580c" : "white"}
+                            color={saved ? "#2563EB" : "white"}
                             style={styles.iconShadow}
                         />
                     </Animated.View>
@@ -837,12 +837,12 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                     <TouchableOpacity activeOpacity={1} style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
                         <View style={{ width: 40, height: 4, backgroundColor: '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
                         
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#111827' }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#172554' }}>
                             {String(item.user_id) === String(currentUserId) ? 'Manage Reel' : 'Reel Options'}
                         </Text>
                         
                         <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}
                             onPress={() => {
                                 setOptionsModalVisible(false);
                                 handleDownloadReel();
@@ -855,14 +855,14 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
                         {String(item.user_id) === String(currentUserId) ? (
                             <>
                                 <TouchableOpacity 
-                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}
                                     onPress={() => {
                                         setOptionsModalVisible(false);
                                         toggleSave();
                                     }}
                                 >
-                                    <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={24} color="#ea580c" style={{ marginRight: 15 }} />
-                                    <Text style={{ fontSize: 16, color: '#ea580c' }}>{saved ? "Unsave Reel" : "Save Reel"}</Text>
+                                    <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={24} color="#2563EB" style={{ marginRight: 15 }} />
+                                    <Text style={{ fontSize: 16, color: '#2563EB' }}>{saved ? "Unsave Reel" : "Save Reel"}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -1077,7 +1077,7 @@ const ReelsScreen = ({ navigation, route }: any) => {
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#ea580c" />
+                <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
     }
@@ -1308,13 +1308,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: '#E2E8F0',
         paddingBottom: 10,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: '#172554',
     },
     modalSubtitle: {
         fontSize: 14,
@@ -1327,14 +1327,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#d1d5db',
         borderRadius: 8,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#F8FAFC',
         marginBottom: 12,
         overflow: 'hidden',
     },
     picker: {
         width: '100%',
         height: 50,
-        color: '#111827',
+        color: '#172554',
     },
     textInput: {
         borderWidth: 1,
@@ -1342,8 +1342,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
-        color: '#111827',
-        backgroundColor: '#f9fafb',
+        color: '#172554',
+        backgroundColor: '#F8FAFC',
         textAlignVertical: 'top',
         height: 100,
         marginBottom: 20,
@@ -1362,7 +1362,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     cancelButton: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#E2E8F0',
         borderWidth: 1,
         borderColor: '#d1d5db',
     },
@@ -1372,7 +1372,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     submitButton: {
-        backgroundColor: '#ea580c',
+        backgroundColor: '#2563EB',
     },
     submitButtonText: {
         color: 'white',

@@ -107,14 +107,14 @@ function MainTabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: '#ea580c',
+        tabBarActiveTintColor: '#2563EB',
         tabBarInactiveTintColor: 'gray',
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === 'Profile' && user?.profile_photo) {
             return (
               <Image 
                 source={{ uri: `${WEBSITE_URL}/uploads/photo/${user.profile_photo}` }} 
-                style={{ width: size, height: size, borderRadius: size / 2, borderWidth: focused ? 2 : 0, borderColor: color, backgroundColor: '#f3f4f6' }} 
+                style={{ width: size, height: size, borderRadius: size / 2, borderWidth: focused ? 2 : 0, borderColor: color, backgroundColor: '#E2E8F0' }} 
               />
             );
           }

@@ -60,7 +60,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
@@ -102,7 +102,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
                 <TouchableOpacity
                     onPress={handleChange}
                     disabled={loading}
-                    style={{ backgroundColor: '#ea580c', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
+                    style={{ backgroundColor: '#2563EB', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
                 >
                     {loading ? <ActivityIndicator color="white" /> : (
                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Update Password</Text>

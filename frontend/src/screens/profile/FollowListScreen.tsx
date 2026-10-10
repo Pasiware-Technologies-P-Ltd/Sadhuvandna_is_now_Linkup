@@ -151,7 +151,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
         const isMe = String(item.id) === String(currentUserId);
 
         let btnText = "Connect";
-        let btnStyle = "bg-orange-600 border-orange-700";
+        let btnStyle = "bg-blue-600 border-orange-700";
         let textStyle = "text-white";
         let iconName: any = "person-add-outline";
 
@@ -163,13 +163,13 @@ const FollowListScreen = ({ route, navigation }: any) => {
                 iconName = "people";
             } else {
                 btnText = "Requested";
-                btnStyle = "bg-gray-100 border-gray-200";
-                textStyle = "text-gray-600";
+                btnStyle = "bg-slate-100 border-slate-200";
+                textStyle = "text-slate-500";
                 iconName = "time-outline";
             }
         } else if (item.follows_me) {
             btnText = "Follow Back";
-            btnStyle = "bg-orange-500 border-orange-600";
+            btnStyle = "bg-blue-500 border-blue-600";
             iconName = "arrow-redo-outline";
         }
 
@@ -188,8 +188,8 @@ const FollowListScreen = ({ route, navigation }: any) => {
                                     className="w-14 h-14 rounded-full border-2 border-orange-100 mr-4"
                                 />
                             ) : (
-                                <View className="w-14 h-14 rounded-full bg-orange-50 items-center justify-center border-2 border-orange-100 mr-4">
-                                    <Text className="text-orange-600 font-bold text-xl">
+                                <View className="w-14 h-14 rounded-full bg-blue-50 items-center justify-center border-2 border-orange-100 mr-4">
+                                    <Text className="text-blue-600 font-bold text-xl">
                                         {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
                                     </Text>
                                 </View>
@@ -202,7 +202,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
                         </View>
 
                         <View className="flex-1 mr-2">
-                            <Text className="font-extrabold text-gray-900 text-base" numberOfLines={1}>
+                            <Text className="font-extrabold text-blue-950 text-base" numberOfLines={1}>
                                 {item.name || "Member"}
                             </Text>
                             <View className="flex-row items-center mt-1">
@@ -226,10 +226,10 @@ const FollowListScreen = ({ route, navigation }: any) => {
                             className={`px-4 py-2 rounded-xl items-center justify-center border ${btnStyle} shadow-sm min-w-[100px]`}
                         >
                             {processingId === item.id ? (
-                                <ActivityIndicator size="small" color={textStyle.includes('white') ? 'white' : '#ea580c'} />
+                                <ActivityIndicator size="small" color={textStyle.includes('white') ? 'white' : '#2563EB'} />
                             ) : (
                                 <View className="flex-row items-center">
-                                    <Ionicons name={iconName} size={14} color={textStyle.includes('white') ? 'white' : (textStyle.includes('green') ? '#15803d' : '#4b5563')} style={{ marginRight: 4 }} />
+                                    <Ionicons name={iconName} size={14} color={textStyle.includes('white') ? 'white' : (textStyle.includes('green') ? '#15803d' : '#64748B')} style={{ marginRight: 4 }} />
                                     <Text className={`font-bold text-xs ${textStyle}`}>
                                         {btnText}
                                     </Text>
@@ -243,18 +243,18 @@ const FollowListScreen = ({ route, navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['top']}>
             {/* Custom Header */}
             <View className="px-4 py-4 bg-white border-b border-gray-100 flex-row items-center justify-between">
                 {isSearching ? (
-                    <View className="flex-row items-center flex-1 bg-gray-50 rounded-full px-3 py-1 border border-gray-200">
+                    <View className="flex-row items-center flex-1 bg-slate-50 rounded-full px-3 py-1 border border-slate-200">
                         <Ionicons name="search-outline" size={20} color="#9ca3af" />
                         <TextInput
                             autoFocus
                             placeholder="Search by name or city..."
                             value={searchQuery}
                             onChangeText={setSearchQuery}
-                            className="flex-1 ml-2 text-base text-gray-900 py-2"
+                            className="flex-1 ml-2 text-base text-blue-950 py-2"
                             placeholderTextColor="#9ca3af"
                         />
                         <TouchableOpacity onPress={() => { setIsSearching(false); setSearchQuery(''); }}>
@@ -266,20 +266,20 @@ const FollowListScreen = ({ route, navigation }: any) => {
                         <View className="flex-row items-center">
                             <TouchableOpacity
                                 onPress={() => navigation.goBack()}
-                                className="mr-4 w-10 h-10 bg-gray-50 rounded-full items-center justify-center border border-gray-100"
+                                className="mr-4 w-10 h-10 bg-slate-50 rounded-full items-center justify-center border border-gray-100"
                             >
-                                <Ionicons name="chevron-back" size={24} color="#1f2937" />
+                                <Ionicons name="chevron-back" size={24} color="#172554" />
                             </TouchableOpacity>
                             <View>
-                                <Text className="text-xl font-black text-gray-900">{title}</Text>
+                                <Text className="text-xl font-black text-blue-950">{title}</Text>
                                 <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Connect with Community</Text>
                             </View>
                         </View>
                         <TouchableOpacity 
-                            className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center border border-orange-100"
+                            className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center border border-orange-100"
                             onPress={() => setIsSearching(true)}
                         >
-                            <Ionicons name="search-outline" size={20} color="#ea580c" />
+                            <Ionicons name="search-outline" size={20} color="#2563EB" />
                         </TouchableOpacity>
                     </>
                 )}
@@ -287,7 +287,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
 
             {loading && users.length === 0 ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                 </View>
             ) : (
                 <FlashList
@@ -305,7 +305,7 @@ const FollowListScreen = ({ route, navigation }: any) => {
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={() => loadingMore ? (
                         <View className="py-4">
-                            <ActivityIndicator size="small" color="#ea580c" />
+                            <ActivityIndicator size="small" color="#2563EB" />
                         </View>
                     ) : null}
                 />

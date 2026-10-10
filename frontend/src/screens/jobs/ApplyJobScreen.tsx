@@ -108,7 +108,7 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
@@ -116,7 +116,7 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 20 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#ea580c', marginBottom: 20 }}>{jobTitle}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2563EB', marginBottom: 20 }}>{jobTitle}</Text>
 
                 <View style={{ gap: 16 }}>
                     <View>
@@ -187,13 +187,13 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                             <TouchableOpacity
                                 onPress={() => pickDocument(field.type)}
                                 style={{
-                                    borderWidth: 1, borderColor: field.state ? '#ea580c' : '#d1d5db',
+                                    borderWidth: 1, borderColor: field.state ? '#2563EB' : '#d1d5db',
                                     borderStyle: 'dashed', borderRadius: 8, padding: 16,
-                                    alignItems: 'center', backgroundColor: field.state ? '#fff7ed' : '#f9fafb'
+                                    alignItems: 'center', backgroundColor: field.state ? '#EFF6FF' : '#F8FAFC'
                                 }}
                             >
-                                <Ionicons name={field.state ? "checkmark-circle" : "cloud-upload-outline"} size={24} color={field.state ? "#ea580c" : "#9ca3af"} />
-                                <Text style={{ color: field.state ? '#c2410c' : '#6b7280', marginTop: 4 }}>
+                                <Ionicons name={field.state ? "checkmark-circle" : "cloud-upload-outline"} size={24} color={field.state ? "#2563EB" : "#9ca3af"} />
+                                <Text style={{ color: field.state ? '#c2410c' : '#64748B', marginTop: 4 }}>
                                     {field.state ? field.state.name : "Tap to Upload"}
                                 </Text>
                             </TouchableOpacity>
@@ -203,7 +203,7 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                     <TouchableOpacity
                         onPress={handleSubmit}
                         disabled={loading}
-                        style={{ backgroundColor: '#ea580c', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
+                        style={{ backgroundColor: '#2563EB', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
                     >
                         {loading ? <ActivityIndicator color="white" /> : (
                             <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Submit Application</Text>

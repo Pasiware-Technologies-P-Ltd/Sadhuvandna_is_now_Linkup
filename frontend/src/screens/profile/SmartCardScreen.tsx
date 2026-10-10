@@ -14,7 +14,7 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.92;
 const CARD_HEIGHT = CARD_WIDTH / 1.586;
 
-const LOGO_ASSET = require('../../../assets/Linkup.png');
+const LOGO_ASSET = require('../../../assets/icon.png');
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 // Format number as card number blocks: SV-00087 → displayed as membership number
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     },
     detailCard: {
         width: CARD_WIDTH,
-        backgroundColor: '#111827',
+        backgroundColor: '#172554',
         borderRadius: 16,
         paddingHorizontal: 20,
         paddingVertical: 4,

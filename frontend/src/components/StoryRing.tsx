@@ -32,9 +32,8 @@ const StoryRing: React.FC<StoryRingProps> = ({
             <Svg width={size} height={size} style={{ position: 'absolute', top: 0, left: 0 }}>
                 <Defs>
                     <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <Stop offset="0%" stopColor="#f9ce34" />
-                        <Stop offset="50%" stopColor="#ee2a7b" />
-                        <Stop offset="100%" stopColor="#6228d7" />
+                        <Stop offset="0%" stopColor="#2563EB" />
+                        <Stop offset="100%" stopColor="#93C5FD" />
                     </LinearGradient>
                 </Defs>
                 <Circle

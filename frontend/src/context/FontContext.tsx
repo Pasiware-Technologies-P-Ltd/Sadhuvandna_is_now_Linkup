@@ -219,12 +219,15 @@ export const getFontForPlatform = (fontName: string) => {
 interface FontContextType {
     fontFamily: string;
     setFontFamily: (font: string) => Promise<void>;
+    fontScale: number;
+    setFontScale: (scale: number) => Promise<void>;
 }
 
 const FontContext = createContext<FontContextType | undefined>(undefined);
 
 export const FontProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [fontFamily, setFontFamilyState] = useState<string>('System');
+    const [fontScale, setFontScaleState] = useState<number>(1);
 
     useEffect(() => {
         loadFontFamily();
@@ -249,6 +252,21 @@ export const FontProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     (global as any).notifyFontChange(undefined);
                 }
             }
+
+            const storedScale = await AsyncStorage.getItem('appFontScale');
+            if (storedScale) {
+                const scale = parseFloat(storedScale);
+                setFontScaleState(scale);
+                (global as any).activeFontScale = scale;
+                if (typeof (global as any).notifyFontScaleChange === 'function') {
+                    (global as any).notifyFontScaleChange(scale);
+                }
+            } else {
+                (global as any).activeFontScale = 1;
+                if (typeof (global as any).notifyFontScaleChange === 'function') {
+                    (global as any).notifyFontScaleChange(1);
+                }
+            }
         } catch (error) {
             console.error("[FontProvider] Failed to load font family from storage", error);
         }
@@ -266,8 +284,17 @@ export const FontProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const setFontScale = async (scale: number) => {
+        setFontScaleState(scale);
+        (global as any).activeFontScale = scale;
+        await AsyncStorage.setItem('appFontScale', scale.toString());
+        if (typeof (global as any).notifyFontScaleChange === 'function') {
+            (global as any).notifyFontScaleChange(scale);
+        }
+    };
+
     return (
-        <FontContext.Provider value={{ fontFamily, setFontFamily }}>
+        <FontContext.Provider value={{ fontFamily, setFontFamily, fontScale, setFontScale }}>
             {children}
         </FontContext.Provider>
     );

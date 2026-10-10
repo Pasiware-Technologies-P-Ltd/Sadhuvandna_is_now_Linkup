@@ -255,11 +255,11 @@ const EditProfileScreen = ({ navigation }: any) => {
         <SafeAreaView className="flex-1 bg-white" edges={['top']}>
             <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text className="text-lg text-gray-500">{t('cancel')}</Text>
+                    <Text className="text-lg text-slate-500">{t('cancel')}</Text>
                 </TouchableOpacity>
-                <Text className="font-bold text-lg text-gray-900">{t('editProfile')}</Text>
+                <Text className="font-bold text-lg text-blue-950">{t('editProfile')}</Text>
                 <TouchableOpacity onPress={handleSave} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#ea580c" /> : <Text className="text-lg font-bold text-orange-600">{t('save')}</Text>}
+                    {loading ? <ActivityIndicator color="#2563EB" /> : <Text className="text-lg font-bold text-blue-600">{t('save')}</Text>}
                 </TouchableOpacity>
             </View>
 
@@ -267,7 +267,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                 <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 30 }}>
                     {/* Cover Photo */}
                     <View className="relative">
-                        <TouchableOpacity onPress={pickCover} className="h-40 bg-gray-200 w-full relative">
+                        <TouchableOpacity onPress={pickCover} className="h-40 bg-slate-200 w-full relative">
                             {displayCover && (
                                 <Image source={{ uri: displayCover }} className="w-full h-full" contentFit="cover" />
                             )}
@@ -285,7 +285,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                                     setDeleteCover(true);
                                 }}
                             >
-                                <Ionicons name="close-circle" size={24} color="#ea580c" />
+                                <Ionicons name="close-circle" size={24} color="#2563EB" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -295,13 +295,13 @@ const EditProfileScreen = ({ navigation }: any) => {
                         <View className="relative">
                             <TouchableOpacity onPress={pickImage}>
                                 {displayImage ? (
-                                    <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-gray-200 border-4 border-white" />
+                                    <Image source={{ uri: displayImage }} className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white" />
                                 ) : (
                                     <View className="w-24 h-24 rounded-full bg-orange-200 items-center justify-center border-4 border-white">
-                                        <Text className="text-4xl text-orange-700">{name?.[0]?.toUpperCase() || 'U'}</Text>
+                                        <Text className="text-4xl text-blue-950">{name?.[0]?.toUpperCase() || 'U'}</Text>
                                     </View>
                                 )}
-                                <View className="absolute bottom-0 right-0 bg-orange-600 p-1.5 rounded-full border-2 border-white">
+                                <View className="absolute bottom-0 right-0 bg-blue-600 p-1.5 rounded-full border-2 border-white">
                                     <Ionicons name="camera" size={16} color="white" />
                                 </View>
                             </TouchableOpacity>
@@ -313,7 +313,7 @@ const EditProfileScreen = ({ navigation }: any) => {
                                         setDeletePhoto(true);
                                     }}
                                 >
-                                    <Ionicons name="close-circle" size={24} color="#ea580c" />
+                                    <Ionicons name="close-circle" size={24} color="#2563EB" />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -321,30 +321,30 @@ const EditProfileScreen = ({ navigation }: any) => {
 
                     <View className="px-5 space-y-6 mt-4">
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('fullName')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('fullName')}</Text>
                             <TextInput
                                 value={name}
                                 onChangeText={setName}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('city')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('city')}</Text>
                             <TextInput
                                 value={location} // Using location state for city
                                 onChangeText={setLocation}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('dateOfBirthFull')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('dateOfBirthFull')}</Text>
                             <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                                 <View pointerEvents="none">
                                     <TextInput
                                         value={dob}
                                         editable={false}
                                         placeholder={t('selectDate')}
-                                        className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                        className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                                     />
                                 </View>
                             </TouchableOpacity>
@@ -363,101 +363,101 @@ const EditProfileScreen = ({ navigation }: any) => {
                             )}
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('cast')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('cast')}</Text>
                             <TextInput
                                 value={cast}
                                 onChangeText={setCast}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('gender')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('gender')}</Text>
                             <TextInput
                                 value={gender}
                                 onChangeText={setGender}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('maritalStatus')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('maritalStatus')}</Text>
                             <TextInput
                                 value={maritalStatus}
                                 onChangeText={setMaritalStatus}
                                 placeholder={t('selectMaritalStatus')}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('education')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('education')}</Text>
                             <TextInput
                                 value={education}
                                 onChangeText={setEducation}
                                 placeholder={t('highestQualification')}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('occupation')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('occupation')}</Text>
                             <TextInput
                                 value={occupation}
                                 onChangeText={setOccupation}
                                 placeholder={t('professionJob')}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('phoneNumberRegistered')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('phoneNumberRegistered')}</Text>
                             <TextInput
                                 value={phone}
                                 editable={false}
-                                className="bg-gray-200 p-4 rounded-xl text-gray-500 text-base border border-gray-100"
+                                className="bg-slate-200 p-4 rounded-xl text-slate-500 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('emailId')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('emailId')}</Text>
                             <TextInput
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('addressPresent')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('addressPresent')}</Text>
                             <TextInput
                                 value={address}
                                 onChangeText={setAddress}
                                 placeholder={t('currentAddress')}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('state')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('state')}</Text>
                             <TextInput
                                 value={stateName}
                                 onChangeText={setStateName}
                                 placeholder="State"
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('hobbiesInterests')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('hobbiesInterests')}</Text>
                             <TextInput
                                 value={hobbies}
                                 onChangeText={setHobbies}
                                 placeholder="Singing, Reading..."
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100"
                             />
                         </View>
                         <View>
-                            <Text className="text-gray-500 text-sm mb-1 ml-1">{t('aboutMeBiodata')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1">{t('aboutMeBiodata')}</Text>
                             <TextInput
                                 value={bio}
                                 onChangeText={setBio}
                                 placeholder={t('yourBio')}
                                 multiline
                                 numberOfLines={4}
-                                className="bg-gray-50 p-4 rounded-xl text-gray-800 text-base border border-gray-100 min-h-[100px]"
+                                className="bg-slate-50 p-4 rounded-xl text-blue-900 text-base border border-gray-100 min-h-[100px]"
                                 style={{ textAlignVertical: 'top' }}
                             />
                         </View>

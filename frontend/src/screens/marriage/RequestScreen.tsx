@@ -145,11 +145,11 @@ const RequestScreen = ({ navigation }: any) => {
         <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-gray-200 mr-4"
+                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
             />
             <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-800">{item.full_name}</Text>
-                <Text className="text-gray-500 text-sm">{item.city} • {item.age} yrs</Text>
+                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
+                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
 
                 <View className="flex-row gap-2 mt-2">
                     <TouchableOpacity
@@ -173,11 +173,11 @@ const RequestScreen = ({ navigation }: any) => {
         <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-gray-200 mr-4"
+                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
             />
             <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-800">{item.full_name}</Text>
-                <Text className="text-gray-500 text-sm">{item.city} • {item.age} yrs</Text>
+                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
+                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
 
                 <View className="flex-row gap-2 mt-2">
                     <TouchableOpacity
@@ -196,13 +196,13 @@ const RequestScreen = ({ navigation }: any) => {
                         <Text className="text-white font-bold text-xs">Chat</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        className="bg-gray-100 border border-gray-300 px-4 py-1.5 rounded-lg flex-1 items-center"
+                        className="bg-slate-100 border border-slate-300 px-4 py-1.5 rounded-lg flex-1 items-center"
                         onPress={() => Alert.alert("Remove Friend", "Are you sure?", [
                             { text: "Cancel", style: "cancel" },
                             { text: "Remove", style: "destructive", onPress: () => handleAction(item.id, 'remove') }
                         ])}
                     >
-                        <Text className="text-gray-600 font-bold text-xs">Remove</Text>
+                        <Text className="text-slate-500 font-bold text-xs">Remove</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -213,16 +213,16 @@ const RequestScreen = ({ navigation }: any) => {
         <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-gray-200 mr-4"
+                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
             />
             <View className="flex-1">
-                <Text className="text-lg font-bold text-gray-800">{item.full_name}</Text>
-                <Text className="text-gray-500 text-sm">{item.city} • {item.age} yrs</Text>
+                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
+                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
                 <TouchableOpacity
-                    className="mt-2 bg-gray-100 border border-gray-300 px-4 py-1.5 rounded-lg items-center self-start"
+                    className="mt-2 bg-slate-100 border border-slate-300 px-4 py-1.5 rounded-lg items-center self-start"
                     onPress={() => handleCancelRequest(item.receiver_id)}
                 >
-                    <Text className="text-gray-600 font-bold text-xs">Cancel Request</Text>
+                    <Text className="text-slate-500 font-bold text-xs">Cancel Request</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -236,7 +236,7 @@ const RequestScreen = ({ navigation }: any) => {
             ListEmptyComponent={
                 <View className="items-center mt-20 p-4">
                     <Text className="text-4xl mb-4">🔕</Text>
-                    <Text className="text-gray-500 text-center text-lg">No pending requests.</Text>
+                    <Text className="text-slate-500 text-center text-lg">No pending requests.</Text>
                 </View>
             }
         />
@@ -250,7 +250,7 @@ const RequestScreen = ({ navigation }: any) => {
             ListEmptyComponent={
                 <View className="items-center mt-20 p-4">
                     <Text className="text-4xl mb-4">🕊️</Text>
-                    <Text className="text-gray-500 text-center text-lg">No sent requests.</Text>
+                    <Text className="text-slate-500 text-center text-lg">No sent requests.</Text>
                 </View>
             }
         />
@@ -264,7 +264,7 @@ const RequestScreen = ({ navigation }: any) => {
             ListEmptyComponent={
                 <View className="items-center mt-20 p-4">
                     <Text className="text-4xl mb-4">👥</Text>
-                    <Text className="text-gray-500 text-center text-lg">No connections yet.</Text>
+                    <Text className="text-slate-500 text-center text-lg">No connections yet.</Text>
                 </View>
             }
         />
@@ -277,16 +277,16 @@ const RequestScreen = ({ navigation }: any) => {
     });
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#ea580c" /></View>;
+        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <View className="p-4 border-b border-orange-100 bg-orange-50 flex-row items-center">
+            <View className="p-4 border-b border-orange-100 bg-blue-50 flex-row items-center">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="#ea580c" />
+                    <Ionicons name="arrow-back" size={24} color="#2563EB" />
                 </TouchableOpacity>
-                <Text className="text-2xl font-bold text-orange-600">Requests & Friends</Text>
+                <Text className="text-2xl font-bold text-blue-600">Requests & Friends</Text>
             </View>
 
             <TabView
@@ -297,9 +297,9 @@ const RequestScreen = ({ navigation }: any) => {
                 renderTabBar={(props: any) => (
                     <TabBar
                         {...props}
-                        indicatorStyle={{ backgroundColor: '#ea580c' }}
+                        indicatorStyle={{ backgroundColor: '#2563EB' }}
                         style={{ backgroundColor: 'white' }}
-                        activeColor="#ea580c"
+                        activeColor="#2563EB"
                         inactiveColor="gray"
                         renderLabel={({ route, focused, color }: any) => (
                             <Text style={{ color, margin: 8, fontWeight: 'bold' }}>

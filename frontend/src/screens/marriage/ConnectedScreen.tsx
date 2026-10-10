@@ -115,17 +115,17 @@ const ConnectedScreen = ({ navigation }: any) => {
             <View style={{ position: 'relative' }}>
                 <Image
                     source={{ uri: (item.profile_photo || item.photo) ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo || item.photo)}` : 'https://via.placeholder.com/150' }}
-                    style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', borderWidth: 2, borderColor: '#ffedd5' }}
+                    style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#E2E8F0', borderWidth: 2, borderColor: '#DBEAFE' }}
                 />
                 <View style={{ position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, backgroundColor: '#22c55e', borderRadius: 7, borderWidth: 2, borderColor: 'white' }} />
             </View>
 
             <View className="flex-1 ml-4 justify-center">
                 <View className="flex-row justify-between items-center mb-1">
-                    <Text className="text-lg font-bold text-gray-800" numberOfLines={1}>{item.full_name}</Text>
+                    <Text className="text-lg font-bold text-blue-900" numberOfLines={1}>{item.full_name}</Text>
                 </View>
-                <Text className="text-gray-500 text-xs" numberOfLines={1}>{item.city} • {item.age} yrs</Text>
-                <Text className="text-orange-600/80 text-xs font-medium mt-1">Tap to chat</Text>
+                <Text className="text-slate-500 text-xs" numberOfLines={1}>{item.city} • {item.age} yrs</Text>
+                <Text className="text-blue-600/80 text-xs font-medium mt-1">Tap to chat</Text>
             </View>
 
             <View className="ml-2">
@@ -135,19 +135,19 @@ const ConnectedScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView className="flex-1 bg-slate-50">
             <View className="px-4 py-4 bg-white border-b border-gray-100 shadow-sm z-10 flex-row items-center justify-between">
                 <View className="flex-row items-center">
-                    <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 bg-gray-50 p-2 rounded-full">
+                    <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 bg-slate-50 p-2 rounded-full">
                         <Ionicons name="arrow-back" size={24} color="#374151" />
                     </TouchableOpacity>
-                    <Text className="text-2xl font-bold text-gray-800 tracking-tight">Messages</Text>
+                    <Text className="text-2xl font-bold text-blue-900 tracking-tight">Messages</Text>
                 </View>
             </View>
 
             {loading && !refreshing ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                     <Text className="text-gray-400 text-xs mt-3">Loading conversations...</Text>
                 </View>
             ) : (
@@ -158,15 +158,15 @@ const ConnectedScreen = ({ navigation }: any) => {
                     contentContainerStyle={{ paddingVertical: 16 }}
                     onEndReached={() => fetchConnectedProfiles(true)}
                     onEndReachedThreshold={0.5}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchConnectedProfiles(); }} colors={['#ea580c']} />}
-                    ListFooterComponent={isLoadMoreLoading ? <ActivityIndicator color="#ea580c" style={{ margin: 10 }} /> : null}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchConnectedProfiles(); }} colors={['#2563EB']} />}
+                    ListFooterComponent={isLoadMoreLoading ? <ActivityIndicator color="#2563EB" style={{ margin: 10 }} /> : null}
                     ListEmptyComponent={
                         <View className="items-center justify-center py-20 px-10">
-                            <View className="w-32 h-32 bg-orange-50 rounded-full items-center justify-center mb-6">
+                            <View className="w-32 h-32 bg-blue-50 rounded-full items-center justify-center mb-6">
                                 <Ionicons name="chatbubbles-outline" size={64} color="#fdba74" />
                             </View>
-                            <Text className="text-gray-800 font-bold text-xl mb-2 text-center">No Connections Yet</Text>
-                            <Text className="text-gray-500 text-center leading-5 mb-8">
+                            <Text className="text-blue-900 font-bold text-xl mb-2 text-center">No Connections Yet</Text>
+                            <Text className="text-slate-500 text-center leading-5 mb-8">
                                 Connect with profiles in the Matrimony section to start chatting.
                             </Text>
                         </View>

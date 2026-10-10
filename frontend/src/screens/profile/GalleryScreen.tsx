@@ -53,7 +53,7 @@ const GalleryScreen = ({ navigation }: any) => {
 
     const renderItem = ({ item, index }: { item: any, index: number }) => (
         <TouchableOpacity
-            className="m-0.5 relative bg-gray-100"
+            className="m-0.5 relative bg-slate-100"
             style={{ width: width / 3 - 4, height: width / 3 - 4 }}
             onPress={() => openImage(index)}
         >
@@ -71,12 +71,12 @@ const GalleryScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">Gallery</Text>
+                <Text className="text-xl font-bold text-blue-900">Gallery</Text>
             </View>
 
             {loading ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                 </View>
             ) : (
                 <FlashList
@@ -88,7 +88,7 @@ const GalleryScreen = ({ navigation }: any) => {
                     ListEmptyComponent={
                         <View className="items-center py-20">
                             <Ionicons name="images-outline" size={48} color="#ccc" />
-                            <Text className="text-gray-500 mt-4">No photos available</Text>
+                            <Text className="text-slate-500 mt-4">No photos available</Text>
                         </View>
                     }
                 />

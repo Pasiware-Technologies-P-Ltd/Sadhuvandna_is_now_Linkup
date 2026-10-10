@@ -244,21 +244,21 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center p-4 border-b border-gray-100 bg-orange-50">
+            <View className="flex-row items-center p-4 border-b border-gray-100 bg-blue-50">
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-                    <Ionicons name="arrow-back" size={24} color="#ea580c" />
+                    <Ionicons name="arrow-back" size={24} color="#2563EB" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold flex-1 text-orange-600">Group Settings</Text>
+                <Text className="text-xl font-bold flex-1 text-blue-600">Group Settings</Text>
                 {isAdmin && (
                     <TouchableOpacity onPress={handleSave} disabled={loading}>
-                        {loading ? <ActivityIndicator color="#ea580c" /> : <Text className="text-orange-600 font-bold text-base">Save</Text>}
+                        {loading ? <ActivityIndicator color="#2563EB" /> : <Text className="text-blue-600 font-bold text-base">Save</Text>}
                     </TouchableOpacity>
                 )}
             </View>
 
             {loadingMembers ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator color="#ea580c" size="large" />
+                    <ActivityIndicator color="#2563EB" size="large" />
                 </View>
             ) : (
                 <ScrollView 
@@ -268,7 +268,7 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                 >
                     <View className="p-6 items-center">
                         <TouchableOpacity onPress={pickImage} disabled={!isAdmin} className="relative mb-6">
-                            <View className="w-32 h-32 rounded-full bg-gray-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
+                            <View className="w-32 h-32 rounded-full bg-slate-200 border-2 border-orange-200 items-center justify-center overflow-hidden">
                                 {currentImageSource ? (
                                     <Image source={currentImageSource} className="w-full h-full" />
                                 ) : (
@@ -276,16 +276,16 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                                 )}
                             </View>
                             {isAdmin && (
-                                <View className="absolute bottom-0 right-0 bg-orange-600 rounded-full p-2 border-2 border-white">
+                                <View className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 border-2 border-white">
                                     <Ionicons name="camera" size={20} color="white" />
                                 </View>
                             )}
                         </TouchableOpacity>
 
                         <View className="w-full">
-                            <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Name</Text>
+                            <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Group Name</Text>
                             <TextInput
-                                className={`border rounded-lg p-3 text-base ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
+                                className={`border rounded-lg p-3 text-base ${isAdmin ? 'border-slate-300 bg-white' : 'border-transparent bg-slate-100 text-slate-600'}`}
                                 value={groupName}
                                 onChangeText={setGroupName}
                                 editable={isAdmin}
@@ -294,9 +294,9 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <View className="w-full mt-4">
-                            <Text className="text-sm text-gray-500 font-bold mb-2 uppercase">Group Description</Text>
+                            <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Group Description</Text>
                             <TextInput
-                                className={`border rounded-lg p-3 text-base min-h-[80px] ${isAdmin ? 'border-gray-300 bg-white' : 'border-transparent bg-gray-100 text-gray-700'}`}
+                                className={`border rounded-lg p-3 text-base min-h-[80px] ${isAdmin ? 'border-slate-300 bg-white' : 'border-transparent bg-slate-100 text-slate-600'}`}
                                 value={groupDescription}
                                 onChangeText={setGroupDescription}
                                 editable={isAdmin}
@@ -314,16 +314,16 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
 
                         {/* Group Permissions (Admin Only) */}
                         {isAdmin && (
-                            <View className="w-full mt-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <View className="w-full mt-6 bg-slate-50 p-4 rounded-2xl border border-gray-100">
                                 <View className="flex-row justify-between items-center">
                                     <View className="flex-1 mr-4">
-                                        <Text className="text-gray-800 font-bold text-base">Only Admins Send Messages</Text>
-                                        <Text className="text-gray-500 text-xs mt-1">If enabled, only group admins can send messages to this group.</Text>
+                                        <Text className="text-blue-900 font-bold text-base">Only Admins Send Messages</Text>
+                                        <Text className="text-slate-500 text-xs mt-1">If enabled, only group admins can send messages to this group.</Text>
                                     </View>
                                     <TouchableOpacity 
                                         onPress={toggleAdminsOnly}
                                         disabled={updatingSettings}
-                                        className={`w-12 h-6 rounded-full px-1 justify-center ${adminsOnly ? 'bg-orange-600' : 'bg-gray-300'}`}
+                                        className={`w-12 h-6 rounded-full px-1 justify-center ${adminsOnly ? 'bg-blue-600' : 'bg-gray-300'}`}
                                     >
                                         <View className={`w-4 h-4 rounded-full bg-white ${adminsOnly ? 'translate-x-6' : 'translate-x-0'} transition-all`} />
                                     </TouchableOpacity>
@@ -332,25 +332,25 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                         )}
 
                         {/* Invite Link Section */}
-                        <View className="w-full mt-4 bg-orange-50 p-4 rounded-2xl border border-orange-100">
+                        <View className="w-full mt-4 bg-blue-50 p-4 rounded-2xl border border-orange-100">
                             <View className="flex-row justify-between items-center mb-2">
                                 <Text className="text-sm text-orange-800 font-bold uppercase">Invite Link</Text>
-                                <TouchableOpacity onPress={handleShareInvite} className="bg-orange-600 px-3 py-1.5 rounded-full flex-row items-center">
+                                <TouchableOpacity onPress={handleShareInvite} className="bg-blue-600 px-3 py-1.5 rounded-full flex-row items-center">
                                     <Ionicons name="share-social" size={14} color="white" />
                                     <Text className="text-white text-xs font-bold ml-1.5">Share</Text>
                                 </TouchableOpacity>
                             </View>
                             {loadingInvite ? (
-                                <ActivityIndicator size="small" color="#ea580c" />
+                                <ActivityIndicator size="small" color="#2563EB" />
                             ) : (
                                 <TouchableOpacity 
                                     onPress={handleShareInvite}
-                                    className="bg-white p-3 rounded-xl border border-orange-100 flex-row items-center justify-between active:bg-orange-50"
+                                    className="bg-white p-3 rounded-xl border border-orange-100 flex-row items-center justify-between active:bg-blue-50"
                                 >
-                                    <Text className="text-gray-600 font-medium flex-1 mr-2" numberOfLines={1}>
+                                    <Text className="text-slate-500 font-medium flex-1 mr-2" numberOfLines={1}>
                                         {inviteCode ? `sadhuvandna.co.in/Api/join_group.php?inviteCode=${inviteCode}` : 'Generating link...'}
                                     </Text>
-                                    <Ionicons name={inviteCode ? "share-social" : "sync"} size={18} color="#ea580c" />
+                                    <Ionicons name={inviteCode ? "share-social" : "sync"} size={18} color="#2563EB" />
                                 </TouchableOpacity>
                             )}
                             <Text className="text-[10px] text-orange-400 mt-2 text-center">Anyone with this link can join the group</Text>
@@ -359,23 +359,23 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                         <View className="w-full mt-8">
                             <View className="flex-row justify-between items-center mb-3">
                                 <View className="flex-1">
-                                    <Text className="text-sm text-gray-500 font-bold uppercase">
+                                    <Text className="text-sm text-slate-500 font-bold uppercase">
                                         Group Members ({members.length})
                                     </Text>
                                 </View>
                                 <View className="flex-row items-center">
                                     <TouchableOpacity 
                                         onPress={() => setIsMemberSearchActive(!isMemberSearchActive)}
-                                        className="bg-orange-100 p-1.5 rounded-full mr-2"
+                                        className="bg-blue-100 p-1.5 rounded-full mr-2"
                                     >
-                                        <Ionicons name={isMemberSearchActive ? "close" : "search"} size={18} color="#ea580c" />
+                                        <Ionicons name={isMemberSearchActive ? "close" : "search"} size={18} color="#2563EB" />
                                     </TouchableOpacity>
                                     {isAdmin && (
                                         <TouchableOpacity 
                                             onPress={() => navigation.navigate('AddGroupMembers', { group, currentMembers: members })}
-                                            className="bg-orange-100 px-3 py-1.5 rounded-full"
+                                            className="bg-blue-100 px-3 py-1.5 rounded-full"
                                         >
-                                            <Text className="text-orange-600 text-xs font-bold">+ Add</Text>
+                                            <Text className="text-blue-600 text-xs font-bold">+ Add</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -383,10 +383,10 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
 
                             {/* Member Search Bar */}
                             {isMemberSearchActive && (
-                                <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2 mb-4 border border-gray-200">
-                                    <Ionicons name="search" size={18} color="#6b7280" />
+                                <View className="flex-row items-center bg-slate-100 rounded-xl px-3 py-2 mb-4 border border-slate-200">
+                                    <Ionicons name="search" size={18} color="#64748B" />
                                     <TextInput
-                                        className="flex-1 ml-2 text-base text-gray-800 p-0"
+                                        className="flex-1 ml-2 text-base text-blue-900 p-0"
                                         placeholder="Search members..."
                                         placeholderTextColor="#9ca3af"
                                         value={memberSearchQuery}
@@ -426,19 +426,19 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                                 <View className="relative mr-3">
                                     <Image
                                         source={{ uri: item.profile_photo ? `${PHOTO_URL}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                                        className="w-10 h-10 rounded-full bg-gray-200 border border-gray-100"
+                                        className="w-10 h-10 rounded-full bg-slate-200 border border-gray-100"
                                     />
                                     <View 
                                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
                                     />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="text-base font-medium text-gray-800">{item.name} {item.user_id == userId ? '(You)' : ''}</Text>
-                                    <Text className="text-xs text-gray-500 capitalize">{item.role}</Text>
+                                    <Text className="text-base font-medium text-blue-900">{item.name} {item.user_id == userId ? '(You)' : ''}</Text>
+                                    <Text className="text-xs text-slate-500 capitalize">{item.role}</Text>
                                 </View>
                                 {item.role === 'admin' ? (
-                                    <View className="bg-orange-100 px-2 py-1 rounded">
-                                        <Text className="text-orange-600 text-xs font-bold">Admin</Text>
+                                    <View className="bg-blue-100 px-2 py-1 rounded">
+                                        <Text className="text-blue-600 text-xs font-bold">Admin</Text>
                                     </View>
                                 ) : (
                                     isAdmin && item.user_id != userId && (

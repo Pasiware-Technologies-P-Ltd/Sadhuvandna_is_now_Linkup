@@ -279,8 +279,8 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
 
     const SectionHeader = ({ title, icon }: any) => (
         <View className="flex-row items-center gap-2 mt-6 mb-3 border-b border-orange-100 pb-2">
-            <Ionicons name={icon} size={20} color="#ea580c" />
-            <Text className="text-lg font-bold text-orange-700">{title}</Text>
+            <Ionicons name={icon} size={20} color="#2563EB" />
+            <Text className="text-lg font-bold text-blue-950">{title}</Text>
         </View>
     );
 
@@ -291,12 +291,12 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-800">{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
+                <Text className="text-xl font-bold text-blue-900">{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
             </View>
 
             {loadingProfile ? (
                 <View className="flex-1 justify-center items-center py-20">
-                    <ActivityIndicator size="large" color="#ea580c" />
+                    <ActivityIndicator size="large" color="#2563EB" />
                     <Text className="text-gray-400 text-sm mt-3 font-medium">Loading profile details...</Text>
                 </View>
             ) : (
@@ -312,16 +312,16 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     <View className="items-center my-6">
                         <TouchableOpacity onPress={pickImage} className="relative">
                             {photo ? (
-                                <Image source={{ uri: photo }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#e5e7eb', borderWidth: 4, borderColor: '#ffedd5' }} />
+                                <Image source={{ uri: photo }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#DBEAFE' }} />
                             ) : existingPhoto ? (
-                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#e5e7eb', borderWidth: 4, borderColor: '#ffedd5' }} />
+                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#DBEAFE' }} />
                             ) : (
-                                <View className="w-32 h-32 rounded-full bg-orange-50 items-center justify-center border-2 border-dashed border-orange-300">
-                                    <Ionicons name="camera" size={36} color="#ea580c" />
-                                    <Text className="text-xs text-orange-600 mt-1 font-semibold">{t('addPhoto')}</Text>
+                                <View className="w-32 h-32 rounded-full bg-blue-50 items-center justify-center border-2 border-dashed border-orange-300">
+                                    <Ionicons name="camera" size={36} color="#2563EB" />
+                                    <Text className="text-xs text-blue-600 mt-1 font-semibold">{t('addPhoto')}</Text>
                                 </View>
                             )}
-                            <View className="absolute bottom-0 right-0 bg-orange-500 rounded-full p-2 border-2 border-white">
+                            <View className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 border-2 border-white">
                                 <Ionicons name="pencil" size={16} color="white" />
                             </View>
                         </TouchableOpacity>
@@ -334,28 +334,28 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         <Input label={t('fullName')} value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} placeholder="e.g. Rahul Sharma" required />
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('genderLabel')} <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('genderLabel')} <Text className="text-red-500">*</Text></Text>
                             <View className="flex-row gap-2">
                                 {['Male', 'Female', 'Other'].map(g => (
                                     <TouchableOpacity
                                         key={g}
                                         onPress={() => handleChange('gender', g)}
-                                        className={`flex-1 py-3 items-center rounded-xl border ${formData.gender === g ? 'bg-orange-500 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
+                                        className={`flex-1 py-3 items-center rounded-xl border ${formData.gender === g ? 'bg-blue-500 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
                                     >
-                                        <Text className={formData.gender === g ? 'text-white font-bold' : 'text-gray-600'}>{g === 'Male' ? t('male') : g === 'Female' ? t('female') : t('other')}</Text>
+                                        <Text className={formData.gender === g ? 'text-white font-bold' : 'text-slate-500'}>{g === 'Male' ? t('male') : g === 'Female' ? t('female') : t('other')}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         </View>
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('dateOfBirth')} <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('dateOfBirth')} <Text className="text-red-500">*</Text></Text>
                             <TouchableOpacity
                                 onPress={openDatePicker}
-                                style={{ backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ color: formatDisplayDate(formData.dob) ? '#1f2937' : '#9ca3af', fontSize: 15 }}>
+                                <Text style={{ color: formatDisplayDate(formData.dob) ? '#172554' : '#9ca3af', fontSize: 15 }}>
                                     {formatDisplayDate(formData.dob) || t('selectDateOfBirth')}
                                 </Text>
                                 <Text style={{ fontSize: 18 }}>📅</Text>
@@ -372,7 +372,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         </View>
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('maritalStatus')} <Text className="text-red-500">*</Text></Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('maritalStatus')} <Text className="text-red-500">*</Text></Text>
                             <View className="flex-row flex-wrap gap-2">
                                 {['Unmarried', 'Married', 'Divorced', 'Widowed', 'Separated'].map(s => {
                                     const tlMap: any = {
@@ -386,9 +386,9 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                         <TouchableOpacity
                                             key={s}
                                             onPress={() => handleChange('status', s)}
-                                            className={`px-3 py-2 rounded-lg border ${formData.status === s ? 'bg-orange-500 border-orange-500' : 'bg-gray-50 border-gray-200'}`}
+                                            className={`px-3 py-2 rounded-lg border ${formData.status === s ? 'bg-blue-500 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
                                         >
-                                            <Text className={formData.status === s ? 'text-white text-xs font-bold' : 'text-gray-600 text-xs'}>{tlMap[s]}</Text>
+                                            <Text className={formData.status === s ? 'text-white text-xs font-bold' : 'text-slate-500 text-xs'}>{tlMap[s]}</Text>
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -436,9 +436,9 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         <Input label={t('hobbiesLabel')} value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="e.g. Reading, Traveling, Music..." />
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('aboutMe')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('aboutMe')}</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24 text-base"
+                                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 h-24 text-base"
                                 value={formData.about}
                                 onChangeText={(t) => handleChange('about', t)}
                                 placeholder={t('tellUsAboutYourself') || "Tell us about yourself, background, personality..."}
@@ -462,9 +462,9 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         </View>
                         <Input label={t('expectedEducation')} value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} placeholder="e.g. Graduate, Post Graduate, MBA" />
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">{t('expectations')}</Text>
+                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('expectations')}</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 h-24 text-base"
+                                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 h-24 text-base"
                                 value={formData.partner_expectations}
                                 onChangeText={(t) => handleChange('partner_expectations', t)}
                                 placeholder={t('whatAreYouLookingFor') || "What qualities and values are you looking for..."}
@@ -476,7 +476,7 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </View>
 
                     <TouchableOpacity
-                        className="bg-orange-600 py-4 rounded-xl items-center my-10 shadow-lg"
+                        className="bg-blue-600 py-4 rounded-xl items-center my-10 shadow-lg"
                         onPress={handleSubmit}
                         disabled={loading}
                     >
@@ -497,13 +497,13 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                 >
                     <TouchableOpacity activeOpacity={1} onPress={() => {}}>
                         <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                    <Text style={{ fontSize: 16, color: '#6b7280' }}>{t('cancelLabel')}</Text>
+                                    <Text style={{ fontSize: 16, color: '#64748B' }}>{t('cancelLabel')}</Text>
                                 </TouchableOpacity>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>{t('selectDateOfBirth')}</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#172554' }}>{t('selectDateOfBirth')}</Text>
                                 <TouchableOpacity onPress={confirmDate}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#ea580c' }}>{t('doneLabel')}</Text>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#2563EB' }}>{t('doneLabel')}</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', height: 200, paddingHorizontal: 8 }}>
@@ -513,8 +513,8 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {DAYS.map(d => (
                                             <TouchableOpacity key={d} onPress={() => setPickerDay(d)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#ea580c' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#2563EB' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -525,8 +525,8 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {MONTHS.map((m, i) => (
                                             <TouchableOpacity key={m} onPress={() => setPickerMonth(i + 1)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#ea580c' : '#374151' }}>{m}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#2563EB' : '#374151' }}>{m}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -537,8 +537,8 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {YEARS.map(y => (
                                             <TouchableOpacity key={y} onPress={() => setPickerYear(y)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#fff7ed' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#ea580c' : '#374151' }}>{y}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#2563EB' : '#374151' }}>{y}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -567,11 +567,11 @@ const Input = ({ label, value, onChangeText, placeholder, keyboardType, multilin
     const defaultPlaceholder = placeholder || (cleanLabel ? `Enter ${cleanLabel.toLowerCase()}` : '');
     return (
         <View>
-            <Text className="text-gray-600 text-sm mb-1 ml-1 font-semibold">
+            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">
                 {label} {required && <Text className="text-red-500">*</Text>}
             </Text>
             <TextInput
-                className={`bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-base ${multiline ? 'h-20' : ''}`}
+                className={`bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 text-base ${multiline ? 'h-20' : ''}`}
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={defaultPlaceholder}

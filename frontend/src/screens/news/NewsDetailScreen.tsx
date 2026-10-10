@@ -137,7 +137,7 @@ const ProfessionalVideoPlayer = ({
                         backgroundColor: 'rgba(0,0,0,0.4)'
                     }}
                 >
-                    <View style={{ backgroundColor: '#ea580c', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="videocam" size={11} color="white" style={{ marginRight: 4 }} />
                         <Text style={{ color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>VIDEO NEWS</Text>
                     </View>
@@ -221,7 +221,7 @@ const ProfessionalVideoPlayer = ({
                         style={{ paddingVertical: 10, marginTop: -10, marginBottom: -4 }}
                     >
                         <View style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, overflow: 'hidden' }}>
-                            <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#ea580c' }} />
+                            <View style={{ width: `${progress}%`, height: '100%', backgroundColor: '#2563EB' }} />
                         </View>
                     </TouchableOpacity>
 
@@ -286,7 +286,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
     if (loading) return (
         <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#ea580c" />
+            <ActivityIndicator size="large" color="#2563EB" />
         </View>
     );
     if (!currentNews) return (
@@ -326,15 +326,15 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
             )}
 
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
-                    <Ionicons name="arrow-back" size={24} color="#111827" />
+                    <Ionicons name="arrow-back" size={24} color="#172554" />
                 </TouchableOpacity>
-                <Text style={{ fontWeight: '700', fontSize: 16, color: '#111827', flex: 1 }} numberOfLines={1}>
+                <Text style={{ fontWeight: '700', fontSize: 16, color: '#172554', flex: 1 }} numberOfLines={1}>
                     {currentNews.category || 'News Detail'}
                 </Text>
                 <TouchableOpacity onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={24} color="#111827" />
+                    <Ionicons name="share-social-outline" size={24} color="#172554" />
                 </TouchableOpacity>
             </View>
 
@@ -343,14 +343,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 {/* Category + Date */}
                 <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     {currentNews.category && (
-                        <View style={{ backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: '#ffedd5' }}>
-                            <Text style={{ fontSize: 11, color: '#ea580c', fontWeight: '800' }}>{currentNews.category}</Text>
+                        <View style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: '#DBEAFE' }}>
+                            <Text style={{ fontSize: 11, color: '#2563EB', fontWeight: '800' }}>{currentNews.category}</Text>
                         </View>
                     )}
                     {(currentNews.state || currentNews.district) && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                            <Ionicons name="location-outline" size={12} color="#6b7280" />
-                            <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '600' }}>
+                            <Ionicons name="location-outline" size={12} color="#64748B" />
+                            <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>
                                 {currentNews.state}{currentNews.district ? ` · ${currentNews.district}` : ''}
                             </Text>
                         </View>
@@ -361,7 +361,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 </View>
 
                 {/* Title */}
-                <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827', lineHeight: 30, paddingHorizontal: 16, marginBottom: 16 }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: '#172554', lineHeight: 30, paddingHorizontal: 16, marginBottom: 16 }}>
                     {currentNews.title}
                 </Text>
 
@@ -395,7 +395,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                     <Image
                                         key={index}
                                         source={{ uri }}
-                                        style={{ width, height: parsedAspectRatio ? undefined : 320, aspectRatio: parsedAspectRatio || undefined, backgroundColor: '#f3f4f6' }}
+                                        style={{ width, height: parsedAspectRatio ? undefined : 320, aspectRatio: parsedAspectRatio || undefined, backgroundColor: '#E2E8F0' }}
                                         resizeMode={parsedAspectRatio ? "cover" : "contain"}
                                     />
                                 );
@@ -412,7 +412,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                             width: i === activeIndex ? 20 : 7,
                                             height: 7,
                                             borderRadius: 4,
-                                            backgroundColor: i === activeIndex ? '#ea580c' : '#d1d5db',
+                                            backgroundColor: i === activeIndex ? '#2563EB' : '#d1d5db',
                                         }}
                                     />
                                 ))}
@@ -430,13 +430,13 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
                 {/* Reporter Details Section */}
                 <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-                    <View style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                    <View style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
                         
                         {/* Avatar & Info */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.6, paddingRight: 4 }}>
                             <Image 
-                                source={isAdmin ? require('../../../assets/logo.png') : { uri: currentNews.user_image ? `${BASE_URL_ROOT}/uploads/users/${currentNews.user_image}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
-                                style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#e5e7eb', marginRight: 10, borderWidth: 1, borderColor: '#f3f4f6' }} 
+                                source={isAdmin ? require('../../../assets/icon.png') : { uri: currentNews.user_image ? `${BASE_URL_ROOT}/uploads/users/${currentNews.user_image}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
+                                style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#E2E8F0', marginRight: 10, borderWidth: 1, borderColor: '#E2E8F0' }} 
                             />
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
@@ -445,12 +445,12 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="checkmark-circle" size={10} color="white" />
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 }} numberOfLines={1}>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#172554', marginBottom: 2 }} numberOfLines={1}>
                                     {currentNews.user_name || currentNews.posted_by || 'Admin'}
                                 </Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Ionicons name="location-outline" size={12} color="#6b7280" />
-                                    <Text style={{ fontSize: 11, color: '#6b7280', marginLeft: 2 }} numberOfLines={1}>
+                                    <Ionicons name="location-outline" size={12} color="#64748B" />
+                                    <Text style={{ fontSize: 11, color: '#64748B', marginLeft: 2 }} numberOfLines={1}>
                                         {currentNews.user_city || currentNews.district || currentNews.state || 'India'}
                                     </Text>
                                 </View>
@@ -458,14 +458,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                         </View>
 
                         {/* Stats */}
-                        <View style={{ flex: 1, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#f3f4f6', paddingLeft: 10 }}>
+                        <View style={{ flex: 1, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#E2E8F0', paddingLeft: 10 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                <Ionicons name="camera-outline" size={16} color="#4b5563" style={{ marginRight: 6 }} />
-                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '500' }}>{currentNews.news_count || '0'} न्यूज़</Text>
+                                <Ionicons name="camera-outline" size={16} color="#64748B" style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>{currentNews.news_count || '0'} न्यूज़</Text>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="people-outline" size={16} color="#4b5563" style={{ marginRight: 6 }} />
-                                <Text style={{ fontSize: 12, color: '#4b5563', fontWeight: '500' }}>{currentNews.followers_count || '0'} फॉलोअर्स</Text>
+                                <Ionicons name="people-outline" size={16} color="#64748B" style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>{currentNews.followers_count || '0'} फॉलोअर्स</Text>
                             </View>
                         </View>
                         
@@ -504,7 +504,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                             <TouchableOpacity 
                                 onPress={() => navigation.navigate('PublicProfile', { user: { id: currentNews.user_id, name: currentNews.user_name, profile_photo: currentNews.user_image } })}
                                 style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6, width: '100%', alignItems: 'center' }}>
-                                <Text style={{ color: '#4b5563', fontSize: 11, fontWeight: '600' }}>प्रोफाइल देखें</Text>
+                                <Text style={{ color: '#64748B', fontSize: 11, fontWeight: '600' }}>प्रोफाइल देखें</Text>
                             </TouchableOpacity>
                         </View>
                         )}
