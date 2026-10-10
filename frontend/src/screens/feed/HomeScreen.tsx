@@ -801,8 +801,8 @@ const HomeScreen = () => {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1, zIndex: 10 }}>
+        <SafeAreaView className="flex-1 bg-[#F1F5F9]" edges={['top']}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', shadowColor: '#172554', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2, zIndex: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Image source={require('../../../assets/icon.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
                     <View>
@@ -823,12 +823,12 @@ const HomeScreen = () => {
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}
                     >
-                        <Ionicons name="search-outline" size={18} color="#374151" />
+                        <Ionicons name="search-outline" size={18} color="#334155" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={handlePlusPress}
                         activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#2563EB12', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
                     >
                         <Ionicons name="add" size={20} color="#2563EB" />
                     </TouchableOpacity>
@@ -837,7 +837,7 @@ const HomeScreen = () => {
                         activeOpacity={0.7}
                         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                     >
-                        <Ionicons name="notifications-outline" size={18} color="#374151" />
+                        <Ionicons name="notifications-outline" size={18} color="#334155" />
                         {notificationCount > 0 && (
                             <View style={{ position: 'absolute', top: -3, right: -3, backgroundColor: '#ef4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: 'white' }}>
                                 <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>

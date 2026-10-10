@@ -108,7 +108,17 @@ function MainTabNavigator() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: 'gray',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarStyle: {
+            backgroundColor: 'white',
+            borderTopWidth: 0,
+            elevation: 12,
+            shadowColor: '#172554',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.04,
+            shadowRadius: 12,
+            height: 60,
+        },
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === 'Profile' && user?.profile_photo) {
             return (
