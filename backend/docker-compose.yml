@@ -78,7 +78,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.node
     ports:
-      - "9000:3000"
+      - "3000:3000"
     environment:
       - API_URL=http://api-server
     labels:

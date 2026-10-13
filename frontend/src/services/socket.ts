@@ -1,15 +1,15 @@
 import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL } from './api';
 
-// Dynamically use the API's IP address but on port 9000
+// Dynamically use the API's IP address on port 3000
 const getSocketUrl = () => {
     if (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('192.168') || API_BASE_URL.includes('10.')) {
         try {
             const url = new URL(API_BASE_URL);
-            return `http://${url.hostname}:9000`;
+            return `http://${url.hostname}:3000`;
         } catch {
             // fallback
-            return 'http://192.168.1.10:9000';
+            return 'http://192.168.1.10:3000';
         }
     }
     // Production socket URL (Clean WSS via port 443)
