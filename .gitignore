@@ -96,3 +96,6 @@ Api/connection./
 android/
 
 scratch/
+
+*.zip
+*.rar
