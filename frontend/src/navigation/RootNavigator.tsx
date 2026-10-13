@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, TouchableOpacity } from 'react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { WEBSITE_URL } from '../services/api';
+import MatrimonyRingsIcon from '../components/MatrimonyRingsIcon';
+import NewsPaperIcon from '../components/NewsPaperIcon';
+import ReelsTabIcon from '../components/ReelsTabIcon';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -86,12 +89,12 @@ function MainTabNavigator() {
       setIsLoadingUser(false);
     };
     checkUser();
-    
+
     const { DeviceEventEmitter } = require('react-native');
     const subscription = DeviceEventEmitter.addListener('profileSwitched', () => {
       checkUser();
     });
-    
+
     return () => {
       subscription.remove();
     };
@@ -101,85 +104,105 @@ function MainTabNavigator() {
 
   return (
     <>
-    <Tab.Navigator
-      key={user?.id || 'default'}
-      initialRouteName="Home"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: '#94a3b8',
-        tabBarStyle: {
+      <Tab.Navigator
+        key={user?.id || 'default'}
+        initialRouteName="Home"
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarShowLabel: false,
+          tabBarActiveTintColor: '#1877F2',
+          tabBarInactiveTintColor: '#64748B',
+          animation: 'shift',
+          tabBarStyle: {
             backgroundColor: 'white',
-            borderTopWidth: 0,
-            elevation: 12,
-            shadowColor: '#172554',
-            shadowOffset: { width: 0, height: -4 },
+            borderTopWidth: 1,
+            borderTopColor: '#F0F2F5',
+            elevation: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.04,
-            shadowRadius: 12,
-            height: 60,
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          if (route.name === 'Profile' && user?.profile_photo) {
-            return (
-              <Image 
-                source={{ uri: `${WEBSITE_URL}/uploads/photo/${user.profile_photo}` }} 
-                style={{ width: size, height: size, borderRadius: size / 2, borderWidth: focused ? 2 : 0, borderColor: color, backgroundColor: '#E2E8F0' }} 
-              />
-            );
-          }
+            shadowRadius: 8,
+            height: 56,
+            paddingTop: 0,
+            paddingBottom: 0,
+          },
+          tabBarIcon: ({ focused, color, size }) => {
+            const userPhoto = user?.profile_photo || user?.photo || user?.avatar;
+            if (route.name === 'Profile' && userPhoto) {
+              const photoUri = userPhoto.startsWith('http')
+                ? userPhoto
+                : (userPhoto.startsWith('uploads/') ? `${WEBSITE_URL}/${userPhoto}` : `${WEBSITE_URL}/uploads/photo/${userPhoto}`);
+              return (
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{ width: size + 2, height: size + 2, borderRadius: (size + 2) / 2, borderWidth: focused ? 2 : 1, borderColor: focused ? color : '#CBD5E1', backgroundColor: '#E2E8F0' }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                />
+              );
+            }
 
-          let iconName: any = 'home';
-          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'Reels') iconName = focused ? 'videocam-sharp' : 'videocam-outline';
-          else if (route.name === 'News') iconName = focused ? 'newspaper' : 'newspaper-outline';
-          else if (route.name === 'Marriage') iconName = focused ? 'heart' : 'heart-outline';
-          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+            if (route.name === 'Marriage') {
+              return <MatrimonyRingsIcon size={size + 2} color={color} focused={focused} />;
+            }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('home') }} />
-      <Tab.Screen name="Reels" component={ReelsScreen} options={{ tabBarLabel: t('reels') }} />
-      <Tab.Screen
-        name="News"
-        component={NewsScreen}
-        options={{ tabBarLabel: t('news') }}
-        listeners={{ focus: () => adService.showAd() }}
-      />
-      {/* Marriage tab is hidden for Business profiles */}
-      {!isBusiness && (
+            if (route.name === 'News') {
+              return <NewsPaperIcon size={size + 2} color={color} focused={focused} />;
+            }
+
+            if (route.name === 'Reels') {
+              return <ReelsTabIcon size={size + 1} color={color} focused={focused} />;
+            }
+
+            let iconName: any = 'home';
+            if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
+            else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+
+            return <Ionicons name={iconName} size={23} color={color} />;
+          },
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('home'), tabBarStyle: { display: 'none' } }} />
+        <Tab.Screen name="Reels" component={ReelsScreen} options={{ tabBarLabel: t('reels'), tabBarStyle: { display: 'none' } }} />
         <Tab.Screen
-          name="Marriage"
-          component={MarriageScreen}
-          options={{ tabBarLabel: t('matrimony') }}
+          name="News"
+          component={NewsScreen}
+          options={{ tabBarLabel: t('news'), tabBarStyle: { display: 'none' } }}
           listeners={{ focus: () => adService.showAd() }}
         />
-      )}
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ 
-          tabBarLabel: t('profile') || 'Profile',
-          tabBarButton: (props: any) => (
-            <TouchableOpacity
-              {...props}
-              onLongPress={() => setSwitcherVisible(true)}
-            />
-          ),
-        }}
-        listeners={{ focus: () => adService.showAd() }}
-      />
-    </Tab.Navigator>
-    <ProfileSwitcherModal
+        {/* Marriage tab is hidden for Business profiles */}
+        {!isBusiness && (
+          <Tab.Screen
+            name="Marriage"
+            component={MarriageScreen}
+            options={{ tabBarLabel: t('matrimony'), tabBarStyle: { display: 'none' } }}
+            listeners={{ focus: () => adService.showAd() }}
+          />
+        )}
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: t('profile') || 'Profile',
+            tabBarStyle: { display: 'none' },
+            tabBarButton: (props: any) => (
+              <TouchableOpacity
+                {...props}
+                onLongPress={() => setSwitcherVisible(true)}
+              />
+            ),
+          }}
+          listeners={{ focus: () => adService.showAd() }}
+        />
+      </Tab.Navigator>
+      <ProfileSwitcherModal
         visible={isSwitcherVisible}
         onClose={() => setSwitcherVisible(false)}
         onProfileSwitched={() => {
-            setSwitcherVisible(false);
-            // checkUser is triggered by event listener anyway
+          setSwitcherVisible(false);
+          // checkUser is triggered by event listener anyway
         }}
-    />
+      />
     </>
   );
 }
@@ -225,7 +248,7 @@ const RootNavigator = ({ initialRoute }: RootNavigatorProps) => {
       <Stack.Screen name="CreateNews" component={CreateNewsScreen} />
       <Stack.Screen name="PostBreakingNews" component={PostBreakingNewsScreen} />
       <Stack.Screen name="MyNews" component={MyNewsScreen} />
-     <Stack.Screen name="AnchorIdCard" component={AnchorIdCardScreen} />
+      <Stack.Screen name="AnchorIdCard" component={AnchorIdCardScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="Comments" component={CommentsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />

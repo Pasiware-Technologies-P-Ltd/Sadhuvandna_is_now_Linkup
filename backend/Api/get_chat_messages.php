@@ -53,7 +53,8 @@ if ($con->affected_rows > 0) {
             'platform'    => $platform
         ]
     ]);
-    $ch = curl_init('http://127.0.0.1:3000/api/trigger');
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $ch = curl_init(rtrim($socketBase, '/') . '/api/trigger');
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $socketPayload);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);

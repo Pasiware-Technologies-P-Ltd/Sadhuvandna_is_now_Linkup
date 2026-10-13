@@ -1,11 +1,12 @@
 import { Image } from 'expo-image';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WEBSITE_URL } from '../../services/api';
 
 const { width } = Dimensions.get('window');
@@ -65,16 +66,16 @@ const SmartCardScreen = ({ navigation }: any) => {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#facc15" />
+            <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
     }
 
     if (!user) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#fff' }}>Failed to load user data.</Text>
+            <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#64748B', fontWeight: '600' }}>Failed to load user data.</Text>
             </View>
         );
     }
@@ -84,36 +85,47 @@ const SmartCardScreen = ({ navigation }: any) => {
     const memberSince = new Date().getFullYear();
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-                    <Ionicons name="arrow-back" size={24} color="#facc15" />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>SMART CARD</Text>
-                <View style={{ width: 40 }} />
+                <TouchableOpacity onPress={handleShare} style={styles.shareIconButton}>
+                    <Ionicons name="share-social-outline" size={22} color="#2563EB" />
+                </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={{ alignItems: 'center', paddingTop: 32, paddingBottom: 50 }}>
+            <ScrollView contentContainerStyle={{ alignItems: 'center', paddingTop: 24, paddingBottom: 50 }}>
 
                 {/* ── ATM CARD ── */}
                 <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1.0 }}
-                    style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
-                    <View style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }]}>
+                    style={{ width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 20, overflow: 'hidden' }}>
+                    <LinearGradient
+                        colors={['#0F172A', '#1E3A8A', '#2563EB']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
+                    >
 
-                        {/* Dark gradient overlay layers */}
+                        {/* Metallic / glass accent balls */}
                         <View style={styles.gradientTop} />
                         <View style={styles.gradientBall} />
 
                         {/* TOP ROW: Logo + VIP badge */}
                         <View style={styles.topRow}>
                             <View style={styles.logoBox}>
-                                <Image source={LOGO_ASSET} style={styles.logo} contentFit="contain" />
+                                <View style={styles.logoWrapper}>
+                                    <Image source={LOGO_ASSET} style={styles.logo} contentFit="cover" />
+                                </View>
                                 <View style={{ marginLeft: 8 }}>
                                     <Text style={styles.orgName}>LINKUP</Text>
                                 </View>
                             </View>
                             <View style={styles.vipPill}>
+                                <Ionicons name="shield-checkmark" size={11} color="#FCD34D" style={{ marginRight: 4 }} />
                                 <Text style={styles.vipText}>VIP MEMBER</Text>
                             </View>
                         </View>
@@ -164,11 +176,11 @@ const SmartCardScreen = ({ navigation }: any) => {
 
                         {/* Shine overlay */}
                         <View style={styles.shine} />
-                    </View>
+                    </LinearGradient>
                 </ViewShot>
 
                 {/* BACK OF CARD HINT */}
-                <Text style={styles.hint}>Tap the card to share your VIP membership</Text>
+                <Text style={styles.hint}>Official LinkUp VIP Digital Membership Smart Card</Text>
 
                 {/* DETAILS CARD */}
                 <View style={styles.detailCard}>
@@ -176,27 +188,27 @@ const SmartCardScreen = ({ navigation }: any) => {
                     {(user.city || user.address) && (
                         <DetailRow icon="location" label="City" value={user.city || user.address} />
                     )}
-                    <DetailRow icon="pricetag" label="Membership No." value={cardIdNum} />
+                    <DetailRow icon="pricetag" label="Membership No." value={cardIdNum} isLast={true} />
                 </View>
 
                 {/* Share Button */}
-                <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
-                    <Ionicons name="cloud-download" size={22} color="#000" />
-                    <Text style={styles.shareBtnText}>DOWNLOAD CARD</Text>
+                <TouchableOpacity onPress={handleShare} style={styles.shareBtn} activeOpacity={0.85}>
+                    <Ionicons name="cloud-download-outline" size={22} color="#FFFFFF" />
+                    <Text style={styles.shareBtnText}>DOWNLOAD SMART CARD</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-const DetailRow = ({ icon, label, value }: any) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' }}>
-        <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
-            <Ionicons name={icon} size={16} color="#fbbf24" />
+const DetailRow = ({ icon, label, value, isLast }: any) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: isLast ? 0 : 1, borderBottomColor: '#F1F5F9' }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+            <Ionicons name={icon} size={18} color="#2563EB" />
         </View>
         <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 10, color: '#64748b', fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
-            <Text style={{ fontSize: 15, color: '#f8fafc', fontWeight: '700', marginTop: 2 }}>{value}</Text>
+            <Text style={{ fontSize: 10.5, color: '#64748B', fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</Text>
+            <Text style={{ fontSize: 15, color: '#0F172A', fontWeight: '800', marginTop: 2 }}>{value}</Text>
         </View>
     </View>
 );
@@ -207,32 +219,46 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingVertical: 14,
-        backgroundColor: '#0a0a0a',
+        paddingVertical: 12,
+        backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        borderBottomColor: '#1a1a1a',
+        borderBottomColor: '#F1F5F9',
     },
     headerTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '900',
-        letterSpacing: 4,
+        color: '#0F172A',
+        fontSize: 17,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
+    backButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F8FAFC',
+    },
+    shareIconButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#EFF6FF',
     },
 
     // ── Card Styles ──
     card: {
-        backgroundColor: '#0f172a',
-        borderRadius: 18,
+        borderRadius: 20,
         padding: 20,
         overflow: 'hidden',
-        // Gold shadow glow
-        elevation: 24,
-        shadowColor: '#fbbf24',
+        elevation: 10,
+        shadowColor: '#2563EB',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.35,
-        shadowRadius: 20,
+        shadowOpacity: 0.28,
+        shadowRadius: 18,
         borderWidth: 1,
-        borderColor: '#2d3748',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'space-between',
     },
     gradientTop: {
@@ -242,7 +268,7 @@ const styles = StyleSheet.create({
         width: CARD_WIDTH * 0.55,
         height: CARD_WIDTH * 0.55,
         borderRadius: CARD_WIDTH * 0.275,
-        backgroundColor: 'rgba(251,191,36,0.07)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
     gradientBall: {
         position: 'absolute',
@@ -251,17 +277,17 @@ const styles = StyleSheet.create({
         width: CARD_WIDTH * 0.4,
         height: CARD_WIDTH * 0.4,
         borderRadius: CARD_WIDTH * 0.2,
-        backgroundColor: 'rgba(234,88,12,0.08)',
+        backgroundColor: 'rgba(37, 99, 235, 0.25)',
     },
     shine: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: CARD_HEIGHT * 0.4,
-        backgroundColor: 'rgba(255,255,255,0.02)',
-        borderBottomLeftRadius: 80,
-        borderBottomRightRadius: 80,
+        height: CARD_HEIGHT * 0.45,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderBottomLeftRadius: 100,
+        borderBottomRightRadius: 100,
     },
 
     // Top row
@@ -274,38 +300,48 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    logo: {
+    logoWrapper: {
         width: 32,
         height: 32,
-        borderRadius: 8,
+        borderRadius: 9,
+        borderWidth: 1.5,
+        borderColor: '#2563EB',
         overflow: 'hidden',
+        backgroundColor: '#2563EB',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#2563EB',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    logo: {
+        width: '100%',
+        height: '100%',
+        transform: [{ scale: 1.18 }],
     },
     orgName: {
-        color: '#fcd34d',
-        fontSize: 11,
-        fontWeight: '900',
-        fontStyle: 'italic',
-        letterSpacing: 1,
-    },
-    orgSub: {
-        color: '#94a3b8',
-        fontSize: 9,
-        fontWeight: '700',
-        letterSpacing: 2,
-    },
-    vipPill: {
-        backgroundColor: 'rgba(251,191,36,0.15)',
-        borderWidth: 1,
-        borderColor: '#fbbf24',
-        borderRadius: 20,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-    },
-    vipText: {
-        color: '#fbbf24',
-        fontSize: 9,
+        color: '#FFFFFF',
+        fontSize: 12,
         fontWeight: '900',
         letterSpacing: 1.5,
+    },
+    vipPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 3.5,
+    },
+    vipText: {
+        color: '#FFFFFF',
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1.2,
     },
 
     // Chip row
@@ -317,7 +353,7 @@ const styles = StyleSheet.create({
     chip: {
         width: 36,
         height: 28,
-        backgroundColor: '#d4af37',
+        backgroundColor: '#EAB308',
         borderRadius: 5,
         justifyContent: 'center',
         alignItems: 'center',
@@ -327,7 +363,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 20,
         borderWidth: 0.5,
-        borderColor: '#b8860b',
+        borderColor: '#A16207',
         borderRadius: 3,
         justifyContent: 'space-around',
         alignItems: 'center',
@@ -336,16 +372,16 @@ const styles = StyleSheet.create({
     chipLine: {
         width: 24,
         height: 1.5,
-        backgroundColor: '#b8860b',
+        backgroundColor: '#A16207',
     },
     chipLineH: {
         width: 1.5,
         height: 14,
-        backgroundColor: '#b8860b',
+        backgroundColor: '#A16207',
         position: 'absolute',
     },
     contactless: {
-        color: '#94a3b8',
+        color: 'rgba(255, 255, 255, 0.7)',
         fontSize: 14,
         letterSpacing: -4,
         fontWeight: '300',
@@ -356,9 +392,10 @@ const styles = StyleSheet.create({
         width: CARD_HEIGHT * 0.38,
         height: CARD_HEIGHT * 0.38,
         borderRadius: CARD_HEIGHT * 0.19,
-        borderWidth: 2,
-        borderColor: '#fbbf24',
+        borderWidth: 2.5,
+        borderColor: '#FFFFFF',
         overflow: 'hidden',
+        backgroundColor: '#1E293B',
     },
     photo: {
         width: '100%',
@@ -367,11 +404,14 @@ const styles = StyleSheet.create({
 
     // Card number
     cardNumber: {
-        color: '#e2e8f0',
-        fontSize: 16,
-        fontWeight: '700',
+        color: '#FFFFFF',
+        fontSize: 17,
+        fontWeight: '800',
         letterSpacing: 3,
         fontVariant: ['tabular-nums'],
+        textShadowColor: 'rgba(0, 0, 0, 0.4)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
 
     // Bottom row
@@ -380,7 +420,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     fieldLabel: {
-        color: '#64748b',
+        color: 'rgba(255, 255, 255, 0.6)',
         fontSize: 8,
         fontWeight: '800',
         letterSpacing: 1.5,
@@ -388,57 +428,64 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     fieldValue: {
-        color: '#f8fafc',
+        color: '#FFFFFF',
         fontSize: 13,
         fontWeight: '800',
         letterSpacing: 0.5,
-        maxWidth: 120,
+        maxWidth: 130,
     },
     memberIdText: {
-        color: '#fbbf24',
+        color: '#93C5FD',
         fontSize: 13,
         fontWeight: '900',
-        letterSpacing: 2,
+        letterSpacing: 1.5,
     },
 
     // Below card
     hint: {
-        color: '#475569',
-        fontSize: 11,
-        marginTop: 16,
-        marginBottom: 28,
-        letterSpacing: 0.5,
+        color: '#64748B',
+        fontSize: 12,
+        marginTop: 18,
+        marginBottom: 24,
+        fontWeight: '600',
+        letterSpacing: 0.3,
         textAlign: 'center',
     },
     detailCard: {
         width: CARD_WIDTH,
-        backgroundColor: '#172554',
-        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         paddingHorizontal: 20,
-        paddingVertical: 4,
+        paddingVertical: 6,
         borderWidth: 1,
-        borderColor: '#1e293b',
-        marginBottom: 28,
+        borderColor: '#E2E8F0',
+        marginBottom: 26,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 2,
     },
     shareBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#facc15',
-        borderRadius: 50,
-        paddingHorizontal: 40,
-        paddingVertical: 16,
-        elevation: 6,
-        shadowColor: '#facc15',
+        justifyContent: 'center',
+        backgroundColor: '#2563EB',
+        borderRadius: 26,
+        width: CARD_WIDTH,
+        height: 52,
+        elevation: 4,
+        shadowColor: '#2563EB',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
+        shadowOpacity: 0.3,
         shadowRadius: 10,
     },
     shareBtnText: {
-        color: '#000',
-        fontWeight: '900',
-        fontSize: 16,
-        marginLeft: 10,
-        letterSpacing: 2,
+        color: '#FFFFFF',
+        fontWeight: '800',
+        fontSize: 14.5,
+        marginLeft: 8,
+        letterSpacing: 1,
     },
 });
 

@@ -85,7 +85,8 @@ try {
         }
         
         // Broadcast delete event
-        $url = 'http://127.0.0.1:3000/api/trigger';
+        $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+        $url = rtrim($socketBase, '/') . '/api/trigger';
         $postData = [
             'room' => $is_group ? "group_{$receiver_id}" : "user_{$receiver_id}",
             'type' => 'chat_deleted',

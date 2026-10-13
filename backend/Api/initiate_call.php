@@ -79,7 +79,8 @@ try {
             'payload' => $ws_payload
         ];
         
-        $ch = curl_init('http://127.0.0.1:3000/api/trigger');
+        $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+        $ch = curl_init(rtrim($socketBase, '/') . '/api/trigger');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

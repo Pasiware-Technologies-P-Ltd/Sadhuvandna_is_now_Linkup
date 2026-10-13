@@ -15,8 +15,10 @@ import {
   Animated,
   DeviceEventEmitter,
   RefreshControl,
+  StatusBar,
+  Easing,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import api, { API_BASE_URL } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +26,8 @@ import { useLanguage } from "../../context/LanguageContext";
 import { ImageService } from "../../services/ImageService";
 
 import { ChatDBService } from "../../services/ChatDBService";
+import { useTabSwipe } from "../../utils/useTabSwipe";
+import LinkUpHeader, { TOP_HEADER_COLLAPSE } from "../../components/LinkUpHeader";
 
 // Enable LayoutAnimation for Android
 if (
@@ -47,6 +51,53 @@ const QUICK_TAGS = [
 ];
 
 const MarriageScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
+  const [user, setUser] = useState<any>(null);
+  const tabSwipe = useTabSwipe({ currentTab: 'Marriage', isBusiness: user?.is_business == 1 });
+
+  // Facebook-style silky smooth auto-collapsing top header on scroll (native driver)
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const accumulatedScroll = useRef(0);
+  const isHeaderHidden = useRef(false);
+  const listRef = useRef<any>(null);
+
+  const animateHeader = useCallback((toHide: boolean) => {
+    if (isHeaderHidden.current === toHide) return;
+    isHeaderHidden.current = toHide;
+    Animated.timing(headerAnim, {
+      toValue: toHide ? -TOP_HEADER_COLLAPSE : 0,
+      duration: 280,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [headerAnim]);
+
+  const handleFeedScroll = useCallback((event: any) => {
+    const currentY = event.nativeEvent.contentOffset.y;
+    const diff = currentY - lastScrollY.current;
+    lastScrollY.current = currentY;
+
+    if (currentY <= 10) {
+      accumulatedScroll.current = 0;
+      animateHeader(false);
+      return;
+    }
+
+    if (diff > 0) {
+      accumulatedScroll.current += diff;
+      if (accumulatedScroll.current > 40) {
+        animateHeader(true);
+      }
+    } else if (diff < 0) {
+      accumulatedScroll.current += diff;
+      if (accumulatedScroll.current < -30) {
+        animateHeader(false);
+      }
+    }
+  }, [animateHeader]);
+
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [myProfileId, setMyProfileId] = useState<number>(0);
@@ -173,6 +224,7 @@ const MarriageScreen = ({ navigation }: any) => {
     const u = await AsyncStorage.getItem("user");
     if (u) {
       const parsed = JSON.parse(u);
+      setUser(parsed);
       const parsedId = parsed.id;
       setUserId(parsedId);
       if (parsed.profile_photo) {
@@ -629,30 +681,81 @@ const MarriageScreen = ({ navigation }: any) => {
       </TouchableOpacity>
     );
   };
-  return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <View className="px-4 py-3 bg-white border-b border-gray-100 shadow-sm z-10">
-        {/* Top Row: Logo, Search, Chat, Bell */}
+  const renderListHeader = () => {
+    const subtitleText = (t as any)("findSoulmate");
+    const displaySubtitle =
+      subtitleText && subtitleText !== "findSoulmate"
+        ? subtitleText
+        : "Soulmate";
+
+    return (
+      <View
+        style={{
+          backgroundColor: "#FFFFFF",
+          marginHorizontal: 4,
+          marginTop: 4,
+          marginBottom: 10,
+          borderRadius: 22,
+          paddingTop: 14,
+          paddingBottom: 12,
+          borderWidth: 1,
+          borderColor: "#E2E8F0",
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
+      >
+        {/* Top Control Bar: Title & Action Trio */}
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 14,
+            marginBottom: 12,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* Title + Soulmate Tag */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
             <Text
               style={{
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: "900",
-                color: "#2563EB",
-                letterSpacing: -0.5,
+                color: "#0F172A",
+                letterSpacing: -0.4,
               }}
             >
-              MATRIMONY
+              Matrimony
             </Text>
+            <View
+              style={{
+                backgroundColor: "#EFF6FF",
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 3,
+                borderWidth: 1,
+                borderColor: "#DBEAFE",
+              }}
+            >
+              <Ionicons name="sparkles" size={10} color="#2563EB" />
+              <Text
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: "700",
+                  color: "#2563EB",
+                }}
+              >
+                {displaySubtitle}
+              </Text>
+            </View>
           </View>
 
+          {/* Action Trio: Search, Requests, Chat (All preserved with improved proportions) */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             {/* Search / Filter Button */}
             <TouchableOpacity
@@ -660,58 +763,68 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: "#F8FAFC",
-                paddingHorizontal: 8,
-                paddingVertical: 6,
-                borderRadius: 20,
+                backgroundColor: filterVisible ? "#2563EB" : "#F8FAFC",
+                paddingHorizontal: 11,
+                height: 34,
+                borderRadius: 17,
                 borderWidth: 1,
-                borderColor: "#E2E8F0",
+                borderColor: filterVisible ? "#2563EB" : "#E2E8F0",
+                gap: 5,
               }}
               activeOpacity={0.7}
             >
+              <Ionicons
+                name="funnel-outline"
+                size={12}
+                color={filterVisible ? "#FFFFFF" : "#2563EB"}
+              />
               <Text
                 style={{
-                  color: "#64748B",
-                  fontSize: 10,
-                  fontWeight: "600",
-                  marginRight: 4,
+                  color: filterVisible ? "#FFFFFF" : "#334155",
+                  fontSize: 11.5,
+                  fontWeight: "700",
                 }}
               >
                 Search
               </Text>
-              <Ionicons name="funnel-outline" size={11} color="#2563EB" />
             </TouchableOpacity>
 
-            {/* Bell (Requests) Icon -> Changed to People Icon */}
+            {/* Requests Icon */}
             <TouchableOpacity
               onPress={() => navigation.navigate("Requests")}
-              style={{ position: "relative" }}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: "#F8FAFC",
+                borderWidth: 1,
+                borderColor: "#E2E8F0",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+              }}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name="people"
-                size={20}
-                color="#2563EB"
-              />
+              <Ionicons name="people" size={17} color="#2563EB" />
               {requestCount > 0 && (
                 <View
                   style={{
                     position: "absolute",
                     top: -3,
                     right: -3,
-                    backgroundColor: "#ef4444",
-                    minWidth: 12,
-                    height: 12,
-                    borderRadius: 6,
+                    backgroundColor: "#EF4444",
+                    minWidth: 15,
+                    height: 15,
+                    borderRadius: 7.5,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingHorizontal: 2,
-                    borderWidth: 1,
-                    borderColor: "white",
+                    borderWidth: 1.5,
+                    borderColor: "#FFFFFF",
                   }}
                 >
                   <Text
-                    style={{ color: "white", fontSize: 6, fontWeight: "bold" }}
+                    style={{ color: "#FFFFFF", fontSize: 8, fontWeight: "800" }}
                   >
                     {requestCount}
                   </Text>
@@ -724,33 +837,43 @@ const MarriageScreen = ({ navigation }: any) => {
               onPress={() =>
                 navigation.navigate("ChatList", { platform: "marriage" })
               }
-              style={{ position: "relative" }}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: "#F8FAFC",
+                borderWidth: 1,
+                borderColor: "#E2E8F0",
+                justifyContent: "center",
+                alignItems: "center",
+                position: "relative",
+              }}
               activeOpacity={0.7}
             >
               <Ionicons
                 name="chatbubble-ellipses-outline"
-                size={22}
-                color="#16a34a"
+                size={16}
+                color="#2563EB"
               />
               {unreadCount > 0 && (
                 <View
                   style={{
                     position: "absolute",
                     top: -3,
-                    right: -5,
-                    backgroundColor: "#ef4444",
-                    minWidth: 12,
-                    height: 12,
-                    borderRadius: 6,
+                    right: -3,
+                    backgroundColor: "#EF4444",
+                    minWidth: 15,
+                    height: 15,
+                    borderRadius: 7.5,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingHorizontal: 2,
-                    borderWidth: 1,
-                    borderColor: "white",
+                    borderWidth: 1.5,
+                    borderColor: "#FFFFFF",
                   }}
                 >
                   <Text
-                    style={{ color: "white", fontSize: 6, fontWeight: "bold" }}
+                    style={{ color: "#FFFFFF", fontSize: 8, fontWeight: "800" }}
                   >
                     {unreadCount}
                   </Text>
@@ -759,21 +882,263 @@ const MarriageScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Row 2: Gender Segment Bar + Profile Button */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 14,
+            marginBottom: 12,
+            gap: 10,
+          }}
+        >
+          {/* Segment Switcher */}
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              backgroundColor: "#F1F5F9",
+              borderRadius: 20,
+              padding: 3,
+              height: 40,
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => handleGenderSegmentPress("")}
+              style={{
+                flex: 1,
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: gender === "" ? "#FFFFFF" : "transparent",
+                borderRadius: 17,
+                shadowColor: gender === "" ? "#000" : "transparent",
+                shadowOffset: { width: 0, height: 1.5 },
+                shadowOpacity: gender === "" ? 0.08 : 0,
+                shadowRadius: 2.5,
+                elevation: gender === "" ? 2 : 0,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: gender === "" ? "#2563EB" : "#64748B",
+                }}
+              >
+                {t("allMatches") || "All Matches"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleGenderSegmentPress("Male")}
+              style={{
+                flex: 1,
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: gender === "Male" ? "#FFFFFF" : "transparent",
+                borderRadius: 17,
+                shadowColor: gender === "Male" ? "#000" : "transparent",
+                shadowOffset: { width: 0, height: 1.5 },
+                shadowOpacity: gender === "Male" ? 0.08 : 0,
+                shadowRadius: 2.5,
+                elevation: gender === "Male" ? 2 : 0,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: gender === "Male" ? "#2563EB" : "#64748B",
+                }}
+              >
+                {t("grooms") || "Grooms"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleGenderSegmentPress("Female")}
+              style={{
+                flex: 1,
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: gender === "Female" ? "#FFFFFF" : "transparent",
+                borderRadius: 17,
+                shadowColor: gender === "Female" ? "#000" : "transparent",
+                shadowOffset: { width: 0, height: 1.5 },
+                shadowOpacity: gender === "Female" ? 0.08 : 0,
+                shadowRadius: 2.5,
+                elevation: gender === "Female" ? 2 : 0,
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: gender === "Female" ? "#2563EB" : "#64748B",
+                }}
+              >
+                {t("brides") || "Brides"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Profile Pill Button */}
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("CreateMarriageProfile", {
+                profile: myProfileId ? { id: myProfileId } : null,
+              })
+            }
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#F8FAFC",
+              paddingLeft: 10,
+              paddingRight: 4,
+              height: 40,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: "#DBEAFE",
+              gap: 6,
+            }}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={{
+                color: "#1E293B",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.2,
+              }}
+            >
+              Profile
+            </Text>
+            <Image
+              source={{
+                uri: myProfilePhoto
+                  ? `${PHOTO_URL}${myProfilePhoto}`
+                  : userPhoto
+                  ? `${PHOTO_URL}${userPhoto}`
+                  : "https://via.placeholder.com/100",
+              }}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: "#E2E8F0",
+                borderWidth: 1.5,
+                borderColor: "#2563EB",
+              }}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Row 3: Quick Tags Carousel */}
+        <View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 14,
+              gap: 7,
+            }}
+          >
+            {QUICK_TAGS.map((tag) => {
+              const isSelected = activeTag === tag;
+              return (
+                <TouchableOpacity
+                  key={tag}
+                  onPress={() => handleTagPress(tag)}
+                  style={{
+                    paddingHorizontal: 14,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: isSelected ? "#2563EB" : "#F8FAFC",
+                    borderWidth: 1,
+                    borderColor: isSelected ? "#2563EB" : "#E2E8F0",
+                    shadowColor: isSelected ? "#2563EB" : "transparent",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: isSelected ? 0.25 : 0,
+                    shadowRadius: 2,
+                    elevation: isSelected ? 2 : 0,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: isSelected ? "700" : "600",
+                      color: isSelected ? "#FFFFFF" : "#64748B",
+                    }}
+                  >
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8FAFC" }} edges={[]} {...tabSwipe.panHandlers}>
+      {/* LinkUp Global Header with Floating Tabs */}
+      <LinkUpHeader
+        currentTab="Marriage"
+        headerAnim={headerAnim}
+        user={user}
+        onTabPress={(tab) => {
+          if (tab === "Marriage") {
+            animateHeader(false);
+            listRef.current?.scrollToOffset({ offset: 0, animated: true });
+          }
+        }}
+        onPlusPress={() => {
+          navigation.navigate("CreateMarriageProfile", { profile: null });
+        }}
+        tabSwipeHandlers={tabSwipe.panHandlers}
+        statusBarHeight={statusBarHeight}
+      />
 
       {loading && myProfileId === 0 ? (
-        <View style={{ flex: 1, backgroundColor: "#F8FAFC", paddingTop: 16 }}>
+        <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
           <FlashList
             data={[1, 2, 3, 4, 5, 6]}
             renderItem={renderSkeletonCard}
             keyExtractor={(item) => item.toString()}
             numColumns={2}
-            contentContainerStyle={{ paddingHorizontal: 6, paddingVertical: 6 }}
+            contentContainerStyle={{
+              paddingTop: statusBarHeight + 116,
+              paddingHorizontal: 6,
+              paddingVertical: 6,
+            }}
           />
         </View>
       ) : !myProfileId ? (
         // Gate: No profile created yet
-        <View className="flex-1 items-center justify-center px-8 bg-slate-50">
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+            paddingTop: statusBarHeight + 116,
+            backgroundColor: "#F8FAFC",
+          }}
+        >
           <View className="bg-white rounded-3xl p-8 items-center shadow-md border border-gray-100 w-full">
             <View className="bg-blue-100 p-5 rounded-full mb-5">
               <Ionicons name="heart-circle-outline" size={52} color="#2563EB" />
@@ -801,249 +1166,49 @@ const MarriageScreen = ({ navigation }: any) => {
         </View>
       ) : (
         <View style={{ flex: 1, position: "relative" }}>
-          {/* Segment Switcher & Profile Button Row */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 16,
-              marginTop: 12,
-              marginBottom: 12,
-              gap: 12,
-            }}
-          >
-            {/* Segment Switcher */}
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                backgroundColor: "#E2E8F0",
-                borderRadius: 24,
-                padding: 3,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => handleGenderSegmentPress("")}
-                style={{
-                  flex: 1,
-                  paddingVertical: 6,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: gender === "" ? "white" : "transparent",
-                  borderRadius: 20,
-                  shadowColor: gender === "" ? "#000" : "transparent",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                  elevation: gender === "" ? 2 : 0,
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "bold",
-                    color: gender === "" ? "#2563EB" : "#64748B",
-                  }}
-                >
-                  {t("allMatches") || "All Matches"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleGenderSegmentPress("Male")}
-                style={{
-                  flex: 1,
-                  paddingVertical: 4,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: gender === "Male" ? "white" : "transparent",
-                  borderRadius: 20,
-                  shadowColor: gender === "Male" ? "#000" : "transparent",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                  elevation: gender === "Male" ? 2 : 0,
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "bold",
-                    color: gender === "Male" ? "#2563EB" : "#64748B",
-                  }}
-                >
-                  {t("grooms") || "Grooms"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleGenderSegmentPress("Female")}
-                style={{
-                  flex: 1,
-                  paddingVertical: 4,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor:
-                    gender === "Female" ? "white" : "transparent",
-                  borderRadius: 20,
-                  shadowColor: gender === "Female" ? "#000" : "transparent",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                  elevation: gender === "Female" ? 2 : 0,
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "bold",
-                    color: gender === "Female" ? "#2563EB" : "#64748B",
-                  }}
-                >
-                  {t("brides") || "Brides"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Profile Button */}
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("CreateMarriageProfile", {
-                  profile: myProfileId ? { id: myProfileId } : null,
-                })
-              }
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "white",
-                paddingLeft: 8,
-                paddingRight: 2,
-                paddingVertical: 2,
-                borderRadius: 24,
-                borderWidth: 1,
-                borderColor: "#2563EB",
-                shadowColor: "#2563EB",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={{
-                  color: "#2563EB",
-                  fontSize: 9,
-                  fontWeight: "bold",
-                  marginRight: 4,
-                  letterSpacing: 0.5,
-                }}
-              >
-                PROFILE
-              </Text>
-              <Image
-                source={{
-                  uri: myProfilePhoto
-                    ? `${PHOTO_URL}${myProfilePhoto}`
-                    : (userPhoto ? `${PHOTO_URL}${userPhoto}` : "https://via.placeholder.com/100"),
-                }}
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 10,
-                  backgroundColor: "#E2E8F0",
-                }}
+          <FlashList
+            ref={listRef}
+            data={profiles}
+            renderItem={renderProfile}
+            keyExtractor={(item, index) =>
+              item.id ? item.id.toString() + "_" + index : index.toString()
+            }
+            numColumns={2}
+            // @ts-ignore
+            estimatedItemSize={350}
+            ListHeaderComponent={renderListHeader}
+            onScroll={handleFeedScroll}
+            scrollEventThrottle={16}
+            onEndReached={() => fetchProfiles(true)}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#2563EB"]}
+                tintColor="#2563EB"
+                progressViewOffset={statusBarHeight + 116}
               />
-            </TouchableOpacity>
-          </View>
-
-          {/* Quick Tags Filter Carousel */}
-          <View style={{ marginBottom: 6 }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: 16,
-                gap: 8,
-                paddingBottom: 6,
-              }}
-            >
-              {QUICK_TAGS.map((tag) => (
-                <TouchableOpacity
-                  key={tag}
-                  onPress={() => handleTagPress(tag)}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    backgroundColor:
-                      activeTag === tag ? "#2563EB" : "transparent",
-                    borderWidth: 1,
-                    borderColor: activeTag === tag ? "#2563EB" : "#E2E8F0",
-                    shadowColor: activeTag === tag ? "#2563EB" : "transparent",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 4,
-                    elevation: activeTag === tag ? 3 : 0,
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "bold",
-                      color: activeTag === tag ? "white" : "#64748B",
-                    }}
-                  >
-                    {tag}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {loading ? (
-            <FlashList
-              data={[1, 2, 3, 4, 5, 6]}
-              renderItem={renderSkeletonCard}
-              keyExtractor={(item) => item.toString()}
-              numColumns={2}
-              contentContainerStyle={{
-                paddingHorizontal: 6,
-                paddingVertical: 6,
-              }}
-            />
-          ) : (
-            <FlashList
-              data={profiles}
-              renderItem={renderProfile}
-              keyExtractor={(item, index) =>
-                item.id ? item.id.toString() + "_" + index : index.toString()
-              }
-              numColumns={2}
-              // @ts-ignore: IDE erroneously flags this property
-              estimatedItemSize={350}
-              onEndReached={() => fetchProfiles(true)}
-              onEndReachedThreshold={0.5}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />
-              }
-              ListFooterComponent={
-                isLoadMoreLoading ? (
-                  <View className="py-4">
-                    <ActivityIndicator color="#2563EB" />
-                  </View>
-                ) : null
-              }
-              contentContainerStyle={{
-                paddingHorizontal: 6,
-                paddingVertical: 10,
-                paddingBottom: 80,
-              }}
-              className="bg-slate-50"
-              ListEmptyComponent={
+            }
+            ListFooterComponent={
+              isLoadMoreLoading ? (
+                <View className="py-4">
+                  <ActivityIndicator color="#2563EB" />
+                </View>
+              ) : null
+            }
+            contentContainerStyle={{
+              paddingTop: statusBarHeight + 114,
+              paddingHorizontal: 6,
+              paddingBottom: 40,
+              backgroundColor: "#F8FAFC",
+            }}
+            ListEmptyComponent={
+              loading ? (
+                <View style={{ paddingVertical: 40, alignItems: "center" }}>
+                  <ActivityIndicator size="large" color="#2563EB" />
+                </View>
+              ) : (
                 <View className="items-center justify-center py-20">
                   <Image
                     source={{
@@ -1066,9 +1231,9 @@ const MarriageScreen = ({ navigation }: any) => {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              }
-            />
-          )}
+              )
+            }
+          />
 
           {filterVisible && (
             <>
@@ -1081,7 +1246,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   right: 0,
                   bottom: 0,
                   backgroundColor: "rgba(0,0,0,0.3)",
-                  zIndex: 90,
+                  zIndex: 200,
                   opacity: filterAnim,
                 }}
               >
@@ -1096,7 +1261,7 @@ const MarriageScreen = ({ navigation }: any) => {
               <Animated.View
                 style={{
                   position: "absolute",
-                  top: 8,
+                  top: statusBarHeight + 50,
                   left: 12,
                   right: 12,
                   backgroundColor: "white",
@@ -1109,7 +1274,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   shadowOpacity: 0.15,
                   shadowRadius: 20,
                   elevation: 10,
-                  zIndex: 100,
+                  zIndex: 201,
                   opacity: filterAnim,
                   transform: [
                     {

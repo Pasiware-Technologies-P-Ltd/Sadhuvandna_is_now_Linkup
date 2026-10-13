@@ -19,6 +19,7 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-production}
       - REDIS_HOST=redis
+      - SOCKET_URL=http://socket-server:3000
       - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
       - DB_USER=${DB_USER:-u941015828_sadhuvandna}
       - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
@@ -80,6 +81,13 @@ services:
       - "9000:3000"
     environment:
       - API_URL=http://api-server
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.socket-server.rule=Host(`ws.sadhuvandna.co.in`)"
+      - "traefik.http.routers.socket-server.entrypoints=https"
+      - "traefik.http.routers.socket-server.tls=true"
+      - "traefik.http.routers.socket-server.tls.certresolver=letsencrypt"
+      - "traefik.http.services.socket-server.loadbalancer.server.port=3000"
     networks:
       - coolify
     depends_on:

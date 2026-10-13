@@ -15,7 +15,8 @@ if(!$current_user_id){
 
 // WebSocket helper
 function triggerWebSocket($receiverId, $type, $payload, $isGlobal = false) {
-    $url = 'http://localhost:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     $postData = array(
         'receiverId' => $receiverId,
         'type' => $type,

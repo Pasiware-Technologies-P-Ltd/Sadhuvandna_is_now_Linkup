@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Image as RNImage, View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { Ionicons } from '@expo/vector-icons';
 import { ImageService } from '../services/ImageService';
+
+const MIN_ASPECT = 9 / 16; // 0.5625 (Max height ratio limit: 9:16)
 
 interface PostImageProps {
     uri: string;
     forcedAspect?: number;
     isDetail?: boolean;
+    onAspectCalculated?: (aspect: number) => void;
 }
 
 const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
@@ -16,7 +20,7 @@ const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
     });
 
     return (
-        <View className="w-full bg-black rounded-xl overflow-hidden relative" style={{ aspectRatio: 4 / 3 }}>
+        <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#0F172A', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
             <VideoView
                 player={player}
                 allowsFullscreen
@@ -29,33 +33,39 @@ const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
     );
 };
 
-const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) => {
+const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail, onAspectCalculated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const [aspect, setAspect] = useState<number>(forcedAspect || 4 / 3);
+    const [aspect, setAspect] = useState<number>(forcedAspect ? (isDetail ? forcedAspect : Math.max(forcedAspect, MIN_ASPECT)) : 4 / 3);
 
     useEffect(() => {
         let isMounted = true;
         if (forcedAspect) {
-            setAspect(forcedAspect);
+            const finalAspect = isDetail ? forcedAspect : Math.max(forcedAspect, MIN_ASPECT);
+            setAspect(finalAspect);
             return;
         }
         if (uri) {
             ImageService.getImageDimensions(uri)
                 .then(({ aspectRatio }) => {
-                    if (isMounted) setAspect(aspectRatio);
+                    if (isMounted) {
+                        const finalAspect = isDetail ? aspectRatio : Math.max(aspectRatio, MIN_ASPECT);
+                        setAspect(finalAspect);
+                        onAspectCalculated?.(finalAspect);
+                    }
                 })
                 .catch(() => {
                     if (isMounted) setAspect(4 / 3);
                 });
         }
         return () => { isMounted = false; };
-    }, [uri, forcedAspect]);
+    }, [uri, forcedAspect, isDetail]);
 
     if (!uri || error) {
         return (
-            <View className="w-full h-64 bg-slate-100 rounded-xl justify-center items-center">
-                <Text className="text-gray-400 text-xs">Image not available</Text>
+            <View style={{ width: '100%', height: 200, backgroundColor: '#F1F5F9', borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="image-outline" size={32} color="#94A3B8" />
+                <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 6, fontWeight: '500' }}>Image not available</Text>
             </View>
         );
     }
@@ -66,15 +76,16 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) =>
         return <PostVideo uri={uri} />;
     }
 
-    // Use the abstraction for feed-optimized URLs (ready for CDN integration)
     const optimizedUri = isDetail ? ImageService.getDetailImageUrl(uri) : ImageService.getFeedImageUrl(uri);
+    const cardAspect = isDetail ? aspect : Math.max(aspect, MIN_ASPECT);
 
     return (
-        <View className="w-full bg-slate-50 rounded-xl overflow-hidden relative">
+        <View style={{ width: '100%', height: '100%', backgroundColor: '#F8FAFC', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
             <Image
                 source={{ uri: optimizedUri }}
-                style={{ width: '100%', aspectRatio: aspect }}
-                contentFit="cover"
+                style={{ width: '100%', height: '100%', aspectRatio: cardAspect }}
+                contentFit={isDetail ? "contain" : "cover"}
+                transition={200}
                 cachePolicy="memory-disk"
                 onLoadStart={() => setLoading(true)}
                 onLoad={() => setLoading(false)}
@@ -84,7 +95,7 @@ const PostImage: React.FC<PostImageProps> = ({ uri, forcedAspect, isDetail }) =>
                 }}
             />
             {loading && (
-                <View className="absolute inset-0 justify-center items-center bg-slate-100">
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
                     <ActivityIndicator color="#2563EB" size="small" />
                 </View>
             )}

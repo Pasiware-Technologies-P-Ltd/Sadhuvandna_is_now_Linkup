@@ -416,6 +416,14 @@ foreach ($raw_posts as $p) {
         }
     }
 
+    $thumbnail = null;
+    if (count($media) > 0 && preg_match('/\.(mp4|mov|avi|wmv|flv|mkv)$/i', $media[0])) {
+        $thumb_file = preg_replace('/\.(mp4|mov|avi|wmv|flv|mkv)$/i', '_thumb.jpg', $media[0]);
+        if (file_exists('../uploads/posts/' . $thumb_file)) {
+            $thumbnail = $thumb_file;
+        }
+    }
+
     $post_item = [
         'id'            => $pid,
         'user_id'       => $p['user_id'],
@@ -429,6 +437,7 @@ foreach ($raw_posts as $p) {
         'is_saved'      => isset($user_saved_map[$pid]),
         'comments'      => $comments_map[$pid] ?? [],
         'media'         => $media,
+        'thumbnail'     => $thumbnail,
         'image_width'   => $image_width,
         'image_height'  => $image_height,
         'date'          => $p['created_at'] ?? $p['date']

@@ -16,7 +16,8 @@ function sendExpoPushNotification($con, $receiver_id, $title, $body, $data = [],
         $stmt->bind_param("issss", $receiver_id, $title, $body, $type, $data_json);
         $stmt->execute();
 
-        $url = 'http://127.0.0.1:3000/api/trigger';
+        $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+        $url = rtrim($socketBase, '/') . '/api/trigger';
         $postData = [
             'room' => "user_{$receiver_id}",
             'type' => 'app_notification',

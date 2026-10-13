@@ -3,12 +3,15 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert
 import { Image } from 'expo-image';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { navigationRef } from '../navigation/navigationRef';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import PostImage from './PostImage';
+import ImageViewer from 'react-native-image-zoom-viewer';
+import { ImageService } from '../services/ImageService';
 import { WEBSITE_URL, API_BASE_URL } from '../services/api';
 import { Audio } from 'expo-av';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import Slider from '@react-native-community/slider';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 import { Asset } from 'expo-asset';
@@ -19,25 +22,19 @@ import YoutubeIframe from 'react-native-youtube-iframe';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { logoBase64 } from '../constants/logoBase64';
+import { getVideoThumbnail } from '../utils/thumbnailHelper';
 
 const FILTERS: any = {
     'none': { color: 'transparent' },
-    'cinematic': { color: 'rgba(50, 20, 0, 0.15)', vignette: true },
+    'cinematic': { color: 'rgba(50, 20, 0, 0.15)' },
     'bw_grain': { color: 'rgba(0,0,0,0.4)', grain: true },
     'cyberpunk': { dualTone: ['rgba(255,0,255,0.15)', 'rgba(0,255,255,0.1)'] },
-    'sunset': { color: 'rgba(255, 69, 0, 0.15)', vignette: true },
+    'sunset': { color: 'rgba(255, 69, 0, 0.15)' },
     'cool_night': { color: 'rgba(0, 0, 139, 0.1)', dualTone: ['rgba(0,0,50,0.2)', 'rgba(0,100,255,0.05)'] },
-    'retro_sepia': { color: 'rgba(112, 66, 20, 0.25)', grain: true, vignette: true },
+    'retro_sepia': { color: 'rgba(112, 66, 20, 0.25)', grain: true },
 };
 
-const VignetteOverlay = () => (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <View style={[styles.vignettePart, { top: -20, left: -20, right: -20, height: 100, borderBottomLeftRadius: 100, borderBottomRightRadius: 100 }]} />
-        <View style={[styles.vignettePart, { bottom: -20, left: -20, right: -20, height: 100, borderTopLeftRadius: 100, borderTopRightRadius: 100 }]} />
-        <View style={[styles.vignettePart, { left: -20, top: 0, bottom: 0, width: 60, borderTopRightRadius: 50, borderBottomRightRadius: 50 }]} />
-        <View style={[styles.vignettePart, { right: -20, top: 0, bottom: 0, width: 60, borderTopLeftRadius: 50, borderBottomLeftRadius: 50 }]} />
-    </View>
-);
+const VignetteOverlay = () => null;
 
 const FilmGrain = () => (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.03)' }]} pointerEvents="none">
@@ -93,12 +90,56 @@ const cardWidth = width - 24;
 const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
-const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, aspectRatio }: any) => {
+const videoStyles = StyleSheet.create({
+    playOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    },
+    playButton: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
+        elevation: 5,
+    },
+});
+
+const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, aspectRatio, isDetail }: any) => {
     const [duration, setDuration] = useState(0);
     const [position, setPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [isBuffering, setIsBuffering] = useState(false);
+    const [isVideoReady, setIsVideoReady] = useState(false);
+    const [thumbUri, setThumbUri] = useState<string | null>(poster || null);
     const isSliding = useRef(false);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (poster) {
+            setThumbUri(poster);
+            return;
+        }
+        if (uri) {
+            getVideoThumbnail(uri).then((thumb) => {
+                if (isMounted && thumb) {
+                    setThumbUri(thumb);
+                }
+            });
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [uri, poster]);
 
     const formatTime = (millis: number) => {
         const totalSeconds = Math.round(millis / 1000);
@@ -110,77 +151,125 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
     const isMounted = useRef(true);
     const showVideo = isActive !== undefined ? isActive : shouldPlay;
 
-    const player = useVideoPlayer(uri, player => {
-        player.loop = true;
-        player.muted = isMuted;
+    const player = useVideoPlayer(uri, p => {
+        try {
+            p.loop = true;
+            p.muted = isMuted;
+        } catch (e) {}
     });
 
     React.useImperativeHandle(forwardedRef, () => ({
-        playAsync: async () => player.play(),
-        pauseAsync: async () => player.pause(),
+        playAsync: async () => {
+            try { player.play(); } catch (e) {}
+        },
+        pauseAsync: async () => {
+            try { player.pause(); } catch (e) {}
+        },
         unloadAsync: async () => { },
-        setPositionAsync: async (ms: number) => { player.currentTime = ms / 1000; }
+        setPositionAsync: async (ms: number) => {
+            try { player.currentTime = ms / 1000; } catch (e) {}
+        }
     }));
 
     useEffect(() => {
-        player.muted = isMuted;
-    }, [isMuted]);
+        try {
+            player.muted = isMuted;
+        } catch (e) {}
+    }, [isMuted, player]);
 
     useEffect(() => {
         isMounted.current = true;
-        if (shouldPlay) {
-            player.play();
-        } else {
-            player.pause();
-        }
+        try {
+            if (shouldPlay) {
+                player.play();
+            } else {
+                player.pause();
+            }
+        } catch (e) {}
         return () => {
             isMounted.current = false;
         };
-    }, [shouldPlay]);
+    }, [shouldPlay, player]);
 
     useEffect(() => {
-        const sub = player.addListener('statusChange', (status) => {
-            if (status.status === 'readyToPlay') {
+        let sub: any;
+        let sub2: any;
+        try {
+            sub = player.addListener('statusChange', (status) => {
+                if (!isMounted.current) return;
+                if (status.status === 'readyToPlay') {
+                    setIsBuffering(false);
+                    setIsVideoReady(true);
+                    try {
+                        setDuration((player.duration || 0) * 1000);
+                    } catch (e) {}
+                } else if (status.status === 'error') {
+                    setError("Failed to play video");
+                    setIsBuffering(false);
+                }
+            });
+            sub2 = player.addListener('playingChange', (isPlaying) => {
+                if (!isMounted.current) return;
                 setIsBuffering(false);
-                setDuration(player.duration * 1000);
-            } else if (status.status === 'error') {
-                setError("Failed to play video");
-                setIsBuffering(false);
-            }
-        });
-        const sub2 = player.addListener('playingChange', (isPlaying) => {
-            setIsBuffering(false);
-        });
-        
+                if (isPlaying) {
+                    setIsVideoReady(true);
+                }
+            });
+        } catch (e) {}
+
         const interval = setInterval(() => {
             if (isMounted.current && !isSliding.current) {
-                setPosition(player.currentTime * 1000);
+                try {
+                    if (player && typeof player.currentTime === 'number') {
+                        setPosition(player.currentTime * 1000);
+                    }
+                } catch (e) {}
             }
         }, 500);
 
         return () => {
-            sub.remove();
-            sub2.remove();
+            try {
+                if (sub) sub.remove();
+                if (sub2) sub2.remove();
+            } catch (e) {}
             clearInterval(interval);
         };
     }, [player]);
 
+    const videoAspect = isDetail ? (aspectRatio || 16 / 9) : (aspectRatio ? Math.max(aspectRatio, 9 / 16) : 9 / 16);
     return (
-        <View style={{ width: '100%', aspectRatio: aspectRatio || 9 / 16, backgroundColor: 'black' }}>
-            {showVideo ? (
+        <View style={{ width: '100%', aspectRatio: videoAspect, backgroundColor: '#0f172a', overflow: 'hidden' }}>
+            {showVideo && (
                 <VideoView
                     player={player}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
+                    style={StyleSheet.absoluteFill}
+                    contentFit={isDetail ? "contain" : "cover"}
                     nativeControls={false}
                 />
-            ) : (
-                <Image
-                    source={{ uri: poster || 'https://via.placeholder.com/640x360.png?text=Loading...' }}
-                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-                />
             )}
-            {isBuffering && (
+            {(!showVideo || !isVideoReady) && (
+                <View style={StyleSheet.absoluteFill}>
+                    {thumbUri ? (
+                        <Image
+                            source={{ uri: thumbUri }}
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="cover"
+                        />
+                    ) : (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' }]}>
+                            <ActivityIndicator color="#3B82F6" size="small" />
+                        </View>
+                    )}
+                    {!shouldPlay && thumbUri && (
+                        <View style={videoStyles.playOverlay}>
+                            <View style={videoStyles.playButton}>
+                                <Ionicons name="play" size={26} color="#ffffff" style={{ marginLeft: 3 }} />
+                            </View>
+                        </View>
+                    )}
+                </View>
+            )}
+            {isBuffering && isVideoReady && (
                 <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
                     <ActivityIndicator color="white" size="large" />
                 </View>
@@ -340,6 +429,7 @@ const BasePostCard = ({
     isDetail?: boolean,
     renderMedia?: (props: any) => React.ReactNode
 }) => {
+    const navigation = useNavigation<any>();
     const isFocused = useIsFocused();
     const [liked, setLiked] = useState(Boolean(post.isLiked || (post as any).user_liked));
     const [likeCount, setLikeCount] = useState(post.likes);
@@ -462,7 +552,9 @@ const BasePostCard = ({
         return null;
     }, [post.link]);
 
-    const postAspectRatio = musicData?.aspectRatio ? Number(musicData.aspectRatio) : (post.image_width && post.image_height ? post.image_width / post.image_height : undefined);
+    const MIN_MEDIA_ASPECT = isDetail ? undefined : 9 / 16; // Capped to 9:16 in feed, full height in detail
+    const rawAspectRatio = musicData?.aspectRatio ? Number(musicData.aspectRatio) : (post.image_width && post.image_height ? post.image_width / post.image_height : undefined);
+    const postAspectRatio = rawAspectRatio ? (MIN_MEDIA_ASPECT ? Math.max(rawAspectRatio, MIN_MEDIA_ASPECT) : rawAspectRatio) : undefined;
     const hasMusic = !!(musicData && (musicData.type === 'youtube_music' || musicData.type === 'custom_music'));
 
     // Combine local shouldPlay with screen focus
@@ -568,6 +660,13 @@ const BasePostCard = ({
     };
 
     const handlePostPress = () => {
+        if (isDetail) return;
+        try {
+            if (navigation && navigation.navigate) {
+                navigation.navigate('PostDetail', { post: { ...post, isSaved: saved, isLiked: liked, likes: likeCount } });
+                return;
+            }
+        } catch (e) {}
         // @ts-ignore
         navigationRef.navigate('PostDetail', { post: { ...post, isSaved: saved, isLiked: liked, likes: likeCount } });
     };
@@ -752,10 +851,11 @@ const BasePostCard = ({
                     </View>
                 )}
                 <View style={styles.headerInfo}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={styles.userName}>{post.user.name}</Text>
+                        <Ionicons name="checkmark-circle" size={15} color="#1877F2" style={{ marginLeft: 4 }} />
                         {(post.user as any).is_business == 1 && (
-                            <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                            <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 6 }}>
                                 <Ionicons name="briefcase" size={10} color="#2563eb" />
                                 <Text style={{ fontSize: 10, color: '#2563eb', fontWeight: 'bold' }}>
                                     {(post.user as any).category || 'Business'}
@@ -767,10 +867,12 @@ const BasePostCard = ({
                         {post.user.location ? (
                             <>
                                 <Text style={styles.timeAgo} numberOfLines={1}>{post.user.location}</Text>
-                                <Text style={styles.dotSeparator}>â€¢</Text>
+                                <Text style={styles.dotSeparator}>·</Text>
                             </>
                         ) : null}
                         <Text style={styles.timeAgo}>{post.timeAgo}</Text>
+                        <Text style={styles.dotSeparator}>·</Text>
+                        <Ionicons name="globe-outline" size={12} color="#64748B" />
                     </View>
                 </View>
                 <TouchableOpacity style={styles.optionsButton} onPress={handleOptions}>
@@ -779,7 +881,12 @@ const BasePostCard = ({
             </TouchableOpacity>
 
             {/* Content Body */}
-            <View style={styles.contentBody}>
+            <TouchableOpacity
+                activeOpacity={0.95}
+                onPress={!isDetail ? handlePostPress : undefined}
+                disabled={isDetail}
+                style={styles.contentBody}
+            >
                 {post.content ? (
                     <View style={{ marginBottom: 8 }}>
                         {(() => {
@@ -864,64 +971,99 @@ const BasePostCard = ({
                     }
                     return null;
                 })()}
-            </View>
+            </TouchableOpacity>
 
             {/* Media Carousel */}
             {renderMedia && renderMedia({
                 mediaList, cardWidth,
                 postAspectRatio, isVideo, paused, setPaused, shouldPlay,
                 isFocused, actualShouldPlay, videoRef,
-                musicMuted, post, styles, isDetail
+                musicMuted, post, styles, isDetail,
+                hasMusic,
+                handlePostPress
             })}
 
-            {/* Actions */}
-            <View style={styles.actions}>
-                <View style={styles.leftActions}>
-                    <TouchableOpacity style={styles.actionButton} onPress={toggleLike} activeOpacity={0.7}>
-                        <Animated.View style={{ transform: [{ scale: likeScale }] }}>
-                            <Ionicons
-                                name={liked ? "heart" : "heart-outline"}
-                                size={24}
-                                color={liked ? "#2563EB" : "#374151"}
-                            />
-                        </Animated.View>
-                        <Text style={[styles.actionText, liked && { color: '#2563EB', fontWeight: '600' }]}>
-                            {likeCount}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.actionButton} onPress={handlePostPress} activeOpacity={0.7}>
-                        <Ionicons name="chatbubble-outline" size={23} color="#374151" />
-                        <Text style={styles.actionText}>{Array.isArray(post.comments) ? post.comments.length : (post.comments || 0)}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.actionButton} onPress={handleShare} activeOpacity={0.7}>
-                        <Ionicons name="paper-plane-outline" size={23} color="#374151" />
-                    </TouchableOpacity>
-
-                    {(post.link || (mediaList.length > 0 && isVideo(mediaList[0]))) && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, { marginLeft: 4 }]}
-                            onPress={() => MuteManager.toggle()}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons
-                                name={musicMuted ? "volume-mute" : "volume-high"}
-                                size={22}
-                                color={musicMuted ? "#64748B" : "#2563EB"}
-                            />
-                        </TouchableOpacity>
-                    )}
+            {/* Reaction Summary Bar (likes & comments count always visible matching image) */}
+            <View style={styles.reactionSummaryBar}>
+                <View style={styles.reactionIconsGroup}>
+                    <View style={styles.reactionLikeBubble}>
+                        <MaterialCommunityIcons name="thumb-up" size={11} color="#ffffff" />
+                    </View>
+                    <Text style={styles.reactionCountText}>
+                        {likeCount > 0 ? likeCount : (liked ? 1 : 0)}
+                    </Text>
                 </View>
 
-                <TouchableOpacity onPress={toggleSave} activeOpacity={0.7} style={styles.actionButton}>
+                <TouchableOpacity onPress={handlePostPress} activeOpacity={0.7}>
+                    <Text style={styles.commentsSharesText}>
+                        {Array.isArray(post.comments) ? post.comments.length : (Number(post.comments) || 0)} comments
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Subtle Divider */}
+            <View style={styles.reactionDivider} />
+
+            {/* 4 Action Buttons: Like, Comment, Share, Save */}
+            <View style={styles.fbActionsRow}>
+                {/* 1. Like */}
+                <TouchableOpacity
+                    style={styles.fbActionButton}
+                    onPress={toggleLike}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                >
+                    <Animated.View style={{ transform: [{ scale: likeScale }] }}>
+                        <MaterialCommunityIcons
+                            name={liked ? "thumb-up" : "thumb-up-outline"}
+                            size={20}
+                            color={liked ? "#1877F2" : "#65676B"}
+                        />
+                    </Animated.View>
+                    <Text style={[styles.fbActionText, liked && { color: '#1877F2', fontWeight: '700' }]}>
+                        Like
+                    </Text>
+                </TouchableOpacity>
+
+                {/* 2. Comment */}
+                <TouchableOpacity
+                    style={styles.fbActionButton}
+                    onPress={handlePostPress}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                >
+                    <Ionicons name="chatbubble-outline" size={18} color="#65676B" />
+                    <Text style={styles.fbActionText}>Comment</Text>
+                </TouchableOpacity>
+
+                {/* 3. Share */}
+                <TouchableOpacity
+                    style={styles.fbActionButton}
+                    onPress={handleShare}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                >
+                    <Ionicons name="arrow-redo-outline" size={20} color="#65676B" />
+                    <Text style={styles.fbActionText}>Share</Text>
+                </TouchableOpacity>
+
+                {/* 4. Save */}
+                <TouchableOpacity
+                    style={styles.fbActionButton}
+                    onPress={toggleSave}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                >
                     <Animated.View style={{ transform: [{ scale: saveScale }] }}>
                         <Ionicons
                             name={saved ? "bookmark" : "bookmark-outline"}
-                            size={22}
-                            color={saved ? "#2563EB" : "#374151"}
+                            size={19}
+                            color={saved ? "#1877F2" : "#65676B"}
                         />
                     </Animated.View>
+                    <Text style={[styles.fbActionText, saved && { color: '#1877F2', fontWeight: '700' }]}>
+                        Save
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -1053,17 +1195,17 @@ const BasePostCard = ({
 const styles = StyleSheet.create({
     cardContainer: {
         backgroundColor: 'white',
-        marginHorizontal: 14,
-        marginVertical: 10,
-        borderRadius: 24,
-        paddingBottom: 12,
+        marginHorizontal: 12,
+        marginVertical: 6,
+        borderRadius: 16,
+        paddingBottom: 4,
         borderWidth: 1,
-        borderColor: '#f1f5f9',
-        shadowColor: '#172554',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.06,
-        shadowRadius: 16,
-        elevation: 4,
+        borderColor: '#F0F2F5',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
     },
     header: {
         flexDirection: 'row',
@@ -1190,19 +1332,131 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
     },
+    mediaContainerWrapper: {
+        width: '100%',
+        alignItems: 'center',
+        marginVertical: 4,
+    },
+    mediaCardInner: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
     mediaBadge: {
         position: 'absolute',
-        bottom: 8,
-        right: 8,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
         paddingHorizontal: 8,
         paddingVertical: 4,
-        borderRadius: 20,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        zIndex: 10,
     },
     mediaBadgeText: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: 'bold',
+        color: '#ffffff',
+        fontSize: 11,
+        fontWeight: '700',
+        marginLeft: 4,
+    },
+    mediaDotsContainer: {
+        position: 'absolute',
+        bottom: 8,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 5,
+        pointerEvents: 'none',
+        zIndex: 10,
+    },
+    mediaDot: {
+        height: 5,
+        borderRadius: 2.5,
+    },
+    mediaDotActive: {
+        width: 16,
+        backgroundColor: '#ffffff',
+    },
+    mediaDotInactive: {
+        width: 5,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    reactionSummaryBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 4,
+    },
+    reactionIconsGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    reactionLikeBubble: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: '#1877F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    reactionCountText: {
+        color: '#65676B',
+        fontSize: 13,
+        fontWeight: '500',
+        marginLeft: 6,
+    },
+    commentsSharesText: {
+        color: '#65676B',
+        fontSize: 13,
+        fontWeight: '400',
+    },
+    reactionDivider: {
+        height: 1,
+        backgroundColor: '#E4E6EB',
+        marginHorizontal: 16,
+        marginVertical: 4,
+    },
+    fbActionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 4,
+        paddingHorizontal: 16,
+    },
+    fbActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 7,
+        paddingHorizontal: 2,
+    },
+    fbActionText: {
+        color: '#65676B',
+        fontSize: 12.5,
+        fontWeight: '600',
+        marginLeft: 5,
+    },
+    cornerMuteButton: {
+        position: 'absolute',
+        bottom: 12,
+        right: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 25,
+        elevation: 6,
     },
     actions: {
         flexDirection: 'row',
@@ -1363,70 +1617,215 @@ export const PostMediaCarousel = React.memo((props: any) => {
         mediaList, cardWidth,
         postAspectRatio, isVideo, paused, setPaused, shouldPlay,
         isFocused, actualShouldPlay, videoRef,
-        musicMuted, post, styles, isDetail
+        musicMuted, post, styles, isDetail,
+        hasMusic, handlePostPress
     } = props;
     
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [dynamicAspect, setDynamicAspect] = useState<number | undefined>(
+        postAspectRatio ? (isDetail ? postAspectRatio : Math.max(postAspectRatio, 9 / 16)) : undefined
+    );
+    const [viewerVisible, setViewerVisible] = useState(false);
+    const [viewerIndex, setViewerIndex] = useState(0);
+
+    const effectiveAspect = isDetail
+        ? (postAspectRatio || dynamicAspect)
+        : (postAspectRatio
+            ? Math.max(postAspectRatio, 9 / 16)
+            : (dynamicAspect ? Math.max(dynamicAspect, 9 / 16) : (isVideo(mediaList[0]) ? 9 / 16 : undefined)));
+
+    const imageViewerUrls = React.useMemo(() => {
+        return mediaList
+            .filter((uri: string) => !isVideo(uri))
+            .map((uri: string) => ({
+                url: ImageService.getDetailImageUrl(uri),
+            }));
+    }, [mediaList]);
 
     if (!mediaList || mediaList.length === 0) return null;
 
+    // Professional framed layout with subtle horizontal X-axis padding
+    const MEDIA_PADDING_X = 8;
+    const mediaWidth = cardWidth - (MEDIA_PADDING_X * 2);
+
+    const isCurrentMediaVideo = isVideo ? isVideo(mediaList[activeMediaIndex]) : false;
+    const showMuteButton = isCurrentMediaVideo || Boolean(hasMusic);
+
     return (
-        <View style={{ width: cardWidth, borderRadius: 12, overflow: 'hidden', alignSelf: 'center' }}>
-            <ScrollView
-                horizontal
-                pagingEnabled
-                nestedScrollEnabled={true}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ alignItems: 'center' }}
-                onScroll={(event) => {
-                    const slide = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
-                    if (slide !== activeMediaIndex) {
-                        setActiveMediaIndex(slide);
-                    }
-                }}
-                scrollEventThrottle={16}
-            >
-                {mediaList.map((uri: string, index: number) => (
-                    <View key={index} style={{ width: cardWidth, aspectRatio: postAspectRatio || (isVideo(uri) ? 9 / 16 : undefined), backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' }}>
-                        {isVideo(uri) ? (
-                            <TouchableOpacity
-                                activeOpacity={0.95}
-                                onPress={() => setPaused(!paused)}
-                                style={{ width: '100%', height: '100%' }}
-                            >
-                                <VideoItem
-                                    uri={uri}
-                                    poster={mediaList.find((m: string) => !isVideo(m)) || (mediaList[0]?.toLowerCase().endsWith('.mp4') ? undefined : mediaList[0])}
-                                    isActive={shouldPlay && isFocused && index === activeMediaIndex}
-                                    shouldPlay={index === activeMediaIndex && actualShouldPlay}
-                                    forwardedRef={index === activeMediaIndex ? videoRef : null}
-                                    isMuted={musicMuted}
-                                    aspectRatio={postAspectRatio}
-                                />
-                            </TouchableOpacity>
-                        ) : (
-                            <PostImage uri={uri} forcedAspect={postAspectRatio} isDetail={isDetail} />
-                        )}
-                    </View>
-                ))}
-            </ScrollView>
-            {mediaList.length > 1 && (
-                <View style={styles.mediaBadge}>
-                    <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
-                </View>
-            )}
-            {/* Apply Filter Overlay if meta contains filterId */}
-            {(() => {
-                try {
-                    if (post.link) {
-                        const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
-                        if (meta.filterId && meta.filterId !== 'none') {
-                            return <FilterOverlay filterId={meta.filterId} />;
+        <View style={[styles.mediaContainerWrapper, { width: cardWidth }]}>
+            <View style={[styles.mediaCardInner, { width: mediaWidth }]}>
+                <ScrollView
+                    horizontal
+                    pagingEnabled
+                    nestedScrollEnabled={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ alignItems: 'center' }}
+                    onScroll={(event) => {
+                        const slide = Math.round(event.nativeEvent.contentOffset.x / mediaWidth);
+                        if (slide !== activeMediaIndex) {
+                            setActiveMediaIndex(slide);
                         }
-                    }
-                } catch (e) { }
-                return null;
-            })()}
+                    }}
+                    scrollEventThrottle={16}
+                >
+                    {mediaList.map((uri: string, index: number) => (
+                        <View 
+                            key={index} 
+                            style={{ 
+                                width: mediaWidth, 
+                                aspectRatio: effectiveAspect || (isVideo(uri) ? 9 / 16 : 4 / 3), 
+                                backgroundColor: isVideo(uri) ? '#0F172A' : '#F8FAFC', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            {isVideo(uri) ? (
+                                <TouchableOpacity
+                                    activeOpacity={0.95}
+                                    onPress={() => {
+                                        if (!isDetail && handlePostPress) {
+                                            handlePostPress();
+                                        } else {
+                                            setPaused(!paused);
+                                        }
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                >
+                                    <VideoItem
+                                        uri={uri}
+                                        poster={
+                                            ((post as any)?.thumbnail ? ((post as any).thumbnail.startsWith('http') ? (post as any).thumbnail : `${POST_MEDIA_PATH}${(post as any).thumbnail}`) : undefined) ||
+                                             mediaList.find((m: string) => !isVideo(m)) ||
+                                            (!isVideo(mediaList[0]) ? mediaList[0] : undefined)
+                                        }
+                                        isActive={shouldPlay && isFocused && index === activeMediaIndex}
+                                        shouldPlay={index === activeMediaIndex && actualShouldPlay}
+                                        forwardedRef={index === activeMediaIndex ? videoRef : null}
+                                        isMuted={musicMuted}
+                                        aspectRatio={effectiveAspect}
+                                        isDetail={isDetail}
+                                    />
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    activeOpacity={0.95}
+                                    onPress={() => {
+                                        if (!isDetail && handlePostPress) {
+                                            handlePostPress();
+                                        } else {
+                                            const currentUrl = ImageService.getDetailImageUrl(uri);
+                                            const idx = imageViewerUrls.findIndex((item: any) => item.url === currentUrl || item.url === uri);
+                                            setViewerIndex(idx >= 0 ? idx : 0);
+                                            setViewerVisible(true);
+                                        }
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                >
+                                    <PostImage
+                                        uri={uri}
+                                        forcedAspect={effectiveAspect}
+                                        isDetail={isDetail}
+                                        onAspectCalculated={(asp) => {
+                                            if (!postAspectRatio) setDynamicAspect(asp);
+                                        }}
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    ))}
+                </ScrollView>
+
+                {/* Multiple Media Badge */}
+                {mediaList.length > 1 && (
+                    <View style={styles.mediaBadge}>
+                        <Ionicons name="images" size={12} color="#ffffff" />
+                        <Text style={styles.mediaBadgeText}>{activeMediaIndex + 1}/{mediaList.length}</Text>
+                    </View>
+                )}
+
+                {/* Multiple Media Dots Indicator */}
+                {mediaList.length > 1 && (
+                    <View style={styles.mediaDotsContainer}>
+                        {mediaList.map((_: any, idx: number) => (
+                            <View
+                                key={idx}
+                                style={[
+                                    styles.mediaDot,
+                                    idx === activeMediaIndex ? styles.mediaDotActive : styles.mediaDotInactive,
+                                ]}
+                            />
+                        ))}
+                    </View>
+                )}
+
+                {/* Instagram-style Media Corner Mute/Unmute Button */}
+                {showMuteButton && (
+                    <TouchableOpacity
+                        style={styles.cornerMuteButton}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            MuteManager.toggle();
+                        }}
+                        activeOpacity={0.8}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Ionicons
+                            name={musicMuted ? "volume-mute" : "volume-high"}
+                            size={16}
+                            color="#ffffff"
+                        />
+                    </TouchableOpacity>
+                )}
+
+                {/* Apply Filter Overlay if meta contains filterId */}
+                {(() => {
+                    try {
+                        if (post.link) {
+                            const meta = typeof post.link === 'string' ? JSON.parse(post.link) : post.link;
+                            if (meta.filterId && meta.filterId !== 'none') {
+                                return <FilterOverlay filterId={meta.filterId} />;
+                            }
+                        }
+                    } catch (e) { }
+                    return null;
+                })()}
+            </View>
+
+            {/* Instagram-style Full Screen Zoomable Image Viewer Modal on Tap */}
+            {imageViewerUrls.length > 0 && (
+                <Modal visible={viewerVisible} transparent={true} onRequestClose={() => setViewerVisible(false)}>
+                    <ImageViewer
+                        imageUrls={imageViewerUrls}
+                        index={viewerIndex}
+                        onSwipeDown={() => setViewerVisible(false)}
+                        enableSwipeDown={true}
+                        renderIndicator={(currentIndex, allSize) => (
+                            allSize && allSize > 1 ? (
+                                <View style={{ position: 'absolute', top: 48, left: 20, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
+                                    <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>{currentIndex}/{allSize}</Text>
+                                </View>
+                            ) : <View />
+                        )}
+                        renderHeader={() => (
+                            <TouchableOpacity
+                                onPress={() => setViewerVisible(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: 45,
+                                    right: 20,
+                                    zIndex: 9999,
+                                    backgroundColor: 'rgba(0,0,0,0.6)',
+                                    borderRadius: 20,
+                                    padding: 6
+                                }}
+                            >
+                                <Ionicons name="close" size={26} color="white" />
+                            </TouchableOpacity>
+                        )}
+                    />
+                </Modal>
+            )}
         </View>
     );
 });

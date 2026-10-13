@@ -29,6 +29,20 @@ if (isset($_FILES['media']) && !empty($_FILES['media']['name'][0])) {
     }
 }
 
+if (isset($_FILES['thumbnail']) && !empty($_FILES['thumbnail']['tmp_name'])) {
+    $firstVideo = null;
+    foreach ($mediaFiles as $m) {
+        if (preg_match('/\.(mp4|mov|avi|wmv|flv|mkv)$/i', $m)) {
+            $firstVideo = $m;
+            break;
+        }
+    }
+    if ($firstVideo) {
+        $thumbName = preg_replace('/\.(mp4|mov|avi|wmv|flv|mkv)$/i', '_thumb.jpg', $firstVideo);
+        move_uploaded_file($_FILES['thumbnail']['tmp_name'], $uploadDir . $thumbName);
+    }
+}
+
 $mediaString = !empty($mediaFiles) ? implode(",", $mediaFiles) : NULL;
 date_default_timezone_set("Asia/Kolkata");
 $date = date("Y-m-d H:i:s");

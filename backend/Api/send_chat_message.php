@@ -133,7 +133,8 @@ if ($redis) {
     QueueManager::pushJob('sync_chat', $chatObj, "chat_{$client_message_id}", 600);
 
     // 4. WebSocket Broadcast
-    $url = 'http://localhost:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     
     // Determine real user IDs for WebSocket routing
     $receiver_user_id = $receiver;

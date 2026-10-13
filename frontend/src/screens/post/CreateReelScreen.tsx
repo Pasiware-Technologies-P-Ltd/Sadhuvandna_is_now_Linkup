@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     },
     searchInput: { flex: 1, color: 'white', marginLeft: 10, fontSize: 16 },
     musicItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    musicThumb: { width: 50, height: 50, borderRadius: 8 },
+    musicThumb: { width: 50, height: 50, borderRadius: 8, borderWidth: 1.5, borderColor: '#2563EB', backgroundColor: '#2563EB', overflow: 'hidden' },
     musicTitle: { color: 'white', fontSize: 15, fontWeight: 'bold' },
     musicArtist: { color: '#888', fontSize: 13, marginTop: 2 },
     countdownOverlay: {

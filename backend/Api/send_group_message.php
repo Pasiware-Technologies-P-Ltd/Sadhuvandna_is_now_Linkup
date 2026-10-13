@@ -98,7 +98,8 @@ if ($redis) {
     QueueManager::pushJob('sync_group_chat', $chatObj, "gchat_{$client_message_id}", 600);
 
     // 4. WebSocket Broadcast
-    $url = 'http://localhost:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     
     $groupNameQ = $con->query("SELECT name FROM tbl_groups WHERE id = '$group_id' LIMIT 1");
     $groupName = ($groupNameQ && $gRow = $groupNameQ->fetch_assoc()) ? $gRow['name'] : "Group";

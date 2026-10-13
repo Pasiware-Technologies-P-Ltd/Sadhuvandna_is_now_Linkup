@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, StyleSheet, Alert, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator, StyleSheet, Alert, Animated, Platform, StatusBar, Easing } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -10,10 +10,13 @@ import { FlatList, ViewToken } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useIsFocused } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
+import { useBadge } from '../../context/BadgeContext';
+import MatrimonyRingsIcon from '../../components/MatrimonyRingsIcon';
+import NewsPaperIcon from '../../components/NewsPaperIcon';
+import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';
 import { WebView } from 'react-native-webview';
@@ -24,6 +27,8 @@ import * as Sharing from 'expo-sharing';
 import { logoBase64 } from '../../constants/logoBase64';
 import { FFmpegKit, ReturnCode } from '@wokcito/ffmpeg-kit-react-native';
 import { Asset } from 'expo-asset';
+import { getVideoThumbnail } from '../../utils/thumbnailHelper';
+import { useTabSwipe } from '../../utils/useTabSwipe';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -34,6 +39,23 @@ const isVideo = (uri: string) => {
     if (!uri) return false;
     const lower = uri.toLowerCase();
     return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.m4v') || lower.endsWith('.3gp') || lower.endsWith('.mkv');
+};
+
+const resolvePhotoUri = (photo: string | undefined | null): string | null => {
+    if (!photo || photo === 'null' || photo === 'undefined' || photo.includes('via.placeholder') || (typeof photo === 'string' && photo.trim() === '')) {
+        return null;
+    }
+    const clean = String(photo).trim();
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+        return clean;
+    }
+    if (clean.startsWith('/')) {
+        return `${WEBSITE_URL}${clean}`;
+    }
+    if (clean.startsWith('uploads/')) {
+        return `${WEBSITE_URL}/${clean}`;
+    }
+    return `${PHOTO_URL}${clean}`;
 };
 
 const FILTERS: any = {
@@ -512,17 +534,17 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
     const [localThumbnail, setLocalThumbnail] = useState<string | null>(null);
 
     useEffect(() => {
-        const generateThumb = async () => {
-            if (!serverThumb && fullVideoUri && isNearby && !localThumbnail) {
-                try {
-                    const { uri } = await VideoThumbnails.getThumbnailAsync(fullVideoUri, { time: 1000 });
-                    setLocalThumbnail(uri);
-                } catch (e) {
-                    console.log("Error generating thumbnail:", e);
+        let isMounted = true;
+        if (!serverThumb && fullVideoUri && isNearby && !localThumbnail) {
+            getVideoThumbnail(fullVideoUri).then((thumb) => {
+                if (isMounted && thumb) {
+                    setLocalThumbnail(thumb);
                 }
-            }
+            });
+        }
+        return () => {
+            isMounted = false;
         };
-        generateThumb();
     }, [isNearby, fullVideoUri, serverThumb, localThumbnail]);
 
     const finalThumbUri = serverThumb ? (serverThumb.startsWith('http') ? serverThumb : `${POST_MEDIA_PATH}${serverThumb}`) : localThumbnail;
@@ -967,16 +989,69 @@ const ReelsScreen = ({ navigation, route }: any) => {
     const filterUserId = route.params?.filter_user_id;
     const showBack = route.params?.showBack || !!filterUserId;
     
+    const [user, setUser] = useState<any>(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const tabSwipe = useTabSwipe({ currentTab: 'Reels', isBusiness: user?.is_business == 1 });
+    const insets = useSafeAreaInsets();
+    const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
+    const { notificationCount, chatCount, refreshCounts } = useBadge();
+
     const [layoutHeight, setLayoutHeight] = useState(height);
     const flashListRef = useRef<any>(null);
     const REELS_BATCH_SIZE = 4;
     const [refreshKey, setRefreshKey] = useState(0);
-    
+
+    // Facebook-style silky smooth auto-collapsing top header on scroll (native driver)
+    const headerAnim = useRef(new Animated.Value(0)).current;
+    const lastScrollY = useRef(0);
+    const accumulatedScroll = useRef(0);
+    const isHeaderHidden = useRef(false);
+
+    const animateHeader = useCallback((toHide: boolean) => {
+        if (isHeaderHidden.current === toHide) return;
+        isHeaderHidden.current = toHide;
+        Animated.timing(headerAnim, {
+            toValue: toHide ? -TOP_HEADER_COLLAPSE : 0,
+            duration: 280,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            useNativeDriver: true,
+        }).start();
+    }, [headerAnim]);
+
+    const handleScroll = useCallback((event: any) => {
+        const currentY = event.nativeEvent.contentOffset.y;
+        const diff = currentY - lastScrollY.current;
+        lastScrollY.current = currentY;
+
+        if (currentY <= 10) {
+            accumulatedScroll.current = 0;
+            animateHeader(false);
+            return;
+        }
+
+        if (diff > 0) {
+            if (accumulatedScroll.current < 0) accumulatedScroll.current = 0;
+            accumulatedScroll.current += diff;
+            if (accumulatedScroll.current > 24 && currentY > 40) {
+                animateHeader(true);
+            }
+        } else if (diff < 0) {
+            if (accumulatedScroll.current > 0) accumulatedScroll.current = 0;
+            accumulatedScroll.current += diff;
+            if (accumulatedScroll.current < -18) {
+                animateHeader(false);
+            }
+        }
+    }, [animateHeader]);
+
     useEffect(() => {
         AsyncStorage.getItem('user').then(u => {
-            if (u) setCurrentUserId(JSON.parse(u).id);
+            if (u) {
+                const parsed = JSON.parse(u);
+                setUser(parsed);
+                setCurrentUserId(parsed.id);
+            }
         });
     }, []);
 
@@ -1057,6 +1132,11 @@ const ReelsScreen = ({ navigation, route }: any) => {
             const index = viewableItems[0].index;
             if (index !== null && index !== undefined) {
                 setActiveIndex(index);
+                if (index === 0) {
+                    animateHeader(false);
+                } else {
+                    animateHeader(true);
+                }
             }
         }
     }).current;
@@ -1092,9 +1172,9 @@ const ReelsScreen = ({ navigation, route }: any) => {
     }
 
     return (
-        <View style={[styles.container, { height: layoutHeight }]} onLayout={(e) => setLayoutHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.container, { height: layoutHeight }]} onLayout={(e) => setLayoutHeight(e.nativeEvent.layout.height)} {...tabSwipe.panHandlers}>
             {isFetching && !isFetchingNextPage && (
-                <View style={{ position: 'absolute', top: 60, width: '100%', alignItems: 'center', zIndex: 100 }}>
+                <View style={{ position: 'absolute', top: statusBarHeight + 120, width: '100%', alignItems: 'center', zIndex: 100 }}>
                     <ActivityIndicator size="small" color="white" />
                 </View>
             )}
@@ -1106,6 +1186,8 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 keyExtractor={(item) => item.id.toString()}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
                 onEndReached={() => {
@@ -1116,21 +1198,41 @@ const ReelsScreen = ({ navigation, route }: any) => {
                 onEndReachedThreshold={0.5}
             />
 
-            <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
+            <LinkUpHeader
+                currentTab="Reels"
+                headerAnim={headerAnim}
+                user={user}
+                onTabPress={(tab) => {
+                    if (tab === 'Reels') {
+                        animateHeader(false);
+                        flashListRef.current?.scrollToIndex({ index: 0, animated: true });
+                    }
+                }}
+                onPlusPress={() => navigation.navigate('CreateReel')}
+                tabSwipeHandlers={tabSwipe.panHandlers}
+                statusBarHeight={statusBarHeight}
+                subHeader={
+                    <View style={styles.reelsSubHeader}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            {showBack && (
+                                <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 6 }}>
+                                    <Ionicons name="arrow-back" size={24} color="white" />
+                                </TouchableOpacity>
+                            )}
+                            <Text style={styles.headerTitle}>{t('reels')}</Text>
+                            <Ionicons name="chevron-down" size={18} color="white" />
+                        </View>
 
-            <SafeAreaView style={styles.headerOverlay} edges={['top']} pointerEvents="box-none">
-                <View style={styles.headerContent}>
-                    {showBack && (
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={28} color="white" />
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('CreateReel')}
+                            style={styles.cameraButton}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="camera-outline" size={26} color="white" />
                         </TouchableOpacity>
-                    )}
-                    <Text style={styles.headerTitle}>{t('reels')}</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('CreateReel')} style={styles.cameraButton}>
-                        <Ionicons name="camera-outline" size={28} color="white" />
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+                    </View>
+                }
+            />
         </View>
     );
 };
@@ -1180,31 +1282,23 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
     },
-    headerOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-    },
-    headerContent: {
+    reelsSubHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-    },
-    backButton: {
-        marginRight: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     headerTitle: {
         color: 'white',
         fontSize: 20,
         fontWeight: 'bold',
-        flex: 1,
+        textShadowColor: 'rgba(0,0,0,0.6)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
     cameraButton: {
-        padding: 10,
-        marginRight: 5,
+        padding: 6,
     },
     bottomOverlay: {
         position: 'absolute',

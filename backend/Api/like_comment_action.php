@@ -32,7 +32,8 @@ $action = $data['action'] ?? $_REQUEST['action'] ?? '';
 
 // WebSocket helper
 function triggerWebSocket($room, $type, $payload, $isGlobal = true) {
-    $url = 'http://127.0.0.1:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     $postData = array(
         'room' => $room,
         'type' => $type,

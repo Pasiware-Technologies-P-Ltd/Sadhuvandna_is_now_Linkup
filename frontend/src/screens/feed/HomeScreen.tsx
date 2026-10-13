@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, RefreshControl, Linking, Alert, Modal, Pressable, StyleSheet, DeviceEventEmitter } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image as ExpoImage } from 'expo-image';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, RefreshControl, Linking, Alert, Modal, Pressable, StyleSheet, DeviceEventEmitter, Platform, Animated, Easing, StatusBar } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +17,11 @@ import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { ImageService } from '../../services/ImageService';
 import socketService from '../../services/socket';
 import StoryRing from '../../components/StoryRing';
+import MatrimonyRingsIcon from '../../components/MatrimonyRingsIcon';
+import NewsPaperIcon from '../../components/NewsPaperIcon';
+import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTabSwipe } from '../../utils/useTabSwipe';
 
 const { width } = Dimensions.get('window');
 
@@ -26,11 +32,193 @@ interface User {
     id: string;
     name: string;
     profile_photo?: string;
+    photo?: string;
+    avatar?: string;
     is_business?: number;
 }
 
 const isVideo = (uri: string) => {
     return uri.toLowerCase().endsWith('.mp4') || uri.toLowerCase().endsWith('.mov');
+};
+
+const resolvePhotoUri = (photo: string | undefined | null): string | null => {
+    if (!photo || photo === 'null' || photo === 'undefined' || photo.includes('via.placeholder') || (typeof photo === 'string' && photo.trim() === '')) {
+        return null;
+    }
+    const clean = String(photo).trim();
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+        return clean;
+    }
+    if (clean.startsWith('/')) {
+        return `${WEBSITE_URL}${clean}`;
+    }
+    if (clean.startsWith('uploads/')) {
+        return `${WEBSITE_URL}/${clean}`;
+    }
+    return `${PHOTO_URL}${clean}`;
+};
+
+// Reusable UserAvatar component that NEVER shows a blank circle
+const UserAvatar = ({
+    photoUrl,
+    name,
+    size = 40,
+    fontSize = 16,
+    style,
+    borderWidth = 0,
+    borderColor = 'transparent',
+}: {
+    photoUrl?: string | null;
+    name?: string;
+    size?: number;
+    fontSize?: number;
+    style?: any;
+    borderWidth?: number;
+    borderColor?: string;
+}) => {
+    const [hasError, setHasError] = React.useState(false);
+    React.useEffect(() => {
+        setHasError(false);
+    }, [photoUrl]);
+
+    const uri = !hasError ? resolvePhotoUri(photoUrl) : null;
+
+    if (uri) {
+        return (
+            <ExpoImage
+                source={{ uri }}
+                style={[
+                    { width: size, height: size, borderRadius: size / 2, borderWidth, borderColor, backgroundColor: '#E2E8F0' },
+                    style,
+                ]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={150}
+                onError={() => setHasError(true)}
+            />
+        );
+    }
+
+    const initial = (name && name.trim().length > 0) ? name.trim().charAt(0).toUpperCase() : 'U';
+    return (
+        <View
+            style={[
+                style,
+                {
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: '#1877F2',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth,
+                    borderColor,
+                },
+            ]}
+        >
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize }}>
+                {initial}
+            </Text>
+        </View>
+    );
+};
+
+// Facebook-style Create Story Card (always present as first item)
+const CreateStoryCardItem = ({
+    photoUri,
+    onPress,
+}: {
+    photoUri: string | null;
+    onPress: () => void;
+}) => {
+    const [imgError, setImgError] = React.useState(false);
+    React.useEffect(() => {
+        setImgError(false);
+    }, [photoUri]);
+    const showPhoto = !!photoUri && !imgError;
+
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.88}
+            style={{
+                width: 105,
+                height: 175,
+                borderRadius: 16,
+                backgroundColor: 'white',
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: '#E2E8F0',
+                marginRight: 10,
+                position: 'relative',
+            }}
+        >
+            {/* Top half — User's Profile Photo or Blue camera placeholder */}
+            <View style={{ width: '100%', height: 110, overflow: 'hidden', backgroundColor: '#F1F5F9' }}>
+                {showPhoto ? (
+                    <ExpoImage
+                        source={{ uri: photoUri! }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={150}
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <LinearGradient
+                        colors={['#2563EB', '#1D4ED8', '#1E40AF']}
+                        style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                    >
+                        <View style={{
+                            width: 44, height: 44, borderRadius: 22,
+                            backgroundColor: 'rgba(255,255,255,0.25)',
+                            justifyContent: 'center', alignItems: 'center',
+                            borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)',
+                        }}>
+                            <Ionicons name="camera" size={22} color="#FFFFFF" />
+                        </View>
+                    </LinearGradient>
+                )}
+            </View>
+
+            {/* Blue + button sitting on the divider */}
+            <View
+                style={{
+                    position: 'absolute',
+                    top: 92,
+                    alignSelf: 'center',
+                    width: 36, height: 36, borderRadius: 18,
+                    backgroundColor: '#1877F2',
+                    alignItems: 'center', justifyContent: 'center',
+                    borderWidth: 3, borderColor: 'white',
+                    zIndex: 10,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 3,
+                    elevation: 4,
+                }}
+            >
+                <Ionicons name="add" size={20} color="white" />
+            </View>
+
+            {/* Bottom half */}
+            <View style={{
+                flex: 1,
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                paddingBottom: 10,
+                backgroundColor: 'white',
+            }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#0F172A', textAlign: 'center' }}>
+                    Create Story
+                </Text>
+                <Text style={{ fontSize: 9, color: '#64748B', fontWeight: '500', marginTop: 1 }}>
+                    Share photo
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
 };
 
 const HomeScreen = () => {
@@ -44,14 +232,100 @@ const HomeScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const setUserWithRef = (u: any) => { userRef.current = u; setUser(u); };
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const tabSwipe = useTabSwipe({ currentTab: 'Home', isBusiness: user?.is_business == 1 });
+    const insets = useSafeAreaInsets();
+    const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
+
+    // Facebook-style silky smooth auto-collapsing top header on scroll (native driver)
+    const headerAnim = useRef(new Animated.Value(0)).current;
+    const lastScrollY = useRef(0);
+    const accumulatedScroll = useRef(0);
+    const isHeaderHidden = useRef(false);
+
+    const animateHeader = useCallback((toHide: boolean) => {
+        if (isHeaderHidden.current === toHide) return;
+        isHeaderHidden.current = toHide;
+        Animated.timing(headerAnim, {
+            toValue: toHide ? -TOP_HEADER_COLLAPSE : 0,
+            duration: 280,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            useNativeDriver: true,
+        }).start();
+    }, [headerAnim]);
+
+    const handleFeedScroll = useCallback((event: any) => {
+        const currentY = event.nativeEvent.contentOffset.y;
+        const diff = currentY - lastScrollY.current;
+        lastScrollY.current = currentY;
+
+        // At the very top of feed (or pull-to-refresh), always smoothly reveal header
+        if (currentY <= 10) {
+            accumulatedScroll.current = 0;
+            animateHeader(false);
+            return;
+        }
+
+        if (diff > 0) {
+            // User is scrolling DOWN
+            if (accumulatedScroll.current < 0) {
+                accumulatedScroll.current = 0;
+            }
+            accumulatedScroll.current += diff;
+
+            // Trigger smooth hide once scrolled down by at least 24px and past top zone
+            if (accumulatedScroll.current > 24 && currentY > 40) {
+                animateHeader(true);
+            }
+        } else if (diff < 0) {
+            // User is scrolling UP
+            if (accumulatedScroll.current > 0) {
+                accumulatedScroll.current = 0;
+            }
+            accumulatedScroll.current += diff;
+
+            // Trigger smooth show once scrolled up by at least 18px
+            if (accumulatedScroll.current < -18) {
+                animateHeader(false);
+            }
+        }
+    }, [animateHeader]);
+
+    const handleLogout = () => {
+        setShowMoreMenu(false);
+        Alert.alert(
+            "Log Out",
+            "Are you sure you want to log out?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Log Out",
+                    style: "destructive",
+                    onPress: async () => {
+                        await AsyncStorage.removeItem('user');
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Auth' }],
+                        });
+                    }
+                }
+            ]
+        );
+    };
     const cursorScoreRef = useRef<string | null>(null);
     const cursorIdRef = useRef<number | null>(null);
     const statsFetchedRef = useRef<Set<string>>(new Set());
     const isFetchingRef = useRef(false);
     const fetchInitialFeedRef = useRef<Function | null>(null);
+    const fetchStoriesOnlyRef = useRef<Function | null>(null);
+    const lastStoriesFetchTimeRef = useRef<number>(0);
+    const isFetchingStoriesRef = useRef<boolean>(false);
     const userRef = useRef<any>(null);
+    const setUserWithRef = (u: any) => {
+        userRef.current = u;
+        setUser(u);
+    };
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
 
@@ -113,8 +387,9 @@ const HomeScreen = () => {
                 console.error("Switch error:", err);
             }
         });
-        
+
         const uploadSub = DeviceEventEmitter.addListener('uploadSuccess', () => {
+            fetchStoriesOnlyRef.current?.(userRef.current?.id, true);
             fetchInitialFeed(userRef.current?.id, false); // false to avoid blocking loading indicator
         });
 
@@ -140,6 +415,19 @@ const HomeScreen = () => {
                 }
                 fetchInitialFeed(u?.id);
                 refreshCounts();
+
+                // Fetch fresh profile in background so latest profile_photo is always available
+                if (u?.id) {
+                    api.get(`/get_user_profile.php?user_id=${u.id}`).then(res => {
+                        if (res.data?.status === 'success' && res.data.user) {
+                            const fresh = { ...u, ...res.data.user };
+                            if (fresh.profile_photo && !fresh.photo) fresh.photo = fresh.profile_photo;
+                            if (fresh.photo && !fresh.profile_photo) fresh.profile_photo = fresh.photo;
+                            setUserWithRef(fresh);
+                            AsyncStorage.setItem('user', JSON.stringify(fresh));
+                        }
+                    }).catch(() => {});
+                }
             } catch (err) {
                 console.error("Init Error:", err);
                 fetchInitialFeed();
@@ -148,6 +436,34 @@ const HomeScreen = () => {
         };
         initUser();
     }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            let isMounted = true;
+            const refreshUser = async () => {
+                try {
+                    const uStr = await AsyncStorage.getItem('user');
+                    if (uStr && isMounted) {
+                        const u = JSON.parse(uStr);
+                        setUserWithRef(u);
+                        if (u?.id) {
+                            api.get(`/get_user_profile.php?user_id=${u.id}`).then(res => {
+                                if (isMounted && res.data?.status === 'success' && res.data.user) {
+                                    const fresh = { ...u, ...res.data.user };
+                                    if (fresh.profile_photo && !fresh.photo) fresh.photo = fresh.profile_photo;
+                                    if (fresh.photo && !fresh.profile_photo) fresh.profile_photo = fresh.photo;
+                                    setUserWithRef(fresh);
+                                    AsyncStorage.setItem('user', JSON.stringify(fresh));
+                                }
+                            }).catch(() => {});
+                        }
+                    }
+                } catch (e) {}
+            };
+            refreshUser();
+            return () => { isMounted = false; };
+        }, [])
+    );
 
     useEffect(() => {
         const handleCommentAdded = (data: any) => {
@@ -287,7 +603,7 @@ const HomeScreen = () => {
             if (!navigation.isFocused() && posts.length > 0) return;
             if (isFetchingRef.current) return;
         }
-        
+
         const uid = userId || userRef.current?.id || user?.id;
         const finalUid = uid || 0;
 
@@ -361,9 +677,22 @@ const HomeScreen = () => {
             }
 
             if (storiesRes.data.status === 'success') {
+                lastStoriesFetchTimeRef.current = Date.now();
                 const myStories = storiesRes.data.my_stories || [];
                 const others = storiesRes.data.others || [];
-                const list = [{ id: 'mine', name: 'Your Story', profile_photo: user?.profile_photo, stories: myStories, isMine: true }];
+                const list: any[] = [];
+                // 1. Create Story card is ALWAYS first
+                list.push({ id: 'create_story_card', isCreateCard: true });
+                // 2. If user has active stories, show 'Your Story' card
+                if (myStories.length > 0) {
+                    list.push({
+                        id: 'my_story_card',
+                        name: 'Your Story',
+                        profile_photo: userRef.current?.profile_photo || user?.profile_photo,
+                        stories: myStories,
+                        isMine: true,
+                    });
+                }
                 finalStories = [...list, ...others];
                 setStories(finalStories);
             }
@@ -404,9 +733,54 @@ const HomeScreen = () => {
         fetchInitialFeedRef.current?.(userRef.current?.id, true);
     }, []);
 
+    const fetchStoriesOnly = useCallback(async (uid?: string, force: boolean = false) => {
+        const finalUid = uid || userRef.current?.id || 0;
+        if (!finalUid) return; // Do not fetch with 0 before user is initialized
+
+        const now = Date.now();
+        if (!force) {
+            if (isFetchingStoriesRef.current) return;
+            // Prevent redundant fetches within 20 seconds
+            if (now - lastStoriesFetchTimeRef.current < 20000) return;
+        }
+
+        isFetchingStoriesRef.current = true;
+        try {
+            const storiesRes = await api.get('fetch_stories.php?user_id=' + finalUid);
+            lastStoriesFetchTimeRef.current = Date.now();
+            if (storiesRes.data.status === 'success') {
+                const myStories = storiesRes.data.my_stories || [];
+                const others = storiesRes.data.others || [];
+                const list: any[] = [];
+                list.push({ id: 'create_story_card', isCreateCard: true });
+                if (myStories.length > 0) {
+                    list.push({
+                        id: 'my_story_card',
+                        name: 'Your Story',
+                        profile_photo: userRef.current?.profile_photo || userRef.current?.photo,
+                        stories: myStories,
+                        isMine: true,
+                    });
+                }
+                setStories([...list, ...others]);
+            }
+        } catch (e) {
+            console.log('[HomeScreen] fetchStoriesOnly error:', e);
+        } finally {
+            isFetchingStoriesRef.current = false;
+        }
+    }, []);
+    fetchStoriesOnlyRef.current = fetchStoriesOnly;
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchStoriesOnly();
+        }, [fetchStoriesOnly])
+    );
+
     const fetchNextPage = async () => {
         if (!hasMore || loading || isFetchingRef.current || cursorScoreRef.current === null || cursorIdRef.current === null) return;
-        
+
         const finalUid = user?.id || 0;
         isFetchingRef.current = true;
         setIsFetchingMore(true);
@@ -425,7 +799,7 @@ const HomeScreen = () => {
                         cursorScoreRef.current = lastPost.rand_score;
                         cursorIdRef.current = lastPost.id;
                     }
-                    
+
                     const idsToFetchStats = newPosts.map((p: any) => p.id);
                     const newStatsIds = idsToFetchStats.filter((id: string) => !statsFetchedRef.current.has(id));
                     if (newStatsIds.length > 0) {
@@ -467,77 +841,107 @@ const HomeScreen = () => {
     };
 
     const renderStoryItem = ({ item }: { item: any }) => {
-        const hasStory = item.stories && item.stories.length > 0;
-        const hasUnseen = item.isMine ? false : (parseInt(item.unseen_count) > 0);
-        
-        // Premium ring for users with stories or others with unseen stories
-        const showRing = item.isMine ? hasStory : hasUnseen;
-        
-        const handlePress = () => {
-            if (item.isMine && !hasStory) {
-                navigation.navigate('CreateStory');
-            } else {
-                if (!item.isMine) {
-                    setStories(prev => prev.map(s => s.id === item.id ? { ...s, unseen_count: 0 } : s));
-                }
-                navigation.navigate('StoryViewer', {
-                    stories: item.stories,
-                    initialIndex: 0,
-                    userId: item.isMine ? user?.id : item.user_id,
-                    userName: item.name,
-                    userPhoto: item.profile_photo,
-                });
-            }
+        // 1. Create Story Card (Always present as first item)
+        if (item.isCreateCard) {
+            const myPhoto = user?.profile_photo || (user as any)?.photo || (user as any)?.avatar || userRef.current?.profile_photo || (userRef.current as any)?.photo || (userRef.current as any)?.avatar;
+            const photoUri = resolvePhotoUri(myPhoto);
+            return (
+                <CreateStoryCardItem
+                    photoUri={photoUri}
+                    onPress={() => navigation.navigate('CreateStory')}
+                />
+            );
+        }
+
+        // Fix: story media from API comes as "uploads/stories/xxx.jpg" — prepend WEBSITE_URL directly
+        const getStoryMediaUrl = (media: string) => {
+            if (!media) return null;
+            if (media.startsWith('http')) return media;
+            return `${WEBSITE_URL}/${media}`;
         };
 
-        const photoUrl = item.isMine ? (user?.profile_photo || item.profile_photo) : item.profile_photo;
-        
-        const renderAvatarContent = () => (
-            <>
-                {photoUrl ? (
-                    <Image
-                        source={{ uri: `${getImageUrl(photoUrl)}` }}
-                        style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#E2E8F0' }}
-                    />
-                ) : (
-                    <View style={{ width: '100%', height: '100%', borderRadius: 28, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: 18 }}>
-                            {item.isMine ? (user?.name ? user.name.charAt(0).toUpperCase() : 'Y') : (item.name ? item.name.charAt(0).toUpperCase() : 'U')}
-                        </Text>
-                    </View>
-                )}
-            </>
-        );
+        const myPhoto = user?.profile_photo || (user as any)?.photo || userRef.current?.profile_photo || (userRef.current as any)?.photo;
+        const validPhoto = myPhoto && myPhoto !== 'null' && myPhoto !== 'undefined' && !myPhoto.includes('via.placeholder');
+        const photoUrl = item.isMine ? (validPhoto ? myPhoto : null) : item.profile_photo;
+
+        const storyCover = (item.stories && item.stories[0]?.media)
+            ? getStoryMediaUrl(item.stories[0].media)
+            : (photoUrl ? (photoUrl.startsWith('http') ? photoUrl : `${PHOTO_URL}${photoUrl}`) : null);
+
+        const handlePress = () => {
+            if (!item.isMine) {
+                setStories(prev => prev.map(s => s.id === item.id ? { ...s, unseen_count: 0 } : s));
+            }
+            navigation.navigate('StoryViewer', {
+                stories: item.stories,
+                initialIndex: 0,
+                userId: item.isMine ? user?.id : item.user_id,
+                userName: item.isMine ? (user?.name || 'Your Story') : item.name,
+                userPhoto: photoUrl,
+            });
+        };
 
         return (
-            <View style={{ alignItems: 'center', marginRight: 16 }}>
-                <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={{ marginBottom: 6 }}>
-                    {showRing ? (
-                        <StoryRing storyCount={item.stories ? item.stories.length : 1} size={62}>
-                            {renderAvatarContent()}
-                        </StoryRing>
-                    ) : (
-                        <View style={{ width: 62, height: 62, borderRadius: 31, padding: 3, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}>
-                            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'white', padding: 2, justifyContent: 'center', alignItems: 'center' }}>
-                                {renderAvatarContent()}
-                            </View>
+            <TouchableOpacity
+                onPress={handlePress}
+                activeOpacity={0.85}
+                style={homeStyles.storyCard}
+            >
+                {/* Always show gradient background as base */}
+                <LinearGradient
+                    colors={item.isMine ? ['#1E3A8A', '#0F172A'] : ['#1e293b', '#0f172a']}
+                    style={StyleSheet.absoluteFill}
+                />
+                {storyCover ? (
+                    <Image
+                        source={{ uri: storyCover }}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                    />
+                ) : null}
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.85)']}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                {/* Top Row: Avatar with story ring + story count badge for Your Story */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 19,
+                        borderWidth: 2.5,
+                        borderColor: item.isMine ? '#3B82F6' : (item.unseen_count > 0 ? '#1877F2' : '#94A3B8'),
+                        overflow: 'hidden',
+                        backgroundColor: '#1E293B',
+                    }}>
+                        <UserAvatar
+                            photoUrl={photoUrl}
+                            name={item.isMine ? (user?.name || 'You') : item.name}
+                            size={34}
+                            fontSize={13}
+                        />
+                    </View>
+
+                    {item.isMine && item.stories?.length > 0 && (
+                        <View style={{
+                            backgroundColor: '#2563EB',
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            borderRadius: 8,
+                        }}>
+                            <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>
+                                {item.stories.length}
+                            </Text>
                         </View>
                     )}
-                    
-                    {item.isMine && (
-                        <TouchableOpacity 
-                            onPress={() => navigation.navigate('CreateStory')}
-                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#2563EB', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white', zIndex: 10 }}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="add" size={14} color="white" />
-                        </TouchableOpacity>
-                    )}
-                </TouchableOpacity>
-                <Text style={{ fontSize: 11, color: '#334155', fontWeight: '500', maxWidth: 65, textAlign: 'center' }} numberOfLines={1}>
-                    {item.name}
+                </View>
+
+                {/* Bottom: Name */}
+                <Text style={homeStyles.storyCardName} numberOfLines={1}>
+                    {item.isMine ? 'Your Story' : item.name}
                 </Text>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -545,7 +949,6 @@ const HomeScreen = () => {
 
     const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
         if (viewableItems && viewableItems.length > 0) {
-            // Find the item currently at the top of the viewport
             const firstPost = viewableItems.find((vi: any) =>
                 vi.item &&
                 vi.item.type !== 'reels_shelf' &&
@@ -568,29 +971,8 @@ const HomeScreen = () => {
 
     const renderHeader = () => (
         <>
-            <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12, marginBottom: 0, flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
-                    <View style={{ width: 46, height: 46, borderRadius: 18, borderWidth: 2, borderColor: '#2563EB', backgroundColor: 'white', padding: 2, overflow: 'hidden' }}>
-                        <Image
-                            source={{ uri: user?.profile_photo ? `${getImageUrl(user?.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                            style={{ width: '100%', height: '100%', borderRadius: 14 }}
-                        />
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: 14, paddingHorizontal: 16, height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginLeft: 12 }}
-                    onPress={() => navigation.navigate('CreatePost')}
-                    activeOpacity={0.7}
-                >
-                    <Text style={{ fontSize: 15, color: '#475569', flex: 1 }}>What are you connecting on today?</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Stories Rail */}
-            <View style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#f1f5f9' }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', letterSpacing: 0.5, color: '#172554', marginBottom: 16, marginLeft: 2 }}>
-                    STORIES
-                </Text>
+            {/* 1. Stories Rail */}
+            <View style={{ backgroundColor: 'white', paddingVertical: 12, paddingLeft: 12, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F0F2F5' }}>
                 <FlatList
                     data={stories}
                     renderItem={renderStoryItem}
@@ -598,6 +980,61 @@ const HomeScreen = () => {
                     horizontal
                     showsHorizontalScrollIndicator={false}
                 />
+            </View>
+
+            {/* 2. "What's on your mind?" Input Box Card */}
+            <View style={homeStyles.composerCard}>
+                <View style={homeStyles.composerTopRow}>
+                    <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
+                        <UserAvatar
+                            photoUrl={user?.profile_photo || (user as any)?.photo || (user as any)?.avatar || userRef.current?.profile_photo || (userRef.current as any)?.photo || (userRef.current as any)?.avatar}
+                            name={user?.name || userRef.current?.name}
+                            size={40}
+                            fontSize={16}
+                            style={homeStyles.composerAvatar}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={homeStyles.composerInputButton}
+                        onPress={() => navigation.navigate('CreatePost')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={homeStyles.composerInputText}>What's on your mind?</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Divider line */}
+                <View style={homeStyles.composerDivider} />
+
+                {/* 3 Action Buttons */}
+                <View style={homeStyles.composerActionRow}>
+                    <TouchableOpacity
+                        style={homeStyles.composerActionButton}
+                        onPress={() => Alert.alert("Live Video", "Live streaming feature is coming soon!")}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="videocam" size={20} color="#EF4444" />
+                        <Text style={homeStyles.composerActionText}>Live</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={homeStyles.composerActionButton}
+                        onPress={() => navigation.navigate('CreatePost')}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="images" size={20} color="#22C55E" />
+                        <Text style={homeStyles.composerActionText}>Photo</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={homeStyles.composerActionButton}
+                        onPress={() => navigation.navigate('CreatePost')}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="happy" size={20} color="#F59E0B" />
+                        <Text style={homeStyles.composerActionText}>Feeling</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </>
     );
@@ -801,67 +1238,21 @@ const HomeScreen = () => {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F5F9]" edges={['top']}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', shadowColor: '#172554', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2, zIndex: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Image source={require('../../../assets/icon.png')} style={{ width: 32, height: 32, marginRight: 8 }} />
-                    <View>
-                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#2563EB', fontStyle: 'italic', letterSpacing: -0.3 }}>
-                            LinkUp
-                        </Text>
-                        {user?.is_business == 1 && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: -2 }}>
-                                <Ionicons name="briefcase" size={10} color="#0064e0" />
-                                <Text style={{ fontSize: 9, color: '#0064e0', fontWeight: 'bold', marginLeft: 3 }}>{t('business')}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Search')}
-                        activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                        <Ionicons name="search-outline" size={18} color="#334155" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handlePlusPress}
-                        activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                        <Ionicons name="add" size={20} color="#2563EB" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Notifications')}
-                        activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                    >
-                        <Ionicons name="notifications-outline" size={18} color="#334155" />
-                        {notificationCount > 0 && (
-                            <View style={{ position: 'absolute', top: -3, right: -3, backgroundColor: '#ef4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: 'white' }}>
-                                <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
-                                    {notificationCount > 9 ? '9+' : notificationCount}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Chats')}
-                        activeOpacity={0.7}
-                        style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                    >
-                        <Ionicons name="chatbubbles-outline" size={18} color="#374151" />
-                        {chatCount > 0 && (
-                            <View style={{ position: 'absolute', top: -3, right: -3, backgroundColor: '#ef4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: 'white' }}>
-                                <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>
-                                    {chatCount > 9 ? '9+' : chatCount}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <SafeAreaView className="flex-1 bg-[#F1F5F9]" edges={[]} {...tabSwipe.panHandlers}>
+            <LinkUpHeader
+                currentTab="Home"
+                headerAnim={headerAnim}
+                user={user}
+                onTabPress={(tab) => {
+                    if (tab === 'Home') {
+                        animateHeader(false);
+                        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                    }
+                }}
+                onPlusPress={handlePlusPress}
+                tabSwipeHandlers={tabSwipe.panHandlers}
+                statusBarHeight={statusBarHeight}
+            />
 
             <FlashList
                 ref={flatListRef as any}
@@ -875,12 +1266,22 @@ const HomeScreen = () => {
                 }}
                 extraData={activePostId}
                 ListHeaderComponent={renderHeader}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#2563EB']}
+                        tintColor="#2563EB"
+                        progressViewOffset={statusBarHeight + 116}
+                    />
+                }
+                onScroll={handleFeedScroll}
+                scrollEventThrottle={16}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 // @ts-ignore
                 estimatedItemSize={600}
-                contentContainerStyle={{ paddingBottom: 100, backgroundColor: '#F8FAFC' }}
+                contentContainerStyle={{ paddingTop: statusBarHeight + 116, paddingBottom: 100, backgroundColor: '#F8FAFC' }}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20">
                         <Ionicons name="newspaper-outline" size={48} color="#ccc" />
@@ -896,30 +1297,6 @@ const HomeScreen = () => {
                 ) : null}
             />
 
-            {/* Professional Floating Action Button */}
-            <TouchableOpacity
-                onPress={() => navigation.navigate('SupportChat')}
-                activeOpacity={0.85}
-                style={{
-                    position: 'absolute',
-                    bottom: 24,
-                    right: 20,
-                    backgroundColor: '#2563EB',
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    shadowColor: '#2563EB',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 6,
-                    zIndex: 999
-                }}
-            >
-                <Ionicons name="chatbubble-ellipses" size={22} color="white" />
-            </TouchableOpacity>
 
             {/* Professional Upload Modal */}
             <Modal
@@ -995,5 +1372,218 @@ const HomeScreen = () => {
         </SafeAreaView>
     );
 };
+
+const homeStyles = StyleSheet.create({
+    morePillBtn: {
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        paddingVertical: 4,
+        marginHorizontal: 4,
+    },
+    morePillBtnActive: {
+        borderColor: '#1877F2',
+        backgroundColor: '#EFF6FF',
+    },
+    createStoryCard: {
+        width: 105,
+        height: 175,
+        borderRadius: 16,
+        backgroundColor: 'white',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginRight: 10,
+        position: 'relative',
+    },
+    createStoryTopHalf: {
+        width: '100%',
+        height: 110,
+        backgroundColor: '#F1F5F9',
+    },
+    createStoryAddCircle: {
+        position: 'absolute',
+        top: 92,
+        alignSelf: 'center',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#1877F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: 'white',
+        zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    createStoryBottomHalf: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingBottom: 10,
+        backgroundColor: 'white',
+    },
+    createStoryText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#0F172A',
+        textAlign: 'center',
+    },
+    storyCard: {
+        width: 105,
+        height: 175,
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginRight: 10,
+        backgroundColor: '#0F172A',
+        position: 'relative',
+        justifyContent: 'space-between',
+        padding: 8,
+    },
+    storyCardAvatarWrap: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        borderWidth: 2.5,
+        borderColor: '#1877F2',
+        overflow: 'hidden',
+        backgroundColor: 'white',
+    },
+    storyCardAvatar: {
+        width: '100%',
+        height: '100%',
+    },
+    storyCardName: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+        paddingHorizontal: 2,
+    },
+    composerCard: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 12,
+        marginHorizontal: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#F0F2F5',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    composerTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    composerAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E2E8F0',
+    },
+    composerInputButton: {
+        flex: 1,
+        backgroundColor: '#F0F2F5',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        height: 40,
+        justifyContent: 'center',
+        marginLeft: 10,
+    },
+    composerInputText: {
+        fontSize: 14,
+        color: '#64748B',
+    },
+    composerDivider: {
+        height: 1,
+        backgroundColor: '#F0F2F5',
+        marginVertical: 10,
+    },
+    composerActionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+    },
+    composerActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    composerActionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#475569',
+        marginLeft: 6,
+    },
+    moreModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+        paddingTop: 95,
+        paddingRight: 12,
+    },
+    moreMenuCard: {
+        width: 260,
+        maxHeight: Dimensions.get('window').height * 0.75,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
+    },
+    moreMenuHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    moreMenuTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#0F172A',
+    },
+    moreMenuCloseBtn: {
+        padding: 4,
+    },
+    moreMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 6,
+        borderRadius: 10,
+    },
+    moreMenuIconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#F8FAFC',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    moreMenuItemLabel: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+});
 
 export default HomeScreen;

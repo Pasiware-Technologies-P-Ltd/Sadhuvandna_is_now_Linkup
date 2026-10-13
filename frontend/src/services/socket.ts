@@ -12,8 +12,8 @@ const getSocketUrl = () => {
             return 'http://192.168.1.10:9000';
         }
     }
-    // Production socket URL (replace when going live)
-    return 'https://www.sadhuvandna.co.in:9000'; 
+    // Production socket URL (Clean WSS via port 443)
+    return 'https://ws.sadhuvandna.co.in'; 
 };
 
 const SOCKET_URL = getSocketUrl();
@@ -24,77 +24,95 @@ class SocketService {
     private heartbeatInterval: any = null;
 
     connect(userId: string) {
-        // Always store as string to avoid Map key type mismatch (42 !== "42")
-        const uid = String(userId);
-        this.registeredUserId = uid;
+        try {
+            // Always store as string to avoid Map key type mismatch (42 !== "42")
+            const uid = String(userId);
+            this.registeredUserId = uid;
 
-        if (!this.socket) {
-            this.socket = io(SOCKET_URL, {
-                reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-            });
-
-            this.socket.on('connect', () => {
-                console.log('Connected to WebSocket server');
-                this.socket?.emit('register', uid);
-                
-                // Keep online status updated in MySQL
-                this.heartbeatInterval = setInterval(() => {
-                    this.socket?.emit('heartbeat', uid);
-                }, 60000); // Send heartbeat every 1 minute
-            });
-
-            this.socket.on('reconnect', () => {
-                console.log('Reconnected to WebSocket server — re-registering');
-                this.socket?.emit('register', uid);
-            });
-
-            this.socket.on('disconnect', () => {
-                console.log('Disconnected from WebSocket server');
-                if (this.heartbeatInterval) {
-                    clearInterval(this.heartbeatInterval);
-                    this.heartbeatInterval = null;
-                }
-            });
-
-            // Set up global event forwarders
-            const forwardToDevice = (eventName: string) => {
-                this.socket?.on(eventName, (data: any) => {
-                    import('react-native').then(({ DeviceEventEmitter }) => {
-                        DeviceEventEmitter.emit(eventName, data);
-                    });
+            if (!this.socket) {
+                console.log(`[WebSocket] Connecting to ${SOCKET_URL} for user ${uid}`);
+                this.socket = io(SOCKET_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 10000,
+                    reconnection: true,
+                    reconnectionAttempts: Infinity,
+                    reconnectionDelay: 2000,
+                    reconnectionDelayMax: 10000,
+                    autoConnect: true,
                 });
-            };
 
-            forwardToDevice('app_notification');
-            forwardToDevice('new_notification');
-            forwardToDevice('new_group_notification');
-            forwardToDevice('post_comment_added');
-            forwardToDevice('post_comment_deleted');
-            forwardToDevice('post_like_updated');
-            forwardToDevice('follow_counts_updated');
-            forwardToDevice('call_status_update');
+                this.socket.on('connect', () => {
+                    console.log('[WebSocket] Successfully connected to server:', SOCKET_URL);
+                    this.socket?.emit('register', uid);
+                    
+                    // Keep online status updated in MySQL
+                    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+                    this.heartbeatInterval = setInterval(() => {
+                        this.socket?.emit('heartbeat', uid);
+                    }, 60000); // Send heartbeat every 1 minute
+                });
 
-        } else if (this.registeredUserId !== uid) {
-            // Different user logged in — re-register
-            this.socket.emit('register', uid);
-        } else if (!this.socket.connected) {
-            // Already created but disconnected — reconnect
-            this.socket.connect();
+                this.socket.on('connect_error', (error) => {
+                    // Safe silent log — does NOT crash or disrupt app
+                    console.log('[WebSocket Status] Waiting for server at', SOCKET_URL, `(${error.message})`);
+                });
+
+                this.socket.on('reconnect', () => {
+                    console.log('[WebSocket] Reconnected to server — re-registering');
+                    this.socket?.emit('register', uid);
+                });
+
+                this.socket.on('disconnect', (reason) => {
+                    console.log('[WebSocket] Disconnected. Reason:', reason);
+                    if (this.heartbeatInterval) {
+                        clearInterval(this.heartbeatInterval);
+                        this.heartbeatInterval = null;
+                    }
+                });
+
+                // Set up global event forwarders
+                const forwardToDevice = (eventName: string) => {
+                    this.socket?.on(eventName, (data: any) => {
+                        import('react-native').then(({ DeviceEventEmitter }) => {
+                            DeviceEventEmitter.emit(eventName, data);
+                        });
+                    });
+                };
+
+                forwardToDevice('app_notification');
+                forwardToDevice('new_notification');
+                forwardToDevice('new_group_notification');
+                forwardToDevice('post_comment_added');
+                forwardToDevice('post_comment_deleted');
+                forwardToDevice('post_like_updated');
+                forwardToDevice('follow_counts_updated');
+                forwardToDevice('call_status_update');
+
+            } else if (this.registeredUserId !== uid) {
+                // Different user logged in — re-register
+                this.socket.emit('register', uid);
+            } else if (!this.socket.connected) {
+                // Already created but disconnected — reconnect
+                this.socket.connect();
+            }
+        } catch (err) {
+            console.log('[WebSocket] Safe catch during connect init:', err);
         }
     }
 
     disconnect() {
-        if (this.socket) {
-            this.socket.disconnect();
-            this.socket = null;
-            this.registeredUserId = null;
-            if (this.heartbeatInterval) {
-                clearInterval(this.heartbeatInterval);
-                this.heartbeatInterval = null;
+        try {
+            if (this.socket) {
+                this.socket.disconnect();
+                this.socket = null;
+                this.registeredUserId = null;
+                if (this.heartbeatInterval) {
+                    clearInterval(this.heartbeatInterval);
+                    this.heartbeatInterval = null;
+                }
             }
+        } catch (e) {
+            console.log('[WebSocket] Safe disconnect catch:', e);
         }
     }
 }

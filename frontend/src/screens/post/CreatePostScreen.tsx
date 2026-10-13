@@ -11,6 +11,7 @@ import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpload } from '../../context/UploadContext';
+import { getVideoThumbnail } from '../../utils/thumbnailHelper';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -292,7 +293,20 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 formData.append('media[]', { uri, name: filename, type } as any);
             });
             
-            const thumbUri = finalImages.length > 0 ? finalImages[0] : null;
+            let thumbUri = finalImages.length > 0 ? finalImages[0] : null;
+            if (thumbUri && /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(thumbUri)) {
+                try {
+                    const generated = await getVideoThumbnail(thumbUri);
+                    if (generated) {
+                        thumbUri = generated;
+                        formData.append('thumbnail', {
+                            uri: generated,
+                            name: `thumb_${Date.now()}.jpg`,
+                            type: 'image/jpeg'
+                        } as any);
+                    }
+                } catch (e) {}
+            }
             
             startUpload('create_post.php', formData, thumbUri);
             
@@ -597,7 +611,7 @@ const styles = StyleSheet.create({
     publicBadgeText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
     contentInput: { fontSize: 20, color: '#172554', marginBottom: 24, minHeight: height * 0.15 },
     musicCard: { padding: 12, backgroundColor: '#F8FAFC', borderRadius: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-    musicThumbnail: { width: 48, height: 48, borderRadius: 12, marginRight: 12 },
+    musicThumbnail: { width: 48, height: 48, borderRadius: 12, marginRight: 12, borderWidth: 1.5, borderColor: '#2563EB', backgroundColor: '#2563EB', overflow: 'hidden' },
     trimmerContainer: { backgroundColor: '#172554', borderRadius: 24, overflow: 'hidden', elevation: 10 },
     trimmerHeader: { padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#172554', backgroundColor: 'rgba(31, 41, 55, 0.5)' },
     timeBadge: { backgroundColor: '#2563EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
@@ -623,7 +637,7 @@ const styles = StyleSheet.create({
     searchInput: { flex: 1, backgroundColor: '#E2E8F0', padding: 12, borderRadius: 12, marginRight: 8, color: '#172554' },
     searchBtn: { backgroundColor: '#2563EB', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     searchItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
-    searchThumbnail: { width: 56, height: 56, borderRadius: 12, marginRight: 16, backgroundColor: '#E2E8F0' },
+    searchThumbnail: { width: 56, height: 56, borderRadius: 12, marginRight: 16, backgroundColor: '#2563EB', borderWidth: 1.5, borderColor: '#2563EB', overflow: 'hidden' },
     previewBtn: { marginRight: 12, padding: 8, borderRadius: 24 },
     hiddenPreview: { height: 10, width: 10, position: 'absolute', bottom: -100, right: -100, zIndex: -1, opacity: 0.1 },
     frameBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#E2E8F0' },

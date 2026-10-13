@@ -11,62 +11,141 @@ import api, { WEBSITE_URL } from '../../services/api';
 const { width } = Dimensions.get('window');
 const cardWidth = Math.min(width - 40, 360);
 
+const getFullPhotoUrl = (raw: string | null | undefined, defaultFolder: string = 'photo') => {
+    if (!raw || typeof raw !== 'string') return null;
+    const clean = raw.trim();
+    if (!clean) return null;
+    if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('file://')) {
+        return clean;
+    }
+    if (clean.startsWith('uploads/')) {
+        return `${WEBSITE_URL}/${clean}`;
+    }
+    return `${WEBSITE_URL}/uploads/${defaultFolder}/${clean}`;
+};
+
 const AnchorIdCardScreen = ({ navigation }: any) => {
     const { t } = useLanguage();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const viewShotRef = useRef<ViewShot>(null);
 
-    const [anchorLocalPhoto, setAnchorLocalPhoto] = useState<string | null>(null);
     const [anchorState, setAnchorState] = useState<string | null>(null);
     const [anchorDistrict, setAnchorDistrict] = useState<string | null>(null);
+    const [photoCandidates, setPhotoCandidates] = useState<string[]>([]);
+    const [candidateIndex, setCandidateIndex] = useState(0);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchUser = async () => {
             try {
+                // 1. Initial user from AsyncStorage
                 const uStr = await AsyncStorage.getItem('user');
+                let parsedUser: any = null;
                 let userId = null;
                 if (uStr) {
-                    const parsedUser = JSON.parse(uStr);
-                    setUser(parsedUser);
+                    parsedUser = JSON.parse(uStr);
+                    if (isMounted) setUser(parsedUser);
                     userId = parsedUser.id;
+
+                    // Immediately seed initial candidates from cached user
+                    const initialPhoto = parsedUser.profile_photo || parsedUser.photo || parsedUser.profile_pic || parsedUser.avatar;
+                    if (initialPhoto) {
+                        const initUrl = getFullPhotoUrl(initialPhoto, 'photo');
+                        if (initUrl && isMounted) {
+                            setPhotoCandidates([initUrl]);
+                        }
+                    }
                 }
-                
-                // 1. Check local storage first (for instant updates after applying)
-                const localPhoto = await AsyncStorage.getItem('anchor_local_photo');
-                if (localPhoto) {
-                    setAnchorLocalPhoto(localPhoto);
+
+                // 2. Fetch fresh user profile from backend to get verified profile_photo & details
+                if (userId) {
+                    try {
+                        const freshRes = await api.get(`/get_user_profile.php?user_id=${userId}`);
+                        if (freshRes.data && freshRes.data.status === 'success' && freshRes.data.user) {
+                            parsedUser = { ...parsedUser, ...freshRes.data.user };
+                            if (isMounted) setUser(parsedUser);
+                            await AsyncStorage.setItem('user', JSON.stringify(parsedUser));
+                        }
+                    } catch (e) {
+                        console.log('[AnchorIdCardScreen] Failed to fetch fresh user profile', e);
+                    }
                 }
-                
-                // 2. Fetch from backend to ensure we have the official application photo across devices
+
+                // 3. Fetch anchor application status
+                let anchorAppPhoto: string | null = null;
                 if (userId) {
                     try {
                         const anchorRes = await api.get(`/check_anchor_status.php?user_id=${userId}`);
                         if (anchorRes.data && anchorRes.data.status === 'success') {
-                            const appPhoto = anchorRes.data.application_photo;
-                            if (appPhoto) {
-                                // Anchor application photos are stored in uploads/anchor_applications/
-                                const fullUrl = appPhoto.startsWith('http') ? appPhoto : `${WEBSITE_URL}/uploads/anchor_applications/${appPhoto}`;
-                                setAnchorLocalPhoto(fullUrl);
+                            if (anchorRes.data.application_photo) {
+                                anchorAppPhoto = anchorRes.data.application_photo;
                             }
-                            if (anchorRes.data.state) {
+                            if (anchorRes.data.state && isMounted) {
                                 setAnchorState(anchorRes.data.state);
                             }
-                            if (anchorRes.data.district) {
+                            if (anchorRes.data.district && isMounted) {
                                 setAnchorDistrict(anchorRes.data.district);
                             }
                         }
                     } catch (e) {
-                        console.log('Failed to fetch backend anchor photo', e);
+                        console.log('[AnchorIdCardScreen] Failed to fetch backend anchor details', e);
                     }
                 }
+
+                // 4. Check local photo from AsyncStorage
+                const localPhoto = await AsyncStorage.getItem('anchor_local_photo');
+
+                // 5. Build candidate URLs list with failover hierarchy
+                const candidates: string[] = [];
+                const addCandidate = (url: string | null | undefined) => {
+                    if (url && typeof url === 'string') {
+                        const trimmed = url.trim();
+                        if (trimmed && !candidates.includes(trimmed)) {
+                            candidates.push(trimmed);
+                        }
+                    }
+                };
+
+                // A. User's active profile photo (verified working throughout LinkUp)
+                const verifiedUserPhoto = parsedUser?.profile_photo || parsedUser?.photo || parsedUser?.profile_pic || parsedUser?.avatar;
+                if (verifiedUserPhoto) {
+                    addCandidate(getFullPhotoUrl(verifiedUserPhoto, 'photo'));
+                }
+
+                // B. Official anchor application photo from server
+                if (anchorAppPhoto) {
+                    addCandidate(getFullPhotoUrl(anchorAppPhoto, 'anchor_applications'));
+                    addCandidate(getFullPhotoUrl(anchorAppPhoto, 'photo'));
+                }
+
+                // C. Local device photo from application submission (fallback if valid)
+                if (localPhoto) {
+                    addCandidate(localPhoto);
+                }
+
+                // D. Other user photo fields
+                if (parsedUser?.profile_picture) {
+                    addCandidate(getFullPhotoUrl(parsedUser.profile_picture, 'photo'));
+                }
+
+                if (isMounted) {
+                    setPhotoCandidates(candidates);
+                    setCandidateIndex(0);
+                }
             } catch (e) {
-                console.error(e);
+                console.error('[AnchorIdCardScreen] Error in fetchUser:', e);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
+
         fetchUser();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const captureAndShare = async () => {
@@ -128,13 +207,8 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
     const qrData = encodeURIComponent(`https://www.sadhuvandna.co.in/verify_reporter.php?id=${idNo}`);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
-    // Get Profile Photo URL (prefer the one uploaded during Anchor Application)
-    const profileFileName = user.profile_photo || user.photo || user.profile_pic || user.avatar;
-    const backendPhotoUrl = profileFileName && !profileFileName.startsWith('http') 
-        ? `${WEBSITE_URL}/uploads/photo/${profileFileName}` 
-        : profileFileName;
-        
-    const finalPhotoUrl = anchorLocalPhoto || backendPhotoUrl;
+    // Active candidate photo URL
+    const activePhotoUrl = candidateIndex < photoCandidates.length ? photoCandidates[candidateIndex] : null;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -166,7 +240,11 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
                                 {/* Logo */}
                                 <View style={styles.logoWrapper}>
                                     <View style={styles.logoCircle}>
-                                        <Image source={require('../../../assets/icon.png')} style={styles.actualLogo} />
+                                        <Image
+                                            source={require('../../../assets/icon.png')}
+                                            style={styles.actualLogo}
+                                            contentFit="cover"
+                                        />
                                     </View>
                                 </View>
                                 
@@ -189,11 +267,21 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
                                 {/* LEFT COLUMN */}
                                 <View style={styles.leftColumn}>
                                     <View style={styles.profileImageContainer}>
-                                        {finalPhotoUrl ? (
-                                            <Image source={{ uri: finalPhotoUrl }} style={styles.profileImage} />
+                                        {activePhotoUrl ? (
+                                            <Image
+                                                source={{ uri: activePhotoUrl }}
+                                                style={styles.profileImage}
+                                                contentFit="cover"
+                                                transition={200}
+                                                onError={(err) => {
+                                                    console.log(`[AnchorIdCardScreen] Photo load error on: ${activePhotoUrl}`, err);
+                                                    setCandidateIndex((prev) => prev + 1);
+                                                }}
+                                            />
                                         ) : (
                                             <View style={styles.profilePlaceholder}>
-                                                <Ionicons name="person" size={70} color="#374151" />
+                                                <Ionicons name="person" size={54} color="#94A3B8" />
+                                                <Text style={styles.placeholderText}>NO PHOTO</Text>
                                             </View>
                                         )}
                                     </View>
@@ -249,7 +337,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
                                         <View style={styles.detailRow}>
                                             <Text style={styles.detailLabel}>District</Text>
                                             <Text style={styles.detailColon}>:</Text>
-                                            <Text style={styles.detailValue} numberOfLines={1}>{anchorDistrict || user.district || 'N/A'}</Text>
+                                            <Text style={styles.detailValue} numberOfLines={1}>{anchorDistrict || user.district || user.city || 'N/A'}</Text>
                                         </View>
                                         <View style={styles.detailRow}>
                                             <Text style={styles.detailLabel}>State</Text>
@@ -381,20 +469,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     logoCircle: {
-        width: 70, // Restored good size
-        height: 70, 
-        borderRadius: 35,
-        backgroundColor: 'white',
+        width: 68,
+        height: 68, 
+        borderRadius: 34,
+        backgroundColor: '#1877F2',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#fbb314', // Yellow border matching design
+        borderColor: '#1877F2',
         overflow: 'hidden',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
     },
     actualLogo: {
-        width: '90%',
-        height: '90%',
-        resizeMode: 'contain',
+        width: '100%',
+        height: '100%',
+        transform: [{ scale: 1.18 }],
     },
     headerRightText: {
         flex: 0.65,
@@ -456,11 +549,11 @@ const styles = StyleSheet.create({
     },
     profileImageContainer: {
         width: 105,
-        height: 125, // Restored good size for profile image
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        borderRadius: 4,
+        height: 125,
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1.5,
+        borderColor: '#CBD5E1',
+        borderRadius: 6,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -473,12 +566,18 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#E2E8F0',
+        backgroundColor: '#F1F5F9',
+    },
+    placeholderText: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#94A3B8',
+        marginTop: 4,
+        letterSpacing: 0.5,
     },
     profileImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
     },
     signatureBox: {
         alignItems: 'center',

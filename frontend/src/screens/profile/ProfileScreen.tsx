@@ -1,10 +1,12 @@
 import { Image } from 'expo-image';
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Animated, Platform, StatusBar, Easing } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader';
 
 import ProfileSwitcherModal from '../../components/ProfileSwitcherModal';
 
@@ -18,13 +20,58 @@ const getInitials = (name: string) => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-import { StatusBar } from 'expo-status-bar';
+import { useTabSwipe } from '../../utils/useTabSwipe';
 const ProfileScreen = ({ navigation }: any) => {
+    const insets = useSafeAreaInsets();
+    const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
     const [user, setUser] = useState<any>(null);
+    const tabSwipe = useTabSwipe({ currentTab: 'Profile', isBusiness: user?.is_business == 1 });
     const [marriageProfile, setMarriageProfile] = useState<any>(null);
     const [followStats, setFollowStats] = useState<any>({ followers: 0, following: 0, posts: 0 });
     const [isSwitcherVisible, setSwitcherVisible] = useState(false);
     const { t } = useLanguage();
+
+    // Silky smooth auto-collapsing top header on scroll (native driver)
+    const headerAnim = useRef(new Animated.Value(0)).current;
+    const lastScrollY = useRef(0);
+    const accumulatedScroll = useRef(0);
+    const isHeaderHidden = useRef(false);
+    const scrollRef = useRef<any>(null);
+
+    const animateHeader = useCallback((toHide: boolean) => {
+        if (isHeaderHidden.current === toHide) return;
+        isHeaderHidden.current = toHide;
+        Animated.timing(headerAnim, {
+            toValue: toHide ? -TOP_HEADER_COLLAPSE : 0,
+            duration: 280,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            useNativeDriver: true,
+        }).start();
+    }, [headerAnim]);
+
+    const handleFeedScroll = useCallback((event: any) => {
+        const currentY = event.nativeEvent.contentOffset.y;
+        const diff = currentY - lastScrollY.current;
+        lastScrollY.current = currentY;
+
+        if (currentY <= 10) {
+            accumulatedScroll.current = 0;
+            animateHeader(false);
+            return;
+        }
+
+        if (diff > 0) {
+            accumulatedScroll.current += diff;
+            if (accumulatedScroll.current > 40) {
+                animateHeader(true);
+            }
+        } else if (diff < 0) {
+            accumulatedScroll.current += diff;
+            if (accumulatedScroll.current < -30) {
+                animateHeader(false);
+            }
+        }
+    }, [animateHeader]);
 
     useEffect(() => {
         loadUser();
@@ -121,9 +168,32 @@ const ProfileScreen = ({ navigation }: any) => {
     if (!user) return <View style={{ flex: 1, backgroundColor: 'white' }} />;
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-            <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
-            <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={[]} {...tabSwipe.panHandlers}>
+            {/* LinkUp Global Header with Floating Tabs */}
+            <LinkUpHeader
+                currentTab="Profile"
+                headerAnim={headerAnim}
+                user={user}
+                onTabPress={(tab) => {
+                    if (tab === 'Profile') {
+                        animateHeader(false);
+                        scrollRef.current?.scrollTo({ y: 0, animated: true });
+                    }
+                }}
+                onPlusPress={() => {
+                    navigation.navigate('CreatePost');
+                }}
+                tabSwipeHandlers={tabSwipe.panHandlers}
+                statusBarHeight={statusBarHeight}
+            />
+
+            <ScrollView
+                ref={scrollRef}
+                onScroll={handleFeedScroll}
+                scrollEventThrottle={16}
+                contentContainerStyle={{ paddingTop: statusBarHeight + 114, paddingBottom: 40 }}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Banner Cover Image Backdrop */}
                 <View style={{ height: 145, backgroundColor: '#2563EB', position: 'relative', overflow: 'hidden' }}>
                     {user.cover_photo ? (
@@ -225,12 +295,11 @@ const ProfileScreen = ({ navigation }: any) => {
                                     </>
                                 ) : (
                                     <>
-                                        {user.cast && (
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="people-outline" size={14} color="#2563EB" />
-                                                <Text style={{ fontSize: 13, color: '#2563EB', fontWeight: 'bold', marginLeft: 6 }}>Caste: {user.cast}</Text>
-                                            </View>
-                                        )}
+                                        {(user.bio || user.about || user.about_me || user.biodata || user.description) ? (
+                                            <Text style={{ fontSize: 13, color: '#475569', lineHeight: 18, marginTop: 1 }} numberOfLines={3}>
+                                                {user.bio || user.about || user.about_me || user.biodata || user.description}
+                                            </Text>
+                                        ) : null}
                                         {user.city && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <Ionicons name="location-outline" size={14} color="#64748B" />
@@ -360,7 +429,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 onClose={() => setSwitcherVisible(false)} 
                 onProfileSwitched={handleProfileSwitched} 
             />
-        </View>
+        </SafeAreaView>
     );
 };
 

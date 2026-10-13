@@ -361,7 +361,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 </View>
 
                 {/* Title */}
-                <Text style={{ fontSize: 22, fontWeight: '800', color: '#172554', lineHeight: 30, paddingHorizontal: 16, marginBottom: 16 }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: '#172554', lineHeight: 30, paddingHorizontal: 16, marginBottom: 16, textAlign: 'justify' }}>
                     {currentNews.title}
                 </Text>
 
@@ -423,7 +423,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
                 {/* Full Description */}
                 <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-                    <Text style={{ fontSize: 16, color: '#374151', lineHeight: 28 }}>
+                    <Text style={{ fontSize: 16, color: '#374151', lineHeight: 28, textAlign: 'justify' }}>
                         {cleanDescription}
                     </Text>
                 </View>
@@ -434,10 +434,12 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                         
                         {/* Avatar & Info */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.6, paddingRight: 4 }}>
-                            <Image 
-                                source={isAdmin ? require('../../../assets/icon.png') : { uri: currentNews.user_image ? `${BASE_URL_ROOT}/uploads/users/${currentNews.user_image}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
-                                style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#E2E8F0', marginRight: 10, borderWidth: 1, borderColor: '#E2E8F0' }} 
-                            />
+                            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isAdmin ? '#2563EB' : '#E2E8F0', marginRight: 10, borderWidth: 1.5, borderColor: isAdmin ? '#2563EB' : '#E2E8F0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                                <Image 
+                                    source={isAdmin ? require('../../../assets/icon.png') : { uri: currentNews.user_image ? `${BASE_URL_ROOT}/uploads/users/${currentNews.user_image}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} 
+                                    style={[{ width: '100%', height: '100%' }, isAdmin && { transform: [{ scale: 1.18 }] }]} 
+                                />
+                            </View>
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                                     <View style={{ backgroundColor: '#2563eb', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, flexDirection: 'row', alignItems: 'center' }}>

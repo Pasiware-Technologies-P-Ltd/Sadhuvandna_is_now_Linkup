@@ -37,7 +37,8 @@ if ($message_id && $my_id) {
     }
 
     // Broadcast seen event back to sender
-    $url = 'http://127.0.0.1:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     $postData = [
         'room' => "user_{$receiver_id}",
         'type' => 'messages_seen',
@@ -84,7 +85,8 @@ if ($message_id && $my_id) {
     }
 
     // Broadcast seen event back to sender
-    $url = 'http://127.0.0.1:3000/api/trigger';
+    $socketBase = getenv('SOCKET_URL') ?: 'http://localhost:3000';
+    $url = rtrim($socketBase, '/') . '/api/trigger';
     $postData = [
         'room' => "user_{$receiver_id}",
         'type' => 'messages_seen',
