@@ -25,7 +25,7 @@ Notifications.setNotificationHandler({
             }
         }
         
-        const isRemote = notification.request.trigger && notification.request.trigger.type === 'push';
+        const isRemote = notification.request.trigger && (notification.request.trigger as any).type === 'push';
         const showNotification = !isCall && !isCurrentChatActive && !isRemote;
 
         return {

@@ -12,6 +12,7 @@ import axios from 'axios';
 import api, { API_BASE_URL } from '../../services/api';
 import { useUpload } from '../../context/UploadContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const CATEGORY_MAP = [
     { name: 'Breaking News', icon: '⚡' },
@@ -32,6 +33,8 @@ const CATEGORY_MAP = [
 ];
 
 const CreateNewsScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('Breaking News');
@@ -405,7 +408,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -414,7 +417,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Add New News</Text>
                     <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -1012,7 +1015,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1020,8 +1023,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#E2E8F0',
-        backgroundColor: 'white',
+        borderBottomColor: theme.border,
+        backgroundColor: theme.card,
     },
     backBtn: {
         padding: 4,
@@ -1029,7 +1032,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#172554',
+        color: theme.text,
     },
     scrollContainer: {
         padding: 20,
@@ -1038,17 +1041,17 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
+        color: theme.text,
         marginBottom: 8,
     },
     uploadPlaceholder: {
         width: '100%',
         height: 150,
         borderWidth: 2,
-        borderColor: '#d1d5db',
+        borderColor: theme.border,
         borderStyle: 'dashed',
         borderRadius: 12,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -1062,12 +1065,12 @@ const styles = StyleSheet.create({
     },
     uploadPlaceholderWithImages: {
         borderStyle: 'solid',
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         height: 120,
     },
 
     uploadText: {
-        color: '#64748B',
+        color: theme.subtext,
         fontSize: 13,
         marginTop: 6,
     },
@@ -1083,7 +1086,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         position: 'relative',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
     },
     imagePreview: {
         width: '100%',
@@ -1103,16 +1106,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 10,
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: theme.border,
         borderRadius: 8,
-        backgroundColor: 'white',
+        backgroundColor: theme.card,
         gap: 8,
         marginBottom: 20,
     },
     chooseFilesText: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#374151',
+        color: theme.text,
     },
     formGroup: {
         marginBottom: 20,
@@ -1120,18 +1123,18 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
+        color: theme.subtext,
         marginBottom: 6,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: theme.border,
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 15,
-        color: '#172554',
-        backgroundColor: '#fafafa',
+        color: theme.text,
+        backgroundColor: isDarkMode ? '#1E293B' : '#fafafa',
     },
     textArea: {
         height: 130,
@@ -1163,7 +1166,7 @@ const styles = StyleSheet.create({
     categoryBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E2E8F0',
+        backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0',
         borderRadius: 25,
         paddingHorizontal: 16,
         paddingVertical: 10,
@@ -1190,7 +1193,7 @@ const styles = StyleSheet.create({
     categoryBadgeText: {
         fontSize: 12,
         fontWeight: '700',
-        color: '#374151',
+        color: theme.text,
     },
     categoryBadgeTextSelected: {
         color: 'white',
@@ -1199,15 +1202,15 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 60,
         borderRadius: 12,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6
     },
     aspectBtnSelected: {
-        backgroundColor: '#EFF6FF',
+        backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF',
         borderColor: '#2563EB'
     },
     aspectIcon: {
@@ -1216,7 +1219,7 @@ const styles = StyleSheet.create({
     },
     aspectBtnText: {
         fontSize: 12,
-        color: '#64748B',
+        color: theme.subtext,
         fontWeight: '600'
     },
 });

@@ -12,6 +12,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import api, { WEBSITE_URL } from '../../services/api';
 import { Asset } from 'expo-asset';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const LOGO_ASSET = require('../../../assets/icon.png');
@@ -19,6 +20,7 @@ const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const FRAME_URL = `${WEBSITE_URL}/uploads/festival_frames/`;
 
 const FestivalPosterScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [frames, setFrames] = useState<any[]>([]);
@@ -352,15 +354,15 @@ const FestivalPosterScreen = ({ navigation }: any) => {
 
     if (loading) {
         return (
-            <View className="flex-1 justify-center items-center bg-white">
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
                 <ActivityIndicator size="large" color="#2563EB" />
-                <Text className="mt-4 text-slate-500 font-bold">Opening Studio...</Text>
+                <Text style={{ marginTop: 16, color: theme.textSecondary, fontWeight: 'bold' }}>Opening Studio...</Text>
             </View>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
             <KeyboardAwareScrollView 
                 className="flex-1" 
                 showsVerticalScrollIndicator={false}
@@ -369,15 +371,18 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Header */}
-                <View className="flex-row items-center px-4 py-4 border-b border-gray-100 justify-between">
+                <View 
+                    className="flex-row items-center px-4 py-4 justify-between"
+                    style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+                >
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
-                        <Ionicons name="close" size={28} color="#172554" />
+                        <Ionicons name="close" size={28} color={theme.text} />
                     </TouchableOpacity>
-                    <Text className="text-xl font-extrabold text-blue-950 tracking-tight">Poster Designer</Text>
+                    <Text style={{ color: theme.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.5 }}>Poster Designer</Text>
                     <TouchableOpacity 
                         onPress={handleGenerate} 
                         disabled={isGenerating || isDownloading}
-                        className={`px-4 py-2 rounded-xl flex-row items-center ${isGenerating || isDownloading ? 'bg-slate-200' : 'bg-blue-500 shadow-md'}`}
+                        className={`px-4 py-2 rounded-xl flex-row items-center ${isGenerating || isDownloading ? 'bg-slate-300' : 'bg-blue-600 shadow-md'}`}
                     >
                         {isGenerating ? <ActivityIndicator size="small" color="#fff" /> : (
                             <>
@@ -389,104 +394,157 @@ const FestivalPosterScreen = ({ navigation }: any) => {
                 </View>
 
                 {/* Visual Preview */}
-                    <View className="p-4 bg-slate-50 items-center justify-center">
-                        <View style={styles.shadowBox}>
-                             {isDownloading && (
-                                 <View className="absolute z-10 w-full h-full items-center justify-center bg-white/50 rounded-[30px]">
-                                     <ActivityIndicator color="#2563EB" />
-                                 </View>
-                             )}
-                            <View style={styles.previewFrame}>
-                                <WebView
-                                    ref={webViewRef}
-                                    originWhitelist={['*']}
-                                    source={{ html: htmlContent }}
-                                    style={styles.webView}
-                                    scrollEnabled={false}
-                                    onMessage={onMessage}
-                                    javaScriptEnabled={true}
-                                />
-                            </View>
-                        </View>
-                        <View className="mt-3 flex-row items-center opacity-40">
-                             <Ionicons name="scan-outline" size={12} color="#64748B" />
-                             <Text className="text-[10px] ml-1 font-bold text-slate-500 uppercase tracking-widest">Live 1080p Studio Preview</Text>
-                        </View>
-                    </View>
-
-                    {/* Inputs */}
-                    <View className="px-5 pt-6 pb-20">
-                        {/* Frame Selection */}
-                        <View className="mb-8">
-                            <Text className="text-blue-950 font-extrabold text-lg mb-4">Choose Frame</Text>
-                            <FlashList
-                                data={[{ id: 'default', title: 'Solid', frame_image: '' }, ...frames]}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                keyExtractor={(item) => item.id.toString()}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        onPress={() => handleFrameSelect(item)}
-                                        className={`mr-4 rounded-2xl overflow-hidden border-2 p-0.5 ${selectedFrameId === item.id ? 'border-orange-500' : 'border-gray-100'}`}
-                                        style={{ width: 85, height: 85 }}
-                                    >
-                                        {item.frame_image ? (
-                                            <Image source={{ uri: `${FRAME_URL}${item.frame_image}` }} className="w-full h-full rounded-2xl" />
-                                        ) : (
-                                            <View className="flex-1 items-center justify-center bg-slate-50 rounded-2xl">
-                                                <Ionicons name="color-filter-outline" size={28} color="#9ca3af" />
-                                                <Text className="text-[10px] text-gray-400 font-bold mt-1">Plain</Text>
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
-                                )}
+                <View 
+                    className="p-4 items-center justify-center"
+                    style={{ backgroundColor: isDarkMode ? '#0B1120' : '#F8FAFC' }}
+                >
+                    <View style={styles.shadowBox}>
+                         {isDownloading && (
+                             <View className="absolute z-10 w-full h-full items-center justify-center bg-black/40 rounded-[30px]">
+                                 <ActivityIndicator color="#2563EB" />
+                             </View>
+                         )}
+                        <View style={styles.previewFrame}>
+                            <WebView
+                                ref={webViewRef}
+                                originWhitelist={['*']}
+                                source={{ html: htmlContent }}
+                                style={styles.webView}
+                                scrollEnabled={false}
+                                onMessage={onMessage}
+                                javaScriptEnabled={true}
                             />
                         </View>
+                    </View>
+                    <View className="mt-3 flex-row items-center opacity-60">
+                         <Ionicons name="scan-outline" size={12} color={theme.textMuted} />
+                         <Text style={{ fontSize: 10, marginLeft: 4, fontWeight: 'bold', color: theme.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5 }}>Live 1080p Studio Preview</Text>
+                    </View>
+                </View>
 
-                        {/* Styles */}
-                        <View className="mb-8">
-                            <Text className="text-blue-950 font-extrabold text-lg mb-4">Branding Style</Text>
-                            <View className="flex-row flex-wrap justify-between">
-                                {[1, 2, 3, 4, 5, 6].map((id) => (
-                                    <TouchableOpacity
-                                        key={id}
-                                        onPress={() => setSelectedLayout(id)}
-                                        className={`w-[48%] py-4 rounded-2xl border-2 mb-3 items-center justify-center ${selectedLayout === id ? 'bg-blue-50 border-orange-500' : 'bg-slate-50 border-gray-100'}`}
+                {/* Inputs */}
+                <View className="px-5 pt-6 pb-20">
+                    {/* Frame Selection */}
+                    <View className="mb-8">
+                        <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginBottom: 16 }}>Choose Frame</Text>
+                        <FlashList
+                            data={[{ id: 'default', title: 'Solid', frame_image: '' }, ...frames]}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    onPress={() => handleFrameSelect(item)}
+                                    className="mr-4 rounded-2xl overflow-hidden p-0.5"
+                                    style={{ 
+                                        width: 85, 
+                                        height: 85,
+                                        borderWidth: 2,
+                                        borderColor: selectedFrameId === item.id ? '#2563EB' : theme.border
+                                    }}
+                                >
+                                    {item.frame_image ? (
+                                        <Image source={{ uri: `${FRAME_URL}${item.frame_image}` }} className="w-full h-full rounded-2xl" />
+                                    ) : (
+                                        <View 
+                                            className="flex-1 items-center justify-center rounded-2xl"
+                                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}
+                                        >
+                                            <Ionicons name="color-filter-outline" size={28} color={theme.textMuted} />
+                                            <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: 'bold', marginTop: 4 }}>Plain</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+
+                    {/* Styles */}
+                    <View className="mb-8">
+                        <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginBottom: 16 }}>Branding Style</Text>
+                        <View className="flex-row flex-wrap justify-between">
+                            {[1, 2, 3, 4, 5, 6].map((id) => (
+                                <TouchableOpacity
+                                    key={id}
+                                    onPress={() => setSelectedLayout(id)}
+                                    className="w-[48%] py-4 rounded-2xl mb-3 items-center justify-center"
+                                    style={{
+                                        backgroundColor: selectedLayout === id 
+                                            ? (isDarkMode ? 'rgba(37,99,235,0.2)' : '#EFF6FF')
+                                            : theme.card,
+                                        borderWidth: 2,
+                                        borderColor: selectedLayout === id ? '#2563EB' : theme.border
+                                    }}
+                                >
+                                    <Text 
+                                        style={{ 
+                                            fontWeight: 'bold', 
+                                            color: selectedLayout === id ? '#2563EB' : theme.textSecondary 
+                                        }}
                                     >
-                                        <Text className={`font-bold ${selectedLayout === id ? 'text-blue-950' : 'text-slate-500'}`}>Layout {id}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        {/* Text Content */}
-                        <View className="bg-slate-50 rounded-3xl p-6 border border-gray-100">
-                             <Text className="text-blue-950 font-extrabold text-lg mb-6">Personalize Poster</Text>
-                             
-                             <View className="space-y-5">
-                                 <View>
-                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Message / Festival</Text>
-                                     <TextInput value={festivalName} onChangeText={setFestivalName} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
-                                 </View>
-                                 <View>
-                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Your Name</Text>
-                                     <TextInput value={name} onChangeText={setName} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
-                                 </View>
-                                 <View>
-                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Mobile Number</Text>
-                                     <TextInput value={mobile} onChangeText={setMobile} keyboardType="phone-pad" className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
-                                 </View>
-                                 <View>
-                                     <Text className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mb-2 px-1">Location (City)</Text>
-                                     <TextInput value={address} onChangeText={setAddress} className="bg-white p-4 rounded-2xl border border-slate-200 text-blue-900 font-bold" />
-                                 </View>
-                                 <TouchableOpacity onPress={pickImage} className="mt-4 bg-blue-500 p-4 rounded-2xl flex-row items-center justify-center">
-                                      <Ionicons name="image" size={20} color="white" />
-                                      <Text className="text-white font-bold ml-2">Update Photo</Text>
-                                 </TouchableOpacity>
-                             </View>
+                                        Layout {id}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </View>
+
+                    {/* Text Content */}
+                    <View 
+                        className="rounded-3xl p-6"
+                        style={{ backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }}
+                    >
+                         <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginBottom: 20 }}>Personalize Poster</Text>
+                         
+                         <View className="space-y-5">
+                             <View>
+                                 <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8, paddingHorizontal: 4 }}>Message / Festival</Text>
+                                 <TextInput 
+                                     value={festivalName} 
+                                     onChangeText={setFestivalName} 
+                                     className="p-4 rounded-2xl font-bold"
+                                     style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border, borderWidth: 1, color: theme.text }}
+                                     placeholderTextColor={theme.textMuted}
+                                 />
+                             </View>
+                             <View>
+                                 <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8, paddingHorizontal: 4 }}>Your Name</Text>
+                                 <TextInput 
+                                     value={name} 
+                                     onChangeText={setName} 
+                                     className="p-4 rounded-2xl font-bold"
+                                     style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border, borderWidth: 1, color: theme.text }}
+                                     placeholderTextColor={theme.textMuted}
+                                 />
+                             </View>
+                             <View>
+                                 <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8, paddingHorizontal: 4 }}>Mobile Number</Text>
+                                 <TextInput 
+                                     value={mobile} 
+                                     onChangeText={setMobile} 
+                                     keyboardType="phone-pad" 
+                                     className="p-4 rounded-2xl font-bold"
+                                     style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border, borderWidth: 1, color: theme.text }}
+                                     placeholderTextColor={theme.textMuted}
+                                 />
+                             </View>
+                             <View>
+                                 <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8, paddingHorizontal: 4 }}>Location (City)</Text>
+                                 <TextInput 
+                                     value={address} 
+                                     onChangeText={setAddress} 
+                                     className="p-4 rounded-2xl font-bold"
+                                     style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border, borderWidth: 1, color: theme.text }}
+                                     placeholderTextColor={theme.textMuted}
+                                 />
+                             </View>
+                             <TouchableOpacity onPress={pickImage} className="mt-4 bg-blue-600 p-4 rounded-2xl flex-row items-center justify-center">
+                                  <Ionicons name="image" size={20} color="white" />
+                                  <Text className="text-white font-bold ml-2">Update Photo</Text>
+                             </TouchableOpacity>
+                         </View>
+                    </View>
+                </View>
             </KeyboardAwareScrollView>
         </SafeAreaView>
     );

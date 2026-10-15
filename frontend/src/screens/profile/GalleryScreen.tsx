@@ -6,11 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL } from '../../services/api';
 import ImageViewer from 'react-native-image-zoom-viewer';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const GALLERY_URL = `${API_BASE_URL.replace('/Api', '')}/uploads/gallery/`;
 
 const GalleryScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [images, setImages] = useState<any[]>([]); // Formatted for ImageViewer {url: ''}
     const [loading, setLoading] = useState(true);
     const [visible, setVisible] = useState(false);
@@ -53,8 +55,12 @@ const GalleryScreen = ({ navigation }: any) => {
 
     const renderItem = ({ item, index }: { item: any, index: number }) => (
         <TouchableOpacity
-            className="m-0.5 relative bg-slate-100"
-            style={{ width: width / 3 - 4, height: width / 3 - 4 }}
+            className="m-0.5 relative"
+            style={{ 
+                width: width / 3 - 4, 
+                height: width / 3 - 4,
+                backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9'
+            }}
             onPress={() => openImage(index)}
         >
             <Image
@@ -66,12 +72,15 @@ const GalleryScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View 
+                className="flex-row items-center p-4" 
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900">Gallery</Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>Gallery</Text>
             </View>
 
             {loading ? (
@@ -84,11 +93,11 @@ const GalleryScreen = ({ navigation }: any) => {
                     renderItem={renderItem}
                     keyExtractor={(item, index) => index.toString()}
                     numColumns={3}
-                    contentContainerStyle={{ padding: 2 }}
+                    contentContainerStyle={{ padding: 2, backgroundColor: theme.background }}
                     ListEmptyComponent={
                         <View className="items-center py-20">
-                            <Ionicons name="images-outline" size={48} color="#ccc" />
-                            <Text className="text-slate-500 mt-4">No photos available</Text>
+                            <Ionicons name="images-outline" size={48} color={theme.textMuted} />
+                            <Text style={{ color: theme.textSecondary, marginTop: 16 }}>No photos available</Text>
                         </View>
                     }
                 />

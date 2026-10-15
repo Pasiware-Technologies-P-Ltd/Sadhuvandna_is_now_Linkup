@@ -8,6 +8,7 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WEBSITE_URL } from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +26,7 @@ const formatCardId = (id: any) => {
 };
 
 const SmartCardScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const viewShotRef = useRef<ViewShot>(null);
@@ -66,7 +68,7 @@ const SmartCardScreen = ({ navigation }: any) => {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
@@ -74,8 +76,8 @@ const SmartCardScreen = ({ navigation }: any) => {
 
     if (!user) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#64748B', fontWeight: '600' }}>Failed to load user data.</Text>
+            <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: theme.textSecondary, fontWeight: '600' }}>Failed to load user data.</Text>
             </View>
         );
     }
@@ -85,15 +87,15 @@ const SmartCardScreen = ({ navigation }: any) => {
     const memberSince = new Date().getFullYear();
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.card} />
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }]}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>SMART CARD</Text>
-                <TouchableOpacity onPress={handleShare} style={styles.shareIconButton}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>SMART CARD</Text>
+                <TouchableOpacity onPress={handleShare} style={[styles.shareIconButton, { backgroundColor: isDarkMode ? 'rgba(37,99,235,0.2)' : '#EFF6FF' }]}>
                     <Ionicons name="share-social-outline" size={22} color="#2563EB" />
                 </TouchableOpacity>
             </View>
@@ -180,15 +182,15 @@ const SmartCardScreen = ({ navigation }: any) => {
                 </ViewShot>
 
                 {/* BACK OF CARD HINT */}
-                <Text style={styles.hint}>Official LinkUp VIP Digital Membership Smart Card</Text>
+                <Text style={[styles.hint, { color: theme.textSecondary }]}>Official LinkUp VIP Digital Membership Smart Card</Text>
 
                 {/* DETAILS CARD */}
-                <View style={styles.detailCard}>
-                    <DetailRow icon="call" label="Mobile" value={`+91 ${user.phone || user.mobile || 'N/A'}`} />
+                <View style={[styles.detailCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <DetailRow icon="call" label="Mobile" value={`+91 ${user.phone || user.mobile || 'N/A'}`} theme={theme} isDarkMode={isDarkMode} />
                     {(user.city || user.address) && (
-                        <DetailRow icon="location" label="City" value={user.city || user.address} />
+                        <DetailRow icon="location" label="City" value={user.city || user.address} theme={theme} isDarkMode={isDarkMode} />
                     )}
-                    <DetailRow icon="pricetag" label="Membership No." value={cardIdNum} isLast={true} />
+                    <DetailRow icon="pricetag" label="Membership No." value={cardIdNum} isLast={true} theme={theme} isDarkMode={isDarkMode} />
                 </View>
 
                 {/* Share Button */}
@@ -201,14 +203,14 @@ const SmartCardScreen = ({ navigation }: any) => {
     );
 };
 
-const DetailRow = ({ icon, label, value, isLast }: any) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: isLast ? 0 : 1, borderBottomColor: '#F1F5F9' }}>
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+const DetailRow = ({ icon, label, value, isLast, theme, isDarkMode }: any) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: isLast ? 0 : 1, borderBottomColor: theme.border }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: isDarkMode ? 'rgba(37,99,235,0.2)' : '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
             <Ionicons name={icon} size={18} color="#2563EB" />
         </View>
         <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 10.5, color: '#64748B', fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</Text>
-            <Text style={{ fontSize: 15, color: '#0F172A', fontWeight: '800', marginTop: 2 }}>{value}</Text>
+            <Text style={{ fontSize: 10.5, color: theme.textSecondary, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</Text>
+            <Text style={{ fontSize: 15, color: theme.text, fontWeight: '800', marginTop: 2 }}>{value}</Text>
         </View>
     </View>
 );

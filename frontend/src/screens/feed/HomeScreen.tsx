@@ -12,6 +12,7 @@ import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
 import { useBadge } from '../../context/BadgeContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { ImageService } from '../../services/ImageService';
@@ -131,6 +132,7 @@ const CreateStoryCardItem = ({
     photoUri: string | null;
     onPress: () => void;
 }) => {
+    const { isDarkMode, theme } = useTheme();
     const [imgError, setImgError] = React.useState(false);
     React.useEffect(() => {
         setImgError(false);
@@ -145,16 +147,16 @@ const CreateStoryCardItem = ({
                 width: 105,
                 height: 175,
                 borderRadius: 16,
-                backgroundColor: 'white',
+                backgroundColor: theme.card,
                 overflow: 'hidden',
                 borderWidth: 1,
-                borderColor: '#E2E8F0',
+                borderColor: theme.border,
                 marginRight: 10,
                 position: 'relative',
             }}
         >
             {/* Top half — User's Profile Photo or Blue camera placeholder */}
-            <View style={{ width: '100%', height: 110, overflow: 'hidden', backgroundColor: '#F1F5F9' }}>
+            <View style={{ width: '100%', height: 110, overflow: 'hidden', backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}>
                 {showPhoto ? (
                     <ExpoImage
                         source={{ uri: photoUri! }}
@@ -188,9 +190,9 @@ const CreateStoryCardItem = ({
                     top: 92,
                     alignSelf: 'center',
                     width: 36, height: 36, borderRadius: 18,
-                    backgroundColor: '#1877F2',
+                    backgroundColor: theme.primary,
                     alignItems: 'center', justifyContent: 'center',
-                    borderWidth: 3, borderColor: 'white',
+                    borderWidth: 3, borderColor: theme.card,
                     zIndex: 10,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
@@ -208,12 +210,12 @@ const CreateStoryCardItem = ({
                 justifyContent: 'flex-end',
                 alignItems: 'center',
                 paddingBottom: 10,
-                backgroundColor: 'white',
+                backgroundColor: theme.card,
             }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#0F172A', textAlign: 'center' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text, textAlign: 'center' }}>
                     Create Story
                 </Text>
-                <Text style={{ fontSize: 9, color: '#64748B', fontWeight: '500', marginTop: 1 }}>
+                <Text style={{ fontSize: 9, color: theme.textMuted, fontWeight: '500', marginTop: 1 }}>
                     Share photo
                 </Text>
             </View>
@@ -223,6 +225,7 @@ const CreateStoryCardItem = ({
 
 const HomeScreen = () => {
     const { t } = useLanguage();
+    const { isDarkMode, theme } = useTheme();
     const queryClient = useQueryClient();
     const [posts, setPosts] = useState<any[]>([]);
     const [stories, setStories] = useState<any[]>([]);
@@ -618,7 +621,8 @@ const HomeScreen = () => {
             hasCache = await loadCachedData(uid.toString());
         }
 
-        if (!hasCache) {
+        // Only show full-screen loader on initial cold start when there is genuinely no data yet
+        if (!hasCache && !isRefresh && posts.length === 0) {
             setPosts([]);
             setStories([]);
             setReels([]);
@@ -971,8 +975,41 @@ const HomeScreen = () => {
 
     const renderHeader = () => (
         <>
-            {/* 1. Stories Rail */}
-            <View style={{ backgroundColor: 'white', paddingVertical: 12, paddingLeft: 12, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F0F2F5' }}>
+            {/* 1. "What's on your mind?" Input Box (Compact & Professional) - Above Stories */}
+            <View style={[homeStyles.composerCard, isDarkMode && { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={homeStyles.composerTopRow}>
+                    <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
+                        <UserAvatar
+                            photoUrl={user?.profile_photo || (user as any)?.photo || (user as any)?.avatar || userRef.current?.profile_photo || (userRef.current as any)?.photo || (userRef.current as any)?.avatar}
+                            name={user?.name || userRef.current?.name}
+                            size={38}
+                            fontSize={15}
+                            borderWidth={1.5}
+                            borderColor={isDarkMode ? '#334155' : '#E2E8F0'}
+                            style={homeStyles.composerAvatar}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[homeStyles.composerInputButton, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
+                        onPress={() => navigation.navigate('CreatePost')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[homeStyles.composerInputText, isDarkMode && { color: theme.textSecondary }]} numberOfLines={1}>
+                            {t('whatsOnYourMind') || "What's on your mind?"}
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[homeStyles.composerMediaBtn, isDarkMode && { backgroundColor: '#1E293B' }]}
+                        onPress={() => navigation.navigate('CreatePost')}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="images" size={20} color="#22C55E" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* 2. Stories Rail */}
+            <View style={{ backgroundColor: theme.card, paddingVertical: 10, paddingLeft: 12, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
                 <FlatList
                     data={stories}
                     renderItem={renderStoryItem}
@@ -981,73 +1018,18 @@ const HomeScreen = () => {
                     showsHorizontalScrollIndicator={false}
                 />
             </View>
-
-            {/* 2. "What's on your mind?" Input Box Card */}
-            <View style={homeStyles.composerCard}>
-                <View style={homeStyles.composerTopRow}>
-                    <TouchableOpacity onPress={() => user?.id && navigation.navigate('PublicProfile', { userId: user.id })} activeOpacity={0.8}>
-                        <UserAvatar
-                            photoUrl={user?.profile_photo || (user as any)?.photo || (user as any)?.avatar || userRef.current?.profile_photo || (userRef.current as any)?.photo || (userRef.current as any)?.avatar}
-                            name={user?.name || userRef.current?.name}
-                            size={40}
-                            fontSize={16}
-                            style={homeStyles.composerAvatar}
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={homeStyles.composerInputButton}
-                        onPress={() => navigation.navigate('CreatePost')}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={homeStyles.composerInputText}>What's on your mind?</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Divider line */}
-                <View style={homeStyles.composerDivider} />
-
-                {/* 3 Action Buttons */}
-                <View style={homeStyles.composerActionRow}>
-                    <TouchableOpacity
-                        style={homeStyles.composerActionButton}
-                        onPress={() => Alert.alert("Live Video", "Live streaming feature is coming soon!")}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="videocam" size={20} color="#EF4444" />
-                        <Text style={homeStyles.composerActionText}>Live</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={homeStyles.composerActionButton}
-                        onPress={() => navigation.navigate('CreatePost')}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="images" size={20} color="#22C55E" />
-                        <Text style={homeStyles.composerActionText}>Photo</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={homeStyles.composerActionButton}
-                        onPress={() => navigation.navigate('CreatePost')}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="happy" size={20} color="#F59E0B" />
-                        <Text style={homeStyles.composerActionText}>Feeling</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
         </>
     );
 
     const renderSuggestShelf = () => (
-        <View className="bg-white py-4 mb-2 border-y border-gray-100">
+        <View style={{ backgroundColor: theme.card, paddingVertical: 16, marginBottom: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.border }}>
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
-                    <Ionicons name="people" size={18} color="#2563EB" />
-                    <Text className="font-bold text-blue-900 text-sm ml-2">{t('peopleYouMayKnow')}</Text>
+                    <Ionicons name="people" size={18} color={theme.primary} />
+                    <Text style={{ fontWeight: 'bold', color: theme.text, fontSize: 14, marginLeft: 8 }}>{t('peopleYouMayKnow')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.push('FollowList', { userId: user?.id, action: 'fetch_all_members', title: 'All Members' })} activeOpacity={0.7}>
-                    <Text className="text-blue-600 font-bold text-xs">{t('viewAll') || 'See All'}</Text>
+                    <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 12 }}>{t('viewAll') || 'See All'}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -1061,27 +1043,49 @@ const HomeScreen = () => {
                     return (
                         <TouchableOpacity
                             onPress={() => navigation.navigate('PublicProfile', { userId: item.id })}
-                            className="mr-3 w-32 bg-white rounded-2xl border border-gray-100 items-center py-4 px-2 shadow-sm"
+                            style={{
+                                marginRight: 12,
+                                width: 128,
+                                backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
+                                borderRadius: 16,
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                                alignItems: 'center',
+                                paddingVertical: 16,
+                                paddingHorizontal: 8,
+                                shadowColor: '#000',
+                                shadowOpacity: isDarkMode ? 0.2 : 0.05,
+                                shadowRadius: 4,
+                                elevation: 2,
+                            }}
                             activeOpacity={0.8}
                         >
                             {item.photo ? (
                                 <Image
                                     source={{ uri: `${getImageUrl(item.photo)}` }}
-                                    className="w-14 h-14 rounded-full bg-slate-100 mb-2.5 border border-orange-100"
+                                    style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDarkMode ? '#334155' : '#F1F5F9', marginBottom: 10, borderWidth: 1, borderColor: theme.border }}
                                 />
                             ) : (
-                                <View className="w-14 h-14 rounded-full bg-blue-50 items-center justify-center mb-2.5 border border-orange-100">
-                                    <Text className="text-blue-600 font-bold text-lg">{item.full_name?.[0] || item.name?.[0] || '?'}</Text>
+                                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDarkMode ? '#1E3A8A40' : '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: theme.border }}>
+                                    <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 18 }}>{item.full_name?.[0] || item.name?.[0] || '?'}</Text>
                                 </View>
                             )}
-                            <Text className="text-blue-900 font-semibold text-xs text-center px-1" numberOfLines={1}>{item.full_name || item.name}</Text>
-                            {item.city ? <Text className="text-gray-400 text-[10px] mt-0.5" numberOfLines={1}>{item.city}</Text> : null}
+                            <Text style={{ color: theme.text, fontWeight: '600', fontSize: 12, textAlign: 'center', paddingHorizontal: 4 }} numberOfLines={1}>{item.full_name || item.name}</Text>
+                            {item.city ? <Text style={{ color: theme.textMuted, fontSize: 10, marginTop: 2 }} numberOfLines={1}>{item.city}</Text> : null}
                             <TouchableOpacity
                                 onPress={() => handleFollowUser(item.id?.toString())}
-                                className={`mt-3 px-4 py-1.5 rounded-full ${isFollowed ? 'bg-slate-100 border border-slate-200' : 'bg-blue-600'}`}
+                                style={{
+                                    marginTop: 12,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 6,
+                                    borderRadius: 9999,
+                                    backgroundColor: isFollowed ? (isDarkMode ? '#334155' : '#F1F5F9') : theme.primary,
+                                    borderWidth: isFollowed ? 1 : 0,
+                                    borderColor: theme.border,
+                                }}
                                 activeOpacity={0.7}
                             >
-                                <Text className={`text-[10px] font-bold ${isFollowed ? 'text-slate-500' : 'text-white'}`}>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', color: isFollowed ? theme.textSecondary : '#FFFFFF' }}>
                                     {isFollowed ? t('followingStatus') : t('followStatus')}
                                 </Text>
                             </TouchableOpacity>
@@ -1093,14 +1097,14 @@ const HomeScreen = () => {
     );
 
     const renderReelsShelf = () => (
-        <View className="bg-white py-4 mb-2 border-y border-gray-100">
+        <View style={{ backgroundColor: theme.card, paddingVertical: 16, marginBottom: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.border }}>
             <View className="flex-row justify-between items-center px-5 mb-3.5">
                 <View className="flex-row items-center">
-                    <Ionicons name="videocam" size={18} color="#2563EB" />
-                    <Text className="font-bold text-blue-900 text-sm ml-2">{t('reels')}</Text>
+                    <Ionicons name="videocam" size={18} color={theme.primary} />
+                    <Text style={{ fontWeight: 'bold', color: theme.text, fontSize: 14, marginLeft: 8 }}>{t('reels')}</Text>
                 </View>
                 <TouchableOpacity onPress={() => navigation.navigate('Reels')} activeOpacity={0.7}>
-                    <Text className="text-blue-600 font-bold text-xs">{t('viewAll')}</Text>
+                    <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 12 }}>{t('viewAll')}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
@@ -1114,20 +1118,53 @@ const HomeScreen = () => {
                         return (
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('CreateReel')}
-                                className="mr-3 w-32 h-52 rounded-2xl bg-blue-50/50 items-center justify-center border border-orange-100 border-dashed"
+                                style={{
+                                    marginRight: 12,
+                                    width: 128,
+                                    height: 208,
+                                    borderRadius: 16,
+                                    backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: 1.5,
+                                    borderColor: isDarkMode ? theme.border : '#DBEAFE',
+                                    borderStyle: 'dashed'
+                                }}
                                 activeOpacity={0.7}
                             >
-                                <View className="bg-blue-100 w-10 h-10 rounded-full items-center justify-center mb-2">
-                                    <Ionicons name="add" size={24} color="#2563EB" />
+                                <View style={{
+                                    backgroundColor: isDarkMode ? '#2563EB30' : '#DBEAFE',
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 22,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 8
+                                }}>
+                                    <Ionicons name="add" size={26} color={theme.primary} />
                                 </View>
-                                <Text className="text-blue-950 font-bold text-xs">{t('create')}</Text>
+                                <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 12 }}>{t('create')}</Text>
                             </TouchableOpacity>
                         );
                     }
                     return (
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Reels', { initialReelId: item.id })}
-                            className="mr-3 w-32 h-52 rounded-2xl overflow-hidden bg-gray-900 relative shadow-md"
+                            style={{
+                                marginRight: 12,
+                                width: 128,
+                                height: 208,
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                                backgroundColor: isDarkMode ? '#0F172A' : '#111827',
+                                position: 'relative',
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                                shadowColor: '#000',
+                                shadowOpacity: 0.2,
+                                shadowRadius: 4,
+                                elevation: 3,
+                            }}
                             activeOpacity={0.8}
                         >
                             <Image
@@ -1142,14 +1179,14 @@ const HomeScreen = () => {
                                 </View>
                             </View>
                             {/* Simple Bottom Overlay */}
-                            <View className="absolute bottom-0 left-0 right-0 p-2.5 bg-black/40 justify-center">
+                            <View className="absolute bottom-0 left-0 right-0 p-2.5 bg-black/60 justify-center">
                                 <Text className="text-white text-[10px] font-semibold" numberOfLines={1}>{item.name}</Text>
                                 <View className="flex-row items-center mt-1">
                                     <Ionicons name="heart" size={8} color="white" />
                                     <Text className="text-white text-[9px] font-bold ml-1">{item.likes || 0}</Text>
                                 </View>
                             </View>
-                            <View className="absolute top-2 right-2 bg-black/30 p-1.5 rounded-full">
+                            <View className="absolute top-2 right-2 bg-black/40 p-1.5 rounded-full">
                                 <Ionicons name="videocam" size={12} color="white" />
                             </View>
                         </TouchableOpacity>
@@ -1231,14 +1268,14 @@ const HomeScreen = () => {
 
     if (loading) {
         return (
-            <View className="flex-1 justify-center items-center bg-blue-50">
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
                 <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F5F9]" edges={[]} {...tabSwipe.panHandlers}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={[]} {...tabSwipe.panHandlers}>
             <LinkUpHeader
                 currentTab="Home"
                 headerAnim={headerAnim}
@@ -1281,7 +1318,7 @@ const HomeScreen = () => {
                 viewabilityConfig={viewabilityConfig}
                 // @ts-ignore
                 estimatedItemSize={600}
-                contentContainerStyle={{ paddingTop: statusBarHeight + 116, paddingBottom: 100, backgroundColor: '#F8FAFC' }}
+                contentContainerStyle={{ paddingTop: statusBarHeight + 116, paddingBottom: 100, backgroundColor: theme.background }}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20">
                         <Ionicons name="newspaper-outline" size={48} color="#ccc" />
@@ -1468,40 +1505,46 @@ const homeStyles = StyleSheet.create({
     },
     composerCard: {
         backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 12,
-        marginHorizontal: 12,
-        marginBottom: 8,
-        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        marginBottom: 6,
+        borderBottomWidth: 1,
         borderColor: '#F0F2F5',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        elevation: 2,
     },
     composerTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     composerAvatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         backgroundColor: '#E2E8F0',
     },
     composerInputButton: {
         flex: 1,
-        backgroundColor: '#F0F2F5',
+        backgroundColor: '#F1F5F9',
         borderRadius: 20,
-        paddingHorizontal: 16,
-        height: 40,
+        paddingHorizontal: 14,
+        height: 38,
         justifyContent: 'center',
         marginLeft: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
     },
     composerInputText: {
-        fontSize: 14,
+        fontSize: 13.5,
+        fontWeight: '500',
         color: '#64748B',
+    },
+    composerMediaBtn: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
+        backgroundColor: '#F0FDF4',
     },
     composerDivider: {
         height: 1,

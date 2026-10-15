@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -18,6 +19,7 @@ const getImageUrl = (photo: string | null, baseUrl: string) => {
 };
 
 const MyPostsScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activePostId, setActivePostId] = useState<string | null>(null);
@@ -147,16 +149,23 @@ const MyPostsScreen = ({ navigation }: any) => {
     );
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+                <ActivityIndicator color="#2563EB" />
+            </View>
+        );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View 
+                className="flex-row items-center p-4" 
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900">My Posts</Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>My Posts</Text>
             </View>
 
             <FlashList
@@ -165,11 +174,11 @@ const MyPostsScreen = ({ navigation }: any) => {
                 keyExtractor={item => item.id?.toString() || Math.random().toString()}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
-                contentContainerStyle={{ paddingBottom: 20 }}
+                contentContainerStyle={{ paddingBottom: 20, backgroundColor: theme.background }}
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
                         <Text className="text-4xl mb-4">📝</Text>
-                        <Text className="text-slate-500 text-center text-lg">You haven't posted anything yet.</Text>
+                        <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 16 }}>You haven't posted anything yet.</Text>
                     </View>
                 }
             />

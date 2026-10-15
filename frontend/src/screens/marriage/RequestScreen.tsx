@@ -7,12 +7,14 @@ import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const RequestScreen = ({ navigation }: any) => {
     const layout = useWindowDimensions();
+    const { isDarkMode, theme } = useTheme();
 
     const [index, setIndex] = useState(0);
     const [routes] = useState([
@@ -142,27 +144,27 @@ const RequestScreen = ({ navigation }: any) => {
     };
 
     const renderPendingItem = ({ item }: { item: any }) => (
-        <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
+                style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', marginRight: 16 }}
             />
-            <View className="flex-1">
-                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
-                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{item.full_name}</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 13, marginTop: 2 }}>{item.city} • {item.age} yrs</Text>
 
-                <View className="flex-row gap-2 mt-2">
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                     <TouchableOpacity
-                        className="bg-green-600 px-4 py-1.5 rounded-lg flex-1 items-center"
+                        style={{ backgroundColor: '#16A34A', paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, flex: 1, alignItems: 'center' }}
                         onPress={() => handleAction(item.id, 'accept')}
                     >
-                        <Text className="text-white font-bold text-xs">Accept</Text>
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Accept</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        className="bg-red-50 text-red-600 border border-red-200 px-4 py-1.5 rounded-lg flex-1 items-center"
+                        style={{ backgroundColor: isDarkMode ? 'rgba(239,68,68,0.15)' : '#FEF2F2', borderWidth: 1, borderColor: isDarkMode ? '#EF4444' : '#FECACA', paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, flex: 1, alignItems: 'center' }}
                         onPress={() => handleAction(item.id, 'reject')}
                     >
-                        <Text className="text-red-600 font-bold text-xs">Reject</Text>
+                        <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 12 }}>Reject</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -170,18 +172,18 @@ const RequestScreen = ({ navigation }: any) => {
     );
 
     const renderConnectedItem = ({ item }: { item: any }) => (
-        <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
+                style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', marginRight: 16 }}
             />
-            <View className="flex-1">
-                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
-                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{item.full_name}</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 13, marginTop: 2 }}>{item.city} • {item.age} yrs</Text>
 
-                <View className="flex-row gap-2 mt-2">
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                     <TouchableOpacity
-                        className="bg-blue-600 px-4 py-1.5 rounded-lg flex-1 items-center flex-row justify-center space-x-1"
+                        style={{ backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, flex: 1, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 4 }}
                         onPress={() => navigation.navigate('Chat', {
                             receiver: {
                                 id: item.friend_profile_id,
@@ -192,17 +194,17 @@ const RequestScreen = ({ navigation }: any) => {
                             platform: 'marriage'
                         })}
                     >
-                        <Ionicons name="chatbubble-ellipses" size={16} color="white" />
-                        <Text className="text-white font-bold text-xs">Chat</Text>
+                        <Ionicons name="chatbubble-ellipses" size={15} color="white" />
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Chat</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        className="bg-slate-100 border border-slate-300 px-4 py-1.5 rounded-lg flex-1 items-center"
+                        style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 7, borderRadius: 8, flex: 1, alignItems: 'center' }}
                         onPress={() => Alert.alert("Remove Friend", "Are you sure?", [
                             { text: "Cancel", style: "cancel" },
                             { text: "Remove", style: "destructive", onPress: () => handleAction(item.id, 'remove') }
                         ])}
                     >
-                        <Text className="text-slate-500 font-bold text-xs">Remove</Text>
+                        <Text style={{ color: theme.textMuted, fontWeight: 'bold', fontSize: 12 }}>Remove</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -210,19 +212,19 @@ const RequestScreen = ({ navigation }: any) => {
     );
 
     const renderSentItem = ({ item }: { item: any }) => (
-        <View className="flex-row items-center p-4 bg-white border-b border-gray-100">
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
             <Image
                 source={{ uri: item.photo ? `${PHOTO_URL}${item.photo}` : 'https://via.placeholder.com/100' }}
-                className="w-16 h-16 rounded-full bg-slate-200 mr-4"
+                style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', marginRight: 16 }}
             />
-            <View className="flex-1">
-                <Text className="text-lg font-bold text-blue-900">{item.full_name}</Text>
-                <Text className="text-slate-500 text-sm">{item.city} • {item.age} yrs</Text>
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{item.full_name}</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 13, marginTop: 2 }}>{item.city} • {item.age} yrs</Text>
                 <TouchableOpacity
-                    className="mt-2 bg-slate-100 border border-slate-300 px-4 py-1.5 rounded-lg items-center self-start"
+                    style={{ marginTop: 8, backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8, alignItems: 'center', alignSelf: 'flex-start' }}
                     onPress={() => handleCancelRequest(item.receiver_id)}
                 >
-                    <Text className="text-slate-500 font-bold text-xs">Cancel Request</Text>
+                    <Text style={{ color: theme.textMuted, fontWeight: 'bold', fontSize: 12 }}>Cancel Request</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -233,10 +235,11 @@ const RequestScreen = ({ navigation }: any) => {
             data={pendingRequests}
             renderItem={renderPendingItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
+            contentContainerStyle={{ backgroundColor: theme.background }}
             ListEmptyComponent={
-                <View className="items-center mt-20 p-4">
-                    <Text className="text-4xl mb-4">🔕</Text>
-                    <Text className="text-slate-500 text-center text-lg">No pending requests.</Text>
+                <View style={{ alignItems: 'center', marginTop: 80, padding: 16 }}>
+                    <Text style={{ fontSize: 36, marginBottom: 16 }}>🔕</Text>
+                    <Text style={{ color: theme.textMuted, textAlign: 'center', fontSize: 16, fontWeight: '500' }}>No pending requests.</Text>
                 </View>
             }
         />
@@ -247,10 +250,11 @@ const RequestScreen = ({ navigation }: any) => {
             data={sentRequests}
             renderItem={renderSentItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
+            contentContainerStyle={{ backgroundColor: theme.background }}
             ListEmptyComponent={
-                <View className="items-center mt-20 p-4">
-                    <Text className="text-4xl mb-4">🕊️</Text>
-                    <Text className="text-slate-500 text-center text-lg">No sent requests.</Text>
+                <View style={{ alignItems: 'center', marginTop: 80, padding: 16 }}>
+                    <Text style={{ fontSize: 36, marginBottom: 16 }}>🕊️</Text>
+                    <Text style={{ color: theme.textMuted, textAlign: 'center', fontSize: 16, fontWeight: '500' }}>No sent requests.</Text>
                 </View>
             }
         />
@@ -261,10 +265,11 @@ const RequestScreen = ({ navigation }: any) => {
             data={connectedFriends}
             renderItem={renderConnectedItem}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : index.toString()}
+            contentContainerStyle={{ backgroundColor: theme.background }}
             ListEmptyComponent={
-                <View className="items-center mt-20 p-4">
-                    <Text className="text-4xl mb-4">👥</Text>
-                    <Text className="text-slate-500 text-center text-lg">No connections yet.</Text>
+                <View style={{ alignItems: 'center', marginTop: 80, padding: 16 }}>
+                    <Text style={{ fontSize: 36, marginBottom: 16 }}>👥</Text>
+                    <Text style={{ color: theme.textMuted, textAlign: 'center', fontSize: 16, fontWeight: '500' }}>No connections yet.</Text>
                 </View>
             }
         />
@@ -277,16 +282,16 @@ const RequestScreen = ({ navigation }: any) => {
     });
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
+        return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <View className="p-4 border-b border-orange-100 bg-blue-50 flex-row items-center">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="#2563EB" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+            <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card, flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12, padding: 4 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-2xl font-bold text-blue-600">Requests & Friends</Text>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text }}>Requests & Friends</Text>
             </View>
 
             <TabView
@@ -297,12 +302,12 @@ const RequestScreen = ({ navigation }: any) => {
                 renderTabBar={(props: any) => (
                     <TabBar
                         {...props}
-                        indicatorStyle={{ backgroundColor: '#2563EB' }}
-                        style={{ backgroundColor: 'white' }}
+                        indicatorStyle={{ backgroundColor: '#2563EB', height: 3 }}
+                        style={{ backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}
                         activeColor="#2563EB"
-                        inactiveColor="gray"
+                        inactiveColor={theme.textMuted}
                         renderLabel={({ route, focused, color }: any) => (
-                            <Text style={{ color, margin: 8, fontWeight: 'bold' }}>
+                            <Text style={{ color, margin: 8, fontWeight: focused ? 'bold' : '600', fontSize: 14 }}>
                                 {route.title}
                             </Text>
                         )}

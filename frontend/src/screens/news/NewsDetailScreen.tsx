@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
 import api, { WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -239,6 +240,7 @@ const ProfessionalVideoPlayer = ({
 
 const NewsDetailScreen = ({ route, navigation }: any) => {
     const isFocused = useIsFocused();
+    const { isDarkMode, theme } = useTheme();
     const { news, newsId } = route.params || {};
     const [currentNews, setCurrentNews] = React.useState<any>(news || null);
     const [loading, setLoading] = React.useState(!news && !!newsId);
@@ -285,13 +287,13 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     };
 
     if (loading) return (
-        <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#2563EB" />
         </View>
     );
     if (!currentNews) return (
-        <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
-            <Text>News not found</Text>
+        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: theme.textMuted }}>News not found</Text>
         </View>
     );
 
@@ -316,7 +318,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                     currentNews.posted_by?.toLowerCase() === 'admin';
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
             {/* Custom Toast */}
             {toastMsg && (
                 <View style={{ position: 'absolute', top: 60, left: 20, right: 20, backgroundColor: '#10b981', padding: 12, borderRadius: 8, zIndex: 1000, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 5 }}>
@@ -326,15 +328,15 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
             )}
 
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
-                    <Ionicons name="arrow-back" size={24} color="#172554" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={{ fontWeight: '700', fontSize: 16, color: '#172554', flex: 1 }} numberOfLines={1}>
+                <Text style={{ fontWeight: '700', fontSize: 16, color: theme.text, flex: 1 }} numberOfLines={1}>
                     {currentNews.category || 'News Detail'}
                 </Text>
                 <TouchableOpacity onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={24} color="#172554" />
+                    <Ionicons name="share-social-outline" size={24} color={theme.text} />
                 </TouchableOpacity>
             </View>
 
@@ -343,25 +345,25 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 {/* Category + Date */}
                 <View style={{ paddingHorizontal: 16, paddingTop: 16, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     {currentNews.category && (
-                        <View style={{ backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: '#DBEAFE' }}>
-                            <Text style={{ fontSize: 11, color: '#2563EB', fontWeight: '800' }}>{currentNews.category}</Text>
+                        <View style={{ backgroundColor: isDarkMode ? 'rgba(37,99,235,0.18)' : '#EFF6FF', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: isDarkMode ? '#1D4ED8' : '#DBEAFE' }}>
+                            <Text style={{ fontSize: 11, color: '#3B82F6', fontWeight: '800' }}>{currentNews.category}</Text>
                         </View>
                     )}
                     {(currentNews.state || currentNews.district) && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                            <Ionicons name="location-outline" size={12} color="#64748B" />
-                            <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '600' }}>
+                            <Ionicons name="location-outline" size={12} color={theme.textMuted} />
+                            <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '600' }}>
                                 {currentNews.state}{currentNews.district ? ` · ${currentNews.district}` : ''}
                             </Text>
                         </View>
                     )}
-                    <Text style={{ fontSize: 11, color: '#9ca3af', marginLeft: 'auto' }}>
+                    <Text style={{ fontSize: 11, color: theme.textMuted, marginLeft: 'auto' }}>
                         {currentNews.created_at?.split(' ')[0]}
                     </Text>
                 </View>
 
                 {/* Title */}
-                <Text style={{ fontSize: 22, fontWeight: '800', color: '#172554', lineHeight: 30, paddingHorizontal: 16, marginBottom: 16, textAlign: 'justify' }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text, lineHeight: 30, paddingHorizontal: 16, marginBottom: 16, textAlign: 'justify' }}>
                     {currentNews.title}
                 </Text>
 
@@ -423,14 +425,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
                 {/* Full Description */}
                 <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-                    <Text style={{ fontSize: 16, color: '#374151', lineHeight: 28, textAlign: 'justify' }}>
+                    <Text style={{ fontSize: 16, color: theme.textSecondary, lineHeight: 28, textAlign: 'justify' }}>
                         {cleanDescription}
                     </Text>
                 </View>
 
                 {/* Reporter Details Section */}
                 <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-                    <View style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                    <View style={{ flexDirection: 'row', backgroundColor: theme.card, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
                         
                         {/* Avatar & Info */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1.6, paddingRight: 4 }}>
@@ -447,12 +449,12 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="checkmark-circle" size={10} color="white" />
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#172554', marginBottom: 2 }} numberOfLines={1}>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 2 }} numberOfLines={1}>
                                     {currentNews.user_name || currentNews.posted_by || 'Admin'}
                                 </Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Ionicons name="location-outline" size={12} color="#64748B" />
-                                    <Text style={{ fontSize: 11, color: '#64748B', marginLeft: 2 }} numberOfLines={1}>
+                                    <Ionicons name="location-outline" size={12} color={theme.textMuted} />
+                                    <Text style={{ fontSize: 11, color: theme.textMuted, marginLeft: 2 }} numberOfLines={1}>
                                         {currentNews.user_city || currentNews.district || currentNews.state || 'India'}
                                     </Text>
                                 </View>
@@ -460,14 +462,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                         </View>
 
                         {/* Stats */}
-                        <View style={{ flex: 1, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: '#E2E8F0', paddingLeft: 10 }}>
+                        <View style={{ flex: 1, justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: theme.border, paddingLeft: 10 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                <Ionicons name="camera-outline" size={16} color="#64748B" style={{ marginRight: 6 }} />
-                                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>{currentNews.news_count || '0'} न्यूज़</Text>
+                                <Ionicons name="camera-outline" size={16} color={theme.textMuted} style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '500' }}>{currentNews.news_count || '0'} न्यूज़</Text>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="people-outline" size={16} color="#64748B" style={{ marginRight: 6 }} />
-                                <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>{currentNews.followers_count || '0'} फॉलोअर्स</Text>
+                                <Ionicons name="people-outline" size={16} color={theme.textMuted} style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '500' }}>{currentNews.followers_count || '0'} फॉलोअर्स</Text>
                             </View>
                         </View>
                         
@@ -505,8 +507,8 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 onPress={() => navigation.navigate('PublicProfile', { user: { id: currentNews.user_id, name: currentNews.user_name, profile_photo: currentNews.user_image } })}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6, width: '100%', alignItems: 'center' }}>
-                                <Text style={{ color: '#64748B', fontSize: 11, fontWeight: '600' }}>प्रोफाइल देखें</Text>
+                                style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6, width: '100%', alignItems: 'center', backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}>
+                                <Text style={{ color: theme.text, fontSize: 11, fontWeight: '600' }}>प्रोफाइल देखें</Text>
                             </TouchableOpacity>
                         </View>
                         )}

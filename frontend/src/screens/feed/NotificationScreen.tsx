@@ -7,6 +7,7 @@ import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { NotificationDBService } from '../../services/NotificationDBService';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
@@ -107,6 +108,7 @@ const groupNotifications = (notifications: any[]) => {
 };
 
 const NotificationScreen = ({ navigation }: any) => {
+    const { isDarkMode, theme } = useTheme();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -255,7 +257,11 @@ const NotificationScreen = ({ navigation }: any) => {
         
         return (
             <TouchableOpacity
-                style={[styles.itemContainer, isUnread && styles.unreadContainer]}
+                style={[
+                    styles.itemContainer,
+                    { backgroundColor: theme.card, borderBottomColor: theme.border },
+                    isUnread && { backgroundColor: isDarkMode ? 'rgba(37, 99, 235, 0.12)' : '#EFF6FF' }
+                ]}
                 activeOpacity={0.7}
                 onPress={() => handlePress(item)}
             >
@@ -267,8 +273,8 @@ const NotificationScreen = ({ navigation }: any) => {
                 {/* Avatar with Badge */}
                 <View style={styles.avatarContainer}>
                     {isLogo && !isSystem ? (
-                        <View style={[styles.avatar, { backgroundColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' }]}>
-                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#475569' }}>{getInitials(item)}</Text>
+                        <View style={[styles.avatar, { backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', alignItems: 'center', justifyContent: 'center' }]}>
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.textSecondary }}>{getInitials(item)}</Text>
                         </View>
                     ) : (
                         <Image
@@ -283,7 +289,7 @@ const NotificationScreen = ({ navigation }: any) => {
                                                 : 'https://via.placeholder.com/100')
                                     }
                             }
-                            style={styles.avatar}
+                            style={[styles.avatar, { backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }]}
                             contentFit="cover"
                             cachePolicy="memory-disk"
                         />
@@ -294,10 +300,10 @@ const NotificationScreen = ({ navigation }: any) => {
                 {/* Content */}
                 <View style={styles.contentContainer}>
                     <View style={styles.titleRow}>
-                        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                        <Text style={styles.date}>{timeAgo(item.date || item.created_at)}</Text>
+                        <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>{item.title}</Text>
+                        <Text style={[styles.date, { color: theme.textMuted }]}>{timeAgo(item.date || item.created_at)}</Text>
                     </View>
-                    <Text style={styles.body} numberOfLines={2}>
+                    <Text style={[styles.body, { color: theme.textSecondary }]} numberOfLines={2}>
                         {item.type === 'post' && item.title === 'New Post' ? (
                             item._groupCount && item._groupCount > 1
                                 ? <Text><Text style={{fontWeight: '900', fontStyle: 'italic', color: '#2563EB'}}>LinkUp</Text> shared {item._groupCount} new posts.</Text>
@@ -316,15 +322,13 @@ const NotificationScreen = ({ navigation }: any) => {
                                 : (item.body || item.message)
                         )}
                     </Text>
-                    
-                    {/* Action Buttons removed as requested */}
                 </View>
 
                 {/* Optional Right Thumbnail (for posts) */}
                 {(item.type === 'post' || item.type === 'like' || item.type === 'comment') && item.data?.thumbnail && (
                     <Image 
                         source={{ uri: item.data.thumbnail?.startsWith('http') ? item.data.thumbnail : `${BASE_URL_ROOT}/${item.data.thumbnail}` }} 
-                        style={styles.thumbnail} 
+                        style={[styles.thumbnail, { backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }]} 
                         contentFit="cover" 
                     />
                 )}
@@ -333,12 +337,12 @@ const NotificationScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={['top']}>
-            <View style={styles.header}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notifications</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Notifications</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -351,14 +355,14 @@ const NotificationScreen = ({ navigation }: any) => {
                     data={notifications}
                     renderItem={renderItem}
                     keyExtractor={item => item.id?.toString() || Math.random().toString()}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: 20, backgroundColor: theme.background }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchNotifications(); }} colors={['#2563EB']} />}
                     onEndReached={fetchMoreNotifications}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#2563EB" style={{ margin: 20 }} /> : null}
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', marginTop: 50 }}>
-                            <Text style={{ color: 'gray' }}>No notifications yet.</Text>
+                            <Text style={{ color: theme.textMuted }}>No notifications yet.</Text>
                         </View>
                     }
                 />
@@ -370,29 +374,29 @@ const NotificationScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     header: { 
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
-        paddingHorizontal: 8, paddingVertical: 12, backgroundColor: '#F8FAFC' 
+        paddingHorizontal: 8, paddingVertical: 12
     },
-    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#172554' },
+    headerTitle: { fontSize: 20, fontWeight: 'bold' },
     itemContainer: { 
         flexDirection: 'row', paddingVertical: 12, paddingRight: 16, 
-        backgroundColor: '#F8FAFC', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E2E8F0' 
+        borderBottomWidth: StyleSheet.hairlineWidth 
     },
-    unreadContainer: { backgroundColor: '#eff6ff' },
+    unreadContainer: {},
     unreadDotContainer: { width: 20, alignItems: 'center', justifyContent: 'center' },
     unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' },
     avatarContainer: { position: 'relative', marginRight: 12 },
-    avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0' },
+    avatar: { width: 60, height: 60, borderRadius: 30 },
     badge: { 
         position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, 
         borderRadius: 12, justifyContent: 'center', alignItems: 'center', 
-        borderWidth: 2, borderColor: '#F8FAFC' 
+        borderWidth: 2, borderColor: '#FFFFFF' 
     },
     contentContainer: { flex: 1, justifyContent: 'center' },
     titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-    title: { fontWeight: 'bold', fontSize: 15, color: '#172554', flex: 1, marginRight: 8 },
-    date: { fontSize: 12, color: '#64748B' },
-    body: { fontSize: 14, color: '#64748B', lineHeight: 20 },
-    thumbnail: { width: 50, height: 50, borderRadius: 8, marginLeft: 12, backgroundColor: '#E2E8F0' }
+    title: { fontWeight: 'bold', fontSize: 15, flex: 1, marginRight: 8 },
+    date: { fontSize: 12 },
+    body: { fontSize: 14, lineHeight: 20 },
+    thumbnail: { width: 50, height: 50, borderRadius: 8, marginLeft: 12 }
 });
 
 export default NotificationScreen;

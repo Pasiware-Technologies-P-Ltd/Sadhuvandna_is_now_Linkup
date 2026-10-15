@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const ChangePasswordScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [current, setCurrent] = useState('');
     const [newPass, setNewPass] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -59,43 +61,46 @@ const ChangePasswordScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', marginLeft: 16 }}>Change Password</Text>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', marginLeft: 16, color: theme.text }}>Change Password</Text>
             </View>
 
             <View style={{ padding: 20, gap: 20 }}>
 
                 <View>
-                    <Text style={{ fontWeight: '600', marginBottom: 8, color: '#374151' }}>Current Password</Text>
+                    <Text style={{ fontWeight: '600', marginBottom: 8, color: theme.subtext }}>Current Password</Text>
                     <TextInput
                         secureTextEntry
-                        style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                        style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 12, backgroundColor: theme.card, color: theme.text }}
                         value={current} onChangeText={setCurrent}
                         placeholder="Enter current password"
+                        placeholderTextColor={theme.subtext}
                     />
                 </View>
 
                 <View>
-                    <Text style={{ fontWeight: '600', marginBottom: 8, color: '#374151' }}>New Password</Text>
+                    <Text style={{ fontWeight: '600', marginBottom: 8, color: theme.subtext }}>New Password</Text>
                     <TextInput
                         secureTextEntry
-                        style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                        style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 12, backgroundColor: theme.card, color: theme.text }}
                         value={newPass} onChangeText={setNewPass}
                         placeholder="Min 6 characters"
+                        placeholderTextColor={theme.subtext}
                     />
                 </View>
 
                 <View>
-                    <Text style={{ fontWeight: '600', marginBottom: 8, color: '#374151' }}>Confirm New Password</Text>
+                    <Text style={{ fontWeight: '600', marginBottom: 8, color: theme.subtext }}>Confirm New Password</Text>
                     <TextInput
                         secureTextEntry
-                        style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                        style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 12, backgroundColor: theme.card, color: theme.text }}
                         value={confirm} onChangeText={setConfirm}
                         placeholder="Re-enter new password"
+                        placeholderTextColor={theme.subtext}
                     />
                 </View>
 

@@ -38,6 +38,24 @@ const fontScaleListeners = new Set<any>();
   });
 };
 
+const isIconFont = (fontFamilyName: any): boolean => {
+  if (!fontFamilyName) return false;
+  const fam = String(fontFamilyName).toLowerCase().trim();
+  return (
+    fam.includes('icon') ||
+    fam.includes('awesome') ||
+    fam.includes('feather') ||
+    fam.includes('entypo') ||
+    fam.includes('octicon') ||
+    fam.includes('fontisto') ||
+    fam.includes('foundation') ||
+    fam.includes('zocial') ||
+    fam.includes('antdesign') ||
+    fam.includes('material') ||
+    fam.includes('glyph')
+  );
+};
+
 const CustomText = React.forwardRef((props: any, ref: any) => {
   const [activeFont, setActiveFont] = React.useState((global as any).activeFontFamily);
   const [activeScale, setActiveScale] = React.useState((global as any).activeFontScale || 1);
@@ -59,14 +77,22 @@ const CustomText = React.forwardRef((props: any, ref: any) => {
 
   let finalStyle = props.style;
   if (activeFont || activeScale !== 1) {
-    const flatStyle = activeScale !== 1 ? (ReactNative.StyleSheet.flatten(props.style) || {}) : null;
-    const fontSize = flatStyle && flatStyle.fontSize ? flatStyle.fontSize * activeScale : undefined;
-    
-    finalStyle = [
-      props.style,
-      activeFont ? { fontFamily: activeFont } : {},
-      fontSize ? { fontSize } : {}
-    ];
+    const flatStyle = ReactNative.StyleSheet.flatten(props.style) || {};
+    const existingFont = flatStyle.fontFamily;
+    const isIcon = isIconFont(existingFont);
+
+    // Never override icon fonts or explicitly specified custom preview fonts
+    const shouldApplyFont = !!activeFont && !isIcon && (!existingFont || existingFont === 'sans-serif' || existingFont === 'System');
+    const shouldScale = activeScale !== 1 && !isIcon && !!flatStyle.fontSize;
+    const scaledFontSize = shouldScale ? flatStyle.fontSize * activeScale : undefined;
+
+    if (shouldApplyFont || shouldScale) {
+      finalStyle = [
+        props.style,
+        shouldApplyFont ? { fontFamily: activeFont } : {},
+        scaledFontSize ? { fontSize: scaledFontSize } : {}
+      ];
+    }
   }
 
   return React.createElement(OriginalText, {

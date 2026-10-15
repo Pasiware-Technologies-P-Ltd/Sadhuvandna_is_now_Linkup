@@ -5,8 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const PostBreakingNewsScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [title, setTitle] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
@@ -71,10 +73,10 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
     };
 
     const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.newsCard}>
-            <Text style={styles.newsTitle}>{item.title}</Text>
+        <View style={[styles.newsCard, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
+            <Text style={[styles.newsTitle, { color: theme.text }]}>{item.title}</Text>
             <View style={styles.newsFooter}>
-                <Text style={styles.newsDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                <Text style={[styles.newsDate, { color: theme.subtext }]}>{new Date(item.created_at).toLocaleDateString()}</Text>
                 <View style={[styles.statusBadge, item.is_active == 1 ? styles.statusApproved : styles.statusPending]}>
                     <Text style={[styles.statusText, item.is_active == 1 ? styles.statusApprovedText : styles.statusPendingText]}>
                         {item.is_active == 1 ? 'Approved' : 'Pending'}
@@ -85,22 +87,22 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#E2E8F0' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View style={styles.header}>
+                <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Post Breaking News</Text>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Post Breaking News</Text>
                     <View style={{ width: 24 }} />
                 </View>
 
-                <View style={styles.formContainer}>
-                    <Text style={styles.label}>Breaking News Text / Ticker</Text>
+                <View style={[styles.formContainer, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.label, { color: theme.text }]}>Breaking News Text / Ticker</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border, color: theme.text }]}
                         placeholder="Enter breaking news here..."
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={theme.subtext}
                         value={title}
                         onChangeText={setTitle}
                         multiline
@@ -121,7 +123,7 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
                 </View>
 
                 <View style={styles.listContainer}>
-                    <Text style={styles.listHeader}>My Breaking News</Text>
+                    <Text style={[styles.listHeader, { color: theme.text }]}>My Breaking News</Text>
                     {fetching ? (
                         <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
                     ) : (
@@ -131,7 +133,7 @@ const PostBreakingNewsScreen = ({ navigation }: any) => {
                             renderItem={renderItem}
                             contentContainerStyle={{ paddingBottom: 20 }}
                             ListEmptyComponent={
-                                <Text style={styles.emptyText}>You haven't posted any breaking news yet.</Text>
+                                <Text style={[styles.emptyText, { color: theme.subtext }]}>You haven't posted any breaking news yet.</Text>
                             }
                         />
                     )}

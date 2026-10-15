@@ -23,6 +23,7 @@ import api, { API_BASE_URL } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
 import { ImageService } from "../../services/ImageService";
 
 import { ChatDBService } from "../../services/ChatDBService";
@@ -53,6 +54,7 @@ const QUICK_TAGS = [
 const MarriageScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
+  const { isDarkMode, theme } = useTheme();
   const [user, setUser] = useState<any>(null);
   const tabSwipe = useTabSwipe({ currentTab: 'Marriage', isBusiness: user?.is_business == 1 });
 
@@ -409,24 +411,24 @@ const MarriageScreen = ({ navigation }: any) => {
       <Animated.View
         style={{
           flex: 1,
-          backgroundColor: "white",
+          backgroundColor: theme.card,
           margin: 6,
           borderRadius: 20,
           borderWidth: 1,
-          borderColor: "#E2E8F0",
+          borderColor: theme.border,
           overflow: "hidden",
           opacity: shimmerAnim,
         }}
       >
         <View
-          style={{ width: "100%", height: 160, backgroundColor: "#E2E8F0" }}
+          style={{ width: "100%", height: 160, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }}
         />
         <View style={{ padding: 12 }}>
           <View
             style={{
               width: "70%",
               height: 14,
-              backgroundColor: "#E2E8F0",
+              backgroundColor: isDarkMode ? '#334155' : '#E2E8F0',
               borderRadius: 4,
               marginBottom: 8,
             }}
@@ -435,7 +437,7 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               width: "90%",
               height: 10,
-              backgroundColor: "#E2E8F0",
+              backgroundColor: isDarkMode ? '#334155' : '#E2E8F0',
               borderRadius: 4,
             }}
           />
@@ -444,9 +446,9 @@ const MarriageScreen = ({ navigation }: any) => {
           style={{
             width: "100%",
             height: 36,
-            backgroundColor: "#F8FAFC",
+            backgroundColor: isDarkMode ? '#0F172A' : '#F8FAFC',
             borderTopWidth: 1,
-            borderColor: "#E2E8F0",
+            borderColor: theme.border,
           }}
         />
       </Animated.View>
@@ -507,11 +509,11 @@ const MarriageScreen = ({ navigation }: any) => {
         onPress={() => navigation.navigate("MarriageDetail", { profile: item })}
         style={{
           flex: 1,
-          backgroundColor: "white",
+          backgroundColor: theme.card,
           margin: 6,
           borderRadius: 20,
           borderWidth: 1,
-          borderColor: "#E2E8F0",
+          borderColor: theme.border,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.03,
@@ -527,7 +529,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 ? ImageService.getFeedImageUrl(`${PHOTO_URL}${item.photo}`, 300)
                 : "https://via.placeholder.com/150",
             }}
-            style={{ width: "100%", height: 160, backgroundColor: "#F8FAFC" }}
+            style={{ width: "100%", height: 160, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}
             contentFit="cover"
           />
           {/* Flame compatibility score badge */}
@@ -536,16 +538,18 @@ const MarriageScreen = ({ navigation }: any) => {
               position: "absolute",
               top: 10,
               left: 10,
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
+              backgroundColor: isDarkMode ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.88)",
               paddingHorizontal: 6,
               paddingVertical: 3,
               borderRadius: 8,
               flexDirection: "row",
               alignItems: "center",
               gap: 2,
+              borderWidth: 1,
+              borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
           >
-            <Text style={{ fontSize: 9, fontWeight: "900", color: "#2563EB" }}>
+            <Text style={{ fontSize: 9, fontWeight: "900", color: "#3B82F6" }}>
               🔥 {compatibilityScore}%
             </Text>
           </View>
@@ -554,15 +558,17 @@ const MarriageScreen = ({ navigation }: any) => {
               position: "absolute",
               top: 10,
               right: 10,
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
+              backgroundColor: isDarkMode ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.88)",
               paddingHorizontal: 8,
               paddingVertical: 3,
               borderRadius: 12,
+              borderWidth: 1,
+              borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
           >
             <Text
               style={{
-                color: "#2563EB",
+                color: "#3B82F6",
                 fontSize: 8,
                 fontWeight: "bold",
                 textTransform: "uppercase",
@@ -576,7 +582,7 @@ const MarriageScreen = ({ navigation }: any) => {
 
         <View style={{ padding: 12 }}>
           <Text
-            style={{ fontSize: 14, fontWeight: "bold", color: "#172554" }}
+            style={{ fontSize: 14, fontWeight: "bold", color: theme.text }}
             numberOfLines={1}
           >
             {item.full_name}, {item.age}
@@ -585,7 +591,7 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               fontSize: 11,
               fontWeight: "500",
-              color: "#64748B",
+              color: theme.textMuted,
               marginTop: 4,
             }}
             numberOfLines={1}
@@ -600,17 +606,17 @@ const MarriageScreen = ({ navigation }: any) => {
             <View
               style={{
                 width: "100%",
-                backgroundColor: "#EFF6FF",
+                backgroundColor: isDarkMode ? "rgba(37,99,235,0.15)" : "#EFF6FF",
                 paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
                 borderTopWidth: 1,
-                borderTopColor: "#DBEAFE",
+                borderTopColor: isDarkMode ? "#1D4ED8" : "#DBEAFE",
               }}
             >
               <Text
                 style={{
-                  color: "#2563EB",
+                  color: "#3B82F6",
                   fontWeight: "bold",
                   fontSize: 11,
                   letterSpacing: 0.3,
@@ -625,17 +631,17 @@ const MarriageScreen = ({ navigation }: any) => {
             <View
               style={{
                 width: "100%",
-                backgroundColor: "#EFF6FF",
+                backgroundColor: isDarkMode ? "rgba(37,99,235,0.15)" : "#EFF6FF",
                 paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
                 borderTopWidth: 1,
-                borderTopColor: "#DBEAFE",
+                borderTopColor: isDarkMode ? "rgba(37,99,235,0.3)" : "#DBEAFE",
               }}
             >
               <Text
                 style={{
-                  color: "#2563EB",
+                  color: isDarkMode ? "#60a5fa" : "#2563EB",
                   fontWeight: "bold",
                   fontSize: 11,
                   letterSpacing: 0.3,
@@ -650,12 +656,12 @@ const MarriageScreen = ({ navigation }: any) => {
             <TouchableOpacity
               style={{
                 width: "100%",
-                backgroundColor: "#f0fdf4",
+                backgroundColor: isDarkMode ? "rgba(22, 163, 74, 0.15)" : "#f0fdf4",
                 paddingVertical: 10,
                 alignItems: "center",
                 justifyContent: "center",
                 borderTopWidth: 1,
-                borderTopColor: "#dcfce7",
+                borderTopColor: isDarkMode ? "#15803d" : "#dcfce7",
               }}
               onPress={() =>
                 navigation.navigate("Chat", {
@@ -667,7 +673,7 @@ const MarriageScreen = ({ navigation }: any) => {
             >
               <Text
                 style={{
-                  color: "#16a34a",
+                  color: isDarkMode ? "#4ade80" : "#16a34a",
                   fontWeight: "bold",
                   fontSize: 11,
                   letterSpacing: 0.3,
@@ -682,16 +688,10 @@ const MarriageScreen = ({ navigation }: any) => {
     );
   };
   const renderListHeader = () => {
-    const subtitleText = (t as any)("findSoulmate");
-    const displaySubtitle =
-      subtitleText && subtitleText !== "findSoulmate"
-        ? subtitleText
-        : "Soulmate";
-
     return (
       <View
         style={{
-          backgroundColor: "#FFFFFF",
+          backgroundColor: theme.card,
           marginHorizontal: 4,
           marginTop: 4,
           marginBottom: 10,
@@ -699,7 +699,7 @@ const MarriageScreen = ({ navigation }: any) => {
           paddingTop: 14,
           paddingBottom: 12,
           borderWidth: 1,
-          borderColor: "#E2E8F0",
+          borderColor: theme.border,
           shadowColor: "#0F172A",
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.05,
@@ -723,36 +723,13 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 fontSize: 20,
                 fontWeight: "900",
-                color: "#0F172A",
+                color: theme.text,
                 letterSpacing: -0.4,
               }}
             >
               Matrimony
             </Text>
-            <View
-              style={{
-                backgroundColor: "#EFF6FF",
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderRadius: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 3,
-                borderWidth: 1,
-                borderColor: "#DBEAFE",
-              }}
-            >
-              <Ionicons name="sparkles" size={10} color="#2563EB" />
-              <Text
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: "700",
-                  color: "#2563EB",
-                }}
-              >
-                {displaySubtitle}
-              </Text>
-            </View>
+            
           </View>
 
           {/* Action Trio: Search, Requests, Chat (All preserved with improved proportions) */}
@@ -763,12 +740,12 @@ const MarriageScreen = ({ navigation }: any) => {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: filterVisible ? "#2563EB" : "#F8FAFC",
+                backgroundColor: filterVisible ? "#2563EB" : (isDarkMode ? "#1E293B" : "#F8FAFC"),
                 paddingHorizontal: 11,
                 height: 34,
                 borderRadius: 17,
                 borderWidth: 1,
-                borderColor: filterVisible ? "#2563EB" : "#E2E8F0",
+                borderColor: filterVisible ? "#2563EB" : theme.border,
                 gap: 5,
               }}
               activeOpacity={0.7}
@@ -776,11 +753,11 @@ const MarriageScreen = ({ navigation }: any) => {
               <Ionicons
                 name="funnel-outline"
                 size={12}
-                color={filterVisible ? "#FFFFFF" : "#2563EB"}
+                color={filterVisible ? "#FFFFFF" : "#3B82F6"}
               />
               <Text
                 style={{
-                  color: filterVisible ? "#FFFFFF" : "#334155",
+                  color: filterVisible ? "#FFFFFF" : theme.text,
                   fontSize: 11.5,
                   fontWeight: "700",
                 }}
@@ -796,16 +773,16 @@ const MarriageScreen = ({ navigation }: any) => {
                 width: 34,
                 height: 34,
                 borderRadius: 17,
-                backgroundColor: "#F8FAFC",
+                backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                 borderWidth: 1,
-                borderColor: "#E2E8F0",
+                borderColor: theme.border,
                 justifyContent: "center",
                 alignItems: "center",
                 position: "relative",
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="people" size={17} color="#2563EB" />
+              <Ionicons name="people" size={17} color="#3B82F6" />
               {requestCount > 0 && (
                 <View
                   style={{
@@ -820,7 +797,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     justifyContent: "center",
                     paddingHorizontal: 2,
                     borderWidth: 1.5,
-                    borderColor: "#FFFFFF",
+                    borderColor: theme.card,
                   }}
                 >
                   <Text
@@ -841,9 +818,9 @@ const MarriageScreen = ({ navigation }: any) => {
                 width: 34,
                 height: 34,
                 borderRadius: 17,
-                backgroundColor: "#F8FAFC",
+                backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                 borderWidth: 1,
-                borderColor: "#E2E8F0",
+                borderColor: theme.border,
                 justifyContent: "center",
                 alignItems: "center",
                 position: "relative",
@@ -853,7 +830,7 @@ const MarriageScreen = ({ navigation }: any) => {
               <Ionicons
                 name="chatbubble-ellipses-outline"
                 size={16}
-                color="#2563EB"
+                color="#3B82F6"
               />
               {unreadCount > 0 && (
                 <View
@@ -899,7 +876,7 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               flex: 1,
               flexDirection: "row",
-              backgroundColor: "#F1F5F9",
+              backgroundColor: isDarkMode ? "#0F172A" : "#F1F5F9",
               borderRadius: 20,
               padding: 3,
               height: 40,
@@ -913,7 +890,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 height: "100%",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: gender === "" ? "#FFFFFF" : "transparent",
+                backgroundColor: gender === "" ? (isDarkMode ? "#1E293B" : "#FFFFFF") : "transparent",
                 borderRadius: 17,
                 shadowColor: gender === "" ? "#000" : "transparent",
                 shadowOffset: { width: 0, height: 1.5 },
@@ -927,7 +904,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 style={{
                   fontSize: 11,
                   fontWeight: "700",
-                  color: gender === "" ? "#2563EB" : "#64748B",
+                  color: gender === "" ? "#3B82F6" : theme.textMuted,
                 }}
               >
                 {t("allMatches") || "All Matches"}
@@ -941,7 +918,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 height: "100%",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: gender === "Male" ? "#FFFFFF" : "transparent",
+                backgroundColor: gender === "Male" ? (isDarkMode ? "#1E293B" : "#FFFFFF") : "transparent",
                 borderRadius: 17,
                 shadowColor: gender === "Male" ? "#000" : "transparent",
                 shadowOffset: { width: 0, height: 1.5 },
@@ -955,7 +932,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 style={{
                   fontSize: 11,
                   fontWeight: "700",
-                  color: gender === "Male" ? "#2563EB" : "#64748B",
+                  color: gender === "Male" ? "#3B82F6" : theme.textMuted,
                 }}
               >
                 {t("grooms") || "Grooms"}
@@ -969,7 +946,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 height: "100%",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: gender === "Female" ? "#FFFFFF" : "transparent",
+                backgroundColor: gender === "Female" ? (isDarkMode ? "#1E293B" : "#FFFFFF") : "transparent",
                 borderRadius: 17,
                 shadowColor: gender === "Female" ? "#000" : "transparent",
                 shadowOffset: { width: 0, height: 1.5 },
@@ -983,7 +960,7 @@ const MarriageScreen = ({ navigation }: any) => {
                 style={{
                   fontSize: 11,
                   fontWeight: "700",
-                  color: gender === "Female" ? "#2563EB" : "#64748B",
+                  color: gender === "Female" ? "#3B82F6" : theme.textMuted,
                 }}
               >
                 {t("brides") || "Brides"}
@@ -1001,20 +978,20 @@ const MarriageScreen = ({ navigation }: any) => {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F8FAFC",
+              backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
               paddingLeft: 10,
               paddingRight: 4,
               height: 40,
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: "#DBEAFE",
+              borderColor: theme.border,
               gap: 6,
             }}
             activeOpacity={0.7}
           >
             <Text
               style={{
-                color: "#1E293B",
+                color: theme.text,
                 fontSize: 11,
                 fontWeight: "700",
                 letterSpacing: 0.2,
@@ -1064,9 +1041,9 @@ const MarriageScreen = ({ navigation }: any) => {
                     borderRadius: 16,
                     alignItems: "center",
                     justifyContent: "center",
-                    backgroundColor: isSelected ? "#2563EB" : "#F8FAFC",
+                    backgroundColor: isSelected ? "#2563EB" : (isDarkMode ? "#1E293B" : "#F8FAFC"),
                     borderWidth: 1,
-                    borderColor: isSelected ? "#2563EB" : "#E2E8F0",
+                    borderColor: isSelected ? "#2563EB" : theme.border,
                     shadowColor: isSelected ? "#2563EB" : "transparent",
                     shadowOffset: { width: 0, height: 1 },
                     shadowOpacity: isSelected ? 0.25 : 0,
@@ -1079,7 +1056,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     style={{
                       fontSize: 11.5,
                       fontWeight: isSelected ? "700" : "600",
-                      color: isSelected ? "#FFFFFF" : "#64748B",
+                      color: isSelected ? "#FFFFFF" : theme.textMuted,
                     }}
                   >
                     {tag}
@@ -1094,7 +1071,7 @@ const MarriageScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8FAFC" }} edges={[]} {...tabSwipe.panHandlers}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={[]} {...tabSwipe.panHandlers}>
       {/* LinkUp Global Header with Floating Tabs */}
       <LinkUpHeader
         currentTab="Marriage"
@@ -1114,7 +1091,7 @@ const MarriageScreen = ({ navigation }: any) => {
       />
 
       {loading && myProfileId === 0 ? (
-        <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
           <FlashList
             data={[1, 2, 3, 4, 5, 6]}
             renderItem={renderSkeletonCard}
@@ -1124,6 +1101,7 @@ const MarriageScreen = ({ navigation }: any) => {
               paddingTop: statusBarHeight + 116,
               paddingHorizontal: 6,
               paddingVertical: 6,
+              backgroundColor: theme.background,
             }}
           />
         </View>
@@ -1136,36 +1114,36 @@ const MarriageScreen = ({ navigation }: any) => {
             justifyContent: "center",
             paddingHorizontal: 32,
             paddingTop: statusBarHeight + 116,
-            backgroundColor: "#F8FAFC",
+            backgroundColor: theme.background,
           }}
         >
-          <View className="bg-white rounded-3xl p-8 items-center shadow-md border border-gray-100 w-full">
-            <View className="bg-blue-100 p-5 rounded-full mb-5">
+          <View style={{ backgroundColor: theme.card, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: theme.border, width: '100%' }}>
+            <View style={{ backgroundColor: isDarkMode ? 'rgba(37,99,235,0.2)' : '#DBEAFE', padding: 20, borderRadius: 999, marginBottom: 20 }}>
               <Ionicons name="heart-circle-outline" size={52} color="#2563EB" />
             </View>
-            <Text className="text-xl font-extrabold text-blue-900 mb-2 text-center">
+            <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 8, textAlign: 'center' }}>
               {t("welcomeMatrimony")}
             </Text>
-            <Text className="text-slate-500 text-sm text-center leading-5 mb-6">
+            <Text style={{ color: theme.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
               {t("browseProfilesMsg")}
             </Text>
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate("CreateMarriageProfile", { profile: null })
               }
-              className="bg-blue-600 w-full py-3.5 rounded-2xl items-center shadow-sm mb-3"
+              style={{ backgroundColor: '#2563EB', width: '100%', paddingVertical: 14, borderRadius: 16, alignItems: 'center', marginBottom: 12 }}
             >
-              <Text className="text-white font-extrabold text-base">
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }}>
                 {t("createMyProfile")}
               </Text>
             </TouchableOpacity>
-            <Text className="text-gray-400 text-xs text-center">
+            <Text style={{ color: theme.textMuted, fontSize: 12, textAlign: 'center' }}>
               {t("afterCreatingMsg")}
             </Text>
           </View>
         </View>
       ) : (
-        <View style={{ flex: 1, position: "relative" }}>
+        <View style={{ flex: 1, position: "relative", backgroundColor: theme.background }}>
           <FlashList
             ref={listRef}
             data={profiles}
@@ -1201,7 +1179,7 @@ const MarriageScreen = ({ navigation }: any) => {
               paddingTop: statusBarHeight + 114,
               paddingHorizontal: 6,
               paddingBottom: 40,
-              backgroundColor: "#F8FAFC",
+              backgroundColor: theme.background,
             }}
             ListEmptyComponent={
               loading ? (
@@ -1264,11 +1242,11 @@ const MarriageScreen = ({ navigation }: any) => {
                   top: statusBarHeight + 50,
                   left: 12,
                   right: 12,
-                  backgroundColor: "white",
+                  backgroundColor: theme.card,
                   padding: 20,
                   borderRadius: 24,
                   borderWidth: 1,
-                  borderColor: "#E2E8F0",
+                  borderColor: theme.border,
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 10 },
                   shadowOpacity: 0.15,
@@ -1296,7 +1274,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 11,
                     fontWeight: "bold",
-                    color: "#9ca3af",
+                    color: theme.textMuted,
                     textTransform: "uppercase",
                     marginBottom: 8,
                     letterSpacing: 0.5,
@@ -1313,9 +1291,9 @@ const MarriageScreen = ({ navigation }: any) => {
                       flex: 1,
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: gender === "Male" ? "#2563EB" : "#E2E8F0",
+                      borderColor: gender === "Male" ? "#2563EB" : theme.border,
                       backgroundColor:
-                        gender === "Male" ? "#2563EB" : "#F8FAFC",
+                        gender === "Male" ? "#2563EB" : (isDarkMode ? "#1E293B" : "#F8FAFC"),
                       paddingVertical: 12,
                       alignItems: "center",
                     }}
@@ -1325,7 +1303,7 @@ const MarriageScreen = ({ navigation }: any) => {
                       style={{
                         fontSize: 13,
                         fontWeight: "bold",
-                        color: gender === "Male" ? "white" : "#64748B",
+                        color: gender === "Male" ? "white" : theme.text,
                       }}
                     >
                       {t("groomMale")}
@@ -1337,9 +1315,9 @@ const MarriageScreen = ({ navigation }: any) => {
                       flex: 1,
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: gender === "Female" ? "#db2777" : "#E2E8F0",
+                      borderColor: gender === "Female" ? "#db2777" : theme.border,
                       backgroundColor:
-                        gender === "Female" ? "#db2777" : "#F8FAFC",
+                        gender === "Female" ? "#db2777" : (isDarkMode ? "#1E293B" : "#F8FAFC"),
                       paddingVertical: 12,
                       alignItems: "center",
                     }}
@@ -1349,7 +1327,7 @@ const MarriageScreen = ({ navigation }: any) => {
                       style={{
                         fontSize: 13,
                         fontWeight: "bold",
-                        color: gender === "Female" ? "white" : "#64748B",
+                        color: gender === "Female" ? "white" : theme.text,
                       }}
                     >
                       {t("brideFemale")}
@@ -1361,7 +1339,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 11,
                     fontWeight: "bold",
-                    color: "#9ca3af",
+                    color: theme.textMuted,
                     textTransform: "uppercase",
                     marginBottom: 8,
                     letterSpacing: 0.5,
@@ -1375,10 +1353,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#E2E8F0",
+                      borderColor: theme.border,
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1393,18 +1371,18 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#172554",
+                        color: theme.text,
                       }}
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textMuted}
                     />
                   </View>
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#E2E8F0",
+                      borderColor: theme.border,
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1419,9 +1397,9 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#172554",
+                        color: theme.text,
                       }}
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textMuted}
                     />
                   </View>
                 </View>
@@ -1430,7 +1408,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   style={{
                     fontSize: 11,
                     fontWeight: "bold",
-                    color: "#9ca3af",
+                    color: theme.textMuted,
                     textTransform: "uppercase",
                     marginBottom: 8,
                     letterSpacing: 0.5,
@@ -1444,10 +1422,10 @@ const MarriageScreen = ({ navigation }: any) => {
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#E2E8F0",
+                      borderColor: theme.border,
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1456,7 +1434,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     <Ionicons
                       name="location-outline"
                       size={16}
-                      color="#9ca3af"
+                      color={theme.textMuted}
                       style={{ marginRight: 4 }}
                     />
                     <TextInput
@@ -1467,18 +1445,18 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#172554",
+                        color: theme.text,
                       }}
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textMuted}
                     />
                   </View>
                   <View
                     style={{
                       flex: 1,
-                      backgroundColor: "#F8FAFC",
+                      backgroundColor: isDarkMode ? "#1E293B" : "#F8FAFC",
                       borderRadius: 24,
                       borderWidth: 1,
-                      borderColor: "#E2E8F0",
+                      borderColor: theme.border,
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 16,
@@ -1487,7 +1465,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     <Ionicons
                       name="school-outline"
                       size={16}
-                      color="#9ca3af"
+                      color={theme.textMuted}
                       style={{ marginRight: 4 }}
                     />
                     <TextInput
@@ -1498,9 +1476,9 @@ const MarriageScreen = ({ navigation }: any) => {
                         flex: 1,
                         paddingVertical: 10,
                         fontSize: 13,
-                        color: "#172554",
+                        color: theme.text,
                       }}
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={theme.textMuted}
                     />
                   </View>
                 </View>
@@ -1512,7 +1490,7 @@ const MarriageScreen = ({ navigation }: any) => {
                     alignItems: "center",
                     paddingTop: 12,
                     borderTopWidth: 1,
-                    borderColor: "#E2E8F0",
+                    borderColor: theme.border,
                   }}
                 >
                   <TouchableOpacity
@@ -1528,7 +1506,7 @@ const MarriageScreen = ({ navigation }: any) => {
                   >
                     <Text
                       style={{
-                        color: "#2563EB",
+                        color: "#3B82F6",
                         fontSize: 13,
                         fontWeight: "bold",
                       }}

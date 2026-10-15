@@ -7,11 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL } from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const CreateGroupScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [groupName, setGroupName] = useState('');
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -125,7 +127,11 @@ const CreateGroupScreen = ({ navigation }: any) => {
         const isSelected = selectedFriends.includes(item.partner_id);
         return (
             <TouchableOpacity 
-                className={`flex-row items-center p-3 mb-2 rounded-lg border ${isSelected ? 'border-orange-500 bg-blue-50' : 'border-slate-200 bg-white'}`}
+                className="flex-row items-center p-3 mb-2 rounded-lg border"
+                style={{ 
+                    borderColor: isSelected ? '#2563EB' : theme.border, 
+                    backgroundColor: isSelected ? (isDarkMode ? '#1E3A8A30' : '#EFF6FF') : theme.card 
+                }}
                 onPress={() => toggleFriendSelection(item.partner_id)}
             >
                 <View className="relative mr-3">
@@ -137,19 +143,19 @@ const CreateGroupScreen = ({ navigation }: any) => {
                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${item.is_online ? 'bg-green-500' : 'bg-red-500'}`} 
                     />
                 </View>
-                <Text className="flex-1 text-base font-medium">{item.full_name}</Text>
+                <Text className="flex-1 text-base font-medium" style={{ color: theme.text }}>{item.full_name}</Text>
                 {isSelected && <Ionicons name="checkmark-circle" size={24} color="#2563EB" />}
             </TouchableOpacity>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center p-4 border-b border-gray-100">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
+            <View className="flex-row items-center p-4 border-b" style={{ backgroundColor: theme.card, borderBottomColor: theme.border }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold flex-1">Create Group</Text>
+                <Text className="text-xl font-bold flex-1" style={{ color: theme.text }}>Create Group</Text>
                 <TouchableOpacity onPress={createGroup} disabled={loading}>
                     {loading ? <ActivityIndicator color="#2563EB" /> : <Text className="text-blue-600 font-bold text-base">Create</Text>}
                 </TouchableOpacity>
@@ -173,30 +179,37 @@ const CreateGroupScreen = ({ navigation }: any) => {
 
                 <TextInput
                     placeholder="Group Name"
-                    className="border border-slate-300 rounded-lg p-3 mb-4 text-base"
+                    placeholderTextColor={theme.subtext}
+                    className="rounded-lg p-3 mb-4 text-base"
+                    style={{ backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1, color: theme.text }}
                     value={groupName}
                     onChangeText={setGroupName}
                 />
                 
                 <View className="mb-4">
-                    <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Search Members</Text>
-                    <View className="flex-row items-center bg-slate-100 rounded-lg px-3 py-1">
-                        <Ionicons name="search" size={18} color="#64748B" />
+                    <Text className="text-sm font-bold mb-2 uppercase" style={{ color: theme.subtext }}>Search Members</Text>
+                    <View 
+                        className="flex-row items-center rounded-lg px-3 py-1"
+                        style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}
+                    >
+                        <Ionicons name="search" size={18} color={theme.subtext} />
                         <TextInput
                             className="flex-1 ml-2 text-base p-1"
+                            style={{ color: theme.text }}
                             placeholder="Type name to search..."
+                            placeholderTextColor={theme.subtext}
                             value={searchQuery}
                             onChangeText={handleSearch}
                         />
                         {searchQuery.length > 0 && (
                             <TouchableOpacity onPress={() => handleSearch('')}>
-                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                                <Ionicons name="close-circle" size={18} color={theme.subtext} />
                             </TouchableOpacity>
                         )}
                     </View>
                 </View>
 
-                <Text className="text-sm text-slate-500 font-bold mb-2 uppercase">Select Members ({selectedFriends.length} selected)</Text>
+                <Text className="text-sm font-bold mb-2 uppercase" style={{ color: theme.subtext }}>Select Members ({selectedFriends.length} selected)</Text>
                 
                 {fetching ? (
                     <ActivityIndicator color="#2563EB" className="mt-4" />
@@ -206,7 +219,7 @@ const CreateGroupScreen = ({ navigation }: any) => {
                         renderItem={renderFriend}
                         keyExtractor={(item, index) => item.partner_id ? `user_${item.partner_id}` : index.toString()}
                         contentContainerStyle={{ paddingBottom: 100 }}
-                        ListEmptyComponent={<Text className="text-center text-slate-500 mt-4">No connected members found.</Text>}
+                        ListEmptyComponent={<Text className="text-center mt-4" style={{ color: theme.subtext }}>No connected members found.</Text>}
                     />
                 )}
             </View>

@@ -16,6 +16,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLanguage } from '../../context/LanguageContext';
 import { ImageService } from '../../services/ImageService';
+import { useTheme } from '../../context/ThemeContext';
 
 // Fix: Point to Root uploads, not Api/uploads
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
@@ -27,6 +28,7 @@ const POST_IMAGE_URL = `${BASE_URL_ROOT}/uploads/posts/`;
 const { width } = Dimensions.get('window');
 
 const PublicProfileScreen = ({ route, navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useLanguage();
     const { userId } = route.params;
@@ -555,7 +557,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </View>
 
             {/* Profile Card Overlay Wrapper */}
-            <View style={{ backgroundColor: 'white', borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -24, paddingHorizontal: 16, paddingTop: 16 }}>
+            <View style={{ backgroundColor: theme.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -24, paddingHorizontal: 16, paddingTop: 16 }}>
                 {/* Avatar & Stats Row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity
@@ -572,7 +574,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     >
                         <Image
                             source={{ uri: getImageUrl(user.profile_photo, PHOTO_URL) }}
-                            style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0' }}
+                            style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: theme.card, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }}
                         />
                     </TouchableOpacity>
 
@@ -580,11 +582,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                         <View style={{ alignItems: 'center' }}>
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.posts || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats?.posts || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
+                            <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                         </View>
                         <TouchableOpacity
                             onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_followers', title: 'Followers' })}
@@ -592,11 +594,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.followers || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats?.followers || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
+                            <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_following', title: 'Following' })}
@@ -604,11 +606,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             activeOpacity={0.7}
                         >
                             {statsLoading ? (
-                                <View style={{ width: 32, height: 16, backgroundColor: '#E2E8F0', borderRadius: 4 }} />
+                                <View style={{ width: 32, height: 16, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0', borderRadius: 4 }} />
                             ) : (
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats?.following || 0}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats?.following || 0}</Text>
                             )}
-                            <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
+                            <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -616,12 +618,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                 {/* User Info Details */}
                 <View style={{ marginTop: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#172554', marginRight: 8 }}>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text, marginRight: 8 }}>
                             {user.name || "Community Member"}
                         </Text>
                         {followStats.follows_me && (
-                            <View style={{ backgroundColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
-                                <Text style={{ fontSize: 9, color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followsYou')}</Text>
+                            <View style={{ backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followsYou')}</Text>
                             </View>
                         )}
                     </View>
@@ -632,13 +634,13 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         </View>
                     ) : null}
                     {user.joined_date && !user.joined_date.startsWith('0000') && (
-                        <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Joined {new Date(user.joined_date).toLocaleDateString()}</Text>
+                        <Text style={{ fontSize: 11, color: theme.subtext, marginTop: 2 }}>Joined {new Date(user.joined_date).toLocaleDateString()}</Text>
                     )}
-                    {user.about ? <Text style={{ fontSize: 13, color: '#64748B', fontStyle: 'italic', marginTop: 6 }}>{user.about}</Text> : null}
+                    {user.about ? <Text style={{ fontSize: 13, color: theme.subtext, fontStyle: 'italic', marginTop: 6 }}>{user.about}</Text> : null}
                     {user.city ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                            <Ionicons name="location-outline" size={14} color="#64748B" />
-                            <Text style={{ fontSize: 12, color: '#64748B', marginLeft: 4 }}>{user.city}</Text>
+                            <Ionicons name="location-outline" size={14} color={theme.subtext} />
+                            <Text style={{ fontSize: 12, color: theme.subtext, marginLeft: 4 }}>{user.city}</Text>
                         </View>
                     ) : null}
                 </View>
@@ -716,12 +718,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
                 {/* Business Details Card - only for business profiles */}
                 {user.is_business == 1 && profile?.business_details && (
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#dbeafe', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 10, marginBottom: 12 }}>
+                    <View style={{ backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 10, marginBottom: 12 }}>
                             <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#0064e015', alignItems: 'center', justifyContent: 'center' }}>
                                 <Ionicons name="briefcase" size={15} color="#0064e0" />
                             </View>
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554' }}>Business Details</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.text }}>Business Details</Text>
                         </View>
                         <View style={{ gap: 10 }}>
                             {profile.business_details.phone_no ? (
@@ -730,7 +732,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="call-outline" size={15} color="#10b981" />
                                     </View>
                                     <View>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Phone</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Phone</Text>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.phone_no}</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -741,7 +743,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="mail-outline" size={15} color="#3b82f6" />
                                     </View>
                                     <View>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Email</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Email</Text>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.email}</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -752,7 +754,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="globe-outline" size={15} color="#8b5cf6" />
                                     </View>
                                     <View>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Website</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Website</Text>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.website_url}</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -763,8 +765,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="location-outline" size={15} color="#2563EB" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Address</Text>
-                                        <Text style={{ fontSize: 13, color: '#374151' }}>{profile.business_details.full_address}{profile.business_details.district ? `, ${profile.business_details.district}` : ''}{profile.business_details.state ? `, ${profile.business_details.state}` : ''}{profile.business_details.pincode ? ` - ${profile.business_details.pincode}` : ''}</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Address</Text>
+                                        <Text style={{ fontSize: 13, color: theme.text }}>{profile.business_details.full_address}{profile.business_details.district ? `, ${profile.business_details.district}` : ''}{profile.business_details.state ? `, ${profile.business_details.state}` : ''}{profile.business_details.pincode ? ` - ${profile.business_details.pincode}` : ''}</Text>
                                     </View>
                                 </View>
                             ) : null}
@@ -774,8 +776,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="time-outline" size={15} color="#eab308" />
                                     </View>
                                     <View>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Working Hours</Text>
-                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{profile.business_details.opening_hours}</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Working Hours</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>{profile.business_details.opening_hours}</Text>
                                     </View>
                                 </View>
                             ) : null}
@@ -785,7 +787,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         <Ionicons name="share-social-outline" size={15} color="#f43f5e" />
                                     </View>
                                     <View>
-                                        <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Social Media</Text>
+                                        <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Social Media</Text>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0064e0' }}>{profile.business_details.social_media_account}</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -796,8 +798,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
                 {/* Personal Details Section Card - only for personal profiles */}
                 {!user.is_business && (
-                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554', borderBottomWidth: 1, borderBottomColor: '#F8FAFC', paddingBottom: 8, marginBottom: 12 }}>Personal Details</Text>
+                <View style={{ backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.text, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 8, marginBottom: 12 }}>Personal Details</Text>
                     
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                         {user.education && (
@@ -806,8 +808,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="school-outline" size={14} color="#3b82f6" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Education</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.education}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Education</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.education}</Text>
                                 </View>
                             </View>
                         )}
@@ -817,8 +819,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="male-female-outline" size={14} color="#8b5cf6" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Gender</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.gender}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Gender</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.gender}</Text>
                                 </View>
                             </View>
                         )}
@@ -828,8 +830,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="calendar-outline" size={14} color="#f59e0b" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>DOB</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>DOB</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>
                                         {new Date(user.dob).toLocaleDateString()}
                                     </Text>
                                 </View>
@@ -841,8 +843,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="map-outline" size={14} color="#14b8a6" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>State</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.state}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>State</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.state}</Text>
                                 </View>
                             </View>
                         )}
@@ -852,8 +854,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="briefcase-outline" size={14} color="#10b981" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Occupation</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.occupation}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Occupation</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.occupation}</Text>
                                 </View>
                             </View>
                         )}
@@ -863,8 +865,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="heart-outline" size={14} color="#ec4899" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Status</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.maritial_status}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Status</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.maritial_status}</Text>
                                 </View>
                             </View>
                         )}
@@ -874,8 +876,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="people-outline" size={14} color="#2563EB" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Caste</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }} numberOfLines={1}>{user.cast}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Caste</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{user.cast}</Text>
                                 </View>
                             </View>
                         )}
@@ -885,8 +887,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     <Ionicons name="sparkles-outline" size={14} color="#8b5cf6" />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 9, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>Hobbies</Text>
-                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#374151' }}>{user.hobbi}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, fontWeight: 'bold', textTransform: 'uppercase' }}>Hobbies</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: theme.text }}>{user.hobbi}</Text>
                                 </View>
                             </View>
                         )}
@@ -898,16 +900,16 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             {/* Family & Marriage Info Section Card - only for personal profiles */}
             {!user.is_business && (
             <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#F8FAFC', paddingBottom: 8, marginBottom: 12 }}>
+                <View style={{ backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.01, shadowRadius: 6, elevation: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 8, marginBottom: 12 }}>
                         <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#2563EB12', alignItems: 'center', justifyContent: 'center' }}>
                             <Ionicons name="people" size={16} color="#2563EB" />
                         </View>
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#172554', flex: 1 }}>Family & Marriage Info</Text>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.text, flex: 1 }}>Family & Marriage Info</Text>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>Family Members</Text>
+                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>Family Members</Text>
                         {isOwner && (
                             <TouchableOpacity onPress={() => { resetFamForm(); setModalVisible(true); }}>
                                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#2563EB' }}>+ Add Member</Text>
@@ -929,10 +931,10 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 >
                                     <Image
                                         source={{ uri: member.photo ? `${FAMILY_PHOTO_URL}${member.photo}` : 'https://via.placeholder.com/100' }}
-                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#DBEAFE', backgroundColor: '#F8FAFC' }}
+                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#DBEAFE', backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}
                                     />
-                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#374151', textAlign: 'center', marginTop: 4 }} numberOfLines={1}>{member.name}</Text>
-                                    <Text style={{ fontSize: 9, color: '#64748B', textAlign: 'center' }}>{member.relation}</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.text, textAlign: 'center', marginTop: 4 }} numberOfLines={1}>{member.name}</Text>
+                                    <Text style={{ fontSize: 9, color: theme.subtext, textAlign: 'center' }}>{member.relation}</Text>
                                     {isOwner && (
                                         <>
                                             <TouchableOpacity
@@ -953,23 +955,23 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             ))}
                         </ScrollView>
                     ) : (
-                        <Text style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>No family members added.</Text>
+                        <Text style={{ fontSize: 12, color: theme.subtext, marginBottom: 12 }}>No family members added.</Text>
                     )}
 
                     {canShowMatrimony && (
                         marriage_profile ? (
-                            <View style={{ backgroundColor: '#EFF6FF', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: '#DBEAFE', flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF', borderRadius: 14, padding: 12, marginTop: 4, borderWidth: 1, borderColor: isDarkMode ? '#334155' : '#DBEAFE', flexDirection: 'row', alignItems: 'center' }}>
                                 <TouchableOpacity
                                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
                                     onPress={() => navigation.navigate('MarriageDetail', { profile: marriage_profile })}
                                     activeOpacity={0.8}
                                 >
-                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isDarkMode ? '#334155' : '#DBEAFE', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                                         <Ionicons name="heart" size={20} color="#2563EB" />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#7c2d12' }}>Marriage Profile</Text>
-                                        <Text style={{ fontSize: 11, color: '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>Marriage Profile</Text>
+                                        <Text style={{ fontSize: 11, color: isDarkMode ? '#F97316' : '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
                                     </View>
                                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#2563EB', marginRight: 4 }}>VIEW</Text>
                                     <Ionicons name="chevron-forward" size={16} color="#2563EB" />
@@ -977,7 +979,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                             </View>
                         ) : isOwner ? (
                             <TouchableOpacity
-                                style={{ backgroundColor: '#EFF6FF', borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#DBEAFE', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
+                                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF', borderStyle: 'dashed', borderWidth: 1.5, borderColor: isDarkMode ? '#334155' : '#DBEAFE', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
                                 onPress={() => navigation.navigate('CreateMarriageProfile')}
                                 activeOpacity={0.8}
                             >
@@ -990,14 +992,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </View>
             )}
 
-            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: 'white', marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card, marginTop: 8 }}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('photos')}
                     style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'photos' ? 2 : 0, borderBottomColor: '#2563EB' }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="images-outline" size={18} color={activeTab === 'photos' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
-                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'photos' ? '#2563EB' : '#64748B' }}>
+                    <Ionicons name="images-outline" size={18} color={activeTab === 'photos' ? "#2563EB" : theme.subtext} style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'photos' ? '#2563EB' : theme.subtext }}>
                         {t('photos')} ({photoPosts.length})
                     </Text>
                 </TouchableOpacity>
@@ -1006,8 +1008,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'reels' ? 2 : 0, borderBottomColor: '#2563EB' }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="film-outline" size={18} color={activeTab === 'reels' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
-                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'reels' ? '#2563EB' : '#64748B' }}>
+                    <Ionicons name="film-outline" size={18} color={activeTab === 'reels' ? "#2563EB" : theme.subtext} style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'reels' ? '#2563EB' : theme.subtext }}>
                         {t('reels')} ({reelPosts.length})
                     </Text>
                 </TouchableOpacity>
@@ -1017,8 +1019,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                         style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'saved' ? 2 : 0, borderBottomColor: '#2563EB' }}
                         activeOpacity={0.7}
                     >
-                        <Ionicons name={activeTab === 'saved' ? "bookmark" : "bookmark-outline"} size={18} color={activeTab === 'saved' ? "#2563EB" : "#64748B"} style={{ marginRight: 6 }} />
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'saved' ? '#2563EB' : '#64748B' }}>
+                        <Ionicons name={activeTab === 'saved' ? "bookmark" : "bookmark-outline"} size={18} color={activeTab === 'saved' ? "#2563EB" : theme.subtext} style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: activeTab === 'saved' ? '#2563EB' : theme.subtext }}>
                             {t('saved')} ({savedPosts.length})
                         </Text>
                     </TouchableOpacity>
@@ -1153,7 +1155,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
     if (loading) {
         return (
-            <View className="flex-1 justify-center items-center bg-white">
+            <View className="flex-1 justify-center items-center" style={{ backgroundColor: theme.background }}>
                 <ActivityIndicator size="large" color="#2563EB" />
             </View>
         );
@@ -1161,14 +1163,14 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
     if (!profile) {
         return (
-            <View className="flex-1 justify-center items-center bg-white">
-                <Text className="text-slate-500">User not found</Text>
+            <View className="flex-1 justify-center items-center" style={{ backgroundColor: theme.background }}>
+                <Text style={{ color: theme.subtext }}>User not found</Text>
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
             <StatusBar style="light" translucent={true} backgroundColor="#0000004d" />
             {/* Floating Back Button Overlay */}
             <TouchableOpacity 

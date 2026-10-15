@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useFocusEffect } from '@react-navigation/native';
 import { ImageService } from '../../services/ImageService';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -15,6 +16,7 @@ const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 const MarriageDetailScreen = ({ navigation, route }: any) => {
     const { profile } = route.params;
     const insets = useSafeAreaInsets();
+    const { isDarkMode, theme } = useTheme();
 
     const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
     const [proposalStatus, setProposalStatus] = React.useState<string>(profile.proposal_status || 'none');
@@ -149,69 +151,80 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
     };
 
     const SectionHeader = ({ title, icon }: any) => (
-        <View className="flex-row items-center gap-2 mt-6 mb-3 bg-blue-50 p-2 rounded-lg">
-            <Ionicons name={icon} size={20} color="#2563EB" />
-            <Text className="text-lg font-bold text-orange-800">{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 10, backgroundColor: isDarkMode ? 'rgba(37, 99, 235, 0.15)' : '#EFF6FF', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: isDarkMode ? 'rgba(37, 99, 235, 0.3)' : '#DBEAFE' }}>
+            <Ionicons name={icon} size={20} color="#3B82F6" />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>{title}</Text>
         </View>
     );
 
     const isPending = proposalStatus === 'pending' || proposalStatus === 'sent' || proposalStatus === 'received';
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center p-4 border-b border-gray-100 z-10 bg-white">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3 p-1">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card, zIndex: 10 }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12, padding: 4 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900 flex-1" numberOfLines={1}>{profile.full_name}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, flex: 1 }} numberOfLines={1}>{profile.full_name}</Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 40 }}>
-                <View className="relative">
+                <View style={{ position: 'relative' }}>
                     <Image
                         source={{ uri: profile.photo ? ImageService.getDetailImageUrl(`${PHOTO_URL}${profile.photo}`, 1080) : 'https://via.placeholder.com/300' }}
-                        className="bg-slate-200"
-                        style={{ width: '100%', height: 320 }}
+                        style={{ width: '100%', height: 320, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }}
                         contentFit="cover"
                     />
                 </View>
 
-                <View className="p-6 -mt-10 bg-white rounded-t-3xl shadow-lg min-h-screen">
-                    <View className="flex-row justify-between items-start">
-                        <View className="flex-1">
-                            <Text className="text-2xl font-bold text-blue-950">{profile.full_name}</Text>
-                            <Text className="text-blue-600 font-medium text-base mb-1">
+                <View style={{ padding: 22, marginTop: -32, backgroundColor: theme.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: theme.border, minHeight: '100%' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1, marginRight: 12 }}>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.text }}>{profile.full_name}</Text>
+                            <Text style={{ color: '#3B82F6', fontWeight: '600', fontSize: 15, marginVertical: 3 }}>
                                 {profile.occupation} {profile.work_place ? `at ${profile.work_place}` : ''}
                             </Text>
-                            <Text className="text-slate-500 text-sm">
-                                <Ionicons name="location" size={12} /> {profile.city}
+                            <Text style={{ color: theme.textMuted, fontSize: 13, flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="location" size={13} color={theme.textMuted} /> {profile.city}
                             </Text>
                         </View>
-                        <View className="bg-blue-100 px-3 py-1 rounded-full border border-orange-200">
-                            {/* Calculate Age roughly */}
-                            <Text className="text-orange-800 font-bold">{new Date().getFullYear() - new Date(profile.dob).getFullYear()} yrs</Text>
+                        <View style={{ backgroundColor: isDarkMode ? 'rgba(37, 99, 235, 0.2)' : '#DBEAFE', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: isDarkMode ? '#2563EB' : '#BFDBFE' }}>
+                            <Text style={{ color: isDarkMode ? '#93C5FD' : '#1E40AF', fontWeight: 'bold', fontSize: 13 }}>
+                                {new Date().getFullYear() - new Date(profile.dob).getFullYear()} yrs
+                            </Text>
                         </View>
                     </View>
 
                     {/* Action Buttons */}
-                    <View className="mt-6 mb-2">
+                    <View style={{ marginTop: 20, marginBottom: 8 }}>
                         {proposalStatus === 'accepted' || proposalStatus === 'friend' ? (
                             <TouchableOpacity
-                                className="bg-green-600 p-4 rounded-xl items-center shadow-lg shadow-green-100 flex-row justify-center gap-2"
+                                style={{ backgroundColor: '#16A34A', padding: 15, borderRadius: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, elevation: 2 }}
                                 onPress={checkPaymentAndNavigate}
+                                activeOpacity={0.85}
                             >
                                 <Ionicons name="chatbubbles" size={20} color="white" />
-                                <Text className="text-white font-bold text-lg">Send Message</Text>
+                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Send Message</Text>
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
-                                className={`p-4 rounded-xl items-center shadow-lg flex-row justify-center gap-2 ${isPending ? 'bg-slate-200' : 'bg-blue-600 shadow-orange-200'}`}
+                                style={{
+                                    padding: 15,
+                                    borderRadius: 14,
+                                    alignItems: 'center',
+                                    flexDirection: 'row',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                    backgroundColor: isPending ? (isDarkMode ? '#334155' : '#E2E8F0') : '#2563EB',
+                                    elevation: isPending ? 0 : 2,
+                                }}
                                 onPress={handleSendProposal}
                                 disabled={isPending || loading}
+                                activeOpacity={0.85}
                             >
                                 {loading ? <ActivityIndicator color="white" /> : (
                                     <>
-                                        <Ionicons name={isPending ? "time" : "heart"} size={20} color={isPending ? "gray" : "white"} />
-                                        <Text className={`font-bold text-lg ${isPending ? 'text-slate-500' : 'text-white'}`}>
+                                        <Ionicons name={isPending ? "time" : "heart"} size={20} color={isPending ? (isDarkMode ? "#94A3B8" : "gray") : "white"} />
+                                        <Text style={{ fontWeight: 'bold', fontSize: 16, color: isPending ? (isDarkMode ? '#94A3B8' : '#64748B') : 'white' }}>
                                             {isPending ? "Requested" : "Send Interest"}
                                         </Text>
                                     </>
@@ -220,78 +233,80 @@ const MarriageDetailScreen = ({ navigation, route }: any) => {
                         )}
                     </View>
 
-                    <Text className="text-slate-500 italic my-4 leading-5 bg-slate-50 p-3 rounded-lg border border-gray-100 text-center">
+                    <Text style={{ color: theme.textSecondary, fontStyle: 'italic', marginVertical: 14, lineHeight: 22, backgroundColor: isDarkMode ? '#0F172A' : '#F8FAFC', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.border, textAlign: 'center' }}>
                         "{profile.about || "No bio available"}"
                     </Text>
 
                     {/* Basic Info */}
                     <SectionHeader title="Basic Details" icon="person" />
-                    <View className="space-y-3">
-                        <InfoRow label="Age / DOB" value={`${profile.dob} (${new Date().getFullYear() - new Date(profile.dob).getFullYear()} yrs)`} />
-                        <InfoRow label="Height" value={profile.height} />
-                        <InfoRow label="Weight" value={profile.weight} />
-                        <InfoRow label="Marital Status" value={profile.status} />
-                        <InfoRow label="Religion" value={profile.religion} />
-                        <InfoRow label="Caste" value={profile.caste} />
-                        <InfoRow label="Kuldevi" value={profile.kuldevi} />
+                    <View>
+                        <InfoRow label="Age / DOB" value={`${profile.dob} (${new Date().getFullYear() - new Date(profile.dob).getFullYear()} yrs)`} theme={theme} />
+                        <InfoRow label="Height" value={profile.height} theme={theme} />
+                        <InfoRow label="Weight" value={profile.weight} theme={theme} />
+                        <InfoRow label="Marital Status" value={profile.status} theme={theme} />
+                        <InfoRow label="Religion" value={profile.religion} theme={theme} />
+                        <InfoRow label="Caste" value={profile.caste} theme={theme} />
+                        <InfoRow label="Kuldevi" value={profile.kuldevi} theme={theme} />
                     </View>
 
                     {/* Education & Career */}
                     <SectionHeader title="Education & Career" icon="briefcase" />
-                    <View className="space-y-3">
-                        <InfoRow label="Education" value={profile.education} />
-                        <InfoRow label="Occupation" value={profile.occupation} />
-                        <InfoRow label="Work Place" value={profile.work_place} />
-                        <InfoRow label="Income" value={profile.income} />
+                    <View>
+                        <InfoRow label="Education" value={profile.education} theme={theme} />
+                        <InfoRow label="Occupation" value={profile.occupation} theme={theme} />
+                        <InfoRow label="Work Place" value={profile.work_place} theme={theme} />
+                        <InfoRow label="Income" value={profile.income} theme={theme} />
                     </View>
 
                     {/* Family Details */}
                     <SectionHeader title="Family Details" icon="people" />
-                    <View className="space-y-3">
-                        <InfoRow label="Father" value={`${profile.father_name} (${profile.father_occupation})`} />
-                        <InfoRow label="Mother" value={profile.mother_name} />
-                        <InfoRow label="Siblings" value={profile.siblings} />
-                        <InfoRow label="Family Type" value={profile.family_type} />
+                    <View>
+                        <InfoRow label="Father" value={`${profile.father_name} (${profile.father_occupation})`} theme={theme} />
+                        <InfoRow label="Mother" value={profile.mother_name} theme={theme} />
+                        <InfoRow label="Siblings" value={profile.siblings} theme={theme} />
+                        <InfoRow label="Family Type" value={profile.family_type} theme={theme} />
                     </View>
 
                     {/* Lifestyle & Habits */}
                     <SectionHeader title="Lifestyle & Habits" icon="cafe" />
-                    <View className="space-y-3">
-                        <InfoRow label="Nature" value={profile.nature} />
-                        <InfoRow label="Food Habit" value={profile.food} />
-                        <InfoRow label="Habits" value={profile.habits} />
-                        <InfoRow label="Hobbies" value={profile.hobbies} />
+                    <View>
+                        <InfoRow label="Nature" value={profile.nature} theme={theme} />
+                        <InfoRow label="Food Habit" value={profile.food} theme={theme} />
+                        <InfoRow label="Habits" value={profile.habits} theme={theme} />
+                        <InfoRow label="Hobbies" value={profile.hobbies} theme={theme} />
                     </View>
 
                     {/* Location */}
                     <SectionHeader title="Location" icon="location" />
-                    <View className="space-y-3">
-                        <InfoRow label="City" value={profile.city} />
-                        <InfoRow label="Residence" value={profile.residence} />
+                    <View>
+                        <InfoRow label="City" value={profile.city} theme={theme} />
+                        <InfoRow label="Residence" value={profile.residence} theme={theme} />
                     </View>
 
                     {/* Partner Preferences */}
                     <SectionHeader title="Partner Preference" icon="heart" />
-                    <View className="space-y-3">
-                        <InfoRow label="Age Range" value={`${profile.partner_age_from} - ${profile.partner_age_to} yrs`} />
-                        <InfoRow label="Education" value={profile.partner_education} />
-                        <View className="mt-2">
-                            <Text className="text-slate-500 text-xs uppercase mb-1">Expectations</Text>
-                            <Text className="text-blue-900 bg-blue-50 p-2 rounded-lg border border-orange-100">{profile.partner_expectations || 'N/A'}</Text>
+                    <View>
+                        <InfoRow label="Age Range" value={`${profile.partner_age_from} - ${profile.partner_age_to} yrs`} theme={theme} />
+                        <InfoRow label="Education" value={profile.partner_education} theme={theme} />
+                        <View style={{ marginTop: 8 }}>
+                            <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 6 }}>Expectations</Text>
+                            <Text style={{ color: theme.text, backgroundColor: isDarkMode ? '#0F172A' : '#EFF6FF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}>
+                                {profile.partner_expectations || 'N/A'}
+                            </Text>
                         </View>
                     </View>
 
-                    <View className="h-10" />
+                    <View style={{ height: 40 }} />
                 </View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-const InfoRow = ({ label, value }: { label: string, value: string }) => (
-    <View className="flex-row border-b border-gray-100 py-2 items-start">
-        <Text className="w-32 text-gray-400 text-sm font-medium">{label}</Text>
-        <Text className="flex-1 text-blue-900 text-sm font-semibold">{value || 'N/A'}</Text>
+const InfoRow = ({ label, value, theme }: { label: string, value: string, theme: any }) => (
+    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.border, paddingVertical: 10, alignItems: 'flex-start' }}>
+        <Text style={{ width: 130, color: theme.textMuted, fontSize: 13, fontWeight: '500' }}>{label}</Text>
+        <Text style={{ flex: 1, color: theme.text, fontSize: 13, fontWeight: '600' }}>{value || 'N/A'}</Text>
     </View>
 );
 

@@ -8,6 +8,7 @@ import api, { API_BASE_URL } from '../../services/api';
 import PostCard, { PostType } from '../../components/PostCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ImageService } from '../../services/ImageService';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -16,6 +17,7 @@ const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 const gifCache: Record<string, any[]> = {};
 
 const PostDetailScreen = ({ route, navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const { post, postId, focusedComment } = route.params;
     const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -225,40 +227,46 @@ const PostDetailScreen = ({ route, navigation }: any) => {
         const isOwner = user && item.user_id && String(user.id) === String(item.user_id);
         
         return (
-            <View className="flex-row p-3 border-b border-gray-100 bg-white">
+            <View 
+                className="flex-row p-3 border-b"
+                style={{ backgroundColor: theme.background, borderBottomColor: theme.border }}
+            >
                 <Image
                     source={{ uri: item.profile_photo ? ImageService.getFeedImageUrl(`${PHOTO_URL}${item.profile_photo}`, 100) : 'https://via.placeholder.com/50' }}
                     className="w-8 h-8 rounded-full bg-slate-200 mt-1"
                 />
                 <View className="ml-3 flex-1 pr-2">
                     <View className="flex-row items-center">
-                        <View className="bg-slate-100 rounded-2xl px-3 py-2 self-start flex-shrink">
-                            <Text className="font-bold text-blue-950 text-xs">{item.name}</Text>
+                        <View 
+                            className="rounded-2xl px-3 py-2 self-start flex-shrink"
+                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}
+                        >
+                            <Text className="font-bold text-xs" style={{ color: theme.text }}>{item.name}</Text>
                             {(item.comment && item.comment.startsWith('http') && (item.comment.includes('giphy.com') || item.comment.includes('tenor.com') || item.comment.endsWith('.gif'))) ? (
-                                <Image source={{ uri: item.comment }} style={{ width: 120, height: 120, borderRadius: 8, marginTop: 4, backgroundColor: '#E2E8F0' }} contentFit="cover" />
+                                <Image source={{ uri: item.comment }} style={{ width: 120, height: 120, borderRadius: 8, marginTop: 4, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }} contentFit="cover" />
                             ) : (
-                                <Text className="text-blue-900 text-sm mt-0.5">{item.comment}</Text>
+                                <Text className="text-sm mt-0.5" style={{ color: isDarkMode ? '#CBD5E1' : '#1E293B' }}>{item.comment}</Text>
                             )}
                         </View>
                         {isOwner && (
                             <TouchableOpacity onPress={() => handleCommentOptions(item)} className="p-2 ml-1">
-                                <Ionicons name="ellipsis-vertical" size={16} color="#64748B" />
+                                <Ionicons name="ellipsis-vertical" size={16} color={theme.subtext} />
                             </TouchableOpacity>
                         )}
                     </View>
-                    <Text className="text-gray-400 text-[10px] ml-2 mt-1">{item.date}</Text>
+                    <Text className="text-[10px] ml-2 mt-1" style={{ color: theme.subtext }}>{item.date}</Text>
                 </View>
             </View>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-            <View className="flex-row items-center border-b border-slate-200 p-2">
+        <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }} edges={['top', 'bottom']}>
+            <View className="flex-row items-center border-b p-2" style={{ backgroundColor: theme.card, borderBottomColor: theme.border }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="font-bold text-lg ml-2">{currentPost?.user?.name || 'Post'}'s Post</Text>
+                <Text className="font-bold text-lg ml-2" style={{ color: theme.text }}>{currentPost?.user?.name || 'Post'}'s Post</Text>
             </View>
 
             <KeyboardAvoidingView
@@ -285,12 +293,12 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                         isDetail={true}
                                         onUserPress={() => navigation.navigate('PublicProfile', { userId: currentPost.user?.id })}
                                     />
-                                    <Text className="p-3 font-bold text-slate-500 text-sm">Comments</Text>
+                                    <Text className="p-3 font-bold text-sm" style={{ color: theme.subtext }}>Comments</Text>
                                 </View>
                             }
                             ListEmptyComponent={
                                 !loadingComments ? (
-                                    <Text className="text-center text-gray-400 py-10">No comments yet. Be the first!</Text>
+                                    <Text className="text-center py-10" style={{ color: theme.subtext }}>No comments yet. Be the first!</Text>
                                 ) : (
                                     <ActivityIndicator className="py-10" color="orange" />
                                 )
@@ -300,12 +308,17 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                     ) : null}
                 </View>
 
-                <View className="bg-white border-t border-slate-200">
+                <View style={{ backgroundColor: theme.card, borderTopWidth: 1, borderTopColor: theme.border }}>
                     <View className="flex-row items-center p-2">
-                        <View className="flex-1 flex-row items-center bg-slate-100 rounded-full px-4 py-1 min-h-[48px] mr-2">
+                        <View 
+                            className="flex-1 flex-row items-center rounded-full px-4 py-1 min-h-[48px] mr-2"
+                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}
+                        >
                             <TextInput
-                                className="flex-1 py-2 text-slate-600 max-h-24"
+                                className="flex-1 py-2 max-h-24"
+                                style={{ color: theme.text }}
                                 placeholder="Write a comment..."
+                                placeholderTextColor={theme.subtext}
                                 value={newComment}
                                 onChangeText={setNewComment}
                                 multiline
@@ -319,8 +332,8 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                 }}
                                 className="p-2"
                             >
-                                <View className={`px-2 py-0.5 rounded ${showGifPicker ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                                    <Text className={`text-[10px] font-bold ${showGifPicker ? 'text-white' : 'text-slate-500'}`}>GIF</Text>
+                                <View className={`px-2 py-0.5 rounded ${showGifPicker ? 'bg-blue-600' : isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                                    <Text className={`text-[10px] font-bold ${showGifPicker ? 'text-white' : isDarkMode ? 'text-slate-300' : 'text-slate-500'}`}>GIF</Text>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -331,13 +344,13 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                 }}
                                 className="p-2 -mr-2"
                             >
-                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : "#9ca3af"} />
+                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : theme.subtext} />
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity 
                             onPress={handleSendComment} 
                             disabled={!newComment.trim()}
-                            className={`w-12 h-12 rounded-full items-center justify-center ${newComment.trim() ? "bg-blue-600" : "bg-slate-200"}`}
+                            className={`w-12 h-12 rounded-full items-center justify-center ${newComment.trim() ? "bg-blue-600" : isDarkMode ? "bg-slate-800" : "bg-slate-200"}`}
                         >
                             <Ionicons name="send" size={20} color={newComment.trim() ? 'white' : 'gray'} style={{ marginLeft: 2 }} />
                         </TouchableOpacity>
@@ -352,7 +365,7 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                             ['🔥', '💯', '⭐', '🌟', '✨', '💫', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🎯', '💎', '🚨']
                         ];
                         return (
-                            <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingBottom: 10 }}>
+                            <View style={{ backgroundColor: theme.card, borderTopWidth: 1, borderTopColor: theme.border, paddingBottom: 10 }}>
                                 {emojiRows.map((row, rowIndex) => (
                                     <ScrollView key={rowIndex} horizontal showsHorizontalScrollIndicator={false}>
                                         <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 }}>
@@ -373,19 +386,24 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                     })()}
 
                     {showGifPicker && (
-                        <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', height: 250 }}>
-                            <View className="flex-row items-center px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                <Ionicons name="search" size={16} color="#9ca3af" />
+                        <View style={{ backgroundColor: theme.card, borderTopWidth: 1, borderTopColor: theme.border, height: 250 }}>
+                            <View 
+                                className="flex-row items-center px-3 py-2 border-b"
+                                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderBottomColor: theme.border }}
+                            >
+                                <Ionicons name="search" size={16} color={theme.subtext} />
                                 <TextInput
-                                    className="flex-1 ml-2 text-sm text-blue-900 py-1"
+                                    className="flex-1 ml-2 text-sm py-1"
+                                    style={{ color: theme.text }}
                                     placeholder="Search GIFs..."
+                                    placeholderTextColor={theme.subtext}
                                     value={gifQuery}
                                     onChangeText={(t) => { setGifQuery(t); fetchGifs(t); }}
                                     returnKeyType="search"
                                 />
                                 {gifQuery.length > 0 && (
                                     <TouchableOpacity onPress={() => { setGifQuery(''); fetchGifs(''); }}>
-                                        <Ionicons name="close-circle" size={16} color="#9ca3af" />
+                                        <Ionicons name="close-circle" size={16} color={theme.subtext} />
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -404,27 +422,27 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                                                     const gifUrl = item.images?.fixed_height?.url;
                                                     if(gifUrl && currentPost && user) {
                                                         const payload = {
-                                                            action: 'comment',
-                                                            id: currentPost.id,
-                                                            user_id: user.id,
-                                                            comment: gifUrl
-                                                        };
-                                                        try {
-                                                            const res = await api.post('like_comment_action.php', payload);
-                                                            setShowGifPicker(false);
-                                                            setGifQuery('');
-                                                            fetchComments(currentPost.id);
-                                                            setCurrentPost(prev => prev ? ({ ...prev, comments: prev.comments + 1 }) : null);
-                                                        } catch (e) {
-                                                            Alert.alert("Error", "Failed to post GIF");
-                                                        }
-                                                    }
-                                                }}
+                                                             action: 'comment',
+                                                             id: currentPost.id,
+                                                             user_id: user.id,
+                                                             comment: gifUrl
+                                                         };
+                                                         try {
+                                                             const res = await api.post('like_comment_action.php', payload);
+                                                             setShowGifPicker(false);
+                                                             setGifQuery('');
+                                                             fetchComments(currentPost.id);
+                                                             setCurrentPost(prev => prev ? ({ ...prev, comments: prev.comments + 1 }) : null);
+                                                         } catch (e) {
+                                                             Alert.alert("Error", "Failed to post GIF");
+                                                         }
+                                                     }
+                                                 }}
                                                 style={{ flex: 1/3, aspectRatio: 1, padding: 2 }}
                                             >
                                                 <Image 
                                                     source={{ uri: item.images?.fixed_height_small?.url || item.images?.fixed_height?.url }} 
-                                                    style={{ flex: 1, borderRadius: 4, backgroundColor: '#E2E8F0' }} 
+                                                    style={{ flex: 1, borderRadius: 4, backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }} 
                                                     contentFit="cover" 
                                                 />
                                             </TouchableOpacity>
@@ -446,16 +464,24 @@ const PostDetailScreen = ({ route, navigation }: any) => {
                 onRequestClose={() => setOptionsModalVisible(false)}
             >
                 <TouchableOpacity 
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} 
                     activeOpacity={1} 
                     onPress={() => setOptionsModalVisible(false)}
                 >
-                    <View className="bg-white rounded-t-3xl pt-2 pb-8 px-4" onStartShouldSetResponder={() => true}>
-                        <View className="w-12 h-1.5 bg-gray-300 rounded-full self-center mb-6" />
+                    <View 
+                        className="rounded-t-3xl pt-2 pb-8 px-4" 
+                        style={{ backgroundColor: theme.card }}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View className="w-12 h-1.5 rounded-full self-center mb-6" style={{ backgroundColor: isDarkMode ? '#475569' : '#D1D5DB' }} />
                         
-                        <TouchableOpacity onPress={handleEditCommentInit} className="flex-row items-center py-4 px-2 border-b border-gray-100">
-                            <Ionicons name="pencil-outline" size={24} color="#374151" />
-                            <Text className="text-blue-900 text-base font-semibold ml-4">Edit Comment</Text>
+                        <TouchableOpacity 
+                            onPress={handleEditCommentInit} 
+                            className="flex-row items-center py-4 px-2 border-b"
+                            style={{ borderBottomColor: theme.border }}
+                        >
+                            <Ionicons name="pencil-outline" size={24} color={theme.text} />
+                            <Text className="text-base font-semibold ml-4" style={{ color: theme.text }}>Edit Comment</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={handleDeleteCommentPrompt} className="flex-row items-center py-4 px-2">

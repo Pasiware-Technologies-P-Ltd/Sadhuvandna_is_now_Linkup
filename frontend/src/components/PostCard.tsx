@@ -23,6 +23,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { logoBase64 } from '../constants/logoBase64';
 import { getVideoThumbnail } from '../utils/thumbnailHelper';
+import { useTheme } from '../context/ThemeContext';
 
 const FILTERS: any = {
     'none': { color: 'transparent' },
@@ -329,8 +330,18 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, postId, isMuted
                 if (soundRef.current) {
                     await soundRef.current.unloadAsync();
                 }
+                const formattedUrl = url?.startsWith('http')
+                    ? url
+                    : (url ? `https://www.sadhuvandna.co.in/${url.replace(/^\/+/, '')}` : '');
+
+                if (!formattedUrl) {
+                    setIsLoaded(true);
+                    if (onReady) onReady(true);
+                    return;
+                }
+
                 const { sound } = await Audio.Sound.createAsync(
-                    { uri: url },
+                    { uri: formattedUrl },
                     {
                         shouldPlay: false, // Don't play until loaded
                         positionMillis: (startTime || 0) * 1000,
@@ -351,8 +362,8 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, postId, isMuted
                         }
                     }
                 });
-            } catch (e) {
-                console.error(`[NativeAudio] Load Error for post ${postId}:`, e);
+            } catch (e: any) {
+                console.warn(`[NativeAudio] Audio unavailable for post ${postId}:`, e?.message || e);
                 // Don't block video if audio fails
                 setIsLoaded(true);
                 if (onReady) onReady(true);
@@ -431,6 +442,7 @@ const BasePostCard = ({
 }) => {
     const navigation = useNavigation<any>();
     const isFocused = useIsFocused();
+    const { isDarkMode, theme } = useTheme();
     const [liked, setLiked] = useState(Boolean(post.isLiked || (post as any).user_liked));
     const [likeCount, setLikeCount] = useState(post.likes);
     // Track self-initiated like/unlike so we skip the next socket sync (avoid double-count)
@@ -833,7 +845,7 @@ const BasePostCard = ({
     };
 
     return (
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer, isDarkMode && { backgroundColor: theme.card, borderColor: theme.border }]}>
             {/* Header */}
             <TouchableOpacity style={styles.header} onPress={() => onUserPress && onUserPress()} activeOpacity={0.7}>
                 {post.user.avatar && !post.user.avatar.includes('placeholder.com') ? (
@@ -844,7 +856,7 @@ const BasePostCard = ({
                         cachePolicy="memory-disk"
                     />
                 ) : (
-                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE' }]}>
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF', borderWidth: 1, borderColor: isDarkMode ? '#334155' : '#DBEAFE' }]}>
                         <Text style={{ color: '#2563EB', fontWeight: 'bold', fontSize: 16 }}>
                             {post.user.name ? post.user.name.charAt(0).toUpperCase() : 'U'}
                         </Text>
@@ -852,10 +864,10 @@ const BasePostCard = ({
                 )}
                 <View style={styles.headerInfo}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.userName}>{post.user.name}</Text>
+                        <Text style={[styles.userName, isDarkMode && { color: theme.text }]}>{post.user.name}</Text>
                         <Ionicons name="checkmark-circle" size={15} color="#1877F2" style={{ marginLeft: 4 }} />
                         {(post.user as any).is_business == 1 && (
-                            <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 6 }}>
+                            <View style={{ backgroundColor: isDarkMode ? '#1E293B' : '#eff6ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 6 }}>
                                 <Ionicons name="briefcase" size={10} color="#2563eb" />
                                 <Text style={{ fontSize: 10, color: '#2563eb', fontWeight: 'bold' }}>
                                     {(post.user as any).category || 'Business'}
@@ -866,17 +878,17 @@ const BasePostCard = ({
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                         {post.user.location ? (
                             <>
-                                <Text style={styles.timeAgo} numberOfLines={1}>{post.user.location}</Text>
-                                <Text style={styles.dotSeparator}>·</Text>
+                                <Text style={[styles.timeAgo, isDarkMode && { color: theme.textMuted }]} numberOfLines={1}>{post.user.location}</Text>
+                                <Text style={[styles.dotSeparator, isDarkMode && { color: theme.textMuted }]}>·</Text>
                             </>
                         ) : null}
-                        <Text style={styles.timeAgo}>{post.timeAgo}</Text>
-                        <Text style={styles.dotSeparator}>·</Text>
-                        <Ionicons name="globe-outline" size={12} color="#64748B" />
+                        <Text style={[styles.timeAgo, isDarkMode && { color: theme.textMuted }]}>{post.timeAgo}</Text>
+                        <Text style={[styles.dotSeparator, isDarkMode && { color: theme.textMuted }]}>·</Text>
+                        <Ionicons name="globe-outline" size={12} color={isDarkMode ? theme.textMuted : "#64748B"} />
                     </View>
                 </View>
                 <TouchableOpacity style={styles.optionsButton} onPress={handleOptions}>
-                    <Ionicons name="ellipsis-horizontal" size={18} color="#64748B" />
+                    <Ionicons name="ellipsis-horizontal" size={18} color={isDarkMode ? theme.textMuted : "#64748B"} />
                 </TouchableOpacity>
             </TouchableOpacity>
 
@@ -894,14 +906,14 @@ const BasePostCard = ({
                             return (
                                 <>
                                     <Text
-                                        style={[styles.contentText, { lineHeight: 22 }]}
+                                        style={[styles.contentText, { lineHeight: 22 }, isDarkMode && { color: theme.text }]}
                                         numberOfLines={!isExpanded && shouldTruncate ? 3 : undefined}
                                     >
                                         {renderContent(post.content)}
                                     </Text>
                                     {shouldTruncate && (
                                         <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                                            <Text style={{ color: '#64748B', marginTop: 4, fontWeight: '500' }}>
+                                            <Text style={{ color: isDarkMode ? theme.primary : '#64748B', marginTop: 4, fontWeight: '500' }}>
                                                 {isExpanded ? 'view less' : 'view more'}
                                             </Text>
                                         </TouchableOpacity>
@@ -918,17 +930,17 @@ const BasePostCard = ({
                     if (music && (music.type === 'youtube_music' || music.type === 'custom_music')) {
                         return (
                             <>
-                                <View style={styles.musicOverlay}>
+                                <View style={[styles.musicOverlay, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
                                     <Animated.View style={[styles.musicIconContainer, { transform: [{ rotate: rotateData }] }]}>
                                         <Ionicons name="disc-outline" size={20} color="white" />
                                     </Animated.View>
                                     <View style={styles.musicTextContainer}>
-                                        <Text style={styles.playingFromText}>{music.type === 'custom_music' ? 'Audio Original' : 'Official Audio'}</Text>
-                                        <Text style={styles.musicTitleText} numberOfLines={1}>
-                                            {music.title} â€¢ {music.artist}
+                                        <Text style={[styles.playingFromText, isDarkMode && { color: '#93C5FD' }]}>{music.type === 'custom_music' ? 'Audio Original' : 'Official Audio'}</Text>
+                                        <Text style={[styles.musicTitleText, isDarkMode && { color: theme.text }]} numberOfLines={1}>
+                                            {music.title} • {music.artist}
                                         </Text>
                                     </View>
-                                    <View style={styles.liveBadge}>
+                                    <View style={[styles.liveBadge, isDarkMode && { backgroundColor: '#0F172A', borderColor: '#334155' }]}>
                                         <View style={styles.liveDot} />
                                         <Text style={styles.liveText}>PLAYING</Text>
                                     </View>
@@ -989,20 +1001,20 @@ const BasePostCard = ({
                     <View style={styles.reactionLikeBubble}>
                         <MaterialCommunityIcons name="thumb-up" size={11} color="#ffffff" />
                     </View>
-                    <Text style={styles.reactionCountText}>
+                    <Text style={[styles.reactionCountText, isDarkMode && { color: theme.textMuted }]}>
                         {likeCount > 0 ? likeCount : (liked ? 1 : 0)}
                     </Text>
                 </View>
 
                 <TouchableOpacity onPress={handlePostPress} activeOpacity={0.7}>
-                    <Text style={styles.commentsSharesText}>
+                    <Text style={[styles.commentsSharesText, isDarkMode && { color: theme.textMuted }]}>
                         {Array.isArray(post.comments) ? post.comments.length : (Number(post.comments) || 0)} comments
                     </Text>
                 </TouchableOpacity>
             </View>
 
             {/* Subtle Divider */}
-            <View style={styles.reactionDivider} />
+            <View style={[styles.reactionDivider, isDarkMode && { backgroundColor: theme.border }]} />
 
             {/* 4 Action Buttons: Like, Comment, Share, Save */}
             <View style={styles.fbActionsRow}>
@@ -1017,10 +1029,10 @@ const BasePostCard = ({
                         <MaterialCommunityIcons
                             name={liked ? "thumb-up" : "thumb-up-outline"}
                             size={20}
-                            color={liked ? "#1877F2" : "#65676B"}
+                            color={liked ? "#1877F2" : (isDarkMode ? theme.textMuted : "#65676B")}
                         />
                     </Animated.View>
-                    <Text style={[styles.fbActionText, liked && { color: '#1877F2', fontWeight: '700' }]}>
+                    <Text style={[styles.fbActionText, isDarkMode && { color: theme.textMuted }, liked && { color: '#1877F2', fontWeight: '700' }]}>
                         Like
                     </Text>
                 </TouchableOpacity>
@@ -1032,8 +1044,8 @@ const BasePostCard = ({
                     activeOpacity={0.7}
                     hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 >
-                    <Ionicons name="chatbubble-outline" size={18} color="#65676B" />
-                    <Text style={styles.fbActionText}>Comment</Text>
+                    <Ionicons name="chatbubble-outline" size={18} color={isDarkMode ? theme.textMuted : "#65676B"} />
+                    <Text style={[styles.fbActionText, isDarkMode && { color: theme.textMuted }]}>Comment</Text>
                 </TouchableOpacity>
 
                 {/* 3. Share */}
@@ -1043,8 +1055,8 @@ const BasePostCard = ({
                     activeOpacity={0.7}
                     hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 >
-                    <Ionicons name="arrow-redo-outline" size={20} color="#65676B" />
-                    <Text style={styles.fbActionText}>Share</Text>
+                    <Ionicons name="arrow-redo-outline" size={20} color={isDarkMode ? theme.textMuted : "#65676B"} />
+                    <Text style={[styles.fbActionText, isDarkMode && { color: theme.textMuted }]}>Share</Text>
                 </TouchableOpacity>
 
                 {/* 4. Save */}
@@ -1058,10 +1070,10 @@ const BasePostCard = ({
                         <Ionicons
                             name={saved ? "bookmark" : "bookmark-outline"}
                             size={19}
-                            color={saved ? "#1877F2" : "#65676B"}
+                            color={saved ? "#1877F2" : (isDarkMode ? theme.textMuted : "#65676B")}
                         />
                     </Animated.View>
-                    <Text style={[styles.fbActionText, saved && { color: '#1877F2', fontWeight: '700' }]}>
+                    <Text style={[styles.fbActionText, isDarkMode && { color: theme.textMuted }, saved && { color: '#1877F2', fontWeight: '700' }]}>
                         Save
                     </Text>
                 </TouchableOpacity>
@@ -1079,22 +1091,22 @@ const BasePostCard = ({
                     activeOpacity={1} 
                     onPress={() => setOptionsModalVisible(false)}
                 >
-                    <TouchableOpacity activeOpacity={1} style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
-                        <View style={{ width: 40, height: 4, backgroundColor: '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+                    <TouchableOpacity activeOpacity={1} style={{ backgroundColor: isDarkMode ? theme.modalBackground : 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}>
+                        <View style={{ width: 40, height: 4, backgroundColor: isDarkMode ? theme.border : '#d1d5db', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
                         
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#172554' }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: theme.text }}>
                             {String(post.user.id) === String(currentUserId) ? 'Manage Post' : 'Post Options'}
                         </Text>
                         
                         <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: theme.border }}
                             onPress={() => {
                                 setOptionsModalVisible(false);
                                 handleDownloadPost();
                             }}
                         >
-                            <Ionicons name="download-outline" size={24} color="#374151" style={{ marginRight: 15 }} />
-                            <Text style={{ fontSize: 16, color: '#374151' }}>Download/Share Media</Text>
+                            <Ionicons name="download-outline" size={24} color={isDarkMode ? theme.text : "#374151"} style={{ marginRight: 15 }} />
+                            <Text style={{ fontSize: 16, color: theme.text }}>Download/Share Media</Text>
                         </TouchableOpacity>
 
                         {String(post.user.id) === String(currentUserId) ? (

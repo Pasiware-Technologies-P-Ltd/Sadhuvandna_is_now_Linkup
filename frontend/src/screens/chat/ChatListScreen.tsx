@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import socketService from '../../services/socket';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { ChatDBService } from '../../services/ChatDBService';
 import { useOnlineStatus } from '../../context/OnlineContext';
 
@@ -20,6 +21,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const ChatListScreen = ({ navigation, route }: any) => {
     const { isUserOnline, checkOnlineStatuses, onlineUsers } = useOnlineStatus();
+    const { isDarkMode, theme } = useTheme();
     const [friends, setFriends] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchContacts, setSearchContacts] = useState<any[]>([]);
@@ -269,27 +271,27 @@ const ChatListScreen = ({ navigation, route }: any) => {
 
         return (
             <TouchableOpacity
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}
                 onPress={() => navigation.navigate('Chat', { receiver: receiverObj, platform: activePlatform, isGroup: item.isGroup })}
                 activeOpacity={0.7}
             >
                 <View style={{ position: 'relative', marginRight: 14 }}>
                     <Image
                         source={{ uri: (item.profile_photo) ? `${currentPhotoUrl}${encodeURIComponent(item.profile_photo)}` : 'https://via.placeholder.com/100' }}
-                        style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: '#E2E8F0', borderWidth: 1, borderColor: '#E2E8F0' }}
+                        style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderWidth: 1, borderColor: theme.border }}
                     />
                     {isOnline && (
                         <View 
-                            style={{ position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2, borderColor: 'white' }} 
+                            style={{ position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2, borderColor: theme.card }} 
                         />
                     )}
                 </View>
                 <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#172554' }} numberOfLines={1}>
+                        <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }} numberOfLines={1}>
                             {item.full_name}
                         </Text>
-                        <Text style={{ fontSize: 11, fontWeight: '500', color: '#9ca3af' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '500', color: theme.textMuted }}>
                             {item.time}
                         </Text>
                     </View>
@@ -299,11 +301,11 @@ const ChatListScreen = ({ navigation, route }: any) => {
                                 <Ionicons
                                     name={item.last_message_seen ? "checkmark-done" : "checkmark-done"}
                                     size={16}
-                                    color={item.last_message_seen ? "#3b82f6" : "#9ca3af"}
+                                    color={item.last_message_seen ? "#3b82f6" : theme.textMuted}
                                     style={{ marginRight: 4 }}
                                 />
                             )}
-                            <Text style={{ fontSize: 13, color: '#64748B', flex: 1 }} numberOfLines={1}>
+                            <Text style={{ fontSize: 13, color: theme.textSecondary, flex: 1 }} numberOfLines={1}>
                                 {item.last_message || 'Media'}
                             </Text>
                         </View>
@@ -331,31 +333,31 @@ const ChatListScreen = ({ navigation, route }: any) => {
     
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
             {/* Header Toolbar */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: 'white', zIndex: 50 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, backgroundColor: theme.card, zIndex: 50 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, marginRight: 8 }} activeOpacity={0.7}>
-                        <Ionicons name="arrow-back" size={24} color="#172554" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#172554', letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: theme.text, letterSpacing: -0.5 }}>{t('messages') || "Messages"}</Text>
                 </View>
                 {activePlatform !== 'marriage' && (
                     <TouchableOpacity onPress={toggleMenu} style={{ padding: 4 }} activeOpacity={0.7}>
-                        <Ionicons name="ellipsis-vertical" size={20} color="#374151" />
+                        <Ionicons name="ellipsis-vertical" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
                 )}
                 {showMenu && activePlatform !== 'marriage' && (
-                    <View style={{ position: 'absolute', top: 48, right: 16, backgroundColor: 'white', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 5, paddingVertical: 6, width: 150, zIndex: 100 }}>
+                    <View style={{ position: 'absolute', top: 48, right: 16, backgroundColor: theme.card, borderRadius: 16, borderWidth: 1, borderColor: theme.border, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 5, paddingVertical: 6, width: 150, zIndex: 100 }}>
                         <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border }}
                             onPress={() => {
                                 toggleMenu();
                                 navigation.navigate('CreateGroup');
                             }}
                         >
                             <Ionicons name="add-circle-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
-                            <Text style={{ color: '#374151', fontSize: 13, fontWeight: '600' }}>Create Group</Text>
+                            <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>Create Group</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
                             style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}
@@ -365,27 +367,27 @@ const ChatListScreen = ({ navigation, route }: any) => {
                             }}
                         >
                             <Ionicons name="enter-outline" size={18} color="#2563EB" style={{ marginRight: 8 }} />
-                            <Text style={{ color: '#374151', fontSize: 13, fontWeight: '600' }}>Join Group</Text>
+                            <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>Join Group</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             </View>
 
             {/* Search Filter Bar */}
-            <View style={{ paddingHorizontal: 16, paddingBottom: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 12, height: 38 }}>
-                    <Ionicons name="search" size={16} color="#9ca3af" style={{ marginRight: 8 }} />
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderRadius: 20, paddingHorizontal: 12, height: 38 }}>
+                    <Ionicons name="search" size={16} color={theme.textMuted} style={{ marginRight: 8 }} />
                     <TextInput
-                        style={{ flex: 1, fontSize: 13, color: '#374151', padding: 0 }}
+                        style={{ flex: 1, fontSize: 13, color: theme.text, padding: 0 }}
                         placeholder={t('search') || "Search messages..."}
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={theme.textMuted}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         autoCorrect={false}
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={16} color="#9ca3af" />
+                            <Ionicons name="close-circle" size={16} color={theme.textMuted} />
                         </TouchableOpacity>
                     )}
                 </View>

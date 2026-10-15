@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import api from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../../context/ThemeContext';
 
 const ApplyJobScreen = ({ navigation, route }: any) => {
+    const { isDarkMode, theme } = useTheme();
     const { jobId, jobTitle, isAnchorApplication } = route.params || {};
 
     const [name, setName] = useState('');
@@ -107,12 +109,14 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="black" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', marginLeft: 16 }}>{isAnchorApplication ? 'Apply for News Anchor' : 'Apply for Job'}</Text>
+                <Text style={{ fontSize: 19, fontWeight: 'bold', marginLeft: 12, color: theme.text }}>
+                    {isAnchorApplication ? 'Apply for News Anchor' : 'Apply for Job'}
+                </Text>
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -120,29 +124,32 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
 
                 <View style={{ gap: 16 }}>
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>Full Name</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>Full Name</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="Enter your name"
+                            placeholderTextColor={theme.textMuted}
                             value={name} onChangeText={setName}
                         />
                     </View>
 
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>Phone Number</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>Phone Number</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="Enter phone number"
+                            placeholderTextColor={theme.textMuted}
                             keyboardType="phone-pad"
                             value={phone} onChangeText={setPhone}
                         />
                     </View>
 
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>Email Address</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>Email Address</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="Enter email"
+                            placeholderTextColor={theme.textMuted}
                             keyboardType="email-address"
                             value={email} onChangeText={setEmail}
                             autoCapitalize="none"
@@ -150,28 +157,31 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                     </View>
 
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>Education / Qualification</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>Education / Qualification</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="e.g. B.Tech, MBA"
+                            placeholderTextColor={theme.textMuted}
                             value={education} onChangeText={setEducation}
                         />
                     </View>
 
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>District</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>District</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="Enter district"
+                            placeholderTextColor={theme.textMuted}
                             value={district} onChangeText={setDistrict}
                         />
                     </View>
 
                     <View>
-                        <Text style={{ fontWeight: '600', marginBottom: 6 }}>State</Text>
+                        <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>State</Text>
                         <TextInput
-                            style={{ borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12 }}
+                            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', color: theme.text }}
                             placeholder="Enter state"
+                            placeholderTextColor={theme.textMuted}
                             value={stateName} onChangeText={setStateName}
                         />
                     </View>
@@ -183,17 +193,17 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                         { label: 'Resume (PDF/Doc)', state: resume, type: 'resume' }
                     ].map((field: any) => (
                         <View key={field.type}>
-                            <Text style={{ fontWeight: '600', marginBottom: 6 }}>{field.label}</Text>
+                            <Text style={{ fontWeight: '600', marginBottom: 6, color: theme.textSecondary }}>{field.label}</Text>
                             <TouchableOpacity
                                 onPress={() => pickDocument(field.type)}
                                 style={{
-                                    borderWidth: 1, borderColor: field.state ? '#2563EB' : '#d1d5db',
-                                    borderStyle: 'dashed', borderRadius: 8, padding: 16,
-                                    alignItems: 'center', backgroundColor: field.state ? '#EFF6FF' : '#F8FAFC'
+                                    borderWidth: 1, borderColor: field.state ? '#2563EB' : theme.border,
+                                    borderStyle: 'dashed', borderRadius: 10, padding: 16,
+                                    alignItems: 'center', backgroundColor: field.state ? (isDarkMode ? 'rgba(37,99,235,0.18)' : '#EFF6FF') : (isDarkMode ? '#1E293B' : '#F8FAFC')
                                 }}
                             >
-                                <Ionicons name={field.state ? "checkmark-circle" : "cloud-upload-outline"} size={24} color={field.state ? "#2563EB" : "#9ca3af"} />
-                                <Text style={{ color: field.state ? '#c2410c' : '#64748B', marginTop: 4 }}>
+                                <Ionicons name={field.state ? "checkmark-circle" : "cloud-upload-outline"} size={24} color={field.state ? "#2563EB" : theme.textMuted} />
+                                <Text style={{ color: field.state ? '#3B82F6' : theme.textMuted, marginTop: 4, fontWeight: '500' }}>
                                     {field.state ? field.state.name : "Tap to Upload"}
                                 </Text>
                             </TouchableOpacity>
@@ -203,7 +213,7 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
                     <TouchableOpacity
                         onPress={handleSubmit}
                         disabled={loading}
-                        style={{ backgroundColor: '#2563EB', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
+                        style={{ backgroundColor: '#2563EB', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 10, opacity: loading ? 0.7 : 1 }}
                     >
                         {loading ? <ActivityIndicator color="white" /> : (
                             <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Submit Application</Text>

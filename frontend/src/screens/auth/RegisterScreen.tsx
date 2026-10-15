@@ -3,8 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const RegisterScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -116,25 +118,49 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep1 = () => (
         <View className="space-y-4">
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="person-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 16
+                }}
+            >
+                <Ionicons name="person-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Full Name"
                     value={name}
                     onChangeText={setName}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="mail-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 16
+                }}
+            >
+                <Ionicons name="mail-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Email Address"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
             <TouchableOpacity
@@ -149,16 +175,28 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep2 = () => (
         <View className="space-y-4">
-            <Text className="text-center text-slate-500 mb-4">OTP sent to {email}</Text>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="key-outline" size={20} color="gray" />
+            <Text style={{ textAlign: 'center', color: theme.textSecondary, marginBottom: 16 }}>OTP sent to {email}</Text>
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 16
+                }}
+            >
+                <Ionicons name="key-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Enter OTP"
                     value={otp}
                     onChangeText={setOtp}
                     keyboardType="number-pad"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
             <TouchableOpacity
@@ -172,81 +210,162 @@ const RegisterScreen = ({ navigation }: any) => {
 
     const renderStep3 = () => (
         <View className="space-y-4">
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="call-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="call-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Mobile Number"
                     value={mobile}
                     onChangeText={setMobile}
                     keyboardType="phone-pad"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="business-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="business-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="City"
                     value={city}
                     onChangeText={setCity}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="people-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="people-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Community / Cast"
                     value={cast}
                     onChangeText={setCast}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="calendar-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="calendar-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Date of Birth (DD-MM-YYYY)"
                     value={dob}
                     onChangeText={setDob}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
 
             {/* Gender Selection */}
-            <View className="flex-row justify-between mb-2">
+            <View className="flex-row justify-between mb-3">
                 {['Male', 'Female'].map((g) => (
                     <TouchableOpacity
                         key={g}
                         onPress={() => setGender(g)}
-                        className={`flex-1 p-3 rounded-xl border items-center mx-1 ${gender === g ? 'bg-blue-100 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
+                        style={{
+                            flex: 1,
+                            padding: 12,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            alignItems: 'center',
+                            marginHorizontal: 4,
+                            backgroundColor: gender === g ? (isDarkMode ? '#1E3A8A40' : '#DBEAFE') : (isDarkMode ? '#1E293B' : '#F8FAFC'),
+                            borderColor: gender === g ? '#2563EB' : theme.border
+                        }}
                     >
-                        <Text className={gender === g ? 'text-blue-600 font-bold' : 'text-slate-500'}>{g}</Text>
+                        <Text style={{ color: gender === g ? '#3B82F6' : theme.textSecondary, fontWeight: gender === g ? 'bold' : 'normal' }}>{g}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="lock-closed-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="lock-closed-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Create Password"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                <Ionicons name="lock-closed-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 12
+                }}
+            >
+                <Ionicons name="lock-closed-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
 
@@ -261,16 +380,16 @@ const RegisterScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
             <ScrollView contentContainerStyle={{ padding: 24 }}>
                 <View className="mb-8 mt-4">
                     <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} className="mb-4">
-                        <Ionicons name="arrow-back" size={24} color="#64748B" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text className="text-3xl font-extrabold text-blue-900">
+                    <Text style={{ fontSize: 28, fontWeight: '900', color: theme.text }}>
                         {step === 1 ? 'Create Account' : step === 2 ? 'Verify Email' : 'Personal Details'}
                     </Text>
-                    <Text className="text-slate-500 mt-2 font-medium">Step {step} of 3</Text>
+                    <Text style={{ color: theme.textSecondary, marginTop: 8, fontWeight: '500' }}>Step {step} of 3</Text>
                 </View>
 
                 {step === 1 && renderStep1()}
@@ -279,7 +398,7 @@ const RegisterScreen = ({ navigation }: any) => {
 
                 {step === 1 && (
                     <View className="flex-row justify-center mt-8 mb-10">
-                        <Text className="text-slate-500">Already have an account? </Text>
+                        <Text style={{ color: theme.textSecondary }}>Already have an account? </Text>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
                             <Text className="text-blue-600 font-bold">Login</Text>
                         </TouchableOpacity>

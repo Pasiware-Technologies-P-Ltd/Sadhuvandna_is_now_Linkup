@@ -12,12 +12,16 @@ import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpload } from '../../context/UploadContext';
 import { getVideoThumbnail } from '../../utils/thumbnailHelper';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const CreatePostScreen = ({ navigation, route }: any) => {
+    const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { startUpload } = useUpload();
     const params = route.params || {};
     // Node.js server for audio streams (Agora/ytdl)
@@ -46,6 +50,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     const [postAspectRatio, setPostAspectRatio] = useState<number | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
     const scrollRef = useRef<ScrollView>(null);
+    const inputRef = useRef<TextInput>(null);
 
     const WAVEFORM_DATA = useRef(Array.from({ length: 151 }).map((_, i) => ({
         height: 15 + (Math.sin(i * 0.3) * 12) + (Math.cos(i * 0.7) * 8) + 10,
@@ -319,59 +324,70 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     const PREVIEW_JS = ''; // No longer used
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['top', 'bottom']}>
-            <View style={styles.header}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 20, color: '#172554', fontWeight: '400' }}>Create Post</Text>
+                    <Text style={{ fontSize: 20, color: theme.text, fontWeight: 'bold' }}>Create Post</Text>
                 </View>
                 <TouchableOpacity
-                    style={[styles.postButton, (content || images.length > 0 || selectedMusic || params.filterId) ? styles.postButtonActive : styles.postButtonDisabled]}
+                    style={[styles.postButton, (content || images.length > 0 || selectedMusic || params.filterId) ? styles.postButtonActive : isDarkMode ? { backgroundColor: '#334155' } : styles.postButtonDisabled]}
                     disabled={(!content && images.length === 0 && !selectedMusic && !params.filterId) || loading}
                     onPress={handlePost}
                 >
                     {loading ? <ActivityIndicator size="small" color="#fff" /> :
-                        <Text style={[styles.postButtonText, (content || images.length > 0 || selectedMusic || params.filterId) ? { color: 'white' } : { color: '#64748B' }]}>POST</Text>}
+                        <Text style={[styles.postButtonText, (content || images.length > 0 || selectedMusic || params.filterId) ? { color: 'white' } : { color: isDarkMode ? '#64748B' : '#94A3B8' }]}>POST</Text>}
                 </TouchableOpacity>
             </View>
 
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-            <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
+            <ScrollView 
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ flexGrow: 1, padding: 16 }} 
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={{ flexDirection: 'row', marginBottom: 16, alignItems: 'center' }}>
-                    <View style={styles.userAvatar}>
+                    <View style={[styles.userAvatar, { backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }]}>
                         {user?.profile_photo ? (
                             <Image source={{ uri: `${PHOTO_URL}${user.profile_photo}` }} style={{ width: '100%', height: '100%' }} />
                         ) : (
-                            <View style={styles.userAvatarPlaceholder}><Text style={styles.userAvatarText}>{user?.name?.[0]}</Text></View>
+                            <View style={[styles.userAvatarPlaceholder, { backgroundColor: isDarkMode ? '#1E3A8A' : '#DBEAFE' }]}><Text style={[styles.userAvatarText, { color: isDarkMode ? '#93C5FD' : '#172554' }]}>{user?.name?.[0]}</Text></View>
                         )}
                     </View>
                     <View>
-                        <Text style={{ fontWeight: 'bold', color: '#172554', fontSize: 18 }}>{user?.name || 'User'}</Text>
-                        <View style={styles.publicBadge}><Ionicons name="earth" size={12} color="gray" /><Text style={styles.publicBadgeText}>Public</Text></View>
+                        <Text style={{ fontWeight: 'bold', color: theme.text, fontSize: 18 }}>{user?.name || 'User'}</Text>
+                        <View style={[styles.publicBadge, { backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderColor: theme.border }]}><Ionicons name="earth" size={12} color={theme.subtext} /><Text style={[styles.publicBadgeText, { color: theme.subtext }]}>Public</Text></View>
                     </View>
                 </View>
 
-                <TextInput
-                    style={styles.contentInput}
-                    placeholder={`What's on your mind?`}
-                    placeholderTextColor="#666"
-                    multiline
-                    value={content}
-                    onChangeText={setContent}
-                    textAlignVertical="top"
-                />
+                {/* Tappable full canvas for text input */}
+                <Pressable
+                    style={{ flex: 1, minHeight: 220, width: '100%', marginBottom: 16 }}
+                    onPress={() => inputRef.current?.focus()}
+                >
+                    <TextInput
+                        ref={inputRef}
+                        style={[styles.contentInput, { color: theme.text, flex: 1 }]}
+                        placeholder={t('whatsOnYourMind') || "What's on your mind?"}
+                        placeholderTextColor={theme.subtext}
+                        multiline
+                        value={content}
+                        onChangeText={setContent}
+                        textAlignVertical="top"
+                    />
+                </Pressable>
 
                 {selectedMusic && !params.isReel && (
                     <View style={{ marginBottom: 24 }}>
-                        <View style={styles.musicCard}>
+                        <View style={[styles.musicCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <Image source={require('../../../assets/icon.png')} style={styles.musicThumbnail} />
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontWeight: 'bold', color: '#172554' }} numberOfLines={1}>{selectedMusic.title}</Text>
-                                <Text style={{ color: '#64748B', fontSize: 12 }}>{selectedMusic.artist}</Text>
+                                <Text style={{ fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{selectedMusic.title}</Text>
+                                <Text style={{ color: theme.subtext, fontSize: 12 }}>{selectedMusic.artist}</Text>
                             </View>
-                            <TouchableOpacity onPress={() => { setSelectedMusic(null); setStartTime(0); setPlaybackTime(0); }}><Ionicons name="close-circle" size={24} color="gray" /></TouchableOpacity>
+                            <TouchableOpacity onPress={() => { setSelectedMusic(null); setStartTime(0); setPlaybackTime(0); }}><Ionicons name="close-circle" size={24} color={theme.subtext} /></TouchableOpacity>
                         </View>
 
                         <View style={styles.trimmerContainer}>
@@ -546,28 +562,40 @@ const CreatePostScreen = ({ navigation, route }: any) => {
                 )}
             </ScrollView>
 
-                <View style={styles.bottomActions}>
-                    <TouchableOpacity style={styles.actionItem} onPress={pickImage}><Ionicons name="images" size={28} color="#45bd62" /><Text style={styles.actionText}>Photo/Video</Text></TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionItem, { borderTopWidth: 1, borderTopColor: '#F8FAFC' }]} onPress={() => setMusicModalVisible(true)}><Ionicons name="musical-notes" size={28} color="#2563EB" /><Text style={styles.actionText}>Music Library</Text></TouchableOpacity>
+                <View style={[styles.bottomActions, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
+                    <TouchableOpacity style={styles.actionItem} onPress={pickImage}><Ionicons name="images" size={28} color="#45bd62" /><Text style={[styles.actionText, { color: theme.text }]}>Photo/Video</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionItem, { borderTopWidth: 1, borderTopColor: theme.border }]} onPress={() => setMusicModalVisible(true)}><Ionicons name="musical-notes" size={28} color="#2563EB" /><Text style={[styles.actionText, { color: theme.text }]}>Music Library</Text></TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
 
             <Modal visible={musicModalVisible} animationType="slide">
-                <View style={{ flex: 1, backgroundColor: 'white' }}>
-                    <View style={styles.modalHeader}><Text style={{ fontSize: 20, fontWeight: 'bold' }}>Search Music</Text><TouchableOpacity onPress={() => setMusicModalVisible(false)}><Text style={{ color: '#64748B', fontWeight: 'bold' }}>Cancel</Text></TouchableOpacity></View>
-                    <View style={styles.searchBarContainer}>
-                        <TextInput style={styles.searchInput} placeholder="Search songs..." placeholderTextColor="#666" value={searchQuery} onChangeText={setSearchQuery} onSubmitEditing={() => searchMusic()} />
+                <View style={{ flex: 1, backgroundColor: theme.background }}>
+                    <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text }}>Search Music</Text>
+                        <TouchableOpacity onPress={() => setMusicModalVisible(false)}>
+                            <Text style={{ color: theme.subtext, fontWeight: 'bold' }}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={[styles.searchBarContainer, { backgroundColor: theme.background }]}>
+                        <TextInput 
+                            style={[styles.searchInput, { backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', color: theme.text }]} 
+                            placeholder="Search songs..." 
+                            placeholderTextColor={theme.subtext} 
+                            value={searchQuery} 
+                            onChangeText={setSearchQuery} 
+                            onSubmitEditing={() => searchMusic()} 
+                        />
                         <TouchableOpacity style={styles.searchBtn} onPress={() => searchMusic()}><Ionicons name="search" size={20} color="white" /></TouchableOpacity>
                     </View>
                     <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
                         {searching ? (<ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />) : (
                             searchResults.map((song) => (
-                                <View key={song.id} style={styles.searchItem}>
+                                <View key={song.id} style={[styles.searchItem, { borderBottomColor: theme.border }]}>
                                     <Image source={require('../../../assets/icon.png')} style={styles.searchThumbnail} />
-                                    <View style={{ flex: 1 }}><Text style={{ fontWeight: 'bold', color: '#172554' }} numberOfLines={1}>{song.title}</Text><Text style={{ color: '#64748B', fontSize: 12 }}>{song.artist}</Text></View>
+                                    <View style={{ flex: 1 }}><Text style={{ fontWeight: 'bold', color: theme.text }} numberOfLines={1}>{song.title}</Text><Text style={{ color: theme.subtext, fontSize: 12 }}>{song.artist}</Text></View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <TouchableOpacity
-                                            style={[styles.previewBtn, playingId === song.id ? { backgroundColor: '#DBEAFE' } : { backgroundColor: '#E2E8F0' }]}
+                                            style={[styles.previewBtn, playingId === song.id ? { backgroundColor: isDarkMode ? '#1E3A8A' : '#DBEAFE' } : { backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }]}
                                             onPress={async () => {
                                                 if (playingId === song.id) {
                                                     setPlayingId(null);
@@ -609,7 +637,7 @@ const styles = StyleSheet.create({
     userAvatarText: { color: '#172554', fontWeight: 'bold', fontSize: 18 },
     publicBadge: { backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
     publicBadgeText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
-    contentInput: { fontSize: 20, color: '#172554', marginBottom: 24, minHeight: height * 0.15 },
+    contentInput: { fontSize: 18, color: '#172554', minHeight: 180, textAlignVertical: 'top' },
     musicCard: { padding: 12, backgroundColor: '#F8FAFC', borderRadius: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
     musicThumbnail: { width: 48, height: 48, borderRadius: 12, marginRight: 12, borderWidth: 1.5, borderColor: '#2563EB', backgroundColor: '#2563EB', overflow: 'hidden' },
     trimmerContainer: { backgroundColor: '#172554', borderRadius: 24, overflow: 'hidden', elevation: 10 },

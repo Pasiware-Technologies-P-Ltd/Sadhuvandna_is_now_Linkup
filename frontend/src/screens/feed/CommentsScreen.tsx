@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
@@ -14,6 +15,7 @@ const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 const gifCache: Record<string, any[]> = {};
 
 const CommentsScreen = ({ route, navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const { postId } = route.params;
     const [comments, setComments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -230,24 +232,28 @@ const CommentsScreen = ({ route, navigation }: any) => {
             <View className="flex-row mb-4">
                 <Image
                     source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/50' }}
-                    className="w-10 h-10 rounded-full bg-slate-200 mr-3"
+                    className="w-10 h-10 rounded-full mr-3"
+                    style={{ backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderWidth: 1, borderColor: theme.border }}
                 />
-                <View className="flex-1 bg-slate-100 rounded-xl p-3">
+                <View 
+                    className="flex-1 rounded-2xl p-3.5 border shadow-sm"
+                    style={{ backgroundColor: theme.card, borderColor: theme.border }}
+                >
                     <View className="flex-row justify-between items-start mb-1">
                         <View className="flex-1">
-                            <Text className="font-bold text-blue-900 text-sm">{item.name}</Text>
-                            <Text className="text-xs text-slate-500">{item.date}</Text>
+                            <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 14 }}>{item.name}</Text>
+                            <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: 1 }}>{item.date}</Text>
                         </View>
                         {isOwner && (
                             <TouchableOpacity onPress={() => handleOptions(item)} className="p-1 -mr-1 -mt-1">
-                                <Ionicons name="ellipsis-vertical" size={16} color="gray" />
+                                <Ionicons name="ellipsis-vertical" size={16} color={theme.textMuted} />
                             </TouchableOpacity>
                         )}
                     </View>
                     {(item.comment && item.comment.startsWith('http') && (item.comment.includes('giphy.com') || item.comment.includes('tenor.com') || item.comment.endsWith('.gif'))) ? (
-                        <Image source={{ uri: item.comment }} style={{ width: 120, height: 120, borderRadius: 8, marginTop: 4, backgroundColor: '#E2E8F0' }} contentFit="cover" />
+                        <Image source={{ uri: item.comment }} style={{ width: 120, height: 120, borderRadius: 8, marginTop: 4, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }} contentFit="cover" />
                     ) : (
-                        <Text className="text-slate-600 leading-5">{item.comment}</Text>
+                        <Text style={{ color: theme.text, lineHeight: 20, fontSize: 14 }}>{item.comment}</Text>
                     )}
                 </View>
             </View>
@@ -255,16 +261,19 @@ const CommentsScreen = ({ route, navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
+            <View 
+                className="flex-row items-center p-4"
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-lg font-bold text-blue-900">Comments</Text>
+                <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold' }}>Comments</Text>
             </View>
 
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
                 className="flex-1"
                 enabled={true}
@@ -276,22 +285,29 @@ const CommentsScreen = ({ route, navigation }: any) => {
                         data={comments}
                         renderItem={renderItem}
                         keyExtractor={(item, index) => index.toString()}
-                        contentContainerStyle={{ padding: 16 }}
+                        contentContainerStyle={{ padding: 16, backgroundColor: theme.background }}
                         ListEmptyComponent={
                             <View className="items-center mt-10">
-                                <Text className="text-gray-400">No comments yet. Be the first!</Text>
+                                <Text style={{ color: theme.textSecondary }}>No comments yet. Be the first!</Text>
                             </View>
                         }
                     />
                 )}
 
-                <View className="bg-white">
-                    <View className="p-3 border-t border-gray-100 flex-row items-center">
-                        <View className="flex-1 bg-slate-100 rounded-full px-4 py-1 mr-2 flex-row items-center min-h-[48px]">
+                <View style={{ backgroundColor: theme.card }}>
+                    <View 
+                        className="p-3 flex-row items-center"
+                        style={{ borderTopColor: theme.border, borderTopWidth: 1 }}
+                    >
+                        <View 
+                            className="flex-1 rounded-full px-4 py-1 mr-2 flex-row items-center min-h-[48px] border"
+                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', borderColor: theme.border }}
+                        >
                             <TextInput
-                                className="flex-1 text-base text-blue-900 py-2"
+                                className="flex-1 text-base py-2"
+                                style={{ color: theme.text }}
                                 placeholder="Write a comment..."
-                                placeholderTextColor="#9ca3af"
+                                placeholderTextColor={theme.textMuted}
                                 value={newComment}
                                 onChangeText={setNewComment}
                                 returnKeyType="send"
@@ -306,8 +322,8 @@ const CommentsScreen = ({ route, navigation }: any) => {
                                 }}
                                 className="p-2"
                             >
-                                <View className={`px-2 py-0.5 rounded ${showGifPicker ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                                    <Text className={`text-[10px] font-bold ${showGifPicker ? 'text-white' : 'text-slate-500'}`}>GIF</Text>
+                                <View className={`px-2 py-0.5 rounded ${showGifPicker ? 'bg-blue-600' : (isDarkMode ? 'bg-slate-700' : 'bg-slate-200')}`}>
+                                    <Text className={`text-[10px] font-bold ${showGifPicker ? 'text-white' : theme.textSecondary}`}>GIF</Text>
                                 </View>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -318,18 +334,21 @@ const CommentsScreen = ({ route, navigation }: any) => {
                                 }}
                                 className="p-2 -mr-2"
                             >
-                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : "#9ca3af"} />
+                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : theme.textMuted} />
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity
                             onPress={handleSend}
                             disabled={!newComment.trim() || sending}
-                            className={`w-12 h-12 rounded-full items-center justify-center ${newComment.trim() ? "bg-blue-600" : "bg-slate-200"}`}
+                            className="w-12 h-12 rounded-full items-center justify-center"
+                            style={{
+                                backgroundColor: newComment.trim() ? '#2563EB' : (isDarkMode ? '#334155' : '#E2E8F0')
+                            }}
                         >
                             {sending ? (
                                 <ActivityIndicator color="white" size="small" />
                             ) : (
-                                <Ionicons name="send" size={20} color={newComment.trim() ? "white" : "gray"} style={{ marginLeft: 2 }} />
+                                <Ionicons name="send" size={20} color={newComment.trim() ? "white" : (isDarkMode ? "#64748B" : "gray")} style={{ marginLeft: 2 }} />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -343,7 +362,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                             ['🔥', '💯', '⭐', '🌟', '✨', '💫', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🎯', '💎', '🚨']
                         ];
                         return (
-                            <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingBottom: 10 }}>
+                            <View style={{ backgroundColor: theme.card, borderTopWidth: 1, borderTopColor: theme.border, paddingBottom: 10 }}>
                                 {emojiRows.map((row, rowIndex) => (
                                     <ScrollView key={rowIndex} horizontal showsHorizontalScrollIndicator={false}>
                                         <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 }}>
@@ -364,26 +383,31 @@ const CommentsScreen = ({ route, navigation }: any) => {
                     })()}
 
                     {showGifPicker && (
-                        <View style={{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', height: 250 }}>
-                            <View className="flex-row items-center px-3 py-2 bg-slate-50 border-b border-slate-200">
-                                <Ionicons name="search" size={16} color="#9ca3af" />
+                        <View style={{ backgroundColor: theme.card, borderTopWidth: 1, borderTopColor: theme.border, height: 250 }}>
+                            <View 
+                                className="flex-row items-center px-3 py-2 border-b"
+                                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderBottomColor: theme.border }}
+                            >
+                                <Ionicons name="search" size={16} color={theme.textMuted} />
                                 <TextInput
-                                    className="flex-1 ml-2 text-sm text-blue-900 py-1"
+                                    className="flex-1 ml-2 text-sm py-1"
+                                    style={{ color: theme.text }}
                                     placeholder="Search GIFs..."
+                                    placeholderTextColor={theme.textMuted}
                                     value={gifQuery}
                                     onChangeText={(t) => { setGifQuery(t); fetchGifs(t); }}
                                     returnKeyType="search"
                                 />
                                 {gifQuery.length > 0 && (
                                     <TouchableOpacity onPress={() => { setGifQuery(''); fetchGifs(''); }}>
-                                        <Ionicons name="close-circle" size={16} color="#9ca3af" />
+                                        <Ionicons name="close-circle" size={16} color={theme.textMuted} />
                                     </TouchableOpacity>
                                 )}
                             </View>
                             {loadingGifs ? (
                                 <ActivityIndicator size="small" color="#2563EB" style={{ marginTop: 20 }} />
                             ) : (
-                                <View style={{ flex: 1 }}>
+                                <View style={{ flex: 1, backgroundColor: theme.background }}>
                                     <FlashList
                                         data={gifs}
                                         numColumns={3}
@@ -420,7 +444,7 @@ const CommentsScreen = ({ route, navigation }: any) => {
                                             >
                                                 <Image 
                                                     source={{ uri: item.images?.fixed_height_small?.url || item.images?.fixed_height?.url }} 
-                                                    style={{ flex: 1, borderRadius: 4, backgroundColor: '#E2E8F0' }} 
+                                                    style={{ flex: 1, borderRadius: 4, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }} 
                                                     contentFit="cover" 
                                                 />
                                             </TouchableOpacity>
@@ -446,12 +470,20 @@ const CommentsScreen = ({ route, navigation }: any) => {
                     activeOpacity={1} 
                     onPress={() => setOptionsModalVisible(false)}
                 >
-                    <View className="bg-white rounded-t-3xl pt-2 pb-8 px-4" onStartShouldSetResponder={() => true}>
-                        <View className="w-12 h-1.5 bg-gray-300 rounded-full self-center mb-6" />
+                    <View 
+                        className="rounded-t-3xl pt-2 pb-8 px-4" 
+                        style={{ backgroundColor: theme.card }}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View className="w-12 h-1.5 rounded-full self-center mb-6" style={{ backgroundColor: theme.border }} />
                         
-                        <TouchableOpacity onPress={handleEditCommentInit} className="flex-row items-center py-4 px-2 border-b border-gray-100">
-                            <Ionicons name="pencil-outline" size={24} color="#374151" />
-                            <Text className="text-blue-900 text-base font-semibold ml-4">Edit Comment</Text>
+                        <TouchableOpacity 
+                            onPress={handleEditCommentInit} 
+                            className="flex-row items-center py-4 px-2 border-b"
+                            style={{ borderBottomColor: theme.border }}
+                        >
+                            <Ionicons name="pencil-outline" size={24} color="#2563EB" />
+                            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginLeft: 16 }}>Edit Comment</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity onPress={handleDeleteCommentPrompt} className="flex-row items-center py-4 px-2">

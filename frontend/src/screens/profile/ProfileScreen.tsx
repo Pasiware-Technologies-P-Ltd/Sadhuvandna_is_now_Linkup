@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader';
 
 import ProfileSwitcherModal from '../../components/ProfileSwitcherModal';
@@ -30,6 +31,7 @@ const ProfileScreen = ({ navigation }: any) => {
     const [followStats, setFollowStats] = useState<any>({ followers: 0, following: 0, posts: 0 });
     const [isSwitcherVisible, setSwitcherVisible] = useState(false);
     const { t } = useLanguage();
+    const { isDarkMode, theme } = useTheme();
 
     // Silky smooth auto-collapsing top header on scroll (native driver)
     const headerAnim = useRef(new Animated.Value(0)).current;
@@ -165,10 +167,10 @@ const ProfileScreen = ({ navigation }: any) => {
         );
     };
 
-    if (!user) return <View style={{ flex: 1, backgroundColor: 'white' }} />;
+    if (!user) return <View style={{ flex: 1, backgroundColor: theme.background }} />;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={[]} {...tabSwipe.panHandlers}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={[]} {...tabSwipe.panHandlers}>
             {/* LinkUp Global Header with Floating Tabs */}
             <LinkUpHeader
                 currentTab="Profile"
@@ -195,7 +197,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Banner Cover Image Backdrop */}
-                <View style={{ height: 145, backgroundColor: '#2563EB', position: 'relative', overflow: 'hidden' }}>
+                <View style={{ height: 145, backgroundColor: isDarkMode ? '#1E3A8A' : '#2563EB', position: 'relative', overflow: 'hidden' }}>
                     {user.cover_photo ? (
                         <Image
                             source={{ uri: `${PHOTO_URL}${user.cover_photo}` }}
@@ -215,7 +217,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 </View>
 
                 {/* Profile Card Overlay Wrapper */}
-                <View style={{ backgroundColor: 'white', borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -24, paddingHorizontal: 20, paddingTop: 16 }}>
+                <View style={{ backgroundColor: theme.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, marginTop: -24, paddingHorizontal: 20, paddingTop: 16 }}>
                     {/* Avatar & Stats Row */}
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <TouchableOpacity
@@ -233,11 +235,11 @@ const ProfileScreen = ({ navigation }: any) => {
                             {user.profile_photo ? (
                                 <Image
                                     source={{ uri: `${PHOTO_URL}${user.profile_photo}` }}
-                                    style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0' }}
+                                    style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: theme.card, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }}
                                 />
                             ) : (
-                                <View style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: 'white', backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#9ca3af' }}>
+                                <View style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: theme.card, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: 32, fontWeight: 'bold', color: theme.textMuted }}>
                                         {getInitials(user.name)}
                                     </Text>
                                 </View>
@@ -247,24 +249,24 @@ const ProfileScreen = ({ navigation }: any) => {
                         {/* Stats Bar */}
                         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-around', marginLeft: 16 }}>
                             <View style={{ alignItems: 'center' }}>
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.posts || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats.posts || 0}</Text>
+                                <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('posts')}</Text>
                             </View>
                             <TouchableOpacity
                                 onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_followers', title: 'Followers' })}
                                 style={{ alignItems: 'center' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.followers || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats.followers || 0}</Text>
+                                <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('followers')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => navigation.push('FollowList', { userId: user.id, action: 'fetch_following', title: 'Following' })}
                                 style={{ alignItems: 'center' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#172554' }}>{followStats.following || 0}</Text>
-                                <Text style={{ fontSize: 10, color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>{followStats.following || 0}</Text>
+                                <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('following')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -272,7 +274,7 @@ const ProfileScreen = ({ navigation }: any) => {
                     {/* User Profile Details */}
                     <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 22, fontWeight: '900', color: '#172554' }}>
+                            <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text }}>
                                 {user.name} {user.is_business == 1 && <Ionicons name="checkmark-circle" size={18} color="#0064e0" />}
                             </Text>
                             
@@ -288,22 +290,22 @@ const ProfileScreen = ({ navigation }: any) => {
                                         )}
                                         {user.city && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="location-outline" size={14} color="#64748B" />
-                                                <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 6 }}>{user.city}</Text>
+                                                <Ionicons name="location-outline" size={14} color={theme.textMuted} />
+                                                <Text style={{ fontSize: 13, color: theme.textMuted, marginLeft: 6 }}>{user.city}</Text>
                                             </View>
                                         )}
                                     </>
                                 ) : (
                                     <>
                                         {(user.bio || user.about || user.about_me || user.biodata || user.description) ? (
-                                            <Text style={{ fontSize: 13, color: '#475569', lineHeight: 18, marginTop: 1 }} numberOfLines={3}>
+                                            <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 18, marginTop: 1 }} numberOfLines={3}>
                                                 {user.bio || user.about || user.about_me || user.biodata || user.description}
                                             </Text>
                                         ) : null}
                                         {user.city && (
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Ionicons name="location-outline" size={14} color="#64748B" />
-                                                <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 6 }}>{user.city}</Text>
+                                                <Ionicons name="location-outline" size={14} color={theme.textMuted} />
+                                                <Text style={{ fontSize: 13, color: theme.textMuted, marginLeft: 6 }}>{user.city}</Text>
                                             </View>
                                         )}
                                     </>
@@ -314,10 +316,10 @@ const ProfileScreen = ({ navigation }: any) => {
                         {/* Switch Profile Button */}
                         <TouchableOpacity 
                             onPress={() => setSwitcherVisible(true)} 
-                            style={{ backgroundColor: '#E2E8F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
+                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
                         >
-                            <Ionicons name="swap-horizontal" size={16} color="#64748B" />
-                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: '#64748B' }}>{t('switchProfile')}</Text>
+                            <Ionicons name="swap-horizontal" size={16} color={theme.textSecondary} />
+                            <Text style={{ marginLeft: 6, fontSize: 12, fontWeight: 'bold', color: theme.textSecondary }}>{t('switchProfile')}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -325,18 +327,18 @@ const ProfileScreen = ({ navigation }: any) => {
                     <View style={{ flexDirection: 'row', gap: 12, marginVertical: 18 }}>
                         <TouchableOpacity
                             onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
-                            style={{ flex: 1, backgroundColor: '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
+                            style={{ flex: 1, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
-                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
+                          <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>{t('editProfile')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity
                             onPress={() => navigation.navigate('PublicProfile', { userId: user.id })}
-                            style={{ flex: 1, backgroundColor: '#EFF6FF', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DBEAFE' }}
+                            style={{ flex: 1, backgroundColor: isDarkMode ? 'rgba(37, 99, 235, 0.15)' : '#EFF6FF', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDarkMode ? '#1D4ED8' : '#DBEAFE' }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#2563EB' }}>{t('publicFeed')}</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#3B82F6' }}>{t('publicFeed')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -344,11 +346,11 @@ const ProfileScreen = ({ navigation }: any) => {
                 {/* Main Content Area */}
                 <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
                     {/* Explore Grid */}
-                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
                         {user.is_business == 1 ? t('businessTools') : t('explore')}
                     </Text>
                     
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
+                    <View style={{ backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         {(user.is_business == 1 ? [
                             { label: t('myPosts'), icon: "grid-outline", route: "MyPosts", color: "#3b82f6" },
                             { label: t('savedPosts'), icon: "bookmark-outline", route: "SavedPosts", color: "#2563EB" },
@@ -382,11 +384,11 @@ const ProfileScreen = ({ navigation }: any) => {
                     </View>
 
                     {/* Settings / Actions */}
-                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12, marginLeft: 4 }}>
                         {t('general')}
                     </Text>
                     
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
+                    <View style={{ backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 }}>
                         <MenuItem label={t('settings')} icon="settings-outline" iconColor="#64748B" onPress={() => navigation.navigate('Settings')} />
                         <MenuItem label={t('linkoSupport')} icon="chatbubble-ellipses-outline" iconColor="#3b82f6" onPress={() => navigation.navigate('SupportChat')} isLast />
                     </View>
@@ -394,11 +396,11 @@ const ProfileScreen = ({ navigation }: any) => {
                     <TouchableOpacity
                         onPress={handleLogout}
                         style={{
-                            backgroundColor: 'white',
+                            backgroundColor: theme.card,
                             borderRadius: 20,
                             padding: 14,
                             borderWidth: 1,
-                            borderColor: '#fee2e2',
+                            borderColor: isDarkMode ? '#7F1D1D' : '#fee2e2',
                             flexDirection: 'row',
                             alignItems: 'center',
                             shadowColor: '#000',
@@ -409,7 +411,7 @@ const ProfileScreen = ({ navigation }: any) => {
                         }}
                         activeOpacity={0.8}
                     >
-                        <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', marginRight: 14 }}>
+                        <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: isDarkMode ? '#450A0A' : '#fef2f2', marginRight: 14 }}>
                             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
                         </View>
                         <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#ef4444', flex: 1 }}>
@@ -419,7 +421,7 @@ const ProfileScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
 
                     <View style={{ alignItems: 'center', marginTop: 30, marginBottom: 10 }}>
-                        <Text style={{ color: '#9ca3af', fontSize: 11, fontWeight: 'bold' }}>Version 1.45.0</Text>
+                        <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: 'bold' }}>Version 1.45.0</Text>
                     </View>
                 </View>
             </ScrollView>
@@ -433,24 +435,27 @@ const ProfileScreen = ({ navigation }: any) => {
     );
 };
 
-const MenuItem = ({ label, icon, iconColor, onPress, isLast }: any) => (
-    <TouchableOpacity 
-        onPress={onPress} 
-        style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            padding: 16, 
-            borderBottomWidth: isLast ? 0 : 1, 
-            borderColor: '#F8FAFC' 
-        }}
-        activeOpacity={0.7}
-    >
-        <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14, backgroundColor: '#F8FAFC' }}>
-            <Ionicons name={icon} size={18} color={iconColor || '#64748B'} />
-        </View>
-        <Text style={{ flex: 1, fontSize: 14, fontWeight: 'bold', color: '#374151' }}>{label}</Text>
-        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
-    </TouchableOpacity>
-);
+const MenuItem = ({ label, icon, iconColor, onPress, isLast }: any) => {
+    const { isDarkMode, theme } = useTheme();
+    return (
+        <TouchableOpacity 
+            onPress={onPress} 
+            style={{ 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                padding: 16, 
+                borderBottomWidth: isLast ? 0 : 1, 
+                borderColor: theme.border 
+            }}
+            activeOpacity={0.7}
+        >
+            <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 14, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}>
+                <Ionicons name={icon} size={18} color={iconColor || (isDarkMode ? '#94A3B8' : '#64748B')} />
+            </View>
+            <Text style={{ flex: 1, fontSize: 14, fontWeight: 'bold', color: theme.text }}>{label}</Text>
+            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+        </TouchableOpacity>
+    );
+};
 
 export default ProfileScreen;

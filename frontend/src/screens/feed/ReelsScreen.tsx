@@ -110,8 +110,17 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
                 if (soundRef.current) {
                     await soundRef.current.unloadAsync();
                 }
+                const formattedUrl = url?.startsWith('http')
+                    ? url
+                    : (url ? `https://www.sadhuvandna.co.in/${url.replace(/^\/+/, '')}` : '');
+
+                if (!formattedUrl) {
+                    if (onReady) onReady(true);
+                    return;
+                }
+
                 const { sound } = await Audio.Sound.createAsync(
-                    { uri: url },
+                    { uri: formattedUrl },
                     {
                         shouldPlay: false,
                         positionMillis: (startTime || 0) * 1000,
@@ -132,8 +141,8 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
                         }
                     }
                 });
-            } catch (e) {
-                console.error("Native Audio Load Error:", e);
+            } catch (e: any) {
+                console.warn("[NativeAudio] Audio load warning:", e?.message || e);
                 if (onReady) onReady(true); // Don't block video if audio fails
             }
         };

@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvo
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Message {
     id: string;
@@ -21,6 +22,7 @@ const SUGGESTIONS = [
 ];
 
 const SupportChatScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 'welcome',
@@ -31,7 +33,7 @@ const SupportChatScreen = ({ navigation }: any) => {
     ]);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
-    const flatListRef = useRef<FlashList>(null);
+    const flatListRef = useRef<any>(null);
 
     // Auto scroll to bottom
     const scrollToBottom = () => {
@@ -102,21 +104,31 @@ const SupportChatScreen = ({ navigation }: any) => {
         return (
             <View className={`flex-row mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 {!isUser && (
-                    <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2 self-end shadow-sm">
-                        <Text className="text-blue-600 text-xs font-bold">L</Text>
+                    <View 
+                        className="w-8 h-8 rounded-full items-center justify-center mr-2 self-end shadow-sm"
+                        style={{ backgroundColor: isDarkMode ? 'rgba(37,99,235,0.25)' : '#DBEAFE' }}
+                    >
+                        <Text className="text-blue-500 text-xs font-bold">L</Text>
                     </View>
                 )}
                 <View 
                     className={`max-w-[78%] p-3.5 rounded-2xl shadow-sm ${
                         isUser 
-                            ? 'bg-blue-500 rounded-tr-none' 
-                            : 'bg-white border border-gray-100 rounded-tl-none'
+                            ? 'bg-blue-600 rounded-tr-none' 
+                            : 'rounded-tl-none'
                     }`}
+                    style={!isUser ? { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 } : undefined}
                 >
-                    <Text className={`text-[14px] leading-5 font-medium ${isUser ? 'text-white' : 'text-blue-900'}`}>
+                    <Text 
+                        className="text-[14px] leading-5 font-medium"
+                        style={{ color: isUser ? '#FFFFFF' : theme.text }}
+                    >
                         {item.text}
                     </Text>
-                    <Text className={`text-[9px] mt-1 self-end ${isUser ? 'text-orange-100' : 'text-gray-400'}`}>
+                    <Text 
+                        className="text-[9px] mt-1 self-end"
+                        style={{ color: isUser ? '#BFDBFE' : theme.textMuted }}
+                    >
                         {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                 </View>
@@ -125,27 +137,33 @@ const SupportChatScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
             {/* Header */}
-            <View className="flex-row items-center px-4 py-3 bg-white border-b border-slate-200 shadow-sm z-10">
+            <View 
+                className="flex-row items-center px-4 py-3 shadow-sm z-10"
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <TouchableOpacity onPress={() => navigation.goBack()} className="p-1 mr-2">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3 shadow-sm">
-                    <Text className="text-blue-600 text-base font-extrabold">LK</Text>
+                <View 
+                    className="w-10 h-10 rounded-full items-center justify-center mr-3 shadow-sm"
+                    style={{ backgroundColor: isDarkMode ? 'rgba(37,99,235,0.25)' : '#DBEAFE' }}
+                >
+                    <Text className="text-blue-500 text-base font-extrabold">LK</Text>
                 </View>
                 <View className="flex-1">
-                    <Text className="text-base font-bold text-blue-950">Linko</Text>
+                    <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'bold' }}>Linko</Text>
                     <View className="flex-row items-center">
                         <View className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />
-                        <Text className="text-[10px] text-slate-500 font-semibold">AI Support Assistant</Text>
+                        <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: '600' }}>AI Support Assistant</Text>
                     </View>
                 </View>
             </View>
 
             {/* Messages Screen Container */}
             <KeyboardAvoidingView 
-                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 className="flex-1"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
@@ -154,16 +172,22 @@ const SupportChatScreen = ({ navigation }: any) => {
                     data={messages}
                     renderItem={renderMessageItem}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 10 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 10, backgroundColor: theme.background }}
                     ListFooterComponent={loading ? (
                         <View className="flex-row mb-4 justify-start items-center">
-                            <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-2 self-end shadow-sm">
-                                <Text className="text-blue-600 text-xs font-bold">L</Text>
+                            <View 
+                                className="w-8 h-8 rounded-full items-center justify-center mr-2 self-end shadow-sm"
+                                style={{ backgroundColor: isDarkMode ? 'rgba(37,99,235,0.25)' : '#DBEAFE' }}
+                            >
+                                <Text className="text-blue-500 text-xs font-bold">L</Text>
                             </View>
-                            <View className="bg-white border border-gray-100 rounded-2xl rounded-tl-none p-3.5 shadow-sm">
+                            <View 
+                                className="rounded-2xl rounded-tl-none p-3.5 shadow-sm"
+                                style={{ backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }}
+                            >
                                 <View className="flex-row items-center px-1.5 py-0.5">
                                     <ActivityIndicator size="small" color="#2563EB" />
-                                    <Text className="text-gray-400 text-xs ml-2 font-medium">Linko is typing...</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginLeft: 8, fontWeight: '500' }}>Linko is typing...</Text>
                                 </View>
                             </View>
                         </View>
@@ -182,10 +206,11 @@ const SupportChatScreen = ({ navigation }: any) => {
                                 <TouchableOpacity
                                     key={index}
                                     onPress={() => handleSendMessage(item.text)}
-                                    className="bg-white rounded-full border border-orange-100 px-4 py-2 mr-2.5 shadow-sm flex-row items-center"
+                                    className="rounded-full px-4 py-2 mr-2.5 shadow-sm flex-row items-center"
+                                    style={{ backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }}
                                     activeOpacity={0.8}
                                 >
-                                    <Text className="text-xs font-bold text-blue-600">{item.title}</Text>
+                                    <Text className="text-xs font-bold text-blue-500">{item.title}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
@@ -193,11 +218,19 @@ const SupportChatScreen = ({ navigation }: any) => {
                 )}
 
                 {/* Input Area */}
-                <View className="p-3 bg-white border-t border-slate-200 flex-row items-center">
+                <View 
+                    className="p-3 flex-row items-center"
+                    style={{ backgroundColor: theme.card, borderTopColor: theme.border, borderTopWidth: 1 }}
+                >
                     <TextInput
-                        className="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 mr-2 text-sm text-blue-900"
+                        className="flex-1 rounded-full px-4 py-2.5 mr-2 text-sm border"
+                        style={{ 
+                            backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', 
+                            borderColor: theme.border, 
+                            color: theme.text 
+                        }}
                         placeholder="अपनी समस्या यहाँ लिखें..."
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={theme.textMuted}
                         value={inputText}
                         onChangeText={setInputText}
                         onSubmitEditing={() => handleSendMessage(inputText)}
@@ -206,9 +239,10 @@ const SupportChatScreen = ({ navigation }: any) => {
                     <TouchableOpacity 
                         onPress={() => handleSendMessage(inputText)}
                         disabled={!inputText.trim()}
-                        className={`w-10 h-10 rounded-full items-center justify-center shadow-sm ${
-                            inputText.trim() ? 'bg-blue-500' : 'bg-slate-200'
-                        }`}
+                        className="w-10 h-10 rounded-full items-center justify-center shadow-sm"
+                        style={{
+                            backgroundColor: inputText.trim() ? '#2563EB' : (isDarkMode ? '#334155' : '#E2E8F0')
+                        }}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="send" size={16} color="white" />

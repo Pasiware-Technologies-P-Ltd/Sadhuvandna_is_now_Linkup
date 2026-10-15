@@ -5,15 +5,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 import * as NavigationBar from 'expo-navigation-bar';
 
-SystemUI.setBackgroundColorAsync('#ffffff');
-if (Platform.OS === 'android') {
-  NavigationBar.setBackgroundColorAsync('#ffffff');
-  NavigationBar.setButtonStyleAsync('dark');
-}
 import './global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef, navigateWithRetry } from './src/navigation/navigationRef';
 import { RootStackParamList } from './src/navigation/types';
@@ -28,6 +22,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { LanguageProvider } from './src/context/LanguageContext';
 import { FontProvider } from './src/context/FontContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import mobileAds from 'react-native-google-mobile-ads';
 // import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Audio } from 'expo-av';
@@ -60,6 +55,42 @@ const queryClient = new QueryClient({
 });
 
 import * as Notifications from 'expo-notifications';
+
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+
+function ThemedAppContent({ initialRoute, linking }: { initialRoute: any; linking: any }) {
+  const { isDarkMode, theme } = useTheme();
+
+  const navTheme = isDarkMode ? {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: theme.background,
+      card: theme.card,
+      text: theme.text,
+      border: theme.border,
+      primary: theme.primary,
+    },
+  } : {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: theme.background,
+      card: theme.card,
+      text: theme.text,
+      border: theme.border,
+      primary: theme.primary,
+    },
+  };
+
+  return (
+    <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={theme.background} />
+      <RootNavigator initialRoute={initialRoute} />
+      <GlobalCallListener />
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList | null>(null);
@@ -211,23 +242,21 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <FontProvider>
-          <LanguageProvider>
-            <UploadProvider>
-              <OnlineProvider>
-                <BadgeProvider>
-                  <NavigationContainer ref={navigationRef} linking={linking}>
-                    <StatusBar style="dark" />
-                    <RootNavigator initialRoute={initialRoute} />
-                    <GlobalCallListener />
-                  </NavigationContainer>
-                  <UploadProgressBanner />
-                  <CustomAlertProvider />
-                </BadgeProvider>
-              </OnlineProvider>
-            </UploadProvider>
-          </LanguageProvider>
-        </FontProvider>
+        <ThemeProvider>
+          <FontProvider>
+            <LanguageProvider>
+              <UploadProvider>
+                <OnlineProvider>
+                  <BadgeProvider>
+                    <ThemedAppContent initialRoute={initialRoute} linking={linking} />
+                    <UploadProgressBanner />
+                    <CustomAlertProvider />
+                  </BadgeProvider>
+                </OnlineProvider>
+              </UploadProvider>
+            </LanguageProvider>
+          </FontProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
     </QueryClientProvider>

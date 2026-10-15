@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
@@ -16,6 +17,7 @@ const getImageUrl = (photo: string | null, baseUrl: string) => {
 };
 
 const SavedPostsScreen = ({ navigation }: any) => {
+    const { isDarkMode, theme } = useTheme();
     const { t } = useLanguage();
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -116,16 +118,16 @@ const SavedPostsScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }} edges={['top', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
             {/* Header */}
             <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 paddingHorizontal: 16,
                 paddingVertical: 12,
-                backgroundColor: 'white',
+                backgroundColor: theme.card,
                 borderBottomWidth: 1,
-                borderBottomColor: '#E2E8F0',
+                borderBottomColor: theme.border,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.05,
@@ -134,14 +136,14 @@ const SavedPostsScreen = ({ navigation }: any) => {
                 zIndex: 10
             }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 6, marginRight: 12 }} activeOpacity={0.7}>
-                    <Ionicons name="arrow-back" size={24} color="#172554" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>
                         {t('saved')} {t('posts')}
                     </Text>
                 </View>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDarkMode ? 'rgba(37,99,235,0.2)' : '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="bookmark" size={20} color="#2563EB" />
                 </View>
             </View>
@@ -149,32 +151,29 @@ const SavedPostsScreen = ({ navigation }: any) => {
             {loading ? (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#2563EB" />
-                    <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>{t('loading')}...</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 8 }}>{t('loading')}...</Text>
                 </View>
             ) : (
                 <FlashList
                     data={posts}
                     keyExtractor={(item) => String(item.id)}
                     renderItem={renderPostItem}
-                    initialNumToRender={8}
-                    maxToRenderPerBatch={8}
-                    windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={viewabilityConfig}
-                    contentContainerStyle={posts.length === 0 ? { flex: 1, justifyContent: 'center', alignItems: 'center' } : { paddingVertical: 10 }}
+                    contentContainerStyle={posts.length === 0 ? { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background } : { paddingVertical: 10, backgroundColor: theme.background }}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />
                     }
                     ListEmptyComponent={
                         <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
-                            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                                 <Ionicons name="bookmark-outline" size={40} color="#2563EB" />
                             </View>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554', marginBottom: 6, textAlign: 'center' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 6, textAlign: 'center' }}>
                                 {t('noSavedPosts') || 'No Saved Posts'}
                             </Text>
-                            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 }}>
+                            <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 }}>
                                 You haven't bookmarked any posts yet. Tap the bookmark icon on any post to save it here!
                             </Text>
                             <TouchableOpacity

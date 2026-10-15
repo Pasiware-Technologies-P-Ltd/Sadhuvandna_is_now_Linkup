@@ -8,10 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { ImageService } from '../../services/ImageService';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const JobScreen = ({ navigation }: any) => {
+    const { isDarkMode, theme } = useTheme();
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -116,23 +118,23 @@ const JobScreen = ({ navigation }: any) => {
     );
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
+        return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}><ActivityIndicator color="#2563EB" /></View>;
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12, padding: 4 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900">{t('jobsEducation')}</Text>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text }}>{t('jobsEducation')}</Text>
             </View>
 
             <FlashList
                 data={jobs}
                 renderItem={renderItem}
                 keyExtractor={item => item.id?.toString()}
-                contentContainerStyle={{ paddingVertical: 10 }}
+                contentContainerStyle={{ paddingVertical: 12, backgroundColor: theme.background }}
                 // @ts-ignore: IDE erroneously flags this property
                 estimatedItemSize={250}
                 onEndReached={() => fetchJobs(true)}
@@ -142,8 +144,8 @@ const JobScreen = ({ navigation }: any) => {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} tintColor="#2563EB" />
                 }
                 ListEmptyComponent={
-                    <View className="items-center mt-20 p-4">
-                        <Text className="text-slate-500 text-center text-lg">{t('noUpdatesAvailable')}</Text>
+                    <View style={{ alignItems: 'center', marginTop: 80, padding: 16 }}>
+                        <Text style={{ color: theme.textMuted, textAlign: 'center', fontSize: 16, fontWeight: '500' }}>{t('noUpdatesAvailable')}</Text>
                     </View>
                 }
             />
@@ -152,6 +154,7 @@ const JobScreen = ({ navigation }: any) => {
 };
 
 const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
+    const { isDarkMode, theme } = useTheme();
     const [expanded, setExpanded] = useState(false);
     const { t } = useLanguage();
     const description = item.description || '';
@@ -171,9 +174,7 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
         if (!imagePath) return null;
         let finalUrl = imagePath;
         if (!imagePath.startsWith('http')) {
-            // Strip leading slash if present
             const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-            // If the path already has 'uploads/', just append it to root, else assume uploads/jobs/
             if (cleanPath.includes('uploads/')) {
                 finalUrl = `${BASE_URL_ROOT}/${cleanPath}`;
             } else {
@@ -195,64 +196,74 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                 return (
                     <Text 
                         key={index} 
-                        className="text-blue-600 underline"
+                        style={{ color: '#3B82F6', textDecorationLine: 'underline' }}
                         onPress={() => Linking.openURL(part).catch(err => console.error("Error opening URL", err))}
                     >
                         {part}
                     </Text>
                 );
             }
-            return <Text key={index}>{part}</Text>;
+            return <Text key={index} style={{ color: theme.textSecondary }}>{part}</Text>;
         });
     };
 
     return (
-        <View className="bg-white mb-4 mx-4 p-5 rounded-xl border border-gray-100 shadow-sm">
-            <View className="flex-row justify-between items-start mb-2">
-                <View className="flex-1">
-                    <Text className={`text-xs font-bold px-2 py-1 rounded self-start mb-2 ${item.type === 'job' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+        <View style={{ backgroundColor: theme.card, marginBottom: 14, marginHorizontal: 16, padding: 18, borderRadius: 16, borderWidth: 1, borderColor: theme.border, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{
+                        fontSize: 11,
+                        fontWeight: 'bold',
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 6,
+                        alignSelf: 'flex-start',
+                        marginBottom: 6,
+                        backgroundColor: item.type === 'job' ? (isDarkMode ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7') : (isDarkMode ? 'rgba(37, 99, 235, 0.2)' : '#DBEAFE'),
+                        color: item.type === 'job' ? '#16A34A' : '#2563EB'
+                    }}>
                         {item.type ? item.type.toUpperCase() : t('updateBadge')}
                     </Text>
-                    <Text className="text-lg font-bold text-blue-950 leading-6">{item.title}</Text>
+                    <Text style={{ fontSize: 17, fontWeight: 'bold', color: theme.text, lineHeight: 24 }}>{item.title}</Text>
                 </View>
-                <Text className="text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString()}</Text>
+                <Text style={{ fontSize: 11, color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</Text>
             </View>
 
-            <Text className="text-slate-500 text-sm leading-5 mb-2">
+            <Text style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 21, marginBottom: 8 }}>
                 {expanded ? renderDescription(description) : renderDescription(description.substring(0, 150) + (isLong ? '...' : ''))}
             </Text>
 
             {isLong && (
-                <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mb-4">
-                    <Text className="text-blue-600 font-bold text-xs">{expanded ? t('readLess') : t('readMore')}</Text>
+                <TouchableOpacity onPress={() => setExpanded(!expanded)} style={{ marginBottom: 12 }}>
+                    <Text style={{ color: '#3B82F6', fontWeight: 'bold', fontSize: 12 }}>{expanded ? t('readLess') : t('readMore')}</Text>
                 </TouchableOpacity>
             )}
 
             {imageUrl && (
-                <View className="mb-4 w-full h-48 rounded-lg overflow-hidden bg-slate-100">
+                <View style={{ marginBottom: 14, width: '100%', height: 190, borderRadius: 12, overflow: 'hidden', backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }}>
                     <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 </View>
             )}
 
-
-
-            <View className="flex-row gap-3 mt-2 flex-wrap">
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
                 {item.type === 'job' && (
                     <TouchableOpacity
-                        className="bg-blue-600 py-2.5 px-4 rounded-lg flex-row items-center"
+                        style={{ backgroundColor: '#2563EB', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
                         onPress={handleApply}
+                        activeOpacity={0.85}
                     >
-                        <Text className="text-white font-bold text-sm">{t('applyNow')}</Text>
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{t('applyNow')}</Text>
                     </TouchableOpacity>
                 )}
 
                 {!!item.link && (
                     <TouchableOpacity
-                        className="bg-blue-600 py-2.5 px-4 rounded-lg flex-row items-center space-x-2"
+                        style={{ backgroundColor: '#2563EB', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
                         onPress={handleLink}
+                        activeOpacity={0.85}
                     >
-                        <Ionicons name="link" size={16} color="white" />
-                        <Text className="text-white font-bold text-sm ml-1">{t('visitLink')}</Text>
+                        <Ionicons name="link" size={15} color="white" />
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13, marginLeft: 4 }}>{t('visitLink')}</Text>
                     </TouchableOpacity>
                 )}
             </View>

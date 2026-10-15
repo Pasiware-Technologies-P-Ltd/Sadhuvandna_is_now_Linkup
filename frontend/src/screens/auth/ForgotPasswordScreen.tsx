@@ -3,8 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 const ForgotPasswordScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -84,16 +86,29 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep1 = () => (
         <View className="w-full">
-            <Text className="text-slate-500 text-center mb-6">Enter your registered email to receive an OTP.</Text>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
-                <Ionicons name="mail-outline" size={20} color="gray" />
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', marginBottom: 24 }}>Enter your registered email to receive an OTP.</Text>
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 24
+                }}
+            >
+                <Ionicons name="mail-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Email Address"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
             <TouchableOpacity
@@ -108,16 +123,29 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep2 = () => (
         <View className="w-full">
-            <Text className="text-slate-500 text-center mb-6">Enter the 6-digit OTP sent to {email}</Text>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
-                <Ionicons name="key-outline" size={20} color="gray" />
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', marginBottom: 24 }}>Enter the 6-digit OTP sent to {email}</Text>
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 24
+                }}
+            >
+                <Ionicons name="key-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Enter OTP"
                     value={otp}
                     onChangeText={setOtp}
                     keyboardType="number-pad"
                     maxLength={6}
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
             <TouchableOpacity
@@ -132,25 +160,51 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
     const renderStep3 = () => (
         <View className="w-full">
-            <Text className="text-slate-500 text-center mb-6">Create a new password for your account.</Text>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-4">
-                <Ionicons name="lock-closed-outline" size={20} color="gray" />
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', marginBottom: 24 }}>Create a new password for your account.</Text>
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 16
+                }}
+            >
+                <Ionicons name="lock-closed-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="New Password"
                     value={newPassword}
                     onChangeText={setNewPassword}
                     secureTextEntry
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
-            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
-                <Ionicons name="lock-closed-outline" size={20} color="gray" />
+            <View 
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    marginBottom: 24
+                }}
+            >
+                <Ionicons name="lock-closed-outline" size={20} color={theme.textMuted} />
                 <TextInput
-                    className="flex-1 ml-3 text-slate-600 text-base"
+                    style={{ flex: 1, marginLeft: 12, color: theme.text, fontSize: 16 }}
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
+                    placeholderTextColor={theme.textMuted}
                 />
             </View>
             <TouchableOpacity
@@ -164,16 +218,26 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white px-6 py-10">
-            <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} className="absolute top-12 left-6 z-10 p-2">
-                <Ionicons name="arrow-back" size={24} color="#64748B" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingVertical: 40 }}>
+            <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={{ position: 'absolute', top: 48, left: 24, zIndex: 10, padding: 8 }}>
+                <Ionicons name="arrow-back" size={24} color={theme.text} />
             </TouchableOpacity>
 
             <View className="items-center mt-10 mb-8">
-                <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mb-4">
+                <View 
+                    style={{
+                        width: 80,
+                        height: 80,
+                        backgroundColor: isDarkMode ? '#1E3A8A40' : '#DBEAFE',
+                        borderRadius: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 16
+                    }}
+                >
                     <Ionicons name={step === 3 ? "lock-open" : "shield-checkmark-outline"} size={40} color="#2563EB" />
                 </View>
-                <Text className="text-2xl font-bold text-blue-900">
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>
                     {step === 1 ? 'Forgot Password?' : step === 2 ? 'Verify Identity' : 'Reset Password'}
                 </Text>
             </View>

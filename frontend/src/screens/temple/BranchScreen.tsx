@@ -7,11 +7,13 @@ import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const BRANCH_IMAGE_URL = `${BASE_URL_ROOT}/uploads/branches/`;
 
 const BranchScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
     const [branches, setBranches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { t } = useLanguage();
@@ -46,29 +48,36 @@ const BranchScreen = ({ navigation }: any) => {
         }
     };
 
-    const renderItem = ({ item }: { item: any }) => <BranchCard item={item} t={t} />;
+    const renderItem = ({ item }: { item: any }) => <BranchCard item={item} t={t} theme={theme} isDarkMode={isDarkMode} />;
 
     if (loading) {
-        return <View className="flex-1 justify-center items-center bg-white"><ActivityIndicator color="#2563EB" /></View>;
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+                <ActivityIndicator color="#2563EB" />
+            </View>
+        );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View 
+                className="flex-row items-center p-4"
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900">{t('branches')}</Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>{t('branches')}</Text>
             </View>
 
             <FlashList
                 data={branches}
                 renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}
-                contentContainerStyle={{ paddingVertical: 10 }}
+                contentContainerStyle={{ paddingVertical: 10, backgroundColor: theme.background }}
                 ListEmptyComponent={
                     <View className="items-center mt-20 p-4">
-                        <Text className="text-slate-500 text-center text-lg">No branches found.</Text>
+                        <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 16 }}>No branches found.</Text>
                     </View>
                 }
             />
@@ -76,38 +85,42 @@ const BranchScreen = ({ navigation }: any) => {
     );
 };
 
-const BranchCard = ({ item, t }: { item: any, t: any }) => {
+const BranchCard = ({ item, t, theme, isDarkMode }: { item: any, t: any, theme: any, isDarkMode: boolean }) => {
     const [expanded, setExpanded] = useState(false);
     const hasLongText = item.details && item.details.length > 100;
 
     return (
-        <View className="bg-white mb-5 rounded-xl border border-orange-100 shadow-sm overflow-hidden mx-4">
+        <View 
+            className="mb-5 rounded-2xl shadow-sm overflow-hidden mx-4"
+            style={{ backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }}
+        >
             {item.photo && (
                 <Image
                     source={{ uri: `${BRANCH_IMAGE_URL}${item.photo}` }}
-                    className="w-full h-72 bg-slate-50"
+                    className="w-full h-72"
+                    style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}
                     contentFit="contain"
                 />
             )}
             <View className="p-4">
-                <Text className="text-xl font-bold text-blue-950 mb-1">{item.branch_name}</Text>
-                <Text className="text-md text-blue-600 font-semibold mb-2">{item.mahant_name}</Text>
-                <Text className="text-sm text-slate-500 mb-2">
-                    <Ionicons name="call" size={14} color="gray" /> {item.mahant_mobile}
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold', marginBottom: 4 }}>{item.branch_name}</Text>
+                <Text style={{ color: '#2563EB', fontSize: 15, fontWeight: '600', marginBottom: 8 }}>{item.mahant_name}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 14, marginBottom: 8 }}>
+                    <Ionicons name="call" size={14} color={theme.textMuted} /> {item.mahant_mobile}
                 </Text>
-                <Text className="text-xs text-slate-500 mb-2">{t('location')}: {item.branch_village}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 8 }}>{t('location')}: {item.branch_village}</Text>
 
                 {item.details && (
                     <View>
                         <Text
-                            className="text-slate-600 text-sm leading-5"
+                            style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 20 }}
                             numberOfLines={expanded ? undefined : 3}
                         >
                             {item.details}
                         </Text>
                         {hasLongText && (
                             <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mt-1">
-                                <Text className="text-blue-600 font-bold text-xs">
+                                <Text className="text-blue-500 font-bold text-xs">
                                     {expanded ? t('seeLess') : t('seeMore')}
                                 </Text>
                             </TouchableOpacity>

@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import api, { UPLOAD_BASE_URL, WEBSITE_URL } from '../../services/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
@@ -40,6 +41,8 @@ const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
 const MARITAL_OPTIONS = ['Single', 'Married', 'Divorced', 'Widowed'];
 
 const EditProfileScreen = ({ navigation }: any) => {
+    const { theme, isDarkMode } = useTheme();
+    const styles = React.useMemo(() => getStyles(theme, isDarkMode), [theme, isDarkMode]);
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [location, setLocation] = useState('');
@@ -735,10 +738,10 @@ const EditProfileScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
     safeContainer: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: theme.background,
     },
     header: {
         flexDirection: 'row',
@@ -746,9 +749,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.card,
         borderBottomWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -764,14 +767,14 @@ const styles = StyleSheet.create({
     },
     cancelText: {
         fontSize: 15,
-        color: '#475569',
+        color: theme.subtext,
         fontWeight: '600',
         marginLeft: 4,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#0F172A',
+        color: theme.text,
     },
     saveBtn: {
         backgroundColor: '#1877F2',
@@ -800,16 +803,16 @@ const styles = StyleSheet.create({
     /* MEDIA CONTAINER */
     mediaContainer: {
         marginBottom: 16,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.card,
         paddingBottom: 16,
         borderBottomWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
     },
     coverWrapper: {
         width: '100%',
         height: 155,
         position: 'relative',
-        backgroundColor: '#CBD5E1',
+        backgroundColor: isDarkMode ? '#1E293B' : '#CBD5E1',
     },
     coverImage: {
         width: '100%',
@@ -868,8 +871,8 @@ const styles = StyleSheet.create({
         height: 104,
         borderRadius: 52,
         borderWidth: 4,
-        borderColor: '#FFFFFF',
-        backgroundColor: '#E2E8F0',
+        borderColor: theme.card,
+        backgroundColor: isDarkMode ? '#334155' : '#E2E8F0',
         overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
@@ -886,7 +889,7 @@ const styles = StyleSheet.create({
     avatarPlaceholder: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#DBEAFE',
+        backgroundColor: isDarkMode ? '#1E3A8A' : '#DBEAFE',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -934,23 +937,23 @@ const styles = StyleSheet.create({
     avatarNameText: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#0F172A',
+        color: theme.text,
     },
     avatarHintText: {
         fontSize: 12,
-        color: '#64748B',
+        color: theme.subtext,
         marginTop: 2,
     },
 
     /* CARDS */
     card: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.card,
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         elevation: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -963,13 +966,13 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         paddingBottom: 10,
         borderBottomWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: theme.border,
     },
     cardIconBox: {
         width: 30,
         height: 30,
         borderRadius: 8,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: isDarkMode ? '#1E3A8A25' : '#EFF6FF',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 10,
@@ -977,7 +980,7 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#0F172A',
+        color: theme.text,
     },
 
     /* FIELD GROUPS */
@@ -987,22 +990,22 @@ const styles = StyleSheet.create({
     fieldLabel: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#475569',
+        color: theme.subtext,
         marginBottom: 6,
         marginLeft: 2,
     },
     inputWrap: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         borderRadius: 12,
         minHeight: 48,
     },
     inputDisabled: {
-        backgroundColor: '#F1F5F9',
-        borderColor: '#E2E8F0',
+        backgroundColor: isDarkMode ? '#0F172A' : '#F1F5F9',
+        borderColor: theme.border,
     },
     inputIcon: {
         marginLeft: 14,
@@ -1011,7 +1014,7 @@ const styles = StyleSheet.create({
     textInput: {
         flex: 1,
         fontSize: 15,
-        color: '#0F172A',
+        color: theme.text,
         paddingVertical: 12,
         paddingRight: 14,
     },
@@ -1025,21 +1028,21 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
     },
     chipActive: {
-        backgroundColor: '#EFF6FF',
+        backgroundColor: isDarkMode ? '#1E3A8A' : '#EFF6FF',
         borderColor: '#1877F2',
     },
     chipText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#64748B',
+        color: theme.subtext,
     },
     chipTextActive: {
         color: '#1877F2',
@@ -1050,12 +1053,12 @@ const styles = StyleSheet.create({
     verifiedBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F0FDF4',
+        backgroundColor: isDarkMode ? '#064E3B' : '#F0FDF4',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#DCFCE7',
+        borderColor: isDarkMode ? '#065F46' : '#DCFCE7',
     },
     verifiedText: {
         fontSize: 11,
@@ -1066,22 +1069,22 @@ const styles = StyleSheet.create({
 
     /* TEXTAREA */
     textareaWrap: {
-        backgroundColor: '#F8FAFC',
+        backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: theme.border,
         borderRadius: 12,
         padding: 12,
         position: 'relative',
     },
     textareaInput: {
         fontSize: 15,
-        color: '#0F172A',
+        color: theme.text,
         minHeight: 90,
         textAlignVertical: 'top',
     },
     charCount: {
         fontSize: 11,
-        color: '#94A3B8',
+        color: theme.subtext,
         textAlign: 'right',
         marginTop: 4,
     },

@@ -13,6 +13,7 @@ import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import WebCallModal from '../../components/WebCallModal';
@@ -33,6 +34,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();
     const { receiver: rawReceiver, platform = 'community' } = route.params || {};
     const { t } = useLanguage();
+    const { isDarkMode, theme } = useTheme();
     const { isUserOnline, isConnected } = useOnlineStatus();
 
     // Ensure receiver object is robust
@@ -1493,7 +1495,7 @@ const ChatScreen = ({ navigation, route }: any) => {
     if (!receiver) return null;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#E2E8F0' }} edges={['top', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: isDarkMode ? '#0B0F19' : '#E2E8F0' }} edges={['top', 'bottom']}>
             {/* Header */}
             {isSelectionMode ? (
                 <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#2563EB', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
@@ -1530,9 +1532,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                     </View>
                 </View>
             ) : (
-                <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ paddingVertical: 12, paddingHorizontal: 16, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 8, padding: 6 }} activeOpacity={0.7}>
-                        <Ionicons name="arrow-back" size={24} color="#172554" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
@@ -1546,18 +1548,18 @@ const ChatScreen = ({ navigation, route }: any) => {
                         <View style={{ position: 'relative' }}>
                             {renderAvatar()}
                             {receiverOnline && !route.params?.isGroup && (
-                                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, backgroundColor: '#10b981', borderRadius: 6, borderWidth: 2, borderColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }} />
+                                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, backgroundColor: '#10b981', borderRadius: 6, borderWidth: 2, borderColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }} />
                             )}
                         </View>
                         <View style={{ marginLeft: 10, flex: 1, justifyContent: 'center' }}>
-                            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#172554' }} numberOfLines={1}>
+                            <Text style={{ fontWeight: 'bold', fontSize: 16, color: theme.text }} numberOfLines={1}>
                                 {receiver.full_name}
                             </Text>
                             {!route.params?.isGroup && (
                                 isReceiverTyping ? (
                                     <TypingIndicator text="Typing" />
                                 ) : (
-                                    <Text style={{ fontSize: 11, fontWeight: '500', color: receiverOnline ? '#16a34a' : '#9ca3af' }}>
+                                    <Text style={{ fontSize: 11, fontWeight: '500', color: receiverOnline ? '#16a34a' : theme.textMuted }}>
                                         {receiverOnline ? t('online') : (receiverLastSeen ? `Last seen ${receiverLastSeen}` : t('offline'))}
                                     </Text>
                                 )
@@ -1791,12 +1793,12 @@ const ChatScreen = ({ navigation, route }: any) => {
                                             shadowOffset: { width: 0, height: 1 },
                                             overflow: 'hidden',
                                             flexShrink: 1,
-                                            backgroundColor: isDeleted ? '#E2E8F0' : (isMe ? '#2563EB' : '#ffffff'),
+                                            backgroundColor: isDeleted ? (isDarkMode ? '#1E293B' : '#E2E8F0') : (isMe ? '#2563EB' : theme.card),
                                             borderRadius: 18,
                                             borderTopRightRadius: isMe ? (isDeleted ? 18 : 4) : 18,
                                             borderTopLeftRadius: isMe ? 18 : (isDeleted ? 18 : 4),
                                             borderWidth: isDeleted ? 1 : (isMe ? 0 : 1),
-                                            borderColor: isDeleted ? '#E2E8F0' : '#E2E8F0',
+                                            borderColor: isDeleted ? theme.border : theme.border,
                                         }}
                                     >
                                         {hasFile && fileUrl && !isDeleted && (
@@ -1896,7 +1898,7 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                     <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 2 }}>
                                                         <Text
                                                             key={`msg-${item.id}`}
-                                                            style={{ fontSize, flexShrink: 1, color: isMe ? '#ffffff' : '#172554', lineHeight: fontSize * 1.4 }}
+                                                            style={{ fontSize, flexShrink: 1, color: isMe ? '#ffffff' : theme.text, lineHeight: fontSize * 1.4 }}
                                                             numberOfLines={expandedMessageIds.includes(item.id) ? undefined : 10}
                                                         >
                                                             {item.message}
@@ -2009,9 +2011,9 @@ const ChatScreen = ({ navigation, route }: any) => {
                     <View style={{
                         paddingHorizontal: 12,
                         paddingVertical: 10,
-                        backgroundColor: 'white',
+                        backgroundColor: theme.card,
                         borderTopWidth: 1,
-                        borderTopColor: '#E2E8F0',
+                        borderTopColor: theme.border,
                         flexDirection: 'row',
                         alignItems: 'center',
                         gap: 8
@@ -2021,17 +2023,17 @@ const ChatScreen = ({ navigation, route }: any) => {
                                 Keyboard.dismiss();
                                 setShowAttachmentMenu(!showAttachmentMenu);
                             }}
-                            style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#DBEAFE' : '#F8FAFC', borderWidth: 1, borderColor: showAttachmentMenu ? '#DBEAFE' : '#E2E8F0', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#DBEAFE' : (isDarkMode ? '#1E293B' : '#F8FAFC'), borderWidth: 1, borderColor: showAttachmentMenu ? '#DBEAFE' : theme.border, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.7}
                         >
                             <Ionicons name={showAttachmentMenu ? "close" : "add"} size={22} color="#2563EB" />
                         </TouchableOpacity>
 
-                        <View style={{ flex: 1, backgroundColor: '#F8FAFC', borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', minHeight: 38 }}>
+                        <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderRadius: 20, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', minHeight: 38 }}>
                             <TextInput
-                                style={{ flex: 1, color: '#172554', fontSize: 14, maxHeight: 100, paddingVertical: 6 }}
+                                style={{ flex: 1, color: theme.text, fontSize: 14, maxHeight: 100, paddingVertical: 6 }}
                                 placeholder={t('typeMessage')}
-                                placeholderTextColor="#9ca3af"
+                                placeholderTextColor={theme.textMuted}
                                 multiline
                                 value={text}
                                 onChangeText={handleTextChange}

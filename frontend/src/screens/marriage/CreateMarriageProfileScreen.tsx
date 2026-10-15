@@ -9,10 +9,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api, { API_BASE_URL, WEBSITE_URL, getFullPaymentUrl } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { useUpload } from '../../context/UploadContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
+    const { isDarkMode, theme } = useTheme();
     const { startUpload } = useUpload();
     const { profile: routeProfile } = route.params || {};
     const [formData, setFormData] = useState({
@@ -278,30 +280,30 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
     };
 
     const SectionHeader = ({ title, icon }: any) => (
-        <View className="flex-row items-center gap-2 mt-6 mb-3 border-b border-orange-100 pb-2">
-            <Ionicons name={icon} size={20} color="#2563EB" />
-            <Text className="text-lg font-bold text-blue-950">{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 8 }}>
+            <Ionicons name={icon} size={20} color="#3B82F6" />
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: theme.text }}>{title}</Text>
         </View>
     );
 
     return (
         <>
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-            <View className="flex-row items-center p-4 border-b border-gray-100 bg-white z-10">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
-                    <Ionicons name="arrow-back" size={24} color="black" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card, zIndex: 10 }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12, padding: 4 }}>
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-blue-900">{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>{isEdit ? t('editMatrimonyProfile') : t('createMatrimonyProfile')}</Text>
             </View>
 
             {loadingProfile ? (
-                <View className="flex-1 justify-center items-center py-20">
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 }}>
                     <ActivityIndicator size="large" color="#2563EB" />
-                    <Text className="text-gray-400 text-sm mt-3 font-medium">Loading profile details...</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 13, marginTop: 12, fontWeight: '500' }}>Loading profile details...</Text>
                 </View>
             ) : (
                 <KeyboardAwareScrollView 
-                    className="flex-1" 
+                    style={{ flex: 1 }} 
                     contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} 
                     showsVerticalScrollIndicator={false}
                     enableOnAndroid={true}
@@ -309,71 +311,81 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Photo Upload */}
-                    <View className="items-center my-6">
-                        <TouchableOpacity onPress={pickImage} className="relative">
+                    <View style={{ alignItems: 'center', marginVertical: 20 }}>
+                        <TouchableOpacity onPress={pickImage} style={{ position: 'relative' }}>
                             {photo ? (
-                                <Image source={{ uri: photo }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#DBEAFE' }} />
+                                <Image source={{ uri: photo }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderWidth: 4, borderColor: '#3B82F6' }} />
                             ) : existingPhoto ? (
-                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: '#E2E8F0', borderWidth: 4, borderColor: '#DBEAFE' }} />
+                                <Image source={{ uri: `${PHOTO_URL}${existingPhoto}` }} style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderWidth: 4, borderColor: '#3B82F6' }} />
                             ) : (
-                                <View className="w-32 h-32 rounded-full bg-blue-50 items-center justify-center border-2 border-dashed border-orange-300">
-                                    <Ionicons name="camera" size={36} color="#2563EB" />
-                                    <Text className="text-xs text-blue-600 mt-1 font-semibold">{t('addPhoto')}</Text>
+                                <View style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderStyle: 'dashed', borderColor: '#3B82F6' }}>
+                                    <Ionicons name="camera" size={36} color="#3B82F6" />
+                                    <Text style={{ fontSize: 12, color: '#3B82F6', marginTop: 4, fontWeight: '600' }}>{t('addPhoto')}</Text>
                                 </View>
                             )}
-                            <View className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 border-2 border-white">
+                            <View style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#2563EB', borderRadius: 20, padding: 8, borderWidth: 2, borderColor: theme.card }}>
                                 <Ionicons name="pencil" size={16} color="white" />
                             </View>
                         </TouchableOpacity>
-                        {isEdit && !photo && existingPhoto && <Text className="text-xs text-gray-400 mt-2 text-center">Tap to change photo</Text>}
+                        {isEdit && !photo && existingPhoto && <Text style={{ fontSize: 12, color: theme.textMuted, marginTop: 8, textAlign: 'center' }}>Tap to change photo</Text>}
                     </View>
 
                     {/* Basic Details */}
                     <SectionHeader title={t('basicDetails')} icon="person-outline" />
-                    <View className="space-y-4">
+                    <View style={{ gap: 14 }}>
                         <Input label={t('fullName')} value={formData.full_name} onChangeText={(t) => handleChange('full_name', t)} placeholder="e.g. Rahul Sharma" required />
 
                         <View>
-                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('genderLabel')} <Text className="text-red-500">*</Text></Text>
-                            <View className="flex-row gap-2">
+                            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>{t('genderLabel')} <Text style={{ color: '#EF4444' }}>*</Text></Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
                                 {['Male', 'Female', 'Other'].map(g => (
                                     <TouchableOpacity
                                         key={g}
                                         onPress={() => handleChange('gender', g)}
-                                        className={`flex-1 py-3 items-center rounded-xl border ${formData.gender === g ? 'bg-blue-500 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
+                                        style={{
+                                            flex: 1,
+                                            paddingVertical: 12,
+                                            alignItems: 'center',
+                                            borderRadius: 12,
+                                            borderWidth: 1,
+                                            borderColor: formData.gender === g ? '#2563EB' : theme.border,
+                                            backgroundColor: formData.gender === g ? '#2563EB' : (isDarkMode ? '#1E293B' : '#F8FAFC')
+                                        }}
                                     >
-                                        <Text className={formData.gender === g ? 'text-white font-bold' : 'text-slate-500'}>{g === 'Male' ? t('male') : g === 'Female' ? t('female') : t('other')}</Text>
+                                        <Text style={{ color: formData.gender === g ? 'white' : theme.textSecondary, fontWeight: formData.gender === g ? 'bold' : '500' }}>
+                                            {g === 'Male' ? t('male') : g === 'Female' ? t('female') : t('other')}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         </View>
 
                         <View>
-                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('dateOfBirth')} <Text className="text-red-500">*</Text></Text>
+                            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>{t('dateOfBirth')} <Text style={{ color: '#EF4444' }}>*</Text></Text>
                             <TouchableOpacity
                                 onPress={openDatePicker}
-                                style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                                 activeOpacity={0.7}
                             >
-                                <Text style={{ color: formatDisplayDate(formData.dob) ? '#172554' : '#9ca3af', fontSize: 15 }}>
+                                <Text style={{ color: formatDisplayDate(formData.dob) ? theme.text : theme.textMuted, fontSize: 15 }}>
                                     {formatDisplayDate(formData.dob) || t('selectDateOfBirth')}
                                 </Text>
                                 <Text style={{ fontSize: 18 }}>📅</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View className="flex-row gap-3">
-                            <View className="flex-1">
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <View style={{ flex: 1 }}>
                                 <Input label={t('heightLabel')} value={formData.height} onChangeText={(t) => handleChange('height', t)} placeholder="e.g. 5 ft 10 in" />
                             </View>
-                            <View className="flex-1">
+                            <View style={{ flex: 1 }}>
                                 <Input label={t('weightLabel')} value={formData.weight} onChangeText={(t) => handleChange('weight', t)} placeholder="e.g. 65 kg" />
                             </View>
                         </View>
 
                         <View>
-                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('maritalStatus')} <Text className="text-red-500">*</Text></Text>
-                            <View className="flex-row flex-wrap gap-2">
+                            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>{t('maritalStatus')} <Text style={{ color: '#EF4444' }}>*</Text></Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                                 {['Unmarried', 'Married', 'Divorced', 'Widowed', 'Separated'].map(s => {
                                     const tlMap: any = {
                                         Unmarried: t('unmarried'),
@@ -382,13 +394,21 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                                         Widowed: t('widowed'),
                                         Separated: t('separated')
                                     };
+                                    const isSelected = formData.status === s;
                                     return (
                                         <TouchableOpacity
                                             key={s}
                                             onPress={() => handleChange('status', s)}
-                                            className={`px-3 py-2 rounded-lg border ${formData.status === s ? 'bg-blue-500 border-orange-500' : 'bg-slate-50 border-slate-200'}`}
+                                            style={{
+                                                paddingHorizontal: 12,
+                                                paddingVertical: 8,
+                                                borderRadius: 8,
+                                                borderWidth: 1,
+                                                borderColor: isSelected ? '#2563EB' : theme.border,
+                                                backgroundColor: isSelected ? '#2563EB' : (isDarkMode ? '#1E293B' : '#F8FAFC')
+                                            }}
                                         >
-                                            <Text className={formData.status === s ? 'text-white text-xs font-bold' : 'text-slate-500 text-xs'}>{tlMap[s]}</Text>
+                                            <Text style={{ color: isSelected ? 'white' : theme.textSecondary, fontSize: 12, fontWeight: isSelected ? 'bold' : '500' }}>{tlMap[s]}</Text>
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -436,13 +456,22 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                         <Input label={t('hobbiesLabel')} value={formData.hobbies} onChangeText={(t) => handleChange('hobbies', t)} placeholder="e.g. Reading, Traveling, Music..." />
 
                         <View>
-                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('aboutMe')}</Text>
+                            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>{t('aboutMe')}</Text>
                             <TextInput
-                                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 h-24 text-base"
+                                style={{
+                                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                                    borderWidth: 1,
+                                    borderColor: theme.border,
+                                    borderRadius: 12,
+                                    padding: 12,
+                                    color: theme.text,
+                                    height: 96,
+                                    fontSize: 15
+                                }}
                                 value={formData.about}
                                 onChangeText={(t) => handleChange('about', t)}
                                 placeholder={t('tellUsAboutYourself') || "Tell us about yourself, background, personality..."}
-                                placeholderTextColor="#9ca3af"
+                                placeholderTextColor={theme.textMuted}
                                 multiline
                                 textAlignVertical="top"
                             />
@@ -451,24 +480,33 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
 
                     {/* Partner Preferences */}
                     <SectionHeader title={t('partnerPreference')} icon="heart-outline" />
-                    <View className="space-y-4">
-                        <View className="flex-row gap-3">
-                            <View className="flex-1">
+                    <View style={{ gap: 14 }}>
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <View style={{ flex: 1 }}>
                                 <Input label={t('ageFrom')} value={formData.partner_age_from} onChangeText={(t) => handleChange('partner_age_from', t)} keyboardType="numeric" placeholder="e.g. 24" />
                             </View>
-                            <View className="flex-1">
+                            <View style={{ flex: 1 }}>
                                 <Input label={t('ageTo')} value={formData.partner_age_to} onChangeText={(t) => handleChange('partner_age_to', t)} keyboardType="numeric" placeholder="e.g. 28" />
                             </View>
                         </View>
                         <Input label={t('expectedEducation')} value={formData.partner_education} onChangeText={(t) => handleChange('partner_education', t)} placeholder="e.g. Graduate, Post Graduate, MBA" />
                         <View>
-                            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">{t('expectations')}</Text>
+                            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>{t('expectations')}</Text>
                             <TextInput
-                                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 h-24 text-base"
+                                style={{
+                                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                                    borderWidth: 1,
+                                    borderColor: theme.border,
+                                    borderRadius: 12,
+                                    padding: 12,
+                                    color: theme.text,
+                                    height: 96,
+                                    fontSize: 15
+                                }}
                                 value={formData.partner_expectations}
                                 onChangeText={(t) => handleChange('partner_expectations', t)}
                                 placeholder={t('whatAreYouLookingFor') || "What qualities and values are you looking for..."}
-                                placeholderTextColor="#9ca3af"
+                                placeholderTextColor={theme.textMuted}
                                 multiline
                                 textAlignVertical="top"
                             />
@@ -476,14 +514,14 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                     </View>
 
                     <TouchableOpacity
-                        className="bg-blue-600 py-4 rounded-xl items-center my-10 shadow-lg"
+                        style={{ backgroundColor: '#2563EB', paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginVertical: 32, elevation: 3 }}
                         onPress={handleSubmit}
                         disabled={loading}
                     >
-                        {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">{isEdit ? t('updateProfile') : t('saveMarriageProfile')}</Text>}
+                        {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 17 }}>{isEdit ? t('updateProfile') : t('saveMarriageProfile')}</Text>}
                     </TouchableOpacity>
 
-                    <View className="h-10" />
+                    <View style={{ height: 40 }} />
                 </KeyboardAwareScrollView>
             )}
         </SafeAreaView>
@@ -491,17 +529,17 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
             {/* DOB Date Picker Modal */}
             <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
                 <TouchableOpacity
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
                     activeOpacity={1}
                     onPress={() => setShowDatePicker(false)}
                 >
                     <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-                        <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
+                        <View style={{ backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34, borderWidth: 1, borderColor: theme.border }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
                                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                    <Text style={{ fontSize: 16, color: '#64748B' }}>{t('cancelLabel')}</Text>
+                                    <Text style={{ fontSize: 16, color: theme.textMuted }}>{t('cancelLabel')}</Text>
                                 </TouchableOpacity>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: '#172554' }}>{t('selectDateOfBirth')}</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: theme.text }}>{t('selectDateOfBirth')}</Text>
                                 <TouchableOpacity onPress={confirmDate}>
                                     <Text style={{ fontSize: 16, fontWeight: '700', color: '#2563EB' }}>{t('doneLabel')}</Text>
                                 </TouchableOpacity>
@@ -509,36 +547,36 @@ const CreateMarriageProfileScreen = ({ navigation, route }: any) => {
                             <View style={{ flexDirection: 'row', height: 200, paddingHorizontal: 8 }}>
                                 {/* Day */}
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('dayLabel')}</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: theme.textMuted, fontWeight: '600', paddingVertical: 6 }}>{t('dayLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {DAYS.map(d => (
                                             <TouchableOpacity key={d} onPress={() => setPickerDay(d)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#2563EB' : '#374151' }}>{String(d).padStart(2,'0')}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerDay === d ? (isDarkMode ? 'rgba(37,99,235,0.25)' : '#EFF6FF') : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerDay === d ? '700' : '400', color: pickerDay === d ? '#3B82F6' : theme.text }}>{String(d).padStart(2,'0')}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
                                 </View>
                                 {/* Month */}
                                 <View style={{ flex: 1.4 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('monthLabel')}</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: theme.textMuted, fontWeight: '600', paddingVertical: 6 }}>{t('monthLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {MONTHS.map((m, i) => (
                                             <TouchableOpacity key={m} onPress={() => setPickerMonth(i + 1)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#2563EB' : '#374151' }}>{m}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerMonth === i+1 ? (isDarkMode ? 'rgba(37,99,235,0.25)' : '#EFF6FF') : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerMonth === i+1 ? '700' : '400', color: pickerMonth === i+1 ? '#3B82F6' : theme.text }}>{m}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
                                 </View>
                                 {/* Year */}
                                 <View style={{ flex: 1.4 }}>
-                                    <Text style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', fontWeight: '600', paddingVertical: 6 }}>{t('yearLabel')}</Text>
+                                    <Text style={{ textAlign: 'center', fontSize: 11, color: theme.textMuted, fontWeight: '600', paddingVertical: 6 }}>{t('yearLabel')}</Text>
                                     <ScrollView showsVerticalScrollIndicator={false}>
                                         {YEARS.map(y => (
                                             <TouchableOpacity key={y} onPress={() => setPickerYear(y)}
-                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? '#EFF6FF' : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
-                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#2563EB' : '#374151' }}>{y}</Text>
+                                                style={{ paddingVertical: 10, alignItems: 'center', backgroundColor: pickerYear === y ? (isDarkMode ? 'rgba(37,99,235,0.25)' : '#EFF6FF') : 'transparent', borderRadius: 8, marginHorizontal: 4, marginVertical: 2 }}>
+                                                <Text style={{ fontSize: 16, fontWeight: pickerYear === y ? '700' : '400', color: pickerYear === y ? '#3B82F6' : theme.text }}>{y}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </ScrollView>
@@ -563,19 +601,29 @@ interface InputProps {
 }
 
 const Input = ({ label, value, onChangeText, placeholder, keyboardType, multiline, required }: InputProps) => {
+    const { isDarkMode, theme } = useTheme();
     const cleanLabel = (label || '').replace('*', '').trim();
     const defaultPlaceholder = placeholder || (cleanLabel ? `Enter ${cleanLabel.toLowerCase()}` : '');
     return (
         <View>
-            <Text className="text-slate-500 text-sm mb-1 ml-1 font-semibold">
-                {label} {required && <Text className="text-red-500">*</Text>}
+            <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 4, marginLeft: 4, fontWeight: '600' }}>
+                {label} {required && <Text style={{ color: '#EF4444' }}>*</Text>}
             </Text>
             <TextInput
-                className={`bg-slate-50 border border-slate-200 rounded-xl p-3 text-blue-900 text-base ${multiline ? 'h-20' : ''}`}
+                style={{
+                    backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 12,
+                    padding: 12,
+                    color: theme.text,
+                    fontSize: 15,
+                    height: multiline ? 80 : undefined
+                }}
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={defaultPlaceholder}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={theme.textMuted}
                 keyboardType={keyboardType}
                 multiline={multiline}
                 textAlignVertical={multiline ? 'top' : 'center'}

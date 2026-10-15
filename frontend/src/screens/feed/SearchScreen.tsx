@@ -8,12 +8,14 @@ import api, { API_BASE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PostCard from '../../components/PostCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const SearchScreen = ({ navigation }: any) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
     const [query, setQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'All' | 'People' | 'Posts'>('All');
     const [loading, setLoading] = useState(false);
@@ -96,21 +98,23 @@ const SearchScreen = ({ navigation }: any) => {
 
     const renderUser = ({ item }: { item: any }) => (
         <TouchableOpacity
-            className="flex-row items-center bg-white p-4 mb-2 mx-4 rounded-2xl border border-gray-100 shadow-sm"
+            className="flex-row items-center p-4 mb-2 mx-4 rounded-2xl shadow-sm border"
+            style={{ backgroundColor: theme.card, borderColor: theme.border }}
             onPress={() => navigation.navigate('PublicProfile', { userId: item.id })}
         >
             <Image
                 source={{ uri: item.profile_photo ? `${PHOTO_URL}${item.profile_photo}` : 'https://via.placeholder.com/100' }}
-                className="w-14 h-14 rounded-full bg-slate-200"
+                className="w-14 h-14 rounded-full"
+                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderWidth: 1, borderColor: theme.border }}
             />
             <View className="ml-4 flex-1">
-                <Text className="font-bold text-blue-950 text-base">{item.name}</Text>
+                <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'bold' }}>{item.name}</Text>
                 <View className="flex-row items-center mt-1">
-                    <Ionicons name="location-outline" size={14} color="#64748B" />
-                    <Text className="text-slate-500 text-sm ml-1">{item.city || 'No City'}</Text>
+                    <Ionicons name="location-outline" size={14} color={theme.textMuted} />
+                    <Text style={{ color: theme.textSecondary, fontSize: 13, marginLeft: 4 }}>{item.city || 'No City'}</Text>
                 </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#E2E8F0" />
+            <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
         </TouchableOpacity>
     );
 
@@ -150,25 +154,33 @@ const SearchScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50" edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
             {/* Header / Search Bar */}
-            <View className="bg-white px-4 pt-2 pb-4 shadow-sm">
+            <View 
+                className="px-4 pt-2 pb-4 shadow-sm"
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }}
+            >
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2">
-                        <Ionicons name="arrow-back" size={24} color="#374151" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <View className="flex-1 bg-slate-100 flex-row items-center px-4 rounded-full border border-slate-200">
-                        <Ionicons name="search" size={20} color="#9ca3af" />
+                    <View 
+                        className="flex-1 flex-row items-center px-4 rounded-full border"
+                        style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', borderColor: theme.border }}
+                    >
+                        <Ionicons name="search" size={20} color={theme.textMuted} />
                         <TextInput
                             placeholder="Search people, posts..."
-                            className="flex-1 py-2.5 ml-2 text-blue-950"
+                            placeholderTextColor={theme.textMuted}
+                            className="flex-1 py-2.5 ml-2"
+                            style={{ color: theme.text }}
                             value={query}
                             onChangeText={setQuery}
                             autoFocus
                         />
                         {query.length > 0 && (
                             <TouchableOpacity onPress={() => setQuery('')}>
-                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                                <Ionicons name="close-circle" size={18} color={theme.textMuted} />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -176,14 +188,17 @@ const SearchScreen = ({ navigation }: any) => {
             </View>
 
             {/* Tabs */}
-            <View className="flex-row bg-white border-b border-gray-100 px-4">
+            <View 
+                className="flex-row px-4 border-b"
+                style={{ backgroundColor: theme.card, borderBottomColor: theme.border }}
+            >
                 {['All', 'People', 'Posts'].map((tab) => (
                     <TouchableOpacity
                         key={tab}
                         onPress={() => setActiveTab(tab as any)}
-                        className={`py-3 px-4 mr-2 ${activeTab === tab ? 'border-b-2 border-orange-500' : ''}`}
+                        className={`py-3 px-4 mr-2 ${activeTab === tab ? 'border-b-2 border-blue-600' : ''}`}
                     >
-                        <Text className={`font-bold ${activeTab === tab ? 'text-blue-600' : 'text-slate-500'}`}>{tab}</Text>
+                        <Text style={{ fontWeight: 'bold', color: activeTab === tab ? '#2563EB' : theme.textSecondary }}>{tab}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -200,13 +215,13 @@ const SearchScreen = ({ navigation }: any) => {
                         if (item.type === 'header') {
                             return (
                                 <View className="px-4 py-3 mt-2">
-                                    <Text className="text-xs font-black text-gray-400 uppercase tracking-widest">{item.title}</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '900', color: theme.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5 }}>{item.title}</Text>
                                 </View>
                             );
                         }
                         return item.name ? renderUser({ item }) : renderPost({ item });
                     }}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: 20, backgroundColor: theme.background }}
                     onEndReached={loadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={
@@ -219,13 +234,13 @@ const SearchScreen = ({ navigation }: any) => {
                     ListEmptyComponent={
                         query.length > 0 ? (
                             <View className="flex-1 items-center justify-center pt-20">
-                                <Ionicons name="search-outline" size={64} color="#E2E8F0" />
-                                <Text className="text-slate-500 mt-4 font-medium">No results found for "{query}"</Text>
+                                <Ionicons name="search-outline" size={64} color={theme.textMuted} />
+                                <Text style={{ color: theme.textSecondary, marginTop: 16, fontWeight: '500' }}>No results found for "{query}"</Text>
                             </View>
                         ) : (
                             <View className="flex-1 items-center justify-center pt-20">
-                                <Ionicons name="people-outline" size={64} color="#E2E8F0" />
-                                <Text className="text-gray-400 mt-4 text-center px-10">Search for friends or community posts to stay connected</Text>
+                                <Ionicons name="people-outline" size={64} color={theme.textMuted} />
+                                <Text style={{ color: theme.textSecondary, marginTop: 16, textAlign: 'center', paddingHorizontal: 40 }}>Search for friends or community posts to stay connected</Text>
                             </View>
                         )
                     }

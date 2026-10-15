@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useBadge } from '../context/BadgeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import NewsPaperIcon from './NewsPaperIcon';
 import MatrimonyRingsIcon from './MatrimonyRingsIcon';
 import ReelsTabIcon from './ReelsTabIcon';
@@ -59,6 +60,8 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
     const insets = useSafeAreaInsets();
     const { t } = useLanguage();
     const { notificationCount, chatCount } = useBadge();
+    const { isDarkMode, theme } = useTheme();
+    const tabInactiveColor = isDarkMode ? '#94A3B8' : '#1E293B';
 
     const statusBarHeight = customStatusBarHeight ?? (Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top);
 
@@ -106,7 +109,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                     left: 0,
                     right: 0,
                     height: statusBarHeight,
-                    backgroundColor: '#CFE5FF',
+                    backgroundColor: isDarkMode ? '#0B0F19' : '#CFE5FF',
                     zIndex: 120,
                 }}
             />
@@ -123,7 +126,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                 pointerEvents="box-none"
             >
                 <LinearGradient
-                    colors={['#CFE5FF', '#E4F1FF', '#F1F5F9']}
+                    colors={isDarkMode ? ['#0B0F19', '#151C2C', '#0F172A'] : ['#CFE5FF', '#E4F1FF', '#F1F5F9']}
                     start={{ x: 0.5, y: 0 }}
                     end={{ x: 0.5, y: 1 }}
                     style={styles.headerAtmosphere}
@@ -140,7 +143,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                                     />
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Text style={styles.brandTitle}>LinkUp</Text>
+                                    <Text style={[styles.brandTitle, isDarkMode && { color: '#F8FAFC' }]}>LinkUp</Text>
                                     {user?.is_business == 1 && (
                                         <View style={styles.businessBadge}>
                                             <Ionicons name="briefcase" size={10} color="#1877F2" />
@@ -153,9 +156,9 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                                 <TouchableOpacity
                                     onPress={() => navigation.navigate('Search')}
                                     activeOpacity={0.7}
-                                    style={styles.headerCircleBtnWhite}
+                                    style={[styles.headerCircleBtnWhite, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
                                 >
-                                    <Ionicons name="search" size={18} color="#0F172A" />
+                                    <Ionicons name="search" size={18} color={isDarkMode ? '#F8FAFC' : '#0F172A'} />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
@@ -169,9 +172,9 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                                 <TouchableOpacity
                                     onPress={() => navigation.navigate('Notifications')}
                                     activeOpacity={0.7}
-                                    style={styles.headerCircleBtnWhite}
+                                    style={[styles.headerCircleBtnWhite, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
                                 >
-                                    <Ionicons name="notifications-outline" size={19} color="#0F172A" />
+                                    <Ionicons name="notifications-outline" size={19} color={isDarkMode ? '#F8FAFC' : '#0F172A'} />
                                     {notificationCount > 0 && (
                                         <View style={styles.blueDot} />
                                     )}
@@ -180,9 +183,9 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                                 <TouchableOpacity
                                     onPress={() => navigation.navigate('Chats')}
                                     activeOpacity={0.7}
-                                    style={styles.headerCircleBtnWhite}
+                                    style={[styles.headerCircleBtnWhite, isDarkMode && { backgroundColor: '#1E293B', borderColor: '#334155' }]}
                                 >
-                                    <Ionicons name="chatbubble-ellipses-outline" size={18} color="#0F172A" />
+                                    <Ionicons name="chatbubble-ellipses-outline" size={18} color={isDarkMode ? '#F8FAFC' : '#0F172A'} />
                                     {chatCount > 0 && (
                                         <View style={styles.redBadge}>
                                             <Text style={styles.redBadgeText}>
@@ -196,7 +199,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                     </Animated.View>
 
                     {/* Floating Capsule Navigation Tab Bar */}
-                    <View style={styles.floatingTabBar} {...tabSwipeHandlers}>
+                    <View style={[styles.floatingTabBar, isDarkMode && { backgroundColor: '#151C2C', borderColor: '#232F46', shadowColor: '#000000' }]} {...tabSwipeHandlers}>
                         {/* Home Tab */}
                         <TouchableOpacity
                             style={styles.floatingTabItem}
@@ -206,7 +209,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                             <Ionicons
                                 name={currentTab === 'Home' ? 'home' : 'home-outline'}
                                 size={22}
-                                color={currentTab === 'Home' ? '#1877F2' : '#1E293B'}
+                                color={currentTab === 'Home' ? '#1877F2' : tabInactiveColor}
                             />
                             {currentTab === 'Home' && <View style={styles.activeIndicatorPill} />}
                         </TouchableOpacity>
@@ -219,7 +222,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                         >
                             <ReelsTabIcon
                                 size={24}
-                                color={currentTab === 'Reels' ? '#1877F2' : '#1E293B'}
+                                color={currentTab === 'Reels' ? '#1877F2' : tabInactiveColor}
                                 focused={currentTab === 'Reels'}
                             />
                             {currentTab === 'Reels' && <View style={styles.activeIndicatorPill} />}
@@ -233,7 +236,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                         >
                             <NewsPaperIcon
                                 size={24}
-                                color={currentTab === 'News' ? '#1877F2' : '#1E293B'}
+                                color={currentTab === 'News' ? '#1877F2' : tabInactiveColor}
                             />
                             {currentTab === 'News' && <View style={styles.activeIndicatorPill} />}
                         </TouchableOpacity>
@@ -247,7 +250,7 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                             >
                                 <MatrimonyRingsIcon
                                     size={24}
-                                    color={currentTab === 'Marriage' ? '#1877F2' : '#1E293B'}
+                                    color={currentTab === 'Marriage' ? '#1877F2' : tabInactiveColor}
                                 />
                                 {currentTab === 'Marriage' && <View style={styles.activeIndicatorPill} />}
                             </TouchableOpacity>
@@ -259,25 +262,13 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                             onPress={() => handleTabClick('Profile', 'Profile')}
                             activeOpacity={0.7}
                         >
-                            {avatarUri ? (
-                                <View style={[
-                                    styles.tabAvatarWrapper,
-                                    currentTab === 'Profile' && { borderColor: '#1877F2', borderWidth: 2 }
-                                ]}>
-                                    <ExpoImage
-                                        source={{ uri: avatarUri }}
-                                        style={{ width: '100%', height: '100%' }}
-                                        contentFit="cover"
-                                        cachePolicy="memory-disk"
-                                    />
-                                </View>
-                            ) : (
-                                <Ionicons
-                                    name={currentTab === 'Profile' ? 'person' : 'menu'}
-                                    size={24}
-                                    color={currentTab === 'Profile' ? '#1877F2' : '#1E293B'}
-                                />
-                            )}
+                            
+                            <Ionicons
+                                name={currentTab === 'Profile' ? 'person' : 'menu'}
+                                size={24}
+                                color={currentTab === 'Profile' ? '#1877F2' : tabInactiveColor}
+                            />
+
                             {currentTab === 'Profile' && <View style={styles.activeIndicatorPill} />}
                         </TouchableOpacity>
                     </View>

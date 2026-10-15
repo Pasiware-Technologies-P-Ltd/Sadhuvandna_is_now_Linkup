@@ -28,6 +28,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useIsFocused } from '@react-navigation/native';
 import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
@@ -143,6 +144,7 @@ const BreakingNewsMarquee = React.memo(({
     tickerData: string[];
     onPress?: () => void;
 }) => {
+    const { isDarkMode, theme } = useTheme();
     const scrollAnim = useRef(new Animated.Value(0)).current;
     const contentWidthRef = useRef(0);
     const [contentWidth, setContentWidth] = useState(0);
@@ -190,7 +192,7 @@ const BreakingNewsMarquee = React.memo(({
 
     return (
         <TouchableOpacity
-            style={styles.breakingTickerBanner}
+            style={[styles.breakingTickerBanner, { backgroundColor: isDarkMode ? '#0F172A' : '#071F46', borderColor: isDarkMode ? theme.border : 'rgba(255, 255, 255, 0.08)' }]}
             activeOpacity={0.9}
             onPress={onPress}
         >
@@ -415,6 +417,7 @@ const HeroNewsCard = React.memo(({
 
 const NewsScreen = ({ navigation }: any) => {
     const { language, t } = useLanguage();
+    const { isDarkMode, theme } = useTheme();
     const isFocused = useIsFocused();
     const insets = useSafeAreaInsets();
     const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || insets.top || 24) : insets.top;
@@ -822,12 +825,12 @@ const NewsScreen = ({ navigation }: any) => {
 
     // Subheader & Controls rendered in ListHeaderComponent
     const renderListHeader = useCallback(() => (
-        <View style={styles.headerContainer}>
+        <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
             {/* 1. News & Updates Title Row (Sleek, balanced layout with no awkward wrap) */}
             <View style={styles.titleRow}>
                 <View style={styles.titleTextWrap}>
-                    <Text style={styles.screenHeading}>News & Updates</Text>
-                    <Text style={styles.screenSubheading} numberOfLines={1}>
+                    <Text style={[styles.screenHeading, { color: theme.text }]}>News & Updates</Text>
+                    <Text style={[styles.screenSubheading, { color: theme.textMuted }]} numberOfLines={1}>
                         Stay Informed • Stay Connected
                     </Text>
                 </View>
@@ -843,7 +846,7 @@ const NewsScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.postNewsButton}
+                        style={[styles.postNewsButton, { backgroundColor: theme.card, borderColor: theme.border }]}
                         onPress={handlePostNewsPress}
                         activeOpacity={0.8}
                     >
@@ -854,51 +857,51 @@ const NewsScreen = ({ navigation }: any) => {
             </View>
 
             {/* 2. Source / Channel Tabs Capsule (Matches cropped screenshot 100%) */}
-            <View style={styles.channelTabsCapsule}>
+            <View style={[styles.channelTabsCapsule, { backgroundColor: isDarkMode ? '#1E293B' : '#F3F8FD', borderColor: theme.border }]}>
                 <TouchableOpacity
-                    style={activeTab === 'apna' ? styles.channelPillActive : styles.channelPillInactive}
+                    style={[activeTab === 'apna' ? styles.channelPillActive : styles.channelPillInactive, activeTab === 'apna' && { backgroundColor: isDarkMode ? '#334155' : 'white' }]}
                     onPress={() => setActiveTab('apna')}
                     activeOpacity={0.8}
                 >
                     <Ionicons
                         name="newspaper"
                         size={17}
-                        color={activeTab === 'apna' ? '#1877F2' : '#64748B'}
+                        color={activeTab === 'apna' ? '#1877F2' : theme.textMuted}
                         style={{ marginRight: 6 }}
                     />
-                    <Text style={activeTab === 'apna' ? styles.channelTextActive : styles.channelTextInactive}>
+                    <Text style={[activeTab === 'apna' ? styles.channelTextActive : styles.channelTextInactive, { color: activeTab === 'apna' ? theme.text : theme.textMuted }]}>
                         Apna News
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={activeTab === 'ddnews' ? styles.channelPillActive : styles.channelPillInactive}
+                    style={[activeTab === 'ddnews' ? styles.channelPillActive : styles.channelPillInactive, activeTab === 'ddnews' && { backgroundColor: isDarkMode ? '#334155' : 'white' }]}
                     onPress={() => setActiveTab('ddnews')}
                     activeOpacity={0.8}
                 >
                     <Ionicons
                         name="logo-youtube"
                         size={16}
-                        color={activeTab === 'ddnews' ? '#DC2626' : '#64748B'}
+                        color={activeTab === 'ddnews' ? '#DC2626' : theme.textMuted}
                         style={{ marginRight: 6 }}
                     />
-                    <Text style={activeTab === 'ddnews' ? styles.channelTextActive : styles.channelTextInactive}>
+                    <Text style={[activeTab === 'ddnews' ? styles.channelTextActive : styles.channelTextInactive, { color: activeTab === 'ddnews' ? theme.text : theme.textMuted }]}>
                         DD News
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={activeTab === 'aastha' ? styles.channelPillActive : styles.channelPillInactive}
+                    style={[activeTab === 'aastha' ? styles.channelPillActive : styles.channelPillInactive, activeTab === 'aastha' && { backgroundColor: isDarkMode ? '#334155' : 'white' }]}
                     onPress={() => setActiveTab('aastha')}
                     activeOpacity={0.8}
                 >
                     <Ionicons
                         name="flower-outline"
                         size={16}
-                        color={activeTab === 'aastha' ? '#D97706' : '#64748B'}
+                        color={activeTab === 'aastha' ? '#D97706' : theme.textMuted}
                         style={{ marginRight: 6 }}
                     />
-                    <Text style={activeTab === 'aastha' ? styles.channelTextActive : styles.channelTextInactive}>
+                    <Text style={[activeTab === 'aastha' ? styles.channelTextActive : styles.channelTextInactive, { color: activeTab === 'aastha' ? theme.text : theme.textMuted }]}>
                         Aastha
                     </Text>
                 </TouchableOpacity>
@@ -910,18 +913,18 @@ const NewsScreen = ({ navigation }: any) => {
                     onPress={() => setIsSearchActive(!isSearchActive)}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="search" size={20} color="#64748B" />
+                    <Ionicons name="search" size={20} color={theme.textMuted} />
                 </TouchableOpacity>
             </View>
 
             {/* Search Input Box */}
             {isSearchActive && (
-                <View style={styles.searchBarContainer}>
-                    <Ionicons name="search" size={18} color="#94A3B8" style={{ marginHorizontal: 10 }} />
+                <View style={[styles.searchBarContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Ionicons name="search" size={18} color={theme.textMuted} style={{ marginHorizontal: 10 }} />
                     <TextInput
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: theme.text }]}
                         placeholder={t('searchNewsUpdates')}
-                        placeholderTextColor="#94A3B8"
+                        placeholderTextColor={theme.textMuted}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         autoFocus
@@ -933,7 +936,7 @@ const NewsScreen = ({ navigation }: any) => {
                         }}
                         style={{ padding: 6 }}
                     >
-                        <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                        <Ionicons name="close-circle" size={18} color={theme.textMuted} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -962,11 +965,11 @@ const NewsScreen = ({ navigation }: any) => {
                             <TouchableOpacity
                                 key={cat.id}
                                 onPress={() => setSelectedCategory(cat.id)}
-                                style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
+                                style={[styles.categoryChip, { backgroundColor: isDarkMode ? '#1E293B' : 'white', borderColor: theme.border }, isSelected && styles.categoryChipActive]}
                                 activeOpacity={0.8}
                             >
                                 <Text style={{ marginRight: 6, fontSize: 13 }}>{cat.icon}</Text>
-                                <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextActive]}>
+                                <Text style={[styles.categoryChipText, { color: theme.text }, isSelected && styles.categoryChipTextActive]}>
                                     {label}
                                 </Text>
                             </TouchableOpacity>
@@ -978,7 +981,7 @@ const NewsScreen = ({ navigation }: any) => {
             {/* State & District Dropdown Pickers */}
             {(selectedCategory === 'State' || selectedCategory === 'राज्य' || selectedCategory === 'District' || selectedCategory === 'जिला' || selectedCategory === 'Local') && activeTab === 'apna' && (
                 <View style={styles.locationPickersContainer}>
-                    <View style={styles.pickerBox}>
+                    <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Picker
                             selectedValue={selectedState}
                             onValueChange={(itemValue, itemIndex) => {
@@ -989,26 +992,28 @@ const NewsScreen = ({ navigation }: any) => {
                                     handleStateChange('', '');
                                 }
                             }}
-                            style={{ height: 46 }}
+                            style={{ height: 46, color: theme.text }}
+                            dropdownIconColor={theme.text}
                         >
-                            <Picker.Item label="Select State" value="" style={{ fontSize: 13 }} />
+                            <Picker.Item label="Select State" value="" style={{ fontSize: 13, color: theme.text, backgroundColor: theme.card }} />
                             {statesList.map((st, idx) => (
-                                <Picker.Item key={idx} label={st.name} value={st.name} style={{ fontSize: 13 }} />
+                                <Picker.Item key={idx} label={st.name} value={st.name} style={{ fontSize: 13, color: theme.text, backgroundColor: theme.card }} />
                             ))}
                         </Picker>
                     </View>
 
                     {(selectedCategory === 'District' || selectedCategory === 'जिला' || selectedCategory === 'Local') && (
-                        <View style={styles.pickerBox}>
+                        <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <Picker
                                 selectedValue={selectedDistrict}
                                 onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
-                                style={{ height: 46 }}
+                                style={{ height: 46, color: theme.text }}
                                 enabled={districtsList.length > 0}
+                                dropdownIconColor={theme.text}
                             >
-                                <Picker.Item label="Select District" value="" style={{ fontSize: 13 }} />
+                                <Picker.Item label="Select District" value="" style={{ fontSize: 13, color: theme.text, backgroundColor: theme.card }} />
                                 {districtsList.map((dst, idx) => (
-                                    <Picker.Item key={idx} label={dst.name} value={dst.name} style={{ fontSize: 13 }} />
+                                    <Picker.Item key={idx} label={dst.name} value={dst.name} style={{ fontSize: 13, color: theme.text, backgroundColor: theme.card }} />
                                 ))}
                             </Picker>
                         </View>
@@ -1037,7 +1042,9 @@ const NewsScreen = ({ navigation }: any) => {
         tickerData,
         anchorStatus,
         language,
-        navigation
+        navigation,
+        isDarkMode,
+        theme
     ]);
 
     // News item card renderer (matching the cards in the screenshot)
@@ -1053,7 +1060,7 @@ const NewsScreen = ({ navigation }: any) => {
         return (
             <View key={item.id || index}>
                 <TouchableOpacity
-                    style={styles.newsCard}
+                    style={[styles.newsCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                     activeOpacity={0.88}
                     onPress={() => navigation.navigate('NewsDetail', { news: item })}
                 >
@@ -1078,7 +1085,7 @@ const NewsScreen = ({ navigation }: any) => {
                     <View style={styles.newsCardBody}>
                         {/* Top: Category Tag + 3 Dots Menu */}
                         <View style={styles.cardHeaderRow}>
-                            <View style={[styles.cardCategoryBadge, { backgroundColor: visuals.badgeBg }]}>
+                            <View style={[styles.cardCategoryBadge, { backgroundColor: isDarkMode ? `${visuals.badgeColor}22` : visuals.badgeBg }]}>
                                 <Ionicons name={visuals.icon} size={10} color={visuals.badgeColor} style={{ marginRight: 3 }} />
                                 <Text style={[styles.cardCategoryText, { color: visuals.badgeColor }]}>
                                     {visuals.category}
@@ -1089,27 +1096,27 @@ const NewsScreen = ({ navigation }: any) => {
                                 onPress={() => setMenuNewsItem(item)}
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
-                                <Ionicons name="ellipsis-vertical" size={16} color="#94A3B8" />
+                                <Ionicons name="ellipsis-vertical" size={16} color={theme.textMuted} />
                             </TouchableOpacity>
                         </View>
 
                         {/* Title (2 lines bold) */}
-                        <Text style={styles.cardTitle} numberOfLines={2}>
+                        <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
                             {item.title}
                         </Text>
 
                         {/* Bottom Metadata: Date & Views */}
                         <View style={styles.cardMetaRow}>
                             <View style={styles.cardMetaItem}>
-                                <Ionicons name="calendar-outline" size={12} color="#94A3B8" style={{ marginRight: 4 }} />
-                                <Text style={styles.cardMetaText}>
+                                <Ionicons name="calendar-outline" size={12} color={theme.textMuted} style={{ marginRight: 4 }} />
+                                <Text style={[styles.cardMetaText, { color: theme.textMuted }]}>
                                     {item.created_at?.split(' ')[0] || '2026-10-11'}
                                 </Text>
                             </View>
 
                             <View style={styles.cardMetaItem}>
-                                <Ionicons name="eye-outline" size={13} color="#94A3B8" style={{ marginRight: 4 }} />
-                                <Text style={styles.cardMetaText}>
+                                <Ionicons name="eye-outline" size={13} color={theme.textMuted} style={{ marginRight: 4 }} />
+                                <Text style={[styles.cardMetaText, { color: theme.textMuted }]}>
                                     {visuals.views}
                                 </Text>
                             </View>
@@ -1119,7 +1126,7 @@ const NewsScreen = ({ navigation }: any) => {
 
                 {/* Ad Banner after every 5 items */}
                 {index > 0 && index % 5 === 0 && (
-                    <View style={styles.adContainer}>
+                    <View style={[styles.adContainer, { backgroundColor: theme.background }]}>
                         <BannerAd
                             unitId="ca-app-pub-3506685647762869/7649518863"
                             size={BannerAdSize.BANNER}
@@ -1139,7 +1146,7 @@ const NewsScreen = ({ navigation }: any) => {
 
         return (
             <TouchableOpacity
-                style={styles.newsCard}
+                style={[styles.newsCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                 activeOpacity={0.88}
                 onPress={() => {
                     if (videoId) setSelectedVideoId(videoId);
@@ -1159,7 +1166,7 @@ const NewsScreen = ({ navigation }: any) => {
 
                 <View style={styles.newsCardBody}>
                     <View style={styles.cardHeaderRow}>
-                        <View style={[styles.cardCategoryBadge, { backgroundColor: '#FEE2E2' }]}>
+                        <View style={[styles.cardCategoryBadge, { backgroundColor: isDarkMode ? 'rgba(220,38,38,0.2)' : '#FEE2E2' }]}>
                             <Ionicons name="logo-youtube" size={10} color="#DC2626" style={{ marginRight: 3 }} />
                             <Text style={[styles.cardCategoryText, { color: '#DC2626' }]}>
                                 {item.isLive ? 'LIVE' : 'Video'}
@@ -1170,18 +1177,18 @@ const NewsScreen = ({ navigation }: any) => {
                             onPress={() => handleShare({ id: item.videoId, title: item.title, description: item.title })}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Ionicons name="share-social-outline" size={16} color="#94A3B8" />
+                            <Ionicons name="share-social-outline" size={16} color={theme.textMuted} />
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.cardTitle} numberOfLines={2}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
                         {item.title}
                     </Text>
 
                     <View style={styles.cardMetaRow}>
                         <View style={styles.cardMetaItem}>
-                            <Ionicons name="time-outline" size={12} color="#94A3B8" style={{ marginRight: 4 }} />
-                            <Text style={styles.cardMetaText}>{item.pubDate || 'Latest'}</Text>
+                            <Ionicons name="time-outline" size={12} color={theme.textMuted} style={{ marginRight: 4 }} />
+                            <Text style={[styles.cardMetaText, { color: theme.textMuted }]}>{item.pubDate || 'Latest'}</Text>
                         </View>
                     </View>
                 </View>
@@ -1190,7 +1197,7 @@ const NewsScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F0F6FF' }} edges={[]} {...tabSwipe.panHandlers}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={[]} {...tabSwipe.panHandlers}>
             {/* LinkUp Global Header with Floating Tabs */}
             <LinkUpHeader
                 currentTab="News"
@@ -1226,7 +1233,7 @@ const NewsScreen = ({ navigation }: any) => {
                     contentContainerStyle={{
                         paddingTop: statusBarHeight + 116,
                         paddingBottom: 40,
-                        backgroundColor: '#F0F6FF',
+                        backgroundColor: theme.background,
                     }}
                     onScroll={handleFeedScroll}
                     scrollEventThrottle={16}
@@ -1277,7 +1284,7 @@ const NewsScreen = ({ navigation }: any) => {
                     contentContainerStyle={{
                         paddingTop: statusBarHeight + 116,
                         paddingBottom: 40,
-                        backgroundColor: '#F0F6FF',
+                        backgroundColor: theme.background,
                     }}
                     onScroll={handleFeedScroll}
                     scrollEventThrottle={16}
@@ -1319,7 +1326,7 @@ const NewsScreen = ({ navigation }: any) => {
                     contentContainerStyle={{
                         paddingTop: statusBarHeight + 116,
                         paddingBottom: 40,
-                        backgroundColor: '#F0F6FF',
+                        backgroundColor: theme.background,
                     }}
                     onScroll={handleFeedScroll}
                     scrollEventThrottle={16}
@@ -1361,11 +1368,11 @@ const NewsScreen = ({ navigation }: any) => {
                     activeOpacity={1}
                     onPress={() => setMenuNewsItem(null)}
                 >
-                    <View style={styles.modalSheet}>
-                        <Text style={styles.modalSheetTitle} numberOfLines={1}>
+                    <View style={[styles.modalSheet, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.modalSheetTitle, { color: theme.text }]} numberOfLines={1}>
                             {menuNewsItem?.title}
                         </Text>
-                        <View style={styles.modalDivider} />
+                        <View style={[styles.modalDivider, { backgroundColor: theme.border }]} />
 
                         <TouchableOpacity
                             style={styles.modalActionRow}
@@ -1376,7 +1383,7 @@ const NewsScreen = ({ navigation }: any) => {
                             }}
                         >
                             <Ionicons name="share-social-outline" size={20} color="#1877F2" />
-                            <Text style={styles.modalActionText}>{t('share') || 'Share News'}</Text>
+                            <Text style={[styles.modalActionText, { color: theme.text }]}>{t('share') || 'Share News'}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -1392,16 +1399,16 @@ const NewsScreen = ({ navigation }: any) => {
                                 size={20}
                                 color="#1877F2"
                             />
-                            <Text style={styles.modalActionText}>
+                            <Text style={[styles.modalActionText, { color: theme.text }]}>
                                 {bookmarks.includes(menuNewsItem?.id?.toString()) ? 'Remove Bookmark' : 'Save / Bookmark'}
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.modalCancelButton}
+                            style={[styles.modalCancelButton, { backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9' }]}
                             onPress={() => setMenuNewsItem(null)}
                         >
-                            <Text style={styles.modalCancelText}>Cancel</Text>
+                            <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -1768,6 +1775,7 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.85)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 6,
+        textAlign: 'justify',
     },
     heroProgressBar: {
         height: 3,
@@ -1879,6 +1887,7 @@ const styles = StyleSheet.create({
         color: '#0F172A',
         lineHeight: 19.5,
         marginVertical: 4,
+        textAlign: 'justify',
     },
     cardMetaRow: {
         flexDirection: 'row',

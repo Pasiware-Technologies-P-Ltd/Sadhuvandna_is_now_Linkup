@@ -11,6 +11,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Modal } from 'react-native';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import { obituaryAssets, LOGO } from './obituary_assets';
 const { mala: MALA, diya: DIYA, incenseStick: INCENSE } = obituaryAssets;
 
@@ -28,7 +29,7 @@ const COLORS = {
     goldLight: '#F3E5AB',
 };
 
-const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multiline, numberOfLines, style, onPress, editable = true }: any) => {
+const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multiline, numberOfLines, style, onPress, editable = true, theme, isDarkMode }: any) => {
     const [isFocused, setIsFocused] = useState(false);
     return (
         <TouchableOpacity 
@@ -36,6 +37,7 @@ const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multi
             onPress={onPress}
             style={[
                 styles.inputWrapper, 
+                theme ? { backgroundColor: isDarkMode ? '#1E293B' : '#F7F8F9', borderColor: theme.border } : null,
                 multiline ? { alignItems: 'flex-start', paddingVertical: 12 } : null,
                 isFocused && styles.inputFocused, 
                 style
@@ -44,12 +46,12 @@ const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multi
             <MaterialCommunityIcons 
                 name={icon} 
                 size={20} 
-                color={isFocused ? COLORS.primary : COLORS.textLight} 
+                color={isFocused ? (isDarkMode ? '#F59E0B' : COLORS.primary) : (theme?.textMuted || COLORS.textLight)} 
                 style={[styles.inputIcon, multiline ? { marginTop: Platform.OS === 'ios' ? 4 : 2 } : null]} 
             />
             <TextInput 
                 placeholder={placeholder} 
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={theme?.textMuted || COLORS.textLight}
                 value={value} 
                 onChangeText={onChangeText} 
                 keyboardType={keyboardType}
@@ -59,13 +61,17 @@ const FormInput = ({ icon, placeholder, value, onChangeText, keyboardType, multi
                 onBlur={() => setIsFocused(false)}
                 editable={editable}
                 pointerEvents={onPress ? 'none' : 'auto'}
-                style={[styles.input, multiline ? { paddingTop: 0, textAlignVertical: 'top' } : null]}
+                style={[
+                    styles.input, 
+                    theme ? { color: theme.text } : null,
+                    multiline ? { paddingTop: 0, textAlignVertical: 'top' } : null
+                ]}
             />
         </TouchableOpacity>
     );
 };
 
-const CustomDatePicker = ({ visible, value, onClose, onConfirm }: any) => {
+const CustomDatePicker = ({ visible, value, onClose, onConfirm, theme, isDarkMode }: any) => {
     // value is "DD-MM-YYYY"
     const [d, m, y] = value ? value.split('-') : ['18', '03', '2026'];
     const [day, setDay] = useState(d);
@@ -79,45 +85,45 @@ const CustomDatePicker = ({ visible, value, onClose, onConfirm }: any) => {
     return (
         <Modal visible={visible} transparent animationType="slide">
             <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, theme ? { backgroundColor: theme.card } : null]}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Select Date (तिथि चुनें)</Text>
+                        <Text style={[styles.modalTitle, theme ? { color: theme.text } : null]}>Select Date (तिथि चुनें)</Text>
                         <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color={COLORS.text} />
+                            <Ionicons name="close" size={24} color={theme?.text || COLORS.text} />
                         </TouchableOpacity>
                     </View>
                     <View style={styles.pickerRow}>
                         <View style={styles.pickerColWrapper}>
-                            <Text style={styles.pickerLabel}>Day</Text>
+                            <Text style={[styles.pickerLabel, theme ? { color: theme.textSecondary } : null]}>Day</Text>
                             <Picker
                                 selectedValue={day}
                                 onValueChange={(v) => setDay(v)}
-                                style={styles.pickerCol}
-                                dropdownIconColor={COLORS.primary}
+                                style={[styles.pickerCol, theme ? { color: theme.text } : null]}
+                                dropdownIconColor={isDarkMode ? '#F59E0B' : COLORS.primary}
                             >
-                                {days.map(d => <Picker.Item key={d} label={d} value={d} color={COLORS.text} />)}
+                                {days.map(d => <Picker.Item key={d} label={d} value={d} color={theme?.text || COLORS.text} />)}
                             </Picker>
                         </View>
                         <View style={styles.pickerColWrapper}>
-                            <Text style={styles.pickerLabel}>Month</Text>
+                            <Text style={[styles.pickerLabel, theme ? { color: theme.textSecondary } : null]}>Month</Text>
                             <Picker
                                 selectedValue={month}
                                 onValueChange={(v) => setMonth(v)}
-                                style={styles.pickerCol}
-                                dropdownIconColor={COLORS.primary}
+                                style={[styles.pickerCol, theme ? { color: theme.text } : null]}
+                                dropdownIconColor={isDarkMode ? '#F59E0B' : COLORS.primary}
                             >
-                                {months.map(m => <Picker.Item key={m} label={m} value={m} color={COLORS.text} />)}
+                                {months.map(m => <Picker.Item key={m} label={m} value={m} color={theme?.text || COLORS.text} />)}
                             </Picker>
                         </View>
                         <View style={styles.pickerColWrapper}>
-                            <Text style={styles.pickerLabel}>Year</Text>
+                            <Text style={[styles.pickerLabel, theme ? { color: theme.textSecondary } : null]}>Year</Text>
                             <Picker
                                 selectedValue={year}
                                 onValueChange={(v) => setYear(v)}
-                                style={styles.pickerCol}
-                                dropdownIconColor={COLORS.primary}
+                                style={[styles.pickerCol, theme ? { color: theme.text } : null]}
+                                dropdownIconColor={isDarkMode ? '#F59E0B' : COLORS.primary}
                             >
-                                {years.map(y => <Picker.Item key={y} label={y} value={y} color={COLORS.text} />)}
+                                {years.map(y => <Picker.Item key={y} label={y} value={y} color={theme?.text || COLORS.text} />)}
                             </Picker>
                         </View>
                     </View>
@@ -135,6 +141,7 @@ const CustomDatePicker = ({ visible, value, onClose, onConfirm }: any) => {
 
 const ShokSanvedanaScreen = ({ navigation }: any) => {
     const { t } = useLanguage();
+    const { theme, isDarkMode } = useTheme();
     const [loading, setLoading] = useState(false);
     
     // Form Inputs
@@ -459,23 +466,23 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
 
     const RenderSectionHeader = ({ title, icon }: { title: string, icon: any }) => (
         <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconBg}>
-                <MaterialCommunityIcons name={icon} size={18} color={COLORS.surface} />
+            <View style={[styles.sectionIconBg, isDarkMode ? { backgroundColor: '#F59E0B' } : null]}>
+                <MaterialCommunityIcons name={icon} size={18} color={isDarkMode ? '#0F172A' : COLORS.surface} />
             </View>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
         </View>
     );
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.card} />
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={{ flex: 1 }}>
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-                            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+                    <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButton, { backgroundColor: isDarkMode ? '#1E293B' : '#F8F8F8' }]}>
+                            <Ionicons name="chevron-back" size={24} color={theme.text} />
                         </TouchableOpacity>
-                        <Text style={styles.headerTitle}>Shraddhanjali Designer</Text>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>Shraddhanjali Designer</Text>
                         <TouchableOpacity 
                             onPress={handleGenerate} 
                             disabled={isGenerating}
@@ -498,7 +505,7 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                         extraScrollHeight={100}
                         keyboardShouldPersistTaps="handled"
                     >
-                        <View style={styles.topPreviewWrapper}>
+                        <View style={[styles.topPreviewWrapper, { backgroundColor: isDarkMode ? '#0B1120' : COLORS.surface }]}>
                             <View style={styles.previewContainer}>
                                 <View style={styles.previewCard}>
                                     <View style={styles.previewFrame}>
@@ -520,42 +527,42 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                         </View>
 
                         <View style={styles.formContainer}>
-                            <View style={styles.langToggleWrapper}>
-                                <Text style={styles.langLabel}>Template Language:</Text>
-                                <View style={styles.langToggle}>
+                            <View style={[styles.langToggleWrapper, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                <Text style={[styles.langLabel, { color: theme.text }]}>Template Language:</Text>
+                                <View style={[styles.langToggle, { backgroundColor: isDarkMode ? '#1E293B' : '#F0F0F0' }]}>
                                     <TouchableOpacity 
                                         onPress={() => setLanguage('Hindi')} 
-                                        style={[styles.langBtn, language === 'Hindi' && styles.langBtnActive]}
+                                        style={[styles.langBtn, language === 'Hindi' && [styles.langBtnActive, isDarkMode ? { backgroundColor: '#334155' } : null]]}
                                     >
-                                        <Text style={[styles.langText, language === 'Hindi' && styles.langTextActive]}>हिन्दी</Text>
+                                        <Text style={[styles.langText, { color: language === 'Hindi' ? (isDarkMode ? '#F59E0B' : COLORS.primary) : theme.textSecondary }]}>हिन्दी</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity 
                                         onPress={() => setLanguage('Gujarati')} 
-                                        style={[styles.langBtn, language === 'Gujarati' && styles.langBtnActive]}
+                                        style={[styles.langBtn, language === 'Gujarati' && [styles.langBtnActive, isDarkMode ? { backgroundColor: '#334155' } : null]]}
                                     >
-                                        <Text style={[styles.langText, language === 'Gujarati' && styles.langTextActive]}>ગુજરાતી</Text>
+                                        <Text style={[styles.langText, { color: language === 'Gujarati' ? (isDarkMode ? '#F59E0B' : COLORS.primary) : theme.textSecondary }]}>ગુજરાતી</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity 
                                         onPress={() => setLanguage('English')} 
-                                        style={[styles.langBtn, language === 'English' && styles.langBtnActive]}
+                                        style={[styles.langBtn, language === 'English' && [styles.langBtnActive, isDarkMode ? { backgroundColor: '#334155' } : null]]}
                                     >
-                                        <Text style={[styles.langText, language === 'English' && styles.langTextActive]}>EN</Text>
+                                        <Text style={[styles.langText, { color: language === 'English' ? (isDarkMode ? '#F59E0B' : COLORS.primary) : theme.textSecondary }]}>EN</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             <RenderSectionHeader title="Person's Identity" icon="account-badge" />
-                            <View style={styles.card}>
-                                <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+                            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                                <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, { backgroundColor: isDarkMode ? '#1E293B' : '#FAFAFA', borderColor: theme.border }]}>
                                     {photoBase64 ? (
                                         <Image source={{ uri: photoBase64 }} style={styles.selectedImage} />
                                     ) : (
                                         <View style={styles.imagePickerPlaceholder}>
-                                            <View style={styles.imageIconCircle}>
-                                                <Ionicons name="image" size={32} color={COLORS.primary} />
+                                            <View style={[styles.imageIconCircle, { backgroundColor: isDarkMode ? 'rgba(239,68,68,0.2)' : '#FFF2F2' }]}>
+                                                <Ionicons name="image" size={32} color={isDarkMode ? '#F59E0B' : COLORS.primary} />
                                             </View>
-                                            <Text style={styles.imagePickerText}>Select Portrait Photo</Text>
-                                            <Text style={styles.imagePickerSubtext}>High quality JPG/PNG recommended</Text>
+                                            <Text style={[styles.imagePickerText, { color: theme.text }]}>Select Portrait Photo</Text>
+                                            <Text style={[styles.imagePickerSubtext, { color: theme.textSecondary }]}>High quality JPG/PNG recommended</Text>
                                         </View>
                                     )}
                                 </TouchableOpacity>
@@ -565,6 +572,8 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     placeholder="Full Name (पूरा नाम)" 
                                     value={name} 
                                     onChangeText={setName} 
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
 
                                 <FormInput 
@@ -573,16 +582,20 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     value={age} 
                                     onChangeText={setAge} 
                                     keyboardType="numeric" 
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                             </View>
 
                             <RenderSectionHeader title="Location Details" icon="map-marker-path" />
-                            <View style={styles.card}>
+                            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <FormInput 
                                     icon="map-marker" 
                                     placeholder="Village (गाँव)" 
                                     value={village} 
                                     onChangeText={setVillage} 
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                                 <View style={styles.row}>
                                     <FormInput 
@@ -591,6 +604,8 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                         placeholder="District (जिला)" 
                                         value={district} 
                                         onChangeText={setDistrict} 
+                                        theme={theme}
+                                        isDarkMode={isDarkMode}
                                     />
                                     <FormInput 
                                         style={{ flex: 1 }}
@@ -598,12 +613,14 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                         placeholder="Taluka (तालुका)" 
                                         value={taluka} 
                                         onChangeText={setTaluka} 
+                                        theme={theme}
+                                        isDarkMode={isDarkMode}
                                     />
                                 </View>
                             </View>
 
                             <RenderSectionHeader title="Ceremony Details" icon="calendar-check" />
-                            <View style={styles.card}>
+                            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <FormInput 
                                     icon="calendar-clock" 
                                     placeholder="Samadhi Date (समाधि तिथि)" 
@@ -611,12 +628,16 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     onChangeText={setSamadhiDate} 
                                     onPress={() => setShowDatePicker(true)}
                                     editable={false}
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                                 <CustomDatePicker
                                     visible={showDatePicker}
                                     value={samadhiDate}
                                     onClose={() => setShowDatePicker(false)}
                                     onConfirm={handleDateConfirm}
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                                 <FormInput 
                                     icon="clock-outline" 
@@ -625,17 +646,21 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     onChangeText={setCeremonyTime} 
                                     onPress={() => setShowCeremonyDatePicker(true)}
                                     editable={false}
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                                 <CustomDatePicker
                                     visible={showCeremonyDatePicker}
                                     value={ceremonyTime}
                                     onClose={() => setShowCeremonyDatePicker(false)}
                                     onConfirm={(date: string) => { setCeremonyTime(date); setShowCeremonyDatePicker(false); }}
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                             </View>
 
                             <RenderSectionHeader title="Bereaved Family (शोकाकुल)" icon="account-group" />
-                            <View style={styles.card}>
+                            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
                                 <FormInput 
                                     icon="text-box-outline" 
                                     placeholder="Family Members Names..." 
@@ -644,6 +669,8 @@ const ShokSanvedanaScreen = ({ navigation }: any) => {
                                     multiline 
                                     numberOfLines={4} 
                                     style={{ height: 120, alignItems: 'flex-start' }}
+                                    theme={theme}
+                                    isDarkMode={isDarkMode}
                                 />
                             </View>
                         </View>
