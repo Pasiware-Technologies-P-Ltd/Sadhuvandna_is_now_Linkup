@@ -12,8 +12,8 @@ const getSocketUrl = () => {
             return 'http://192.168.1.10:3000';
         }
     }
-    // Production socket URL (Clean WSS via port 443)
-    return BASE_SOCKET_URL; 
+// Production socket URL (Clean WSS via port 443 without trailing slash)
+    return (BASE_SOCKET_URL || 'https://ws.sadhuvandna.co.in').replace(/\/+$/, ''); 
 };
 
 const SOCKET_URL = getSocketUrl();
@@ -32,12 +32,13 @@ class SocketService {
             if (!this.socket) {
                 console.log(`[WebSocket] Connecting to ${SOCKET_URL} for user ${uid}`);
                 this.socket = io(SOCKET_URL, {
-                    transports: ['websocket', 'polling'],
-                    timeout: 10000,
+                    transports: ['websocket'],
+                    secure: true,
+                    rejectUnauthorized: false,
                     reconnection: true,
                     reconnectionAttempts: Infinity,
-                    reconnectionDelay: 2000,
-                    reconnectionDelayMax: 10000,
+                    reconnectionDelay: 1000,
+                    reconnectionDelayMax: 5000,
                     autoConnect: true,
                 });
 
@@ -57,9 +58,8 @@ class SocketService {
                     }, 60000); // Send heartbeat every 1 minute
                 });
 
-                this.socket.on('connect_error', (error) => {
-                    // Safe silent log — does NOT crash or disrupt app
-                    console.log('[WebSocket Status] Waiting for server at', SOCKET_URL, `(${error.message})`);
+                this.socket.on('connect_error', (error: any) => {
+                    console.log('[WebSocket Status] Waiting for server at', SOCKET_URL, `(${error.message || error})`, error.description ? `desc: ${JSON.stringify(error.description)}` : '');
                 });
 
                 this.socket.on('reconnect', () => {

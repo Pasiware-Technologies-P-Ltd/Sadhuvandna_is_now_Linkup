@@ -54,6 +54,16 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
         const refreshSub = DeviceEventEmitter.addListener('refresh_badge_counts', refreshCounts);
 
         const showLocalNotification = async (data: any) => {
+            try {
+                const userStr = await AsyncStorage.getItem('user');
+                const currentUser = userStr ? JSON.parse(userStr) : null;
+                const myId = currentUser?.id;
+                const senderId = data?.sender_profile_id || data?.sender_id || data?.message?.sender_id;
+                if (myId && senderId && String(senderId) === String(myId)) {
+                    return;
+                }
+            } catch (e) {}
+
             console.log("Local Notification Triggered:", data);
             let title = data.title;
             let body = data.body;
@@ -137,11 +147,35 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
             setNotificationCount(prev => prev + 1);
             showLocalNotification(data);
         };
-        const handleNewNotification = (data: any) => {
+        const handleNewNotification = async (data: any) => {
+            try {
+                const userStr = await AsyncStorage.getItem('user');
+                const currentUser = userStr ? JSON.parse(userStr) : null;
+                const myId = currentUser?.id;
+                const senderId = data?.sender_profile_id || data?.sender_id || data?.message?.sender_id;
+
+                // Don't notify or increment chat count if the notification was triggered by own message
+                if (myId && senderId && String(senderId) === String(myId)) {
+                    return;
+                }
+            } catch (e) {}
+
             setChatCount(prev => prev + 1);
             showLocalNotification(data);
         };
-        const handleNewGroupNotification = (data: any) => {
+        const handleNewGroupNotification = async (data: any) => {
+            try {
+                const userStr = await AsyncStorage.getItem('user');
+                const currentUser = userStr ? JSON.parse(userStr) : null;
+                const myId = currentUser?.id;
+                const senderId = data?.sender_profile_id || data?.sender_id || data?.message?.sender_id;
+
+                // Don't notify if the group message is from self
+                if (myId && senderId && String(senderId) === String(myId)) {
+                    return;
+                }
+            } catch (e) {}
+
             setChatCount(prev => prev + 1);
             showLocalNotification(data);
         };

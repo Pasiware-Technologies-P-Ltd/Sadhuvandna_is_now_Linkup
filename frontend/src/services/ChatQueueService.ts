@@ -305,7 +305,23 @@ class ChatQueueService {
 
       const endpoint = meta.isGroup ? 'send_group_message.php' : 'send_chat_message.php';
       const apiModule = await import('./api');
-      const res = await apiModule.default.post(endpoint, formData);
+      const payloadData: Record<string, string> = {
+        client_message_id: requestId,
+        message: pending.message.message || '',
+        platform: meta.platform || 'community',
+      };
+      if (meta.isGroup) {
+        payloadData.group_id = String(meta.receiver_id || pending.message.chat_id.replace(/^group_/, ''));
+        payloadData.sender_id = String(meta.my_profile_id || pending.message.sender_id);
+      } else {
+        payloadData.my_profile_id = String(meta.my_profile_id || pending.message.sender_id);
+        payloadData.receiver_id = String(meta.receiver_id || pending.message.chat_id.replace(/^user_/, ''));
+      }
+
+      const formBody = new URLSearchParams(payloadData).toString();
+      const res = await apiModule.default.post(endpoint, formBody, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
 
       if (res.data && res.data.status === 'success') {
         const sId = res.data.id || res.data.client_message_id || requestId;

@@ -72,25 +72,28 @@ const GlobalCallListener = () => {
 
             if (data && data.type === 'chat' && data.message) {
                 const newMsg = data.message;
-                const chatId = `user_${newMsg.sender_id}`;
-                ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: false, seen: 0 }]).catch(() => {}); 
-                let timeStr = ""; try { const d = new Date(newMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) {} 
-                ChatDBService.updateConversationLastMessage(chatId, newMsg.message || "Media", timeStr, true, false, false); 
-                
-                // Show notification if not on chat screen with this user
-                let showPopup = true;
-                if (navigationRef.isReady()) {
-                    const currentRoute = navigationRef.getCurrentRoute();
-                    const params = currentRoute?.params as any;
-                    if (currentRoute?.name === 'Chat' && !params?.isGroup && String(params?.receiver?.id) === String(newMsg.sender_id)) {
-                        showPopup = false;
+                const isMine = String(newMsg.sender_id) === String(myUserId);
+
+                if (!isMine) {
+                    const chatId = `user_${newMsg.sender_id}`;
+                    ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: false, seen: 0 }]).catch(() => {}); 
+                    let timeStr = ""; try { const d = new Date(newMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) {} 
+                    ChatDBService.updateConversationLastMessage(chatId, newMsg.message || "Media", timeStr, true, false, false); 
+                    
+                    // Show notification if not on chat screen with this user
+                    let showPopup = true;
+                    if (navigationRef.isReady()) {
+                        const currentRoute = navigationRef.getCurrentRoute();
+                        const params = currentRoute?.params as any;
+                        if (currentRoute?.name === 'Chat' && !params?.isGroup && String(params?.receiver?.id) === String(newMsg.sender_id)) {
+                            showPopup = false;
+                        }
                     }
-                }
-                if (showPopup) {
-                    const notif = { title: 'New Message', message: newMsg.message || 'Sent an attachment' };
-                    setInAppNotif(notif);
-                    setTimeout(() => setInAppNotif(null), 4000);
-                    // System notification comes via bell_notification from notification_worker (same as like/comment)
+                    if (showPopup) {
+                        const notif = { title: 'New Message', message: newMsg.message || 'Sent an attachment' };
+                        setInAppNotif(notif);
+                        setTimeout(() => setInAppNotif(null), 4000);
+                    }
                 }
             } 
             
@@ -104,25 +107,29 @@ const GlobalCallListener = () => {
             
             if (data && data.type === 'group_chat' && data.message) {
                 const newMsg = data.message;
-                const chatId = `group_${data.group_id}`;
-                ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: false, seen: 0 }]).catch(() => {}); 
-                let timeStr = ""; try { const d = new Date(newMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) {} 
-                ChatDBService.updateConversationLastMessage(chatId, newMsg.message || "Media", timeStr, true, false, false); 
-                
-                // Show notification if not on group chat screen
-                let showPopup = true;
-                if (navigationRef.isReady()) {
-                    const currentRoute = navigationRef.getCurrentRoute();
-                    const params = currentRoute?.params as any;
-                    if (currentRoute?.name === 'Chat' && params?.isGroup && String(params?.receiver?.id) === String(data.group_id)) {
-                        showPopup = false;
+                const isMine = String(newMsg.sender_id) === String(myUserId);
+
+                if (!isMine) {
+                    const chatId = `group_${data.group_id}`;
+                    ChatDBService.saveMessages(chatId, [{ ...newMsg, is_mine: false, seen: 0 }]).catch(() => {}); 
+                    let timeStr = ""; try { const d = new Date(newMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) {} 
+                    ChatDBService.updateConversationLastMessage(chatId, newMsg.message || "Media", timeStr, true, false, false); 
+                    
+                    // Show notification if not on group chat screen
+                    let showPopup = true;
+                    if (navigationRef.isReady()) {
+                        const currentRoute = navigationRef.getCurrentRoute();
+                        const params = currentRoute?.params as any;
+                        if (currentRoute?.name === 'Chat' && params?.isGroup && String(params?.receiver?.id) === String(data.group_id)) {
+                            showPopup = false;
+                        }
                     }
-                }
-                if (showPopup) {
-                    const notif = { title: 'New Group Message', message: newMsg.message || 'Sent an attachment' };
-                    setInAppNotif(notif);
-                    setTimeout(() => setInAppNotif(null), 4000);
-                    // System notification comes via bell_notification from notification_worker (same as like/comment)
+                    if (showPopup) {
+                        const notif = { title: 'New Group Message', message: newMsg.message || 'Sent an attachment' };
+                        setInAppNotif(notif);
+                        setTimeout(() => setInAppNotif(null), 4000);
+                        // System notification comes via bell_notification from notification_worker (same as like/comment)
+                    }
                 }
             } 
         };

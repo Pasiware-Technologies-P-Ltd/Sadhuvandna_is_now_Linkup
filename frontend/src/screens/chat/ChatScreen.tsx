@@ -187,11 +187,39 @@ const ChatScreen = ({ navigation, route }: any) => {
                             const isMine = isFromMeToReceiver;
 
                             setMessages(prev => {
-                                // Deduplicate by client_message_id to avoid echoing back our own optimistic message
-                                if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (newMsg.client_message_id && m.client_message_id === newMsg.client_message_id))) return prev;
+                                const cmid = newMsg.client_message_id;
+                                const sId = newMsg.id || cmid;
+
+                                // If this is our own message arriving back from WebSocket broadcast
+                                if (isMine && cmid) {
+                                    const exists = prev.some(m => m.client_message_id === cmid || m.id === cmid);
+                                    if (exists) {
+                                        // Mark optimistic message as confirmed sent!
+                                        return prev.map(m =>
+                                            (m.client_message_id === cmid || m.id === cmid)
+                                                ? { ...m, isOptimistic: false, status: 'sent', id: sId, server_id: sId }
+                                                : m
+                                        );
+                                    }
+                                }
+
+                                // Deduplicate incoming message
+                                if (prev.some(m => (newMsg.id && m.id === newMsg.id) || (cmid && m.client_message_id === cmid))) return prev;
                                 console.log('[WS] NEW MESSAGE → appended');
                                 return [{ ...newMsg, is_mine: isMine, seen: isMine ? 0 : 1 }, ...prev];
                             });
+
+                            if (isMine && newMsg.client_message_id) {
+                                ChatDBService.updateMessageStatus(newMsg.client_message_id, { status: 'sent', server_id: newMsg.id || newMsg.client_message_id }).catch(() => { });
+                                import('../../services/ChatQueueService').then(({ chatQueueService }) => {
+                                    chatQueueService.handleServerAck({
+                                        requestId: newMsg.client_message_id,
+                                        client_message_id: newMsg.client_message_id,
+                                        server_id: newMsg.id || newMsg.client_message_id,
+                                        status: 'sent'
+                                    });
+                                }).catch(() => { });
+                            }
 
                             if (isAtBottomRef.current && navigation.isFocused()) {
                                 setTimeout(() => {
