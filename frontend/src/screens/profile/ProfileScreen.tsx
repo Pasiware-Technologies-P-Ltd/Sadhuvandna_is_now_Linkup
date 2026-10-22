@@ -121,7 +121,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
     const fetchFollowStats = async (userId: string) => {
         try {
-            const res = await api.post(`/api_follow.php?action=get_counts`, { current_user_id: userId, user_id: userId });
+            const res = await api.post(`/api_follow.php?action=get_counts&current_user_id=${userId}&user_id=${userId}`, { current_user_id: userId, user_id: userId });
             if (res.data.ok) {
                 setFollowStats(res.data);
                 AsyncStorage.setItem(`cached_stats_${userId}`, JSON.stringify(res.data));

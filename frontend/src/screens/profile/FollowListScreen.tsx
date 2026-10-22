@@ -112,11 +112,9 @@ const FollowListScreen = ({ route, navigation }: any) => {
         setProcessingId(targetUserId);
 
         try {
-            const formData = new FormData();
-            formData.append('current_user_id', currentUserId);
-            formData.append('user_id', targetUserId);
-            const res = await api.post('/api_follow.php?action=follow', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+            const res = await api.post(`/api_follow.php?action=follow&current_user_id=${currentUserId}&user_id=${targetUserId}`, {
+                current_user_id: currentUserId,
+                user_id: targetUserId,
             });
 
             if (res.data.ok) {

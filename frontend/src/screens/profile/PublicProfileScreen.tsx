@@ -148,7 +148,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             const promises: Promise<any>[] = [
                 api.get(`get_user_profile.php?user_id=${uid}`),
                 api.get(`get_posts.php?filter_user_id=${uid}&user_id=${currentUserId || 0}`),
-                api.post(`api_follow.php?action=get_counts`, { current_user_id: currentUserId || 0, user_id: uid }, {
+                api.post(`api_follow.php?action=get_counts&current_user_id=${currentUserId || 0}&user_id=${uid}`, { current_user_id: currentUserId || 0, user_id: uid }, {
                     headers: { 'Content-Type': 'application/json' }
                 })
             ];
@@ -327,11 +327,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
         setTogglingFollow(true);
         try {
-            const formData = new FormData();
-            formData.append('current_user_id', currentUserId);
-            formData.append('user_id', uid);
-            const res = await api.post('api_follow.php?action=follow', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+            const res = await api.post(`api_follow.php?action=follow&current_user_id=${currentUserId}&user_id=${uid}`, {
+                current_user_id: currentUserId,
+                user_id: uid,
             });
             if (res.data.ok) {
                 await fetchProfileData();

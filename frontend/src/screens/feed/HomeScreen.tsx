@@ -834,10 +834,10 @@ const HomeScreen = () => {
     const handleFollowUser = async (targetId: string) => {
         if (!user?.id) return;
         try {
-            const formData = new FormData();
-            formData.append('current_user_id', user.id);
-            formData.append('user_id', targetId);
-            await api.post('api_follow.php?action=follow', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await api.post(`api_follow.php?action=follow&current_user_id=${user.id}&user_id=${targetId}`, {
+                current_user_id: user.id,
+                user_id: targetId,
+            });
             setFollowedUsers(prev => new Set([...prev, targetId]));
         } catch (e) {
             console.error('Follow error:', e);

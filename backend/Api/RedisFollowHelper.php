@@ -17,8 +17,8 @@ class RedisFollowHelper {
                 }
                 $redis->hMSet($key, $data);
             }
-            $redis->set($loadedKey, 1, ['ex' => 86400]);
-            $redis->expire($key, 86400);
+            $redis->set($loadedKey, 1, ['ex' => 1800]);
+            $redis->expire($key, 1800);
         }
         
         return $redis->hGet($key, $following_id);
@@ -45,7 +45,7 @@ class RedisFollowHelper {
                 'posts' => $posts
             ];
             $redis->hMSet($countsKey, $counts);
-            $redis->expire($countsKey, 86400);
+            $redis->expire($countsKey, 1800);
             return $counts;
         }
         

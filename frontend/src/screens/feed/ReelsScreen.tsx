@@ -313,7 +313,7 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
             return;
         }
         try {
-            const res = await api.post('api_follow.php?action=get_counts', {
+            const res = await api.post(`api_follow.php?action=get_counts&current_user_id=${currentUserId}&user_id=${item.user_id}`, {
                 current_user_id: currentUserId,
                 user_id: item.user_id
             });
@@ -331,12 +331,9 @@ const ReelsItem = ({ item, index, activeIndex, focused, currentUserId, layoutHei
         if (!currentUserId || !item.user_id) return;
 
         try {
-            const formData = new FormData();
-            formData.append('current_user_id', currentUserId);
-            formData.append('user_id', item.user_id);
-
-            const res = await api.post('api_follow.php?action=follow', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+            const res = await api.post(`api_follow.php?action=follow&current_user_id=${currentUserId}&user_id=${item.user_id}`, {
+                current_user_id: currentUserId,
+                user_id: item.user_id,
             });
 
             if (res.data.ok) {

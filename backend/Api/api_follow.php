@@ -4,11 +4,11 @@ include("push_helper.php");
 header('Content-Type: application/json');
 
 // Get action from request or JSON input
-$input = json_decode(file_get_contents("php://input"), true);
+$input = json_decode(file_get_contents("php://input"), true) ?: [];
 $action = $_REQUEST['action'] ?? $input['action'] ?? '';
-$current_user_id = intval($_POST['current_user_id'] ?? $input['current_user_id'] ?? $_GET['current_user_id'] ?? 0);
+$current_user_id = intval($_REQUEST['current_user_id'] ?? $_POST['current_user_id'] ?? $input['current_user_id'] ?? $_GET['current_user_id'] ?? 0);
 
-if(!$current_user_id){
+if(!$current_user_id && $action !== 'get_counts' && $action !== 'fetch_suggestions'){
     echo json_encode(["ok" => false, "message" => "Not logged in (Missing current_user_id)"]);
     exit;
 }
@@ -37,7 +37,7 @@ function triggerWebSocket($receiverId, $type, $payload, $isGlobal = false) {
 $follower_id = $current_user_id;
 
 if($action === 'follow'){
-    $following_id = intval($_POST['user_id'] ?? $input['user_id'] ?? $_GET['user_id'] ?? 0);
+    $following_id = intval($_REQUEST['user_id'] ?? $_POST['user_id'] ?? $input['user_id'] ?? $_GET['user_id'] ?? 0);
     
     if(!$following_id) {
         echo json_encode(["ok" => false, "message" => "Target user missing"]);
@@ -55,88 +55,50 @@ if($action === 'follow'){
     
     $redis = RedisConfig::getConnection();
     
-    if (!$redis) {
-        $check = $con->query("SELECT status FROM tbl_followers WHERE follower_id=$follower_id AND following_id=$following_id");
-        if($check->num_rows == 0){
-            $sender_name = "Someone";
-            $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $follower_id LIMIT 1");
-            if($sRow = $sQ->fetch_assoc()) $sender_name = $sRow['name'];
-            $check_other = $con->query("SELECT id FROM tbl_followers WHERE follower_id=$following_id AND following_id=$follower_id");
-            if($check_other->num_rows > 0){
-                $stmt = $con->prepare("INSERT INTO tbl_followers (follower_id, following_id, status) VALUES (?, ?, 'accepted')");
-                $stmt->bind_param("ii", $follower_id, $following_id);
-                $stmt->execute();
-                $con->query("UPDATE tbl_followers SET status='accepted' WHERE follower_id=$following_id AND following_id=$follower_id");
-                $status = "connected";
-                sendExpoPushNotification($con, $following_id, "New Connection", "$sender_name accepted your request and followed you back!", ["type" => "follow", "user_id" => $follower_id]);
-            } else {
-                $stmt = $con->prepare("INSERT INTO tbl_followers (follower_id, following_id, status) VALUES (?, ?, 'pending')");
-                $stmt->bind_param("ii", $follower_id, $following_id);
-                $stmt->execute();
-                $status = "requested";
-                sendExpoPushNotification($con, $following_id, "Follow Request", "$sender_name wants to connect with you.", ["type" => "follow_request", "user_id" => $follower_id]);
-            }
-        } else {
-            $con->query("DELETE FROM tbl_followers WHERE follower_id=$follower_id AND following_id=$following_id");
-            $status = "unfollowed";
-        }
-        $followers_count = $con->query("SELECT COUNT(*) FROM tbl_followers WHERE following_id=$following_id AND status='accepted'")->fetch_row()[0];
-        echo json_encode(["ok" => true, "status" => $status, "followers_count" => $followers_count]);
-        exit;
-    }
-    
-    $myStatus = RedisFollowHelper::getStatus($redis, $con, $follower_id, $following_id);
-    $theirStatus = RedisFollowHelper::getStatus($redis, $con, $following_id, $follower_id);
-    
-    RedisFollowHelper::getCounts($redis, $con, $follower_id);
-    RedisFollowHelper::getCounts($redis, $con, $following_id);
-    
-    $myCountsKey = "user:{$follower_id}:counts";
-    $theirCountsKey = "user:{$following_id}:counts";
-    $myFollowingKey = "user:{$follower_id}:following";
-    $theirFollowingKey = "user:{$following_id}:following";
+    // Direct authoritative write to MySQL tbl_followers
+    $check = $con->query("SELECT id, status FROM tbl_followers WHERE follower_id=$follower_id AND following_id=$following_id LIMIT 1");
+    if(!$check || $check->num_rows == 0){
+        $sender_name = "Someone";
+        $sQ = $con->query("SELECT name FROM tbl_members WHERE id = $follower_id LIMIT 1");
+        if($sRow = $sQ->fetch_assoc()) $sender_name = $sRow['name'];
 
-    if (!$myStatus) {
-        if ($theirStatus === 'pending' || $theirStatus === 'accepted') {
+        $check_other = $con->query("SELECT id, status FROM tbl_followers WHERE follower_id=$following_id AND following_id=$follower_id LIMIT 1");
+        if($check_other && $check_other->num_rows > 0){
+            $stmt = $con->prepare("INSERT INTO tbl_followers (follower_id, following_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status='accepted'");
+            $stmt->bind_param("ii", $follower_id, $following_id);
+            $stmt->execute();
+            $con->query("UPDATE tbl_followers SET status='accepted' WHERE follower_id=$following_id AND following_id=$follower_id");
             $status = "connected";
-            $redis->hSet($myFollowingKey, $following_id, 'accepted');
-            $redis->hSet($theirFollowingKey, $follower_id, 'accepted'); 
-            
-            $redis->hIncrBy($myCountsKey, 'following', 1);
-            $redis->hIncrBy($myCountsKey, 'friends', 1);
-            if ($theirStatus === 'pending') $redis->hIncrBy($myCountsKey, 'requested', -1);
-            
-            $redis->hIncrBy($theirCountsKey, 'followers', 1);
-            $redis->hIncrBy($theirCountsKey, 'friends', 1);
-            if ($theirStatus === 'pending') $redis->hIncrBy($theirCountsKey, 'sent', -1);
+            sendExpoPushNotification($con, $following_id, "New Connection", "$sender_name accepted your request and connected with you!", ["type" => "follow", "user_id" => $follower_id]);
         } else {
+            $stmt = $con->prepare("INSERT INTO tbl_followers (follower_id, following_id, status) VALUES (?, ?, 'pending') ON DUPLICATE KEY UPDATE status='pending'");
+            $stmt->bind_param("ii", $follower_id, $following_id);
+            $stmt->execute();
             $status = "requested";
-            $redis->hSet($myFollowingKey, $following_id, 'pending');
-            
-            $redis->hIncrBy($myCountsKey, 'following', 1);
-            $redis->hIncrBy($myCountsKey, 'sent', 1);
-            
-            $redis->hIncrBy($theirCountsKey, 'followers', 1);
-            $redis->hIncrBy($theirCountsKey, 'requested', 1);
+            sendExpoPushNotification($con, $following_id, "Connection Request", "$sender_name wants to connect with you.", ["type" => "follow_request", "user_id" => $follower_id]);
         }
     } else {
+        $con->query("DELETE FROM tbl_followers WHERE follower_id=$follower_id AND following_id=$following_id");
         $status = "unfollowed";
-        $redis->hDel($myFollowingKey, $following_id);
-        
-        $redis->hIncrBy($myCountsKey, 'following', -1);
-        if ($myStatus === 'pending') $redis->hIncrBy($myCountsKey, 'sent', -1);
-        if ($myStatus === 'accepted') $redis->hIncrBy($theirCountsKey, 'friends', -1);
-        
-        $redis->hIncrBy($theirCountsKey, 'followers', -1);
-        if ($myStatus === 'pending') $redis->hIncrBy($theirCountsKey, 'requested', -1);
     }
-    
-    QueueManager::pushJob('sync_follow_state', [
-        'follower_id' => $follower_id,
-        'following_id' => $following_id
-    ], "sync_follow_{$follower_id}_{$following_id}", 600);
-    
-    $followers_count = $redis->hGet($theirCountsKey, 'friends');
+
+    // Invalidate Redis caches so fresh authoritative data is reloaded on next query
+    if ($redis) {
+        try {
+            $redis->del("user:{$follower_id}:counts");
+            $redis->del("user:{$following_id}:counts");
+            $redis->del("user:{$follower_id}:following");
+            $redis->del("user:{$following_id}:following");
+            $redis->del("user:{$follower_id}:following_loaded");
+            $redis->del("user:{$following_id}:following_loaded");
+        } catch (Exception $e) {}
+    }
+
+    $followers_count = 0;
+    $countQ = $con->query("SELECT COUNT(*) FROM tbl_followers WHERE following_id=$following_id AND status='accepted'");
+    if ($countQ && $row = $countQ->fetch_row()) {
+        $followers_count = intval($row[0]);
+    }
     
     // Notify the target user of the count change in real-time and broadcast to update all connected UI instances
     triggerWebSocket($following_id, "follow_counts_updated", ["follower_id" => $follower_id, "following_id" => $following_id, "status" => $status], true);
@@ -213,7 +175,7 @@ if(in_array($action, ['fetch_followers', 'fetch_following', 'fetch_friends', 'fe
 }
 
 if($action === 'get_counts'){
-    $uid = intval($_GET['user_id'] ?? $_POST['user_id'] ?? $input['user_id'] ?? 0);
+    $uid = intval($_REQUEST['user_id'] ?? $_POST['user_id'] ?? $input['user_id'] ?? $_GET['user_id'] ?? 0);
     
     if(!$uid) {
         echo json_encode(["ok" => false, "message" => "Target user missing"]);
@@ -223,6 +185,7 @@ if($action === 'get_counts'){
     require_once 'RedisConfig.php';
     require_once 'RedisFollowHelper.php';
     $redis = RedisConfig::getConnection();
+    $curr_id = intval($_REQUEST['current_user_id'] ?? $_POST['current_user_id'] ?? $input['current_user_id'] ?? $_GET['current_user_id'] ?? $current_user_id);
     
     if ($redis) {
         $counts = RedisFollowHelper::getCounts($redis, $con, $uid);
@@ -232,9 +195,9 @@ if($action === 'get_counts'){
         $is_connected = false;
         $follows_me = false;
         
-        if ($follower_id) {
-            $myStatus = RedisFollowHelper::getStatus($redis, $con, $follower_id, $uid);
-            $theirStatus = RedisFollowHelper::getStatus($redis, $con, $uid, $follower_id);
+        if ($curr_id) {
+            $myStatus = RedisFollowHelper::getStatus($redis, $con, $curr_id, $uid);
+            $theirStatus = RedisFollowHelper::getStatus($redis, $con, $uid, $curr_id);
             
             if ($myStatus === 'accepted') $is_following = true;
             elseif ($myStatus === 'pending') $is_requested = true;
@@ -272,15 +235,15 @@ if($action === 'get_counts'){
     $is_connected = false;
     $follows_me = false;
     
-    if($follower_id){
-        $check = $con->query("SELECT status FROM tbl_followers WHERE follower_id=$follower_id AND following_id=$uid");
-        if($row = $check->fetch_assoc()){
+    if($curr_id){
+        $check = $con->query("SELECT status FROM tbl_followers WHERE follower_id=$curr_id AND following_id=$uid");
+        if($check && $row = $check->fetch_assoc()){
             if($row['status'] === 'accepted') $is_following = true;
             else $is_requested = true;
         }
         
-        $check_me = $con->query("SELECT status FROM tbl_followers WHERE follower_id=$uid AND following_id=$follower_id");
-        if($row_me = $check_me->fetch_assoc()){
+        $check_me = $con->query("SELECT status FROM tbl_followers WHERE follower_id=$uid AND following_id=$curr_id");
+        if($check_me && $row_me = $check_me->fetch_assoc()){
             $follows_me = true;
             if($row_me['status'] === 'accepted' && $is_following) $is_connected = true;
         }

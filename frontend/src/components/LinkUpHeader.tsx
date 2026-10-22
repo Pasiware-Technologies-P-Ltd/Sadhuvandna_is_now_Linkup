@@ -142,11 +142,11 @@ export const LinkUpHeader: React.FC<LinkUpHeaderProps> = ({
                                         contentFit="cover"
                                     />
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Text style={[styles.brandTitle, isDarkMode && { color: '#F8FAFC' }]}>LinkUp</Text>
+                                <View style={{ justifyContent: 'center', alignItems: 'flex-start' }}>
+                                    <Text style={[styles.brandTitle, isDarkMode && { color: '#F8FAFC' }, user?.is_business == 1 && { fontSize: 22, lineHeight: 24 }]}>LinkUp</Text>
                                     {user?.is_business == 1 && (
                                         <View style={styles.businessBadge}>
-                                            <Ionicons name="briefcase" size={10} color="#1877F2" />
+                                            <Ionicons name="briefcase" size={9} color="#1877F2" />
                                             <Text style={styles.businessBadgeText}>{t('business')}</Text>
                                         </View>
                                     )}
@@ -354,17 +354,18 @@ const styles = StyleSheet.create({
     },
     businessBadge: {
         backgroundColor: '#EFF6FF',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 6,
+        paddingHorizontal: 5,
+        paddingVertical: 1.5,
+        borderRadius: 4,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 3,
         borderWidth: 1,
         borderColor: '#DBEAFE',
+        marginTop: 1,
     },
     businessBadgeText: {
-        fontSize: 10,
+        fontSize: 9,
         color: '#1877F2',
         fontWeight: '700',
     },

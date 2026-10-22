@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, Share, Linking, Animated, Easing, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -192,6 +192,25 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
         };
     }, [shouldPlay, player]);
 
+    const retryCountRef = useRef(0);
+    const retryTimerRef = useRef<any>(null);
+
+    const handleRetry = useCallback(() => {
+        if (!isMounted.current) return;
+        setError(null);
+        setIsBuffering(true);
+        setIsVideoReady(false);
+        try {
+            if (player) {
+                if (typeof (player as any).replace === 'function' && uri) {
+                    (player as any).replace(uri);
+                }
+                player.currentTime = 0;
+                player.play();
+            }
+        } catch (e) {}
+    }, [player, uri]);
+
     useEffect(() => {
         let sub: any;
         let sub2: any;
@@ -199,20 +218,34 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
             sub = player.addListener('statusChange', (status) => {
                 if (!isMounted.current) return;
                 if (status.status === 'readyToPlay') {
+                    retryCountRef.current = 0;
+                    setError(null);
                     setIsBuffering(false);
                     setIsVideoReady(true);
                     try {
                         setDuration((player.duration || 0) * 1000);
                     } catch (e) {}
                 } else if (status.status === 'error') {
-                    setError("Failed to play video");
                     setIsBuffering(false);
+                    if (retryCountRef.current < 2 && isMounted.current) {
+                        retryCountRef.current += 1;
+                        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+                        retryTimerRef.current = setTimeout(() => {
+                            if (isMounted.current) {
+                                handleRetry();
+                            }
+                        }, 1800);
+                    } else {
+                        setError("retry");
+                    }
                 }
             });
             sub2 = player.addListener('playingChange', (isPlaying) => {
                 if (!isMounted.current) return;
                 setIsBuffering(false);
                 if (isPlaying) {
+                    retryCountRef.current = 0;
+                    setError(null);
                     setIsVideoReady(true);
                 }
             });
@@ -233,9 +266,10 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
                 if (sub) sub.remove();
                 if (sub2) sub2.remove();
             } catch (e) {}
+            if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
             clearInterval(interval);
         };
-    }, [player]);
+    }, [player, handleRetry]);
 
     const videoAspect = isDetail ? (aspectRatio || 16 / 9) : (aspectRatio ? Math.max(aspectRatio, 9 / 16) : 9 / 16);
     return (
@@ -249,7 +283,7 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
                     nativeControls={false}
                 />
             )}
-            {(!showVideo || !isVideoReady) && (
+            {(!showVideo || !isVideoReady || !!error) && (
                 <View style={StyleSheet.absoluteFill}>
                     {thumbUri ? (
                         <Image
@@ -262,7 +296,7 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
                             <ActivityIndicator color="#3B82F6" size="small" />
                         </View>
                     )}
-                    {!shouldPlay && thumbUri && (
+                    {!shouldPlay && !error && thumbUri && (
                         <View style={videoStyles.playOverlay}>
                             <View style={videoStyles.playButton}>
                                 <Ionicons name="play" size={26} color="#ffffff" style={{ marginLeft: 3 }} />
@@ -271,16 +305,30 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
                     )}
                 </View>
             )}
-            {isBuffering && isVideoReady && (
-                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+            {isBuffering && !error && (
+                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' }]}>
                     <ActivityIndicator color="white" size="large" />
                 </View>
             )}
             {error && (
-                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-                    <Ionicons name="alert-circle" size={40} color="white" />
-                    <Text style={{ color: 'white', marginTop: 8, fontSize: 12 }}>{error}</Text>
-                </View>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleRetry}
+                    style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.25)' }]}
+                >
+                    <View style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 25,
+                        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1.5,
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                    }}>
+                        <Ionicons name="reload" size={24} color="#FFFFFF" />
+                    </View>
+                </TouchableOpacity>
             )}
             {duration > 0 && (
                 <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: !shouldPlay ? 'rgba(0,0,0,0.3)' : 'transparent', paddingTop: !shouldPlay ? 10 : 0 }}>
