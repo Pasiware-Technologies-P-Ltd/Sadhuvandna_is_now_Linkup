@@ -4,6 +4,16 @@ services:
   # 1. Redis Server
   redis:
     image: redis:alpine
+    command: >
+      sh -c '
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          redis-server --requirepass "$$REDIS_PASSWORD"
+        else
+          redis-server --protected-mode no
+        fi
+      '
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     ports:
       - "6379:6379"
     networks:
@@ -18,7 +28,9 @@ services:
       - "8078:80"
     environment:
       - APP_ENV=${APP_ENV:-production}
-      - REDIS_HOST=redis
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - SOCKET_URL=http://socket-server:3000
       - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
       - DB_USER=${DB_USER:-u941015828_sadhuvandna}
@@ -41,7 +53,9 @@ services:
     command: php /var/www/html/Api/worker.php
     environment:
       - APP_ENV=${APP_ENV:-production}
-      - REDIS_HOST=redis
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
       - DB_USER=${DB_USER:-u941015828_sadhuvandna}
       - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
@@ -60,7 +74,9 @@ services:
     command: php /var/www/html/Api/notification_worker.php
     environment:
       - APP_ENV=${APP_ENV:-production}
-      - REDIS_HOST=redis
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - SOCKET_URL=http://socket-server:3000
       - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
       - DB_USER=${DB_USER:-u941015828_sadhuvandna}

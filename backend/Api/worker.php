@@ -6,8 +6,10 @@ require_once __DIR__ . '/connection.php';
 echo "Starting background batch queue worker...\n";
 
 $redis = RedisConfig::getConnection();
-if (!$redis) {
-    die("Redis is not available. Please ensure Redis server is running.\n");
+while (!$redis) {
+    echo "[" . date('Y-m-d H:i:s') . "] Waiting for Redis connection...\n";
+    sleep(2);
+    $redis = RedisConfig::getConnection();
 }
 
 $maxRetries = 3;
@@ -17,13 +19,21 @@ if ($recovered > 0) echo "Recovered {$recovered} orphaned jobs on startup.\n";
 $lastRecoveryTime = time();
 
 while (true) {
-    if (time() - $lastRecoveryTime > 300) {
-        $recovered = QueueManager::recoverOrphanedJobs();
-        if ($recovered > 0) echo "Recovered {$recovered} orphaned jobs during housekeeping.\n";
-        $lastRecoveryTime = time();
-    }
-
     try {
+        $redis = RedisConfig::getConnection();
+        if (!$redis) {
+            sleep(2);
+            continue;
+        }
+
+        ensure_db_connection($con);
+
+        if (time() - $lastRecoveryTime > 300) {
+            $recovered = QueueManager::recoverOrphanedJobs();
+            if ($recovered > 0) echo "Recovered {$recovered} orphaned jobs during housekeeping.\n";
+            $lastRecoveryTime = time();
+        }
+
         $jobs = QueueManager::popBatch(200); // Batch of up to 200 jobs
         
         if (empty($jobs)) {
@@ -52,6 +62,25 @@ while (true) {
                     }
                 }
             } catch (Exception $e) {
+                // If MySQL disconnected, reconnect and retry once
+                $msg = $e->getMessage();
+                if (stripos($msg, 'gone away') !== false || stripos($msg, 'Lost connection') !== false) {
+                    try {
+                        echo "[" . date('Y-m-d H:i:s') . "] Reconnecting to MySQL after disconnect...\n";
+                        ensure_db_connection($con);
+                        processBatch($type, $group);
+                        foreach ($group as $jobItem) {
+                            QueueManager::finalizeJob($jobItem['json']);
+                            if (!empty($jobItem['data']['deduplication_key'])) {
+                                $redis->del($jobItem['data']['deduplication_key']);
+                            }
+                        }
+                        continue;
+                    } catch (Exception $retryEx) {
+                        $e = $retryEx;
+                    }
+                }
+
                 echo "[" . date('Y-m-d H:i:s') . "] Error in batch type {$type}: " . $e->getMessage() . "\n";
                 // Requeue or fail on error
                 foreach ($group as $jobItem) {
@@ -75,8 +104,10 @@ while (true) {
 
 function processBatch($type, $jobs) {
     global $con;
+    ensure_db_connection($con);
     $redis = RedisConfig::getConnection();
     if (!$redis) throw new Exception("Redis not available");
+
 
     if ($type === 'sync_like_state') {
         $inserts = [];

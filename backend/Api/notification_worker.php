@@ -6,8 +6,12 @@ require_once __DIR__ . '/push_helper.php';
 
 echo "Starting background notification worker...\n";
 $redis = RedisConfig::getConnection();
+while (!$redis) {
+    echo "[" . date('Y-m-d H:i:s') . "] Waiting for Redis connection...\n";
+    sleep(2);
+    $redis = RedisConfig::getConnection();
+}
 
-if (!$redis) die("Redis not available.\n");
 
 function processGroupedNotification($con, $redis, $receiver_id, $type, $reference_id, $actor_id, $actor_name, $default_title, $payload_data) {
     if ($type === 'follow_request' || $type === 'follow' || $type === 'message') {
@@ -127,8 +131,16 @@ function deliverNotification($con, $receiver_id, $type, $reference_id, $title, $
 
 while (true) {
     try {
+        ensure_db_connection($con);
+        $redis = RedisConfig::getConnection();
+        if (!$redis) {
+            sleep(2);
+            continue;
+        }
+
         $json = $redis->brPop(QueueManager::QUEUE_NOTIFICATIONS, 5);
         if (!$json || !isset($json[1])) continue;
+
         
         $payload = json_decode($json[1], true);
         if (!$payload) continue;
