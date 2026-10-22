@@ -40,6 +40,7 @@ import { Alert } from 'react-native';
 
 // Globally override React Native Alert with Instagram-style client friendly titles
 const originalAlert = Alert.alert;
+CustomAlertManager.nativeAlert = originalAlert;
 Alert.alert = (title: string, message?: string, buttons?: any[], options?: any) => {
   let friendlyTitle = title;
   if (!friendlyTitle || friendlyTitle.trim().toLowerCase() === 'error') {

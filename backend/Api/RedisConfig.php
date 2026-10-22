@@ -46,6 +46,11 @@ class RedisConfig {
                 }
             }
 
+            // Test ping to verify auth and responsiveness
+            if (!@$redis->ping()) {
+                throw new Exception("Redis ping failed or requires authentication.");
+            }
+
             // Prefix all keys to avoid conflicts with other apps on the same Redis
             $redis->setOption(Redis::OPT_PREFIX, 'bs_queue:');
 

@@ -11,6 +11,7 @@ type AlertConfig = {
 
 class CustomAlertManager {
     static listener: ((config: AlertConfig | null) => void) | null = null;
+    static nativeAlert: any = null;
 
     static show(title: string, message?: string, buttons?: AlertButton[], options?: any) {
         let cleanTitle = title;
@@ -27,8 +28,8 @@ class CustomAlertManager {
 
         if (this.listener) {
             this.listener({ title: cleanTitle, message, buttons, options });
-        } else {
-            console.warn('CustomAlertProvider not mounted');
+        } else if (this.nativeAlert) {
+            this.nativeAlert(cleanTitle, message, buttons, options);
         }
     }
 
