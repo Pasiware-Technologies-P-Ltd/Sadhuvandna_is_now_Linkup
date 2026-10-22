@@ -3,14 +3,13 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const BRANCH_IMAGE_URL = `${BASE_URL_ROOT}/uploads/branches/`;
+const BRANCH_IMAGE_URL = `${WEBSITE_URL}/uploads/branches/`;
 
 const BranchScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();

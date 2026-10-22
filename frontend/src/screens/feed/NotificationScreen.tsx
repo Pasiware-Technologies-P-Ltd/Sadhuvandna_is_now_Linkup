@@ -3,13 +3,11 @@ import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, StyleS
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, BASE_URL_ROOT } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { NotificationDBService } from '../../services/NotificationDBService';
 import { useTheme } from '../../context/ThemeContext';
-
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 
 const timeAgo = (dateString: string) => {
     if (!dateString) return '';

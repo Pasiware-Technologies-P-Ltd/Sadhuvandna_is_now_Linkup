@@ -19,7 +19,7 @@ import {
   Easing,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import api, { API_BASE_URL } from "../../services/api";
+import api, { API_BASE_URL, WEBSITE_URL } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useLanguage } from "../../context/LanguageContext";
@@ -38,8 +38,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const QUICK_TAGS = [
   "All",
   "Delhi",

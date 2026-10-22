@@ -5,7 +5,7 @@ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Linking, D
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL, BASE_URL_ROOT } from '../../services/api';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PostImage from '../../components/PostImage';
@@ -18,10 +18,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { ImageService } from '../../services/ImageService';
 import { useTheme } from '../../context/ThemeContext';
 
-// Fix: Point to Root uploads, not Api/uploads
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 // Matched with FamilyScreen.tsx pattern which seems to be the working one
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const FAMILY_PHOTO_URL = `${BASE_URL_ROOT}/uploads/family/`;
 const POST_IMAGE_URL = `${BASE_URL_ROOT}/uploads/posts/`;
 

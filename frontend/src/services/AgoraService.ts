@@ -2,8 +2,8 @@
 import axios from 'axios';
 import { API_BASE_URL } from './api';
 
-export const AGORA_APP_ID = '42eb51e0bc30431cba75efefb9ea15ea';
-export const AGORA_SERVER_URL = 'https://www.call.sadhuvandna.co.in';
+export const AGORA_APP_ID = process.env.EXPO_PUBLIC_AGORA_APP_ID || '42eb51e0bc30431cba75efefb9ea15ea';
+export const AGORA_SERVER_URL = process.env.EXPO_PUBLIC_AGORA_SERVER_URL || 'https://www.call.sadhuvandna.co.in';
 
 export const getAgoraToken = async (channelName: string, uid: number): Promise<string> => {
     // 1. Try Primary Node Token Server

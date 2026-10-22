@@ -4,12 +4,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const FollowListScreen = ({ route, navigation }: any) => {
     const { theme, isDarkMode } = useTheme();

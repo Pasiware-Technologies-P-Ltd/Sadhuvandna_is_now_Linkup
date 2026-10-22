@@ -8,8 +8,7 @@ import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 // Global cache for GIFs to make it fast
 const gifCache: Record<string, any[]> = {};

@@ -3,11 +3,10 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import api, { API_BASE_URL } from '../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../services/api';
 
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const { width } = Dimensions.get('window');
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 interface Profile {
     id: string;

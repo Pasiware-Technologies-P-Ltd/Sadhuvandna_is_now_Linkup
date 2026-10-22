@@ -3,14 +3,15 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Linking, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { ImageService } from '../../services/ImageService';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
+const BASE_URL_ROOT = WEBSITE_URL;
+
 
 const JobScreen = ({ navigation }: any) => {
     const { isDarkMode, theme } = useTheme();

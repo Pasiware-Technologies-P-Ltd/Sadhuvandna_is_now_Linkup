@@ -6,11 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const CreateGroupScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();

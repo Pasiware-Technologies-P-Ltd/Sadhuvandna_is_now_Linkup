@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, SOCKET_URL as BASE_SOCKET_URL } from './api';
 
 // Dynamically use the API's IP address on port 3000
 const getSocketUrl = () => {
@@ -13,7 +13,7 @@ const getSocketUrl = () => {
         }
     }
     // Production socket URL (Clean WSS via port 443)
-    return 'https://ws.sadhuvandna.co.in'; 
+    return BASE_SOCKET_URL; 
 };
 
 const SOCKET_URL = getSocketUrl();

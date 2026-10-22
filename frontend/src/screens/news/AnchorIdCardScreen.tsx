@@ -204,7 +204,7 @@ const AnchorIdCardScreen = ({ navigation }: any) => {
     const validTill = `${day} ${month} ${year}`;
 
     // QR Code URL
-    const qrData = encodeURIComponent(`https://www.sadhuvandna.co.in/verify_reporter.php?id=${idNo}`);
+    const qrData = encodeURIComponent(`${WEBSITE_URL}/verify_reporter.php?id=${idNo}`);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
 
     // Active candidate photo URL

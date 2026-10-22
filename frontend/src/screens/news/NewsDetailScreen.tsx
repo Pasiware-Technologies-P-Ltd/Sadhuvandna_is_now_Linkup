@@ -6,12 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
-import api, { WEBSITE_URL } from '../../services/api';
+import api, { WEBSITE_URL, BASE_URL_ROOT } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
+const NEWS_URL = `${WEBSITE_URL}/uploads/news/`;
 
 const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename.trim());
 

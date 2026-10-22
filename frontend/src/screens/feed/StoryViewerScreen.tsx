@@ -7,12 +7,11 @@ import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { useIsFocused } from '@react-navigation/native';
 import { MediaCacheService } from '../../services/MediaCacheService';
-import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL, BASE_URL_ROOT } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
-const BASE_URL_ROOT = WEBSITE_URL;
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const StoryViewerScreen = ({ navigation, route }: any) => {
     const { stories: initialStories, initialIndex = 0, userId: storyOwnerId, userName, userPhoto } = route.params;

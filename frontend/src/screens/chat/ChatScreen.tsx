@@ -9,7 +9,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
+import api, { API_BASE_URL, getFullPaymentUrl, BASE_URL_ROOT, WEBSITE_URL } from '../../services/api';
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../context/LanguageContext';
@@ -26,9 +27,7 @@ import * as Notifications from 'expo-notifications';
 import { ChatDBService } from '../../services/ChatDBService';
 import { useOnlineStatus } from '../../context/OnlineContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
 
 const ChatScreen = ({ navigation, route }: any) => {
     const insets = useSafeAreaInsets();

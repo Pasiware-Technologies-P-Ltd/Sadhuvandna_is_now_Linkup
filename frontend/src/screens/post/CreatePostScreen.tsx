@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Audio } from 'expo-av';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
-import api, { API_BASE_URL, UPLOAD_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, UPLOAD_BASE_URL, BASE_URL_ROOT, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUpload } from '../../context/UploadContext';
 import { getVideoThumbnail } from '../../utils/thumbnailHelper';
@@ -16,8 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const CreatePostScreen = ({ navigation, route }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -25,7 +24,7 @@ const CreatePostScreen = ({ navigation, route }: any) => {
     const { startUpload } = useUpload();
     const params = route.params || {};
     // Node.js server for audio streams (Agora/ytdl)
-    const NODE_SERVER = __DEV__ ? 'http://192.168.31.124:3000' : 'https://www.sadhuvandna.co.in';
+    const NODE_SERVER = __DEV__ ? (process.env.EXPO_PUBLIC_NODE_DEV_URL || 'http://192.168.31.124:3000') : WEBSITE_URL;
     const [content, setContent] = useState('');
     const [images, setImages] = useState<{uri: string, aspect: number}[]>([]);
     const [loading, setLoading] = useState(false);

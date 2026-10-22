@@ -13,6 +13,7 @@ import { useLanguage } from '../../context/LanguageContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
+
 const { width } = Dimensions.get('window');
 
 const categories = [

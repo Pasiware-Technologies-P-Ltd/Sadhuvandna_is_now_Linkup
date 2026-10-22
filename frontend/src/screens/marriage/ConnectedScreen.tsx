@@ -3,12 +3,11 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
+import api, { API_BASE_URL, getFullPaymentUrl, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const ConnectedScreen = ({ navigation }: any) => {
     const [profiles, setProfiles] = useState<any[]>([]);

@@ -2,7 +2,8 @@ import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert, LayoutAnimation, Platform, UIManager, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, BASE_URL_ROOT, WEBSITE_URL } from '../../services/api';
+const PHOTO_URL_COMMUNITY = `${WEBSITE_URL}/uploads/photo/`;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import socketService from '../../services/socket';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,9 +11,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { ChatDBService } from '../../services/ChatDBService';
 import { useOnlineStatus } from '../../context/OnlineContext';
-
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL_COMMUNITY = `${BASE_URL_ROOT}/uploads/photo/`;
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

@@ -5,11 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const GroupSettingsScreen = ({ navigation, route }: any) => {
     const { theme, isDarkMode } = useTheme();
@@ -82,7 +81,7 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
             return;
         }
         try {
-            const inviteLink = `https://sadhuvandna.co.in/Api/join_group.php?inviteCode=${inviteCode}`;
+            const inviteLink = `${API_BASE_URL}join_group.php?inviteCode=${inviteCode}`;
             const result = await Share.share({
                 message: `Join our group "${groupName}" on SadhuVandna! Click here: ${inviteLink}\n\nInvite Code: ${inviteCode}`,
                 title: 'Group Invite',
@@ -372,7 +371,7 @@ const GroupSettingsScreen = ({ navigation, route }: any) => {
                                     style={{ backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderColor: theme.border }}
                                 >
                                     <Text className="font-medium flex-1 mr-2" style={{ color: theme.text }} numberOfLines={1}>
-                                        {inviteCode ? `sadhuvandna.co.in/Api/join_group.php?inviteCode=${inviteCode}` : 'Generating link...'}
+                                        {inviteCode ? `${API_BASE_URL.replace(/^https?:\/\//, '')}join_group.php?inviteCode=${inviteCode}` : 'Generating link...'}
                                     </Text>
                                     <Ionicons name={inviteCode ? "share-social" : "sync"} size={18} color="#2563EB" />
                                 </TouchableOpacity>

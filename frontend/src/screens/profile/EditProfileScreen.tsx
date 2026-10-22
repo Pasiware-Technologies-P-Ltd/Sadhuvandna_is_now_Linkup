@@ -25,6 +25,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
+
 const getResolvedPhotoUrl = (path: string | null | undefined) => {
     if (!path || typeof path !== 'string' || !path.trim()) return null;
     const clean = path.trim();

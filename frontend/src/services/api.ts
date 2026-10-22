@@ -1,13 +1,20 @@
 import axios from 'axios';
 
-// Production URL
-const PROD_URL = 'https://www.sadhuvandna.co.in/Api/';
-const LOCAL_URL = 'http://192.168.1.10:8000/';
+// Core Base URLs
+export const BASE_API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.sadhuvandna.co.in/';
+export const API_BASE_URL = BASE_API_URL;
+export const WEBSITE_URL = (process.env.EXPO_PUBLIC_WEBSITE_URL || 'https://sadhuvandna.co.in/').replace(/\/+$/, '');
+export const BASE_URL_ROOT = WEBSITE_URL;
+export const WEBSOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'https://ws.sadhuvandna.co.in/';
+export const SOCKET_URL = WEBSOCKET_URL;
+export const UPLOAD_BASE_URL = API_BASE_URL;
 
-// Auto-toggle between Production and Local
-export const API_BASE_URL = PROD_URL;
-export const UPLOAD_BASE_URL = PROD_URL;
-export const WEBSITE_URL = 'https://www.sadhuvandna.co.in';
+export const resolveMediaUrl = (path?: string | null): string => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/+/, '');
+    return `${WEBSITE_URL}/${clean}`;
+};
 
 export const getFullPaymentUrl = (paymentUrl: string): string => {
     if (!paymentUrl) return '';

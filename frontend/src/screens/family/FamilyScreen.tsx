@@ -3,13 +3,13 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 
-const FAMILY_PHOTO_URL = `${API_BASE_URL}/uploads/family/`;
+const FAMILY_PHOTO_URL = `${WEBSITE_URL}/uploads/family/`;
 
 const FamilyScreen = ({ navigation }: any) => {
     const { theme, isDarkMode } = useTheme();

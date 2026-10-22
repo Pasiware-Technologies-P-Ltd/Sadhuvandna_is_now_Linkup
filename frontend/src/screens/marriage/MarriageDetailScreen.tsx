@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import api, { API_BASE_URL, getFullPaymentUrl } from '../../services/api';
+import api, { API_BASE_URL, getFullPaymentUrl, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -10,8 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ImageService } from '../../services/ImageService';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 
 const MarriageDetailScreen = ({ navigation, route }: any) => {
     const { profile } = route.params;

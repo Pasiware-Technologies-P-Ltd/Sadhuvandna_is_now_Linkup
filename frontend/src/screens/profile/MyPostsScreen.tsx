@@ -2,16 +2,15 @@ import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import api, { API_BASE_URL } from '../../services/api';
+import api, { API_BASE_URL, BASE_URL_ROOT, WEBSITE_URL } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import PostImage from '../../components/PostImage';
 import PostCard from '../../components/PostCard';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
-const POST_IMAGE_URL = `${BASE_URL_ROOT}/uploads/posts/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
+const POST_IMAGE_URL = `${WEBSITE_URL}/uploads/posts/`;
 
 const getImageUrl = (photo: string | null, baseUrl: string) => {
     if (!photo) return '';

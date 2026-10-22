@@ -87,9 +87,7 @@ export interface PostType {
 
 const { width } = Dimensions.get('window');
 const cardWidth = width - 24;
-// Clean the base URL by stripping trailing slash and /Api
-const BASE_URL_ROOT = WEBSITE_URL.replace(/\/$/, '');
-const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
+const POST_MEDIA_PATH = `${WEBSITE_URL}/uploads/posts/`;
 
 const videoStyles = StyleSheet.create({
     playOverlay: {
@@ -381,7 +379,7 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, postId, isMuted
                 }
                 const formattedUrl = url?.startsWith('http')
                     ? url
-                    : (url ? `https://www.sadhuvandna.co.in/${url.replace(/^\/+/, '')}` : '');
+                    : (url ? `${WEBSITE_URL}/${url.replace(/^\/+/, '')}` : '');
 
                 if (!formattedUrl) {
                     setIsLoaded(true);

@@ -12,7 +12,7 @@ import { useInfiniteQuery, keepPreviousData, useQueryClient } from '@tanstack/re
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL, BASE_URL_ROOT } from '../../services/api';
 import { useBadge } from '../../context/BadgeContext';
 import MatrimonyRingsIcon from '../../components/MatrimonyRingsIcon';
 import NewsPaperIcon from '../../components/NewsPaperIcon';
@@ -31,8 +31,7 @@ import { getVideoThumbnail } from '../../utils/thumbnailHelper';
 import { useTabSwipe } from '../../utils/useTabSwipe';
 
 const { width, height } = Dimensions.get('window');
-const BASE_URL_ROOT = "https://www.sadhuvandna.co.in";
-const PHOTO_URL = `${BASE_URL_ROOT}/uploads/photo/`;
+const PHOTO_URL = `${WEBSITE_URL}/uploads/photo/`;
 const POST_MEDIA_PATH = `${BASE_URL_ROOT}/uploads/posts/`;
 
 const isVideo = (uri: string) => {
@@ -112,7 +111,7 @@ const NativeAudioItem = ({ url, startTime, duration, shouldPlay, onReady }: any)
                 }
                 const formattedUrl = url?.startsWith('http')
                     ? url
-                    : (url ? `https://www.sadhuvandna.co.in/${url.replace(/^\/+/, '')}` : '');
+                    : (url ? `${WEBSITE_URL}/${url.replace(/^\/+/, '')}` : '');
 
                 if (!formattedUrl) {
                     if (onReady) onReady(true);

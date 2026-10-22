@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../context/LanguageContext';
 import { useFont, FONT_CATALOG } from '../../context/FontContext';
 import { useTheme, ThemeMode } from '../../context/ThemeContext';
+import { WEBSITE_URL } from '../../services/api';
 
 const SettingsScreen = ({ navigation }: any) => {
     const { language, setLanguage, t } = useLanguage();
@@ -182,9 +183,9 @@ const SettingsScreen = ({ navigation }: any) => {
         {
             title: t('supportLegal'),
             items: [
-                { label: t('privacyPolicy'), icon: "shield-checkmark-outline", action: () => openLink('https://www.sadhuvandna.co.in/policy.php') },
-                { label: t('termsConditions'), icon: "document-text-outline", action: () => openLink('https://www.sadhuvandna.co.in/terms.php') },
-                { label: t('contactUs'), icon: "mail-outline", action: () => openLink('https://www.sadhuvandna.co.in/contact.php') },
+                { label: t('privacyPolicy'), icon: "shield-checkmark-outline", action: () => openLink(`${WEBSITE_URL}/policy.php`) },
+                { label: t('termsConditions'), icon: "document-text-outline", action: () => openLink(`${WEBSITE_URL}/terms.php`) },
+                { label: t('contactUs'), icon: "mail-outline", action: () => openLink(`${WEBSITE_URL}/contact.php`) },
             ]
         },
         {

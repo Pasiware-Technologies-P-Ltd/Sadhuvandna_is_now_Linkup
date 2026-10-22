@@ -38,8 +38,7 @@ import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader
 import { getVideoThumbnail } from '../../utils/thumbnailHelper';
 
 const { width } = Dimensions.get('window');
-const BASE_URL_ROOT = 'https://www.sadhuvandna.co.in';
-const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
+const NEWS_URL = `${WEBSITE_URL}/uploads/news/`;
 
 const formatTime = (millis: number) => {
     if (!millis || isNaN(millis)) return '0:00';

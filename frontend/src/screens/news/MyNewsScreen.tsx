@@ -5,11 +5,10 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Alert, RefreshControl 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../services/api';
+import api, { WEBSITE_URL } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 
-const BASE_URL_ROOT = 'https://www.sadhuvandna.co.in';
-const NEWS_URL = `${BASE_URL_ROOT}/uploads/news/`;
+const NEWS_URL = `${WEBSITE_URL}/uploads/news/`;
 
 const MyNewsScreen = ({ navigation }: any) => {
     const { isDarkMode, theme } = useTheme();
