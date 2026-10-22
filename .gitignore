@@ -51,11 +51,13 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 *.log
+*_log.txt
 build_*.log
 last_error*.log
 gradle-error*.log
 hs_err_pid*.log
 replay_pid*.log
+
 
 # ========== LARGE / UNNECESSARY FILES ==========
 jdk17/

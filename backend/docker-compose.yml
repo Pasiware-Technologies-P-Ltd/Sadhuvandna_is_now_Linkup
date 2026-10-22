@@ -93,6 +93,25 @@ services:
     depends_on:
       - redis
 
+  # 6. Web & Admin Portal (Replaces standard web hosting)
+  web-portal:
+    build: 
+      context: ../web
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
+      - DB_USER=${DB_USER:-u941015828_sadhuvandna}
+      - DB_PASS=${DB_PASS:-Sadhuvandna7832%^}
+      - DB_NAME=${DB_NAME:-u941015828_sadhuvandna}
+      - DB_PORT=${DB_PORT:-3306}
+    volumes:
+      - uploads-volume:/var/www/html/uploads
+    networks:
+      - coolify
+
 networks:
   coolify:
     external: true
