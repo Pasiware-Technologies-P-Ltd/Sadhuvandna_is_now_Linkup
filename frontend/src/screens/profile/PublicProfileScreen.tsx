@@ -646,10 +646,10 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     {isOwner ? (
                         <TouchableOpacity
                             onPress={() => navigation.navigate(user.is_business == 1 ? 'EditBusinessPage' : 'EditProfile')}
-                            style={{ backgroundColor: '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
+                            style={{ backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderRadius: 14, height: 42, alignItems: 'center', justifyContent: 'center' }}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#374151' }}>{t('editProfile')}</Text>
+                            <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>{t('editProfile')}</Text>
                         </TouchableOpacity>
                     ) : (
                         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -663,12 +663,12 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     backgroundColor: followStats.is_following || followStats.is_connected
-                                        ? '#f0fdf4'
-                                        : (followStats.is_requested && !user.is_business) ? '#E2E8F0' : '#2563EB',
+                                        ? (isDarkMode ? '#064e3b' : '#f0fdf4')
+                                        : (followStats.is_requested && !user.is_business) ? (isDarkMode ? '#1E293B' : '#E2E8F0') : '#2563EB',
                                     borderWidth: 1,
                                     borderColor: followStats.is_following || followStats.is_connected
-                                        ? '#dcfce7'
-                                        : (followStats.is_requested && !user.is_business) ? '#E2E8F0' : '#2563EB',
+                                        ? (isDarkMode ? '#047857' : '#dcfce7')
+                                        : (followStats.is_requested && !user.is_business) ? (isDarkMode ? '#334155' : '#E2E8F0') : '#2563EB',
                                 }}
                                 activeOpacity={0.8}
                             >
@@ -676,8 +676,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     fontSize: 13,
                                     fontWeight: 'bold',
                                     color: followStats.is_following || followStats.is_connected
-                                        ? '#16a34a'
-                                        : (followStats.is_requested && !user.is_business) ? '#64748B' : 'white'
+                                        ? '#10b981'
+                                        : (followStats.is_requested && !user.is_business) ? theme.subtext : 'white'
                                 }}>
                                     {togglingFollow ? t('updating') :
                                         user.is_business
@@ -701,7 +701,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         },
                                         platform: 'community'
                                     })}
-                                    style={{ flex: 1, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE', borderRadius: 14, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    style={{ flex: 1, backgroundColor: isDarkMode ? '#1E3A8A26' : '#EFF6FF', borderWidth: 1, borderColor: isDarkMode ? '#1D4ED8' : '#DBEAFE', borderRadius: 14, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                     activeOpacity={0.8}
                                 >
                                     <Ionicons name="chatbubble-ellipses" size={16} color="#2563EB" />
@@ -927,20 +927,20 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 >
                                     <Image
                                         source={{ uri: member.photo ? `${FAMILY_PHOTO_URL}${member.photo}` : 'https://via.placeholder.com/100' }}
-                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#DBEAFE', backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}
+                                        style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: isDarkMode ? '#334155' : '#DBEAFE', backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }}
                                     />
                                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.text, textAlign: 'center', marginTop: 4 }} numberOfLines={1}>{member.name}</Text>
                                     <Text style={{ fontSize: 9, color: theme.subtext, textAlign: 'center' }}>{member.relation}</Text>
                                     {isOwner && (
                                         <>
                                             <TouchableOpacity
-                                                style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#fee2e2', zIndex: 10 }}
+                                                style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: isDarkMode ? '#450a0a' : '#fef2f2', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDarkMode ? '#7f1d1d' : '#fee2e2', zIndex: 10 }}
                                                 onPress={() => handleDeleteMember(member.id)}
                                             >
                                                 <Ionicons name="close" size={10} color="#ef4444" />
                                             </TouchableOpacity>
                                             <TouchableOpacity
-                                                style={{ position: 'absolute', bottom: 12, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dbeafe', zIndex: 10 }}
+                                                style={{ position: 'absolute', bottom: 12, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: isDarkMode ? '#1e3a8a' : '#eff6ff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDarkMode ? '#1d4ed8' : '#dbeafe', zIndex: 10 }}
                                                 onPress={() => handleEditMember(member)}
                                             >
                                                 <Ionicons name="pencil" size={10} color="#3b82f6" />
@@ -967,7 +967,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.text }}>Marriage Profile</Text>
-                                        <Text style={{ fontSize: 11, color: isDarkMode ? '#F97316' : '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
+                                        <Text style={{ fontSize: 11, color: isDarkMode ? '#FB923C' : '#c2410c' }}>{marriage_profile.city} • {marriage_profile.caste}</Text>
                                     </View>
                                     <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#2563EB', marginRight: 4 }}>VIEW</Text>
                                     <Ionicons name="chevron-forward" size={16} color="#2563EB" />
@@ -988,7 +988,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
             </View>
             )}
 
-            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card, marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
                 <TouchableOpacity
                     onPress={() => setActiveTab('photos')}
                     style={{ flex: 1, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderBottomWidth: activeTab === 'photos' ? 2 : 0, borderBottomColor: '#2563EB' }}
@@ -1105,7 +1105,7 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 });
                             }}
                         >
-                            <View style={{ flex: 1, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                            <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
                                 {isVideoMedia ? (
                                     <Video
                                         source={{ uri: `${POST_IMAGE_URL}${item.media[0]}` }}
@@ -1117,8 +1117,8 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 ) : meta?.thumbnail ? (
                                     <Image source={{ uri: meta.thumbnail }} style={{ width: '100%', height: '100%' }} />
                                 ) : (
-                                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E2E8F0' }}>
-                                        <Ionicons name="film-outline" size={24} color="#9ca3af" />
+                                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDarkMode ? '#1E293B' : '#E2E8F0' }}>
+                                        <Ionicons name="film-outline" size={24} color={theme.subtext} />
                                     </View>
                                 )}
                                 <View style={{ position: 'absolute', bottom: 4, left: 4, flexDirection: 'row', alignItems: 'center' }}>
@@ -1198,118 +1198,196 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                     ListHeaderComponent={renderHeader}
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={viewabilityConfig}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDarkMode ? '#ffffff' : '#2563EB'} />}
                     ListEmptyComponent={
-                        <Text className="text-center text-slate-500 py-10">
+                        <Text style={{ textAlign: 'center', color: theme.subtext, paddingVertical: 40 }}>
                             {activeTab === 'saved' ? (t('noSavedPosts') || 'No saved posts yet.') : `No ${activeTab} shared yet.`}
                         </Text>
                     }
-                    contentContainerStyle={{ paddingBottom: 40 }}
-                    className="bg-slate-50"
+                    contentContainerStyle={{ paddingBottom: 40, backgroundColor: theme.background }}
+                    style={{ backgroundColor: theme.background }}
                 />
             </Animated.View>
 
             {/* Add Family Member Modal */}
             <Modal animationType="slide" visible={modalVisible} onRequestClose={() => setModalVisible(false)} presentationStyle="pageSheet">
-                <View className="flex-1 bg-white">
-                    <View className="flex-row items-center justify-between p-4 border-b border-gray-100">
-                        <Text className="text-xl font-bold text-blue-900">{editFamId ? 'Edit Family Member' : 'Add Family Member'}</Text>
+                <View style={{ flex: 1, backgroundColor: theme.background }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border, backgroundColor: theme.card }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>{editFamId ? 'Edit Family Member' : 'Add Family Member'}</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Text className="text-slate-500 text-lg">Cancel</Text>
+                            <Text style={{ color: theme.subtext, fontSize: 16 }}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
-                    <ScrollView className="flex-1 p-5">
+                    <ScrollView style={{ flex: 1, padding: 20 }}>
 
-                        <View className="items-center mb-6">
+                        <View style={{ alignItems: 'center', marginBottom: 24 }}>
                             <TouchableOpacity onPress={pickFamilyImage}>
                                 {famPhoto ? (
-                                    <Image source={{ uri: famPhoto }} className="w-24 h-24 rounded-full" />
+                                    <Image source={{ uri: famPhoto }} style={{ width: 96, height: 96, borderRadius: 48 }} />
                                 ) : (
-                                    <View className="w-24 h-24 rounded-full bg-slate-100 items-center justify-center border border-slate-300">
-                                        <Ionicons name="camera" size={24} color="gray" />
-                                        <Text className="text-xs text-slate-500 mt-1">Photo</Text>
+                                    <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}>
+                                        <Ionicons name="camera" size={24} color={theme.subtext} />
+                                        <Text style={{ fontSize: 11, color: theme.subtext, marginTop: 4 }}>Photo</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
                         </View>
 
-                        <View className="space-y-4 mb-20">
+                        <View style={{ gap: 16, marginBottom: 80 }}>
                             <View>
-                                <Text className="mb-1 text-slate-500">Name *</Text>
-                                <TextInput value={famName} onChangeText={setFamName} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Name *</Text>
+                                <TextInput
+                                    value={famName}
+                                    onChangeText={setFamName}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
                             <View>
-                                <Text className="mb-1 text-slate-500">Relation *</Text>
-                                <TextInput value={famRelation} onChangeText={setFamRelation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. Brother" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Relation *</Text>
+                                <TextInput
+                                    value={famRelation}
+                                    onChangeText={setFamRelation}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholder="e.g. Brother"
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
                             <View>
-                                <Text className="mb-1 text-slate-500">Gender</Text>
-                                <View className="flex-row gap-4">
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Gender</Text>
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
                                     {['Male', 'Female', 'Other'].map(g => (
-                                        <TouchableOpacity key={g} onPress={() => setFamGender(g)} className={`px-4 py-2 rounded-full border ${famGender === g ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
-                                            <Text className={famGender === g ? 'text-blue-600' : 'text-slate-500'}>{g}</Text>
+                                        <TouchableOpacity
+                                            key={g}
+                                            onPress={() => setFamGender(g)}
+                                            style={{
+                                                paddingHorizontal: 16,
+                                                paddingVertical: 8,
+                                                borderRadius: 20,
+                                                borderWidth: 1,
+                                                borderColor: famGender === g ? '#2563EB' : theme.border,
+                                                backgroundColor: famGender === g ? (isDarkMode ? '#1E3A8A' : '#EFF6FF') : theme.card
+                                            }}
+                                        >
+                                            <Text style={{ color: famGender === g ? '#2563EB' : theme.subtext, fontWeight: famGender === g ? 'bold' : 'normal' }}>{g}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Marital Status</Text>
-                                <View className="flex-row gap-2 flex-wrap">
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Marital Status</Text>
+                                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                                     {['Unmarried', 'Married', 'Divorced', 'Widow'].map(s => (
-                                        <TouchableOpacity key={s} onPress={() => setFamMaritalStatus(s)} className={`px-3 py-1.5 rounded-full border ${famMaritalStatus === s ? 'bg-blue-50 border-orange-500' : 'border-slate-200'}`}>
-                                            <Text className={`text-xs ${famMaritalStatus === s ? 'text-blue-600' : 'text-slate-500'}`}>{s}</Text>
+                                        <TouchableOpacity
+                                            key={s}
+                                            onPress={() => setFamMaritalStatus(s)}
+                                            style={{
+                                                paddingHorizontal: 12,
+                                                paddingVertical: 6,
+                                                borderRadius: 20,
+                                                borderWidth: 1,
+                                                borderColor: famMaritalStatus === s ? '#2563EB' : theme.border,
+                                                backgroundColor: famMaritalStatus === s ? (isDarkMode ? '#1E3A8A' : '#EFF6FF') : theme.card
+                                            }}
+                                        >
+                                            <Text style={{ fontSize: 12, color: famMaritalStatus === s ? '#2563EB' : theme.subtext, fontWeight: famMaritalStatus === s ? 'bold' : 'normal' }}>{s}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Occupation</Text>
-                                <TextInput value={famOccupation} onChangeText={setFamOccupation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. Engineer" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Occupation</Text>
+                                <TextInput
+                                    value={famOccupation}
+                                    onChangeText={setFamOccupation}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholder="e.g. Engineer"
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">DOB (YYYY-MM-DD)</Text>
-                                <TextInput value={famDob} onChangeText={setFamDob} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="2000-01-01" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>DOB (YYYY-MM-DD)</Text>
+                                <TextInput
+                                    value={famDob}
+                                    onChangeText={setFamDob}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholder="2000-01-01"
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
-                            <View className="flex-row gap-4">
-                                <View className="flex-1">
-                                    <Text className="mb-1 text-slate-500">Height</Text>
-                                    <TextInput value={famHeight} onChangeText={setFamHeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. 5.9" placeholderTextColor="#9ca3af" />
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Height</Text>
+                                    <TextInput
+                                        value={famHeight}
+                                        onChangeText={setFamHeight}
+                                        style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                        placeholder="e.g. 5.9"
+                                        placeholderTextColor={theme.subtext}
+                                    />
                                 </View>
-                                <View className="flex-1">
-                                    <Text className="mb-1 text-slate-500">Weight</Text>
-                                    <TextInput value={famWeight} onChangeText={setFamWeight} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholder="e.g. 70kg" placeholderTextColor="#9ca3af" />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Weight</Text>
+                                    <TextInput
+                                        value={famWeight}
+                                        onChangeText={setFamWeight}
+                                        style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                        placeholder="e.g. 70kg"
+                                        placeholderTextColor={theme.subtext}
+                                    />
                                 </View>
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Education</Text>
-                                <TextInput value={famEducation} onChangeText={setFamEducation} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Education</Text>
+                                <TextInput
+                                    value={famEducation}
+                                    onChangeText={setFamEducation}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Monthly Income</Text>
-                                <TextInput value={famIncome} onChangeText={setFamIncome} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" keyboardType="numeric" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Monthly Income</Text>
+                                <TextInput
+                                    value={famIncome}
+                                    onChangeText={setFamIncome}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    keyboardType="numeric"
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Caste / Samaj</Text>
-                                <TextInput value={famCaste} onChangeText={setFamCaste} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Caste / Samaj</Text>
+                                <TextInput
+                                    value={famCaste}
+                                    onChangeText={setFamCaste}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
                             <View>
-                                <Text className="mb-1 text-slate-500">Kuldevi</Text>
-                                <TextInput value={famKuldevi} onChangeText={setFamKuldevi} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-blue-950" placeholderTextColor="#9ca3af" />
+                                <Text style={{ marginBottom: 6, color: theme.subtext, fontSize: 13, fontWeight: '600' }}>Kuldevi</Text>
+                                <TextInput
+                                    value={famKuldevi}
+                                    onChangeText={setFamKuldevi}
+                                    style={{ backgroundColor: theme.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.border, color: theme.text }}
+                                    placeholderTextColor={theme.subtext}
+                                />
                             </View>
 
                         </View>
                     </ScrollView>
-                    <View className="p-4 border-t border-gray-100">
-                        <TouchableOpacity onPress={handleAddMember} disabled={submittingFam} className="bg-blue-600 py-4 rounded-xl items-center">
-                            {submittingFam ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">Save Member</Text>}
+                    <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: theme.border, backgroundColor: theme.card }}>
+                        <TouchableOpacity onPress={handleAddMember} disabled={submittingFam} style={{ backgroundColor: '#2563EB', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+                            {submittingFam ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Save Member</Text>}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -1317,73 +1395,50 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
 
             {/* View Member Details Modal */}
             <Modal animationType="fade" visible={viewModalVisible} onRequestClose={() => setViewModalVisible(false)} transparent={true}>
-                <View className="flex-1 bg-black/50 justify-center items-center p-4">
-                    <View className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-                        <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-lg font-bold text-blue-950">Family Member Details</Text>
-                            <TouchableOpacity onPress={() => setViewModalVisible(false)} className="bg-slate-100 p-1 rounded-full">
-                                <Ionicons name="close" size={20} color="gray" />
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+                    <View style={{ backgroundColor: theme.card, width: '100%', maxWidth: 360, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 8 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>Family Member Details</Text>
+                            <TouchableOpacity onPress={() => setViewModalVisible(false)} style={{ backgroundColor: isDarkMode ? '#334155' : '#F1F5F9', padding: 6, borderRadius: 16 }}>
+                                <Ionicons name="close" size={18} color={theme.subtext} />
                             </TouchableOpacity>
                         </View>
 
                         {selectedMember && (
-                            <ScrollView className="max-h-[80%]">
-                                <View className="items-center mb-4">
+                            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+                                <View style={{ alignItems: 'center', marginBottom: 16 }}>
                                     <Image
                                         source={{ uri: selectedMember.photo ? `${FAMILY_PHOTO_URL}${selectedMember.photo}` : 'https://via.placeholder.com/100' }}
-                                        className="w-24 h-24 rounded-full bg-slate-200 mb-2 border-2 border-orange-100"
+                                        style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: isDarkMode ? '#1E293B' : '#F1F5F9', marginBottom: 8, borderWidth: 2, borderColor: '#2563EB' }}
                                     />
-                                    <Text className="text-xl font-bold text-blue-900">{selectedMember.name}</Text>
-                                    <Text className="text-blue-600 font-medium">{selectedMember.relation}</Text>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>{selectedMember.name}</Text>
+                                    <Text style={{ color: '#2563EB', fontWeight: '600', fontSize: 13, marginTop: 2 }}>{selectedMember.relation}</Text>
                                 </View>
 
-                                <View className="space-y-3">
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Gender</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.gender || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Marital Status</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.marital_status || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Occupation</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.occupation || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">DOB</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.dob || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Education</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.education || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Income</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.income ? `₹${selectedMember.income}` : 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Height</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.height || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Weight</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.weight || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Caste</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.caste || 'N/A'}</Text>
-                                    </View>
-                                    <View className="flex-row border-b border-gray-100 py-2">
-                                        <Text className="w-28 text-slate-500">Kuldevi</Text>
-                                        <Text className="flex-1 text-blue-900">{selectedMember.kuldevi || 'N/A'}</Text>
-                                    </View>
+                                <View style={{ gap: 8 }}>
+                                    {[
+                                        { label: 'Gender', val: selectedMember.gender },
+                                        { label: 'Marital Status', val: selectedMember.marital_status },
+                                        { label: 'Occupation', val: selectedMember.occupation },
+                                        { label: 'DOB', val: selectedMember.dob },
+                                        { label: 'Education', val: selectedMember.education },
+                                        { label: 'Income', val: selectedMember.income ? `₹${selectedMember.income}` : null },
+                                        { label: 'Height', val: selectedMember.height },
+                                        { label: 'Weight', val: selectedMember.weight },
+                                        { label: 'Caste', val: selectedMember.caste },
+                                        { label: 'Kuldevi', val: selectedMember.kuldevi },
+                                    ].map((row, i) => (
+                                        <View key={i} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: theme.border, paddingVertical: 8 }}>
+                                            <Text style={{ width: 110, color: theme.subtext, fontSize: 13 }}>{row.label}</Text>
+                                            <Text style={{ flex: 1, color: theme.text, fontSize: 13, fontWeight: '500' }}>{row.val || 'N/A'}</Text>
+                                        </View>
+                                    ))}
                                 </View>
                             </ScrollView>
                         )}
 
-                        <TouchableOpacity onPress={() => setViewModalVisible(false)} className="mt-6 bg-blue-600 py-3 rounded-xl items-center">
-                            <Text className="text-white font-bold">Close</Text>
+                        <TouchableOpacity onPress={() => setViewModalVisible(false)} style={{ marginTop: 20, backgroundColor: '#2563EB', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}>
+                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

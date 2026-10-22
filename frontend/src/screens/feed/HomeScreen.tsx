@@ -23,6 +23,7 @@ import NewsPaperIcon from '../../components/NewsPaperIcon';
 import LinkUpHeader, { TOP_HEADER_COLLAPSE } from '../../components/LinkUpHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTabSwipe } from '../../utils/useTabSwipe';
+import { getVideoThumbnail } from '../../utils/thumbnailHelper';
 
 const { width } = Dimensions.get('window');
 
@@ -221,7 +222,50 @@ const CreateStoryCardItem = ({
             </View>
         </TouchableOpacity>
     );
-};
+const ReelShelfThumbnail = React.memo(({ item }: { item: any }) => {
+    const rawThumb = item.thumbnail || (item.media && Array.isArray(item.media) ? item.media.find((m: string) => !isVideo(m)) : null) || item.image;
+    let initialUri: string | null = null;
+    if (rawThumb && typeof rawThumb === 'string' && !rawThumb.includes('via.placeholder')) {
+        initialUri = rawThumb.startsWith('http') ? rawThumb : `${POST_IMAGE_URL}${rawThumb}`;
+    }
+
+    const [thumbUri, setThumbUri] = useState<string | null>(initialUri);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (!initialUri) {
+            const videoMedia = item.media && Array.isArray(item.media) ? item.media.find((m: string) => isVideo(m)) : (isVideo(item.image || '') ? item.image : null);
+            if (videoMedia) {
+                const fullVideo = videoMedia.startsWith('http') ? videoMedia : `${POST_IMAGE_URL}${videoMedia}`;
+                getVideoThumbnail(fullVideo).then((extracted) => {
+                    if (isMounted && extracted) {
+                        setThumbUri(extracted);
+                    }
+                }).catch(() => {});
+            }
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [initialUri, item]);
+
+    if (thumbUri) {
+        return (
+            <ExpoImage
+                source={{ uri: thumbUri }}
+                style={{ width: '100%', height: '100%', opacity: 0.9 }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+            />
+        );
+    }
+
+    return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F172A' }}>
+            <Ionicons name="film-outline" size={32} color="#64748B" />
+        </View>
+    );
+});
 
 const HomeScreen = () => {
     const { t } = useLanguage();
@@ -1167,11 +1211,7 @@ const HomeScreen = () => {
                             }}
                             activeOpacity={0.8}
                         >
-                            <Image
-                                source={{ uri: getImageUrl(item.media?.find((m: string) => !isVideo(m)) || item.image, 'post') }}
-                                style={{ width: '100%', height: '100%', opacity: 0.9 }}
-                                resizeMode="cover"
-                            />
+                            <ReelShelfThumbnail item={item} />
                             {/* Play Icon Overlay for Reels */}
                             <View style={StyleSheet.absoluteFill} className="items-center justify-center">
                                 <View className="bg-white/20 border border-white/20 p-2 rounded-full">
