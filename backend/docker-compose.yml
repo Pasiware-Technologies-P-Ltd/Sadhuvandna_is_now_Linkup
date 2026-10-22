@@ -115,7 +115,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8079}:80"
     environment:
       - APP_ENV=${APP_ENV:-production}
       - DB_HOST=${DB_HOST:-e4skgkwwk0s0gkso48oc40kg}
