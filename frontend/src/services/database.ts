@@ -104,6 +104,11 @@ export const initDB = async () => {
       );
     `);
 
+    // Ensure extra_data column exists on chat_messages for offline queue metadata
+    try {
+      await db.execAsync(`ALTER TABLE chat_messages ADD COLUMN extra_data TEXT;`);
+    } catch (e) {}
+
     console.log('Database and tables initialized successfully');
       return db;
     } catch (error) {

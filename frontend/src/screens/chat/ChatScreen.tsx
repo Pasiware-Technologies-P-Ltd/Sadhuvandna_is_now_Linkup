@@ -26,6 +26,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { ChatDBService } from '../../services/ChatDBService';
 import { useOnlineStatus } from '../../context/OnlineContext';
+import { DeviceEventEmitter } from 'react-native';
+import chatQueueService from '../../services/ChatQueueService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -155,6 +157,7 @@ const ChatScreen = ({ navigation, route }: any) => {
         if (paymentStatus !== 'paid' || !myProfileId) return;
 
         let notificationSubscription: any;
+        let statusSub: any = null;
         let lastOnlineCheck = 0;
         let lastBlockCheck = 0;
         let isActive = true;
@@ -248,23 +251,50 @@ const ChatScreen = ({ navigation, route }: any) => {
 
                 // Handle Send ACKs
                 socketService.socket.on('chat:ack', (data: any) => {
-                    if (data && data.client_message_id) {
+                    if (data && (data.client_message_id || data.requestId)) {
+                        const cmid = data.client_message_id || data.requestId;
+                        const sId = data.server_id || cmid;
                         setMessages(prev => prev.map(m =>
-                            m.client_message_id === data.client_message_id
-                                ? { ...m, isOptimistic: false, id: data.server_id, server_id: data.server_id }
+                            m.client_message_id === cmid
+                                ? { ...m, isOptimistic: false, status: 'sent', id: sId, server_id: sId }
                                 : m
                         ));
-                        ChatDBService.updateMessageStatus(data.client_message_id, { status: 'sent', server_id: data.server_id }).catch(() => { });
+                        ChatDBService.updateMessageStatus(cmid, { status: 'sent', server_id: sId }).catch(() => { });
                     }
                 });
 
                 // Handle Send Errors
                 socketService.socket.on('chat:error', (data: any) => {
-                    if (data && data.client_message_id) {
-                        // Silently handle error, message remains in pending/optimistic state for retry
-                        console.log('Send Error', data.message);
+                    if (data && (data.client_message_id || data.requestId)) {
+                        const cmid = data.client_message_id || data.requestId;
+                        setMessages(prev => prev.map(m =>
+                            m.client_message_id === cmid
+                                ? { ...m, status: 'failed', isOptimistic: false }
+                                : m
+                        ));
+                        ChatDBService.updateMessageStatus(cmid, { status: 'failed' }).catch(() => { });
                     }
                 });
+
+                // Listen to local queue status changes
+                if (!statusSub) {
+                    statusSub = DeviceEventEmitter.addListener('chat:local_message_status', (data: any) => {
+                        if (data && data.client_message_id) {
+                            setMessages(prev => prev.map(m => {
+                                if (m.client_message_id === data.client_message_id) {
+                                    return {
+                                        ...m,
+                                        status: data.status,
+                                        isOptimistic: data.status === 'pending' || data.status === 'sending',
+                                        server_id: data.server_id || m.server_id,
+                                        id: data.server_id || m.id,
+                                    };
+                                }
+                                return m;
+                            }));
+                        }
+                    });
+                }
 
                 socketService.socket.on('typing', (data: any) => {
                     if (data.senderId == receiver?.id || data.senderId == receiver?.user_id) {
@@ -358,6 +388,10 @@ const ChatScreen = ({ navigation, route }: any) => {
             if (notificationSubscription) {
                 notificationSubscription.remove();
                 notificationSubscription = null;
+            }
+            if (statusSub) {
+                statusSub.remove();
+                statusSub = null;
             }
             if (socketService.socket) {
                 // Important: Clean up the event listener to avoid memory leaks and multiple fires
@@ -512,9 +546,10 @@ const ChatScreen = ({ navigation, route }: any) => {
                 // Map from SQLite schema back to UI structure
                 const mapped = cachedMessages.map((m: any) => ({
                     ...m,
-                    id: m.server_id,
+                    id: m.server_id || m.client_message_id,
                     is_mine: m.is_mine === 1,
-                    isOptimistic: m.status === 'pending'
+                    status: m.status || 'sent',
+                    isOptimistic: m.status === 'pending' || m.status === 'sending'
                 }));
 
                 setMessages(mapped);
@@ -1021,25 +1056,26 @@ const ChatScreen = ({ navigation, route }: any) => {
 
         // Optimistic UI Render (Show instantly to Sender)
         const tempId = 'msg_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+        const createdAtTime = (() => {
+            const n = new Date();
+            const pad = (x: number) => x.toString().padStart(2, '0');
+            return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+        })();
+
         const optimisticMsg = {
             id: tempId,
             client_message_id: tempId,
             message: msgContent,
             sender_id: myProfileId,
             receiver_id: receiver.id,
-            created_at: (() => {
-                // toISOString() gives UTC — but server stores IST (NOW() with +05:30 tz).
-                // Use local time string so optimistic timestamp matches server format.
-                const n = new Date();
-                const pad = (x: number) => x.toString().padStart(2, '0');
-                return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
-            })(),
+            created_at: createdAtTime,
             is_mine: true,
             seen: 0,
             is_deleted: 0,
             file: mediaToSend ? mediaToSend.uri : null,
             file_type: mediaToSend ? (mediaToSend.type === 'video' ? 'video' : 'image') : null,
-            isOptimistic: true
+            isOptimistic: true,
+            status: 'pending' as const
         };
 
         setMessages(prev => [optimisticMsg, ...prev]);
@@ -1049,35 +1085,36 @@ const ChatScreen = ({ navigation, route }: any) => {
             }
         }, 150);
 
-        // Save to SQLite
-        const isGroup = route.params?.isGroup;
+        const isGroup = !!route.params?.isGroup;
         const chatId = isGroup ? `group_${receiver?.id}` : `user_${receiver?.id}`;
-        ChatDBService.saveMessages(chatId, [optimisticMsg]).catch(() => { }); let timeStr = ""; try { const d = new Date(optimisticMsg.created_at.replace(" ", "T")); timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { } ChatDBService.updateConversationLastMessage(chatId, optimisticMsg.message || "Media", timeStr, false, true, false);
+
+        let timeStr = ""; 
+        try { 
+            const d = new Date(createdAtTime.replace(" ", "T")); 
+            timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); 
+        } catch (e) { } 
+        ChatDBService.updateConversationLastMessage(chatId, optimisticMsg.message || "Media", timeStr, false, true, false);
 
         try {
-            const isGroup = route.params?.isGroup;
-
-            // 1. Text Message (WebSocket Only)
+            // 1. Text Message (Offline-First via ChatQueueService with SQLite & auto-retry)
             if (!mediaToSend) {
-                if (socketService.socket) {
-                    socketService.socket.emit('chat:send', {
-                        isGroup,
-                        receiver_id: receiver.id,
-                        my_profile_id: myProfileId,
-                        client_message_id: tempId,
-                        message: msgContent,
-                        platform: String(platform)
-                    });
-                    // We don't await the ACK here to keep the UI snappy and fully optimistic.
-                    // The socket listener for 'chat:ack' will handle SQLite update to 'sent'.
-                    // Fallback 'chat:error' will handle SQLite update to 'failed'.
-                } else {
-                    // Silently wait. Leave message in pending state; offline reconciliation logic will retry it.
-                    console.log('WebSocket not connected. Message pending.');
-                }
+                chatQueueService.enqueueMessage({
+                    client_message_id: tempId,
+                    chat_id: chatId,
+                    sender_id: String(myProfileId),
+                    receiver_id: receiver.id,
+                    message: msgContent,
+                    isGroup: isGroup,
+                    my_profile_id: String(myProfileId),
+                    platform: String(platform),
+                    created_at: createdAtTime
+                }).catch(err => {
+                    console.error('[ChatScreen] Error enqueuing message:', err);
+                });
             }
             // 2. Media Message (Requires Multi-part upload)
             else {
+                ChatDBService.saveMessages(chatId, [optimisticMsg]).catch(() => { });
                 const formData = new FormData();
                 if (isGroup) {
                     formData.append('group_id', String(receiver.id));
@@ -1924,15 +1961,32 @@ const ChatScreen = ({ navigation, route }: any) => {
                                                     <Text key={`time-${item.id}`} style={{ fontSize: 10, fontWeight: '500', color: isMe ? 'rgba(255,255,255,0.7)' : '#9ca3af' }}>
                                                         {timeStr}
                                                     </Text>
-                                                    {isMe && (
-                                                        <Ionicons
-                                                            name={
-                                                                item.isOptimistic ? "time-outline" : "checkmark-done-outline"
-                                                            }
-                                                            size={14}
-                                                            color={item.seen == 1 ? "#3b82f6" : "rgba(255,255,255,0.8)"}
-                                                        />
-                                                    )}
+                                                    {isMe && (() => {
+                                                        const status = item.status || (item.isOptimistic ? 'pending' : 'sent');
+                                                        if (status === 'failed') {
+                                                            return (
+                                                                <TouchableOpacity 
+                                                                    onPress={() => chatQueueService.retryMessage(item.client_message_id || item.id)}
+                                                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                                >
+                                                                    <Ionicons name="alert-circle" size={14} color="#ef4444" />
+                                                                </TouchableOpacity>
+                                                            );
+                                                        }
+                                                        if (status === 'pending' || status === 'sending') {
+                                                            return (
+                                                                <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.7)" />
+                                                            );
+                                                        }
+                                                        // sent / delivered / seen
+                                                        return (
+                                                            <Ionicons
+                                                                name="checkmark-done-outline"
+                                                                size={14}
+                                                                color={item.seen == 1 ? "#3b82f6" : "rgba(255,255,255,0.8)"}
+                                                            />
+                                                        );
+                                                    })()}
                                                 </View>
                                             </>
                                         )}

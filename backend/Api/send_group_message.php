@@ -77,6 +77,22 @@ require_once 'RedisConfig.php';
 require_once 'QueueManager.php';
 $redis = RedisConfig::getConnection();
 
+// Backend Idempotency Check for Group Messages
+if ($redis) {
+    $processedKey = "gmsg_processed:{$client_message_id}";
+    $isNew = $redis->set($processedKey, "1", ['nx', 'ex' => 3600]);
+    if (!$isNew) {
+        echo json_encode([
+            "status" => "success",
+            "message" => "Already processed",
+            "client_message_id" => $client_message_id,
+            "requestId" => $client_message_id,
+            "idempotent" => true
+        ]);
+        exit;
+    }
+}
+
 if ($redis) {
     // 1. Build message object
     $chatObj = [

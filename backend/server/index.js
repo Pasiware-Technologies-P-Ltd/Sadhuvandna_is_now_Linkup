@@ -159,6 +159,7 @@ io.on('connection', (socket) => {
   });
   socket.on('chat:send', async (payload) => {
     console.log("chat:send received", payload);
+    const requestId = payload.requestId || payload.client_message_id;
     try {
       const axios = require('axios');
       const FormData = require('form-data');
@@ -171,7 +172,7 @@ io.on('connection', (socket) => {
         formData.append('my_profile_id', String(payload.my_profile_id));
         formData.append('receiver_id', String(payload.receiver_id));
       }
-      formData.append('client_message_id', payload.client_message_id);
+      formData.append('client_message_id', requestId);
       formData.append('message', payload.message || '');
       formData.append('platform', payload.platform || 'marriage');
       
@@ -183,21 +184,28 @@ io.on('connection', (socket) => {
       });
       
       if (res.data && res.data.status === 'success') {
+        const serverId = res.data.id || res.data.client_message_id || requestId;
         socket.emit('chat:ack', {
-          client_message_id: payload.client_message_id,
-          server_id: res.data.id || res.data.client_message_id,
+          type: 'ACK',
+          requestId: requestId,
+          client_message_id: requestId,
+          server_id: serverId,
           status: 'sent'
         });
       } else {
         socket.emit('chat:error', {
-          client_message_id: payload.client_message_id,
+          type: 'ERROR',
+          requestId: requestId,
+          client_message_id: requestId,
           message: res.data?.message || 'Failed to send'
         });
       }
     } catch (e) {
       console.error("chat:send error", e.message);
       socket.emit('chat:error', {
-        client_message_id: payload.client_message_id,
+        type: 'ERROR',
+        requestId: requestId,
+        client_message_id: requestId,
         message: 'Network error'
       });
     }

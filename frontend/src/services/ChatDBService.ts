@@ -52,9 +52,14 @@ export const ChatDBService = {
         is_deleted INTEGER,
         seen INTEGER,
         created_at TEXT,
-        status TEXT
+        status TEXT,
+        extra_data TEXT
       );
     `);
+
+    try {
+      await db.execAsync(`ALTER TABLE chat_messages ADD COLUMN extra_data TEXT;`);
+    } catch (e) {}
 
     await db.runAsync(`
       INSERT OR REPLACE INTO chat_conversations 
@@ -97,8 +102,8 @@ export const ChatDBService = {
       const cid = m.client_message_id || `temp_${m.id}`;
       await db.runAsync(`
         INSERT OR REPLACE INTO chat_messages 
-        (client_message_id, server_id, chat_id, sender_id, message, file, file_type, is_mine, is_deleted, seen, created_at, status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (client_message_id, server_id, chat_id, sender_id, message, file, file_type, is_mine, is_deleted, seen, created_at, status, extra_data) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         cid,
         m.id ? String(m.id) : null,
@@ -111,20 +116,37 @@ export const ChatDBService = {
         m.is_deleted ? 1 : 0,
         m.seen || 0,
         m.created_at || new Date().toISOString(),
-        m.isOptimistic ? 'pending' : 'sent'
+        m.status || (m.isOptimistic ? 'pending' : 'sent'),
+        m.extra_data ? (typeof m.extra_data === 'string' ? m.extra_data : JSON.stringify(m.extra_data)) : null
       ]);
     }
     
-    // Enforce 30 messages limit per chat
+    // Enforce 30 messages limit per chat (preserve unsent/pending messages)
     await db.runAsync(`
       DELETE FROM chat_messages 
-      WHERE chat_id = ? AND client_message_id NOT IN (
-        SELECT client_message_id FROM chat_messages 
-        WHERE chat_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 30
-      )
+      WHERE chat_id = ? 
+        AND status NOT IN ('pending', 'sending', 'failed')
+        AND client_message_id NOT IN (
+          SELECT client_message_id FROM chat_messages 
+          WHERE chat_id = ? 
+          ORDER BY created_at DESC 
+          LIMIT 30
+        )
     `, [chatId, chatId]);
+  },
+
+  getPendingMessages: async (): Promise<any[]> => {
+    const db = await getDBConnection();
+    try {
+      return await db.getAllAsync(`
+        SELECT * FROM chat_messages 
+        WHERE is_mine = 1 AND status IN ('pending', 'sending', 'failed')
+        ORDER BY created_at ASC
+      `);
+    } catch (e) {
+      console.log('[ChatDBService] getPendingMessages error', e);
+      return [];
+    }
   },
 
   getMessages: async (chatId: string, limit = 50, offset = 0) => {

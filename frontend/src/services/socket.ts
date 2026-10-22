@@ -45,6 +45,11 @@ class SocketService {
                     console.log('[WebSocket] Successfully connected to server:', SOCKET_URL);
                     this.socket?.emit('register', uid);
                     
+                    import('./ChatQueueService').then(({ chatQueueService }) => {
+                        chatQueueService.attachSocketDirectListeners();
+                        chatQueueService.processQueue();
+                    }).catch(() => {});
+
                     // Keep online status updated in MySQL
                     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
                     this.heartbeatInterval = setInterval(() => {
@@ -58,8 +63,11 @@ class SocketService {
                 });
 
                 this.socket.on('reconnect', () => {
-                    console.log('[WebSocket] Reconnected to server — re-registering');
+                    console.log('[WebSocket] Reconnected to server — re-registering and draining offline queue');
                     this.socket?.emit('register', uid);
+                    import('./ChatQueueService').then(({ chatQueueService }) => {
+                        chatQueueService.processQueue();
+                    }).catch(() => {});
                 });
 
                 this.socket.on('disconnect', (reason) => {
@@ -87,10 +95,20 @@ class SocketService {
                 forwardToDevice('post_like_updated');
                 forwardToDevice('follow_counts_updated');
                 forwardToDevice('call_status_update');
+                forwardToDevice('chat:ack');
+                forwardToDevice('chat:error');
+
+                // Trigger offline SQLite queue processing on connection
+                import('./ChatQueueService').then(({ chatQueueService }) => {
+                    chatQueueService.processQueue();
+                }).catch(() => {});
 
             } else if (this.registeredUserId !== uid) {
                 // Different user logged in — re-register
                 this.socket.emit('register', uid);
+                import('./ChatQueueService').then(({ chatQueueService }) => {
+                    chatQueueService.processQueue();
+                }).catch(() => {});
             } else if (!this.socket.connected) {
                 // Already created but disconnected — reconnect
                 this.socket.connect();

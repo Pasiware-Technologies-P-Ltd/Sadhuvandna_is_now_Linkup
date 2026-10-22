@@ -106,6 +106,26 @@ require_once 'QueueManager.php';
 
 $redis = RedisConfig::getConnection();
 
+// Backend Idempotency Check:
+// If this requestId/client_message_id was already received, return success ACK immediately
+// so no duplicate message is created or broadcasted twice.
+if ($redis) {
+    $processedKey = "msg_processed:{$client_message_id}";
+    // NX = Only set if Not eXists, EX = 3600 seconds (1 hour window)
+    $isNew = $redis->set($processedKey, "1", ['nx', 'ex' => 3600]);
+    if (!$isNew) {
+        // Already processed or in flight! Return success ACK immediately
+        echo json_encode([
+            "status" => "success",
+            "message" => "Already processed",
+            "client_message_id" => $client_message_id,
+            "requestId" => $client_message_id,
+            "idempotent" => true
+        ]);
+        exit;
+    }
+}
+
 if ($redis) {
     // 1. Build message object
     $chatObj = [
