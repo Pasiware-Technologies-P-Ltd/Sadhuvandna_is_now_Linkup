@@ -112,7 +112,7 @@ services:
   # 6. Web & Admin Portal (Replaces standard web hosting)
   web-portal:
     build: 
-      context: ../web
+      context: ./web
       dockerfile: Dockerfile
     ports:
       - "8080:80"
