@@ -1,10 +1,9 @@
 FROM php:8.2-apache
 
-# Install PHP extension installer helper for fast binary installation
+# Install only required PHP extensions: MySQL (mysqli)
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-# Install PHP extensions directly using pre-compiled binaries (takes ~30s instead of 20min compilation)
-RUN install-php-extensions mysqli pdo_mysql gd zip mbstring curl exif bcmath
+RUN install-php-extensions mysqli
 
 # Enable Apache rewrite and headers modules
 RUN a2enmod rewrite headers
