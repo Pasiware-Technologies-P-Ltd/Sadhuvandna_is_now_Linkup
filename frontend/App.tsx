@@ -38,10 +38,21 @@ import CustomAlertManager, { CustomAlertProvider } from './src/components/Custom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 
-// Globally override React Native Alert
+// Globally override React Native Alert with Instagram-style client friendly titles
 const originalAlert = Alert.alert;
 Alert.alert = (title: string, message?: string, buttons?: any[], options?: any) => {
-  CustomAlertManager.show(title, message, buttons, options);
+  let friendlyTitle = title;
+  if (!friendlyTitle || friendlyTitle.trim().toLowerCase() === 'error') {
+    const lowerMsg = (message || '').toLowerCase();
+    if (lowerMsg.includes('required') || lowerMsg.includes('please enter') || lowerMsg.includes('must be') || lowerMsg.includes('match') || lowerMsg.includes('select') || lowerMsg.includes('fill') || lowerMsg.includes('invalid') || lowerMsg.includes('check')) {
+      friendlyTitle = "Please Check";
+    } else if (lowerMsg.includes('network') || lowerMsg.includes('connection') || lowerMsg.includes('offline') || lowerMsg.includes('internet') || lowerMsg.includes('server')) {
+      friendlyTitle = "Couldn't Connect";
+    } else {
+      friendlyTitle = "Something Went Wrong";
+    }
+  }
+  CustomAlertManager.show(friendlyTitle, message, buttons, options);
 };
 
 const queryClient = new QueryClient({

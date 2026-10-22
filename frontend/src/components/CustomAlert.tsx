@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, Animated, Easing, AlertButton } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 type AlertConfig = {
     title: string;
@@ -12,8 +13,20 @@ class CustomAlertManager {
     static listener: ((config: AlertConfig | null) => void) | null = null;
 
     static show(title: string, message?: string, buttons?: AlertButton[], options?: any) {
+        let cleanTitle = title;
+        if (!cleanTitle || cleanTitle.trim().toLowerCase() === 'error') {
+            const lowerMsg = (message || '').toLowerCase();
+            if (lowerMsg.includes('required') || lowerMsg.includes('please enter') || lowerMsg.includes('must be') || lowerMsg.includes('match') || lowerMsg.includes('select') || lowerMsg.includes('fill') || lowerMsg.includes('invalid') || lowerMsg.includes('check')) {
+                cleanTitle = "Please Check";
+            } else if (lowerMsg.includes('network') || lowerMsg.includes('connection') || lowerMsg.includes('offline') || lowerMsg.includes('internet') || lowerMsg.includes('server')) {
+                cleanTitle = "Couldn't Connect";
+            } else {
+                cleanTitle = "Something Went Wrong";
+            }
+        }
+
         if (this.listener) {
-            this.listener({ title, message, buttons, options });
+            this.listener({ title: cleanTitle, message, buttons, options });
         } else {
             console.warn('CustomAlertProvider not mounted');
         }
@@ -108,19 +121,39 @@ export const CustomAlertProvider = () => {
                     }}
                     className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl"
                 >
-                    <View className="items-center mb-4">
-                        <View className="bg-blue-100 w-12 h-12 rounded-full items-center justify-center mb-3">
-                            <Text className="text-blue-600 text-xl font-bold">!</Text>
-                        </View>
-                        <Text className="text-xl font-extrabold text-blue-950 text-center mb-2">
-                            {config.title}
-                        </Text>
-                        {config.message ? (
-                            <Text className="text-sm text-slate-500 text-center leading-relaxed">
-                                {config.message}
-                            </Text>
-                        ) : null}
-                    </View>
+                    {(() => {
+                        const titleLower = (config.title || '').toLowerCase();
+                        const isDanger = titleLower.includes('wrong') || titleLower.includes('connect') || titleLower.includes('fail') || titleLower.includes('delete') || titleLower.includes('error');
+                        const isSuccess = titleLower.includes('success') || titleLower.includes('done') || titleLower.includes('copied') || titleLower.includes('saved');
+
+                        return (
+                            <View className="items-center mb-4">
+                                <View style={{
+                                    width: 52,
+                                    height: 52,
+                                    borderRadius: 26,
+                                    backgroundColor: isDanger ? '#FEE2E2' : (isSuccess ? '#DCFCE7' : '#EFF6FF'),
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 12,
+                                }}>
+                                    <Ionicons
+                                        name={isDanger ? "alert-circle" : (isSuccess ? "checkmark-circle" : "information-circle")}
+                                        size={28}
+                                        color={isDanger ? "#EF4444" : (isSuccess ? "#16A34A" : "#2563EB")}
+                                    />
+                                </View>
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: '#0F172A', textAlign: 'center', marginBottom: 6, letterSpacing: -0.4 }}>
+                                    {config.title}
+                                </Text>
+                                {config.message ? (
+                                    <Text style={{ fontSize: 13.5, color: '#64748B', textAlign: 'center', lineHeight: 20, paddingHorizontal: 6 }}>
+                                        {config.message}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        );
+                    })()}
 
                     <View className={`flex-row justify-center mt-2 ${buttons.length > 2 ? 'flex-col' : ''}`}>
                         {buttons.map((btn, index) => {
