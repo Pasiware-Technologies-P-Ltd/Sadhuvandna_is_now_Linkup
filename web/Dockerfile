@@ -1,19 +1,10 @@
 FROM php:8.2-apache
 
-# Install system dependencies and PHP extensions
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libzip-dev \
-    libonig-dev \
-    libcurl4-openssl-dev \
-    zip \
-    unzip \
-    curl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) mysqli pdo pdo_mysql gd zip mbstring curl exif bcmath \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install PHP extension installer helper for fast binary installation
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+# Install PHP extensions directly using pre-compiled binaries (takes ~30s instead of 20min compilation)
+RUN install-php-extensions mysqli pdo_mysql gd zip mbstring curl exif bcmath
 
 # Enable Apache rewrite and headers modules
 RUN a2enmod rewrite headers

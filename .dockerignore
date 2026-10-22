@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+.agents
+frontend
+scratch
+uploads
+node_modules
+*.log
+*.patch

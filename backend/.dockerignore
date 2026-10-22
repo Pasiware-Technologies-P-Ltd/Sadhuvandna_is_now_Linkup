@@ -1,0 +1,7 @@
+.git
+.vscode
+.agents
+scratch
+uploads
+node_modules
+*.log

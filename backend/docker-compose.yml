@@ -21,6 +21,7 @@ services:
 
   # 2. Main PHP API (Replaces: php -S 0.0.0.0:8000 -t Api)
   api-server:
+    image: sadhuvandna-backend:latest
     build: 
       context: ./backend
       dockerfile: Dockerfile.php
@@ -47,9 +48,7 @@ services:
 
   # 3. Queue Worker (Replaces: php Api/worker.php)
   php-worker:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile.php
+    image: sadhuvandna-backend:latest
     command: php /var/www/html/Api/worker.php
     environment:
       - APP_ENV=${APP_ENV:-production}
@@ -65,12 +64,11 @@ services:
       - coolify
     depends_on:
       - redis
+      - api-server
 
   # 4. Notification Worker (Replaces: php Api/notification_worker.php)
   php-notification-worker:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile.php
+    image: sadhuvandna-backend:latest
     command: php /var/www/html/Api/notification_worker.php
     environment:
       - APP_ENV=${APP_ENV:-production}
@@ -87,6 +85,7 @@ services:
       - coolify
     depends_on:
       - redis
+      - api-server
 
   # 5. Socket Server (Replaces: node server/index.js)
   socket-server:
