@@ -310,6 +310,43 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
         cleanDescription = cleanDescription.replace(aspectMatch[0], "").trim();
     }
 
+    const paragraphs = React.useMemo(() => {
+        if (!cleanDescription) return [];
+        const rawParagraphs = cleanDescription.split(/\r?\n\s*\r?\n/);
+        const result: string[] = [];
+        
+        rawParagraphs.forEach((rawP: string) => {
+            const trimmed = rawP.trim();
+            if (!trimmed) return;
+            
+            // Join lines inside a paragraph with a space so Android doesn't terminate justification on each sentence
+            const lines = trimmed.split(/\r?\n/);
+            let currentBlock = '';
+            lines.forEach((line: string) => {
+                const lineTrimmed = line.trim();
+                if (!lineTrimmed) return;
+                if (lineTrimmed.startsWith('•') || lineTrimmed.startsWith('-') || /^\d+[\.\)]/.test(lineTrimmed)) {
+                    if (currentBlock) {
+                        result.push(currentBlock);
+                        currentBlock = '';
+                    }
+                    result.push(lineTrimmed);
+                } else {
+                    if (currentBlock) {
+                        currentBlock += ' ' + lineTrimmed;
+                    } else {
+                        currentBlock = lineTrimmed;
+                    }
+                }
+            });
+            if (currentBlock) {
+                result.push(currentBlock);
+            }
+        });
+        
+        return result.length > 0 ? result : [cleanDescription.trim()];
+    }, [cleanDescription]);
+
     const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename);
     
     const isAdmin = !currentNews.user_id || 
@@ -363,7 +400,11 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                 </View>
 
                 {/* Title */}
-                <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text, lineHeight: 30, paddingHorizontal: 16, marginBottom: 16, textAlign: 'justify' }}>
+                <Text
+                    style={{ fontSize: 22, fontWeight: '800', color: theme.text, lineHeight: 32, paddingHorizontal: 16, marginBottom: 16, textAlign: 'justify' }}
+                    textBreakStrategy="highQuality"
+                    android_hyphenationFrequency="normal"
+                >
                     {currentNews.title}
                 </Text>
 
@@ -423,11 +464,55 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                     </View>
                 )}
 
-                {/* Full Description */}
-                <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-                    <Text style={{ fontSize: 16, color: theme.textSecondary, lineHeight: 28, textAlign: 'justify' }}>
-                        {cleanDescription}
-                    </Text>
+                {/* Full News Content Section (Newspaper Column Style) */}
+                <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+                    {/* Newspaper Dateline Header if location is present */}
+                    {(currentNews.district || currentNews.user_city || currentNews.state) && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+                            <Ionicons name="newspaper-outline" size={15} color="#2563EB" style={{ marginRight: 6 }} />
+                            <Text style={{ fontSize: 13, fontWeight: '800', color: isDarkMode ? '#93C5FD' : '#1D4ED8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                {currentNews.district || currentNews.user_city || currentNews.state}
+                            </Text>
+                            <Text style={{ fontSize: 13, color: theme.textMuted, marginHorizontal: 6 }}>•</Text>
+                            <Text style={{ fontSize: 12, color: theme.textMuted, fontWeight: '600' }}>
+                                विशेष समाचार
+                            </Text>
+                        </View>
+                    )}
+
+                    {paragraphs.length > 0 ? (
+                        paragraphs.map((para: string, idx: number) => (
+                            <Text
+                                key={idx}
+                                style={{
+                                    fontSize: 16.5,
+                                    color: theme.text,
+                                    lineHeight: 28,
+                                    textAlign: 'justify',
+                                    letterSpacing: 0.2,
+                                    marginBottom: 14,
+                                }}
+                                textBreakStrategy="highQuality"
+                                android_hyphenationFrequency="normal"
+                            >
+                                {para}
+                            </Text>
+                        ))
+                    ) : (
+                        <Text
+                            style={{
+                                fontSize: 16.5,
+                                color: theme.text,
+                                lineHeight: 28,
+                                textAlign: 'justify',
+                                letterSpacing: 0.2,
+                            }}
+                            textBreakStrategy="highQuality"
+                            android_hyphenationFrequency="normal"
+                        >
+                            {cleanDescription}
+                        </Text>
+                    )}
                 </View>
 
                 {/* Reporter Details Section */}

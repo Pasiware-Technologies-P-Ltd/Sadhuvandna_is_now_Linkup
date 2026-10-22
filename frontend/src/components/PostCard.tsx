@@ -240,8 +240,9 @@ const VideoItem = ({ uri, shouldPlay, isActive, forwardedRef, isMuted, poster, a
     const videoAspect = isDetail ? (aspectRatio || 16 / 9) : (aspectRatio ? Math.max(aspectRatio, 9 / 16) : 9 / 16);
     return (
         <View style={{ width: '100%', aspectRatio: videoAspect, backgroundColor: '#0f172a', overflow: 'hidden' }}>
-            {showVideo && (
+            {showVideo && player && (
                 <VideoView
+                    key={uri || 'post_video'}
                     player={player}
                     style={StyleSheet.absoluteFill}
                     contentFit={isDetail ? "contain" : "cover"}
@@ -908,6 +909,8 @@ const BasePostCard = ({
                                     <Text
                                         style={[styles.contentText, { lineHeight: 22 }, isDarkMode && { color: theme.text }]}
                                         numberOfLines={!isExpanded && shouldTruncate ? 3 : undefined}
+                                        textBreakStrategy="highQuality"
+                                        android_hyphenationFrequency="normal"
                                     >
                                         {renderContent(post.content)}
                                     </Text>
@@ -1264,6 +1267,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#334155',
         lineHeight: 22,
+        textAlign: 'justify',
     },
     musicOverlay: {
         flexDirection: 'row',

@@ -21,14 +21,17 @@ const PostVideo: React.FC<{ uri: string }> = ({ uri }) => {
 
     return (
         <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#0F172A', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
-            <VideoView
-                player={player}
-                allowsFullscreen
-                allowsPictureInPicture
-                style={{ width: '100%', height: '100%' }}
-                contentFit="contain"
-                nativeControls={false}
-            />
+            {player && (
+                <VideoView
+                    key={uri || 'post_image_video'}
+                    player={player}
+                    allowsFullscreen
+                    allowsPictureInPicture
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="contain"
+                    nativeControls={false}
+                />
+            )}
         </View>
     );
 };

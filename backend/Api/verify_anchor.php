@@ -10,8 +10,8 @@ $user_id = intval($_SESSION['payer_user_id'] ?? 0);
 $orderId = $_SESSION['anchor_orderid'] ?? '';
 $amount = $_SESSION['anchor_amount'] ?? 100;
 
-$api_key = 'rzp_test_RMXAUXty6nvaXm';
-$api_secret = 'It60ovNrbtNA6kPw0kxET8Fl';
+$api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
+$api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
 $api = new Api($api_key, $api_secret);
 
 $success = true;

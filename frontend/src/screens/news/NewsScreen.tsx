@@ -278,6 +278,23 @@ const NewsVideoThumbnail = React.memo(({ videoUri }: { videoUri: string }) => {
     );
 });
 
+// Google Banner Ad Card with dedicated space and label
+const NewsAdBanner = React.memo(({ theme }: { theme: any }) => {
+    return (
+        <View style={[styles.adContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.adHeaderRow}>
+                <Ionicons name="sparkles" size={10} color="#94A3B8" style={{ marginRight: 4 }} />
+                <Text style={styles.adHeaderText}>SPONSORED / ADVERTISEMENT</Text>
+            </View>
+            <BannerAd
+                unitId="ca-app-pub-3506685647762869/7649518863"
+                size={BannerAdSize.BANNER}
+                requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+            />
+        </View>
+    );
+});
+
 // Self-contained Hero Card so high-frequency video status updates don't re-render NewsScreen
 const HeroNewsCard = React.memo(({
     heroItem,
@@ -365,7 +382,12 @@ const HeroNewsCard = React.memo(({
 
                 {/* Bottom Overlay Info */}
                 <View style={styles.heroBottomOverlay}>
-                    <Text style={styles.heroTitle} numberOfLines={2}>
+                    <Text
+                        style={styles.heroTitle}
+                        numberOfLines={2}
+                        textBreakStrategy="highQuality"
+                        android_hyphenationFrequency="normal"
+                    >
                         {heroItem.title}
                     </Text>
 
@@ -1056,6 +1078,11 @@ const NewsScreen = ({ navigation }: any) => {
             ? (isVideo ? `${NEWS_URL}${images[0]}` : ImageService.getFeedImageUrl(`${NEWS_URL}${images[0]}`, 400))
             : 'https://via.placeholder.com/300x200?text=News';
         const visuals = getItemVisuals(item);
+        const cleanDesc = (item.description || '')
+            .replace(/\[aspect:[^\]]+\]/g, '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
 
         return (
             <View key={item.id || index}>
@@ -1100,10 +1127,27 @@ const NewsScreen = ({ navigation }: any) => {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Title (2 lines bold) */}
-                        <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
+                        {/* Title (Bold Headline) */}
+                        <Text
+                            style={[styles.cardTitle, { color: theme.text }]}
+                            numberOfLines={cleanDesc ? 1 : 2}
+                            textBreakStrategy="highQuality"
+                            android_hyphenationFrequency="normal"
+                        >
                             {item.title}
                         </Text>
+
+                        {/* News Content / Description Snippet (Justified) */}
+                        {cleanDesc ? (
+                            <Text
+                                style={[styles.cardContent, { color: isDarkMode ? '#94A3B8' : '#475569' }]}
+                                numberOfLines={2}
+                                textBreakStrategy="highQuality"
+                                android_hyphenationFrequency="normal"
+                            >
+                                {cleanDesc}
+                            </Text>
+                        ) : null}
 
                         {/* Bottom Metadata: Date & Views */}
                         <View style={styles.cardMetaRow}>
@@ -1124,15 +1168,9 @@ const NewsScreen = ({ navigation }: any) => {
                     </View>
                 </TouchableOpacity>
 
-                {/* Ad Banner after every 5 items */}
-                {index > 0 && index % 5 === 0 && (
-                    <View style={[styles.adContainer, { backgroundColor: theme.background }]}>
-                        <BannerAd
-                            unitId="ca-app-pub-3506685647762869/7649518863"
-                            size={BannerAdSize.BANNER}
-                            requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                        />
-                    </View>
+                {/* Dedicated Google Ad Banner slot after every 4 items */}
+                {(index + 1) % 4 === 0 && (
+                    <NewsAdBanner theme={theme} />
                 )}
             </View>
         );
@@ -1181,7 +1219,12 @@ const NewsScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
+                    <Text
+                        style={[styles.cardTitle, { color: theme.text }]}
+                        numberOfLines={2}
+                        textBreakStrategy="highQuality"
+                        android_hyphenationFrequency="normal"
+                    >
                         {item.title}
                     </Text>
 
@@ -1833,8 +1876,8 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
     },
     newsCardThumbnailWrapper: {
-        width: 126,
-        height: 86,
+        width: 120,
+        height: 88,
         borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: '#0F172A',
@@ -1864,6 +1907,7 @@ const styles = StyleSheet.create({
         marginLeft: 12,
         justifyContent: 'space-between',
         paddingVertical: 1,
+        minHeight: 88,
     },
     cardHeaderRow: {
         flexDirection: 'row',
@@ -1882,12 +1926,20 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     cardTitle: {
-        fontSize: 14,
+        fontSize: 13.5,
         fontWeight: '700',
         color: '#0F172A',
-        lineHeight: 19.5,
-        marginVertical: 4,
+        lineHeight: 18.5,
+        marginTop: 3,
+        marginBottom: 2,
+    },
+    cardContent: {
+        fontSize: 12,
+        lineHeight: 16.5,
+        color: '#64748B',
         textAlign: 'justify',
+        marginBottom: 5,
+        letterSpacing: 0.1,
     },
     cardMetaRow: {
         flexDirection: 'row',
@@ -1905,8 +1957,25 @@ const styles = StyleSheet.create({
     },
     adContainer: {
         alignItems: 'center',
-        paddingVertical: 12,
-        backgroundColor: '#F0F6FF',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        minHeight: 76,
+    },
+    adHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    adHeaderText: {
+        fontSize: 9.5,
+        fontWeight: '700',
+        color: '#94A3B8',
+        letterSpacing: 0.8,
     },
     modalBackdrop: {
         flex: 1,

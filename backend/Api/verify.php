@@ -13,8 +13,8 @@ $logged_user_id = $res['id'] ?? 0;
 $sender_id = intval($_SESSION['sender_id'] ?? 0);
 $receiver_id = intval($_SESSION['receiver_id'] ?? 0);
 
-$api_key = 'rzp_test_RMXAUXty6nvaXm';
-$api_secret = 'It60ovNrbtNA6kPw0kxET8Fl';
+$api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
+$api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
 $api = new Api($api_key, $api_secret);
 
 $success = true;

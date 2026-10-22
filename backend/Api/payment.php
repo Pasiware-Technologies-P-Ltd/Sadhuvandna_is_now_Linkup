@@ -21,8 +21,8 @@ if($productprice>0)
     $number=$res['mobile'] ?? '';
     $amounta=$productprice*100;
 
-    $api_key = 'rzp_test_RMXAUXty6nvaXm';
-    $api_secret = 'It60ovNrbtNA6kPw0kxET8Fl';
+    $api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
+    $api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
 
     $api = new Api($api_key,$api_secret);
     $order = $api->order->create([

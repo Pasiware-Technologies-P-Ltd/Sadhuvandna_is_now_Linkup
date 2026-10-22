@@ -99,10 +99,20 @@ const MyNewsScreen = ({ navigation }: any) => {
                             <Text style={{ fontSize: 11, fontWeight: '700', color: '#3B82F6' }}>{item.category}</Text>
                         </View>
                     )}
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text, lineHeight: 22, marginBottom: 6, textAlign: 'justify' }} numberOfLines={2}>
+                    <Text
+                        style={{ fontSize: 15, fontWeight: '700', color: theme.text, lineHeight: 22, marginBottom: 6, textAlign: 'justify' }}
+                        numberOfLines={2}
+                        textBreakStrategy="highQuality"
+                        android_hyphenationFrequency="normal"
+                    >
                         {item.title}
                     </Text>
-                    <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 19, textAlign: 'justify' }} numberOfLines={2}>
+                    <Text
+                        style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 19, textAlign: 'justify' }}
+                        numberOfLines={2}
+                        textBreakStrategy="highQuality"
+                        android_hyphenationFrequency="normal"
+                    >
                         {item.description}
                     </Text>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>

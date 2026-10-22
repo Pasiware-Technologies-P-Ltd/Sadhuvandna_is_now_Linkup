@@ -160,10 +160,6 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
     const description = item.description || '';
     const isLong = description.length > 150;
 
-    const handleApply = () => {
-        navigation.navigate('ApplyJob', { jobId: item.id, jobTitle: item.title });
-    };
-
     const handleLink = () => {
         if (item.link) {
             Linking.openURL(item.link).catch(err => console.error("Couldn't load page", err));
@@ -229,7 +225,11 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                 <Text style={{ fontSize: 11, color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</Text>
             </View>
 
-            <Text style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 21, marginBottom: 8 }}>
+            <Text
+                style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 21, marginBottom: 8, textAlign: 'justify' }}
+                textBreakStrategy="highQuality"
+                android_hyphenationFrequency="normal"
+            >
                 {expanded ? renderDescription(description) : renderDescription(description.substring(0, 150) + (isLong ? '...' : ''))}
             </Text>
 
@@ -245,18 +245,8 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                 </View>
             )}
 
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
-                {item.type === 'job' && (
-                    <TouchableOpacity
-                        style={{ backgroundColor: '#2563EB', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
-                        onPress={handleApply}
-                        activeOpacity={0.85}
-                    >
-                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{t('applyNow')}</Text>
-                    </TouchableOpacity>
-                )}
-
-                {!!item.link && (
+            {!!item.link && (
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
                     <TouchableOpacity
                         style={{ backgroundColor: '#2563EB', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center' }}
                         onPress={handleLink}
@@ -265,8 +255,8 @@ const JobCard = ({ item, navigation }: { item: any, navigation: any }) => {
                         <Ionicons name="link" size={15} color="white" />
                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13, marginLeft: 4 }}>{t('visitLink')}</Text>
                     </TouchableOpacity>
-                )}
-            </View>
+                </View>
+            )}
         </View>
     );
 };
