@@ -222,6 +222,8 @@ const CreateStoryCardItem = ({
             </View>
         </TouchableOpacity>
     );
+};
+
 const ReelShelfThumbnail = React.memo(({ item }: { item: any }) => {
     const rawThumb = item.thumbnail || (item.media && Array.isArray(item.media) ? item.media.find((m: string) => !isVideo(m)) : null) || item.image;
     let initialUri: string | null = null;
