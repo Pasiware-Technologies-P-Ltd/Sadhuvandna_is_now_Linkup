@@ -163,24 +163,30 @@ if (isset($_SESSION['msg'])) {
 
 <?php include("header.php"); ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
 
   <?php if (!empty($msg)): ?>
-    <div class="p-4 mb-6 rounded-lg font-medium shadow-sm <?php echo $msgType == 'success' ? 'bg-green-100 text-green-700 border-l-4 border-green-500' : 'bg-red-100 text-red-700 border-l-4 border-red-500'; ?>">
-        <?php echo htmlspecialchars($msg); ?>
+    <div class="mb-5 p-4 rounded-xl flex items-center justify-between border <?= $msgType === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' ?>">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid <?= $msgType === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600' ?> text-lg"></i>
+        <span class="text-xs font-semibold"><?php echo htmlspecialchars($msg); ?></span>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
     </div>
   <?php endif; ?>
 
-  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-8">
-    <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-      <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-      </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fa-brands fa-whatsapp text-green-600"></i>
-        Bulk WhatsApp Messaging
-      </h2>
+  <div class="premium-card overflow-hidden mb-6">
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Bulk WhatsApp Messaging</h2>
+          <p class="text-xs text-slate-400 font-medium">Send bulk WhatsApp campaigns to members and contacts</p>
+        </div>
+      </div>
     </div>
     
     <div class="p-6">
@@ -449,3 +455,4 @@ renderList();
 </script>
 </body>
 </html>
+

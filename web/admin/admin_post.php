@@ -24,6 +24,9 @@ if (isset($_POST['action'], $_POST['id']) && $_POST['action'] === "delete") {
 
 // Handle AJAX Request for Infinite Scroll
 if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    if (ob_get_length()) ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    
     $limit = $page_limit;
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
@@ -69,42 +72,70 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         $status = htmlspecialchars($p['status']);
         $id = $p['id'];
         
-        $desktop_html .= '<tr class="hover:bg-orange-50">
-        <td class="px-4 py-3">'.$i.'</td>
-        <td class="px-4 py-3"><div class="font-semibold">'.$name.'</div><div class="text-xs text-gray-500">'.$mobile.'</div></td>
-        <td class="px-4 py-3">'.$status.'</td>
-        <td class="px-4 py-3">'.$mediaHtml.'</td>
-        <td class="px-4 py-3">'.$linkHtml.'</td>
-        <td class="px-4 py-3">'.$dateHtml.'</td>
-        <td class="px-4 py-3 text-center">
+        $desktop_html .= '<tr class="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
+        <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold">'.$i.'</td>
+        <td class="px-5 py-3.5"><div class="font-bold text-slate-800 text-xs">'.$name.'</div><div class="text-[11px] text-slate-400 font-medium">'.$mobile.'</div></td>
+        <td class="px-5 py-3.5 text-xs text-slate-700 font-medium max-w-[280px]"><div class="line-clamp-2" title="'.$status.'">'.$status.'</div></td>
+        <td class="px-5 py-3.5">'.($mediaHtml ?: '<span class="text-xs text-slate-400 font-medium italic">No media</span>').'</td>
+        <td class="px-5 py-3.5 text-xs">'.($linkHtml ?: '<span class="text-slate-300">-</span>').'</td>
+        <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">'.$dateHtml.'</td>
+        <td class="px-5 py-3.5 text-center">
         <form method="post" onsubmit="return confirm(\'Delete this post?\')">
         <input type="hidden" name="id" value="'.$id.'">
-        <button name="action" value="delete" class="w-8 h-8 bg-red-100 text-red-600 rounded"><i class="fa-solid fa-trash"></i></button>
+        <button name="action" value="delete" class="w-7 h-7 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition inline-flex items-center justify-center cursor-pointer" title="Delete Post"><i class="fa-solid fa-trash text-xs"></i></button>
         </form>
         </td>
         </tr>';
         
         // Mobile HTML
-        $mobile_html .= '<div class="bg-white rounded-xl shadow p-4 mobile-card">
-        <h3 class="font-bold">'.$name.'</h3>
-        <p class="text-xs text-gray-500 mb-1">'.$mobile.'</p>
-        <p class="text-sm mb-2">'.$status.'</p>';
+        $mobile_media_html = '';
         if($p['media']){
             if(preg_match('/mp4|webm|ogg/i',$p['media'])){
-                $mobile_html .= '<video src="../uploads/posts/'.$p['media'].'" class="w-full rounded mb-2 cursor-pointer view-video" muted></video>';
+                $mobile_media_html = '<div class="relative rounded-xl overflow-hidden mb-3 bg-slate-900 border border-slate-200">
+                  <video src="../uploads/posts/'.$p['media'].'" class="w-full max-h-64 object-cover cursor-pointer view-video" muted></video>
+                  <div class="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-video text-[10px]"></i> Video
+                  </div>
+                </div>';
             }else{
-                $mobile_html .= '<img src="../uploads/posts/'.$p['media'].'" class="w-full rounded mb-2 cursor-pointer view-img">';
+                $mobile_media_html = '<div class="rounded-xl overflow-hidden mb-3 border border-slate-200">
+                  <img src="../uploads/posts/'.$p['media'].'" class="w-full max-h-64 object-cover cursor-pointer view-img hover:scale-102 transition">
+                </div>';
             }
         }
-        $mobile_html .= '<form method="post" onsubmit="return confirm(\'Delete this post?\')">
-        <input type="hidden" name="id" value="'.$id.'">
-        <button name="action" value="delete" class="w-full bg-red-100 text-red-600 py-2 rounded">Delete Post</button>
-        </form>
+
+        $mobile_link_html = !empty($p['link']) ? '<div class="mb-3"><a href="'.htmlspecialchars($p['link']).'" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline font-semibold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/60 break-all"><i class="fa-solid fa-link text-[10px]"></i> '.htmlspecialchars($p['link']).'</a></div>' : '';
+
+        $mobile_html .= '<div class="premium-card p-4 mobile-card bg-white transition hover:shadow-md">
+          <div class="flex items-start justify-between gap-2.5 mb-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-sm font-bold text-slate-900 truncate">'.$name.'</h3>
+                <p class="text-[11px] text-slate-400 font-medium">'.$mobile.'</p>
+              </div>
+            </div>
+            <span class="text-[11px] text-slate-400 font-medium whitespace-nowrap">'.$dateHtml.'</span>
+          </div>
+
+          <p class="text-xs text-slate-700 leading-relaxed mb-3 break-words whitespace-pre-wrap">'.$status.'</p>
+
+          '.$mobile_media_html.'
+          '.$mobile_link_html.'
+
+          <form method="post" onsubmit="return confirm(\'Delete this post?\')" class="pt-2 border-t border-slate-100">
+            <input type="hidden" name="id" value="'.$id.'">
+            <button name="action" value="delete" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition cursor-pointer">
+              <i class="fa-solid fa-trash text-xs"></i> Delete Post
+            </button>
+          </form>
         </div>';
         $i++;
     }
     
-    echo json_encode(['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_posts]);
+    echo json_encode(['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_posts], JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 }
 
@@ -125,7 +156,7 @@ $posts = mysqli_query($con, "
 
 <?php include("header.php"); ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-4">
 
 <?php if(isset($_SESSION['msg'])): ?>
 <div class="mb-2 p-1 bg-green-100 text-green-700 rounded text-sm text-center font-semibold border border-green-300">
@@ -133,83 +164,96 @@ $posts = mysqli_query($con, "
 </div>
 <?php endif; ?>
 
-<!-- DESKTOP TABLE -->
-<div class="hidden md:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
-  
-  <div class="p-2 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-    <div class="flex items-center gap-3">
-      <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+<!-- Table Sub-Header / Filters (Visible on BOTH Mobile & Desktop) -->
+<div class="premium-card overflow-hidden mb-5">
+  <div class="page-subheader">
+    <div class="page-subheader-left">
+      <a href="index.php" class="btn-back-nav" title="Back to Dashboard">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
       </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        All Posts
-      </h2>
+      <div>
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          Community Feed Posts
+        </h2>
+        <p class="text-xs text-slate-400">Moderate live community posts, media attachments and updates</p>
+      </div>
     </div>
     
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <div class="relative w-full sm:w-64">
-        <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
+    <div class="page-subheader-right">
+      <div class="subheader-search">
+        <i class="fa-solid fa-search subheader-search-icon"></i>
         <input 
-          type="text" 
+          type="search" 
           id="searchInput"
-          placeholder="Search..." 
-          class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
+          placeholder="Search member or content..."
         >
       </div>
-      <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-        Total: <span id="totalPostsCount" class="text-orange-600 font-bold"><?= $total_posts ?></span>
+      <div class="premium-counter-pill">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        Total: <span id="totalPostsCount" class="text-blue-600 font-bold"><?= number_format($total_posts) ?></span>
       </div>
     </div>
   </div>
+</div>
 
-<div class="overflow-y-auto" style="max-height: calc(100vh - 130px);" id="tableScrollContainer">
-<table class="w-full text-sm">
-<thead class="bg-orange-600 text-white sticky top-0 z-20">
-<tr>
-  <th class="px-4 py-3">#</th>
-  <th class="px-4 py-3">Member</th>
-  <th class="px-4 py-3">Post</th>
-  <th class="px-4 py-3">Media</th>
-  <th class="px-4 py-3">Link</th>
-  <th class="px-4 py-3">Date</th>
-  <th class="px-4 py-3 text-center">Action</th>
+<!-- Desktop Table Container -->
+<div class="hidden md:block premium-card overflow-hidden">
+  <div class="overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
+    <table class="w-full text-sm">
+      <thead class="sticky top-0 z-20 shadow-xs">
+        <tr class="bg-slate-50/95 backdrop-blur border-b border-slate-200">
+  <th class="premium-th w-12">#</th>
+  <th class="premium-th">Author</th>
+  <th class="premium-th">Content / Caption</th>
+  <th class="premium-th">Media</th>
+  <th class="premium-th">External Link</th>
+  <th class="premium-th">Posted On</th>
+  <th class="premium-th text-center w-24">Action</th>
 </tr>
 </thead>
-<tbody id="tableBody">
+<tbody id="tableBody" class="divide-y divide-slate-100">
 <?php $i=1; while($p=mysqli_fetch_assoc($posts)): ?>
-<tr class="hover:bg-orange-50">
-<td class="px-4 py-3"><?= $i ?></td>
+<tr class="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
+<td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $i ?></td>
 
-<td class="px-4 py-3">
-  <div class="font-semibold"><?= htmlspecialchars($p['name'] ?? 'Unknown') ?></div>
-  <div class="text-xs text-gray-500"><?= htmlspecialchars($p['mobile'] ?? '-') ?></div>
+<td class="px-5 py-3.5">
+  <div class="font-bold text-slate-800 text-xs"><?= htmlspecialchars($p['name'] ?? 'Unknown') ?></div>
+  <div class="text-[11px] text-slate-400 font-medium"><?= htmlspecialchars($p['mobile'] ?? '-') ?></div>
 </td>
 
-<td class="px-4 py-3"><?= htmlspecialchars($p['status']) ?></td>
+<td class="px-5 py-3.5 text-xs text-slate-700 font-medium max-w-[280px]">
+  <div class="line-clamp-2" title="<?= htmlspecialchars($p['status']) ?>"><?= htmlspecialchars($p['status']) ?></div>
+</td>
 
-<td class="px-4 py-3">
+<td class="px-5 py-3.5">
 <?php if($p['media']): ?>
 <?php if(preg_match('/mp4|webm|ogg/i',$p['media'])): ?>
-<video src="../uploads/posts/<?= $p['media'] ?>" class="w-28 rounded cursor-pointer view-video" muted></video>
+<video src="../uploads/posts/<?= $p['media'] ?>" class="w-20 h-14 rounded-lg object-cover ring-1 ring-slate-200 cursor-pointer view-video" muted></video>
 <?php else: ?>
-<img src="../uploads/posts/<?= $p['media'] ?>" class="w-20 rounded cursor-pointer view-img">
+<img src="../uploads/posts/<?= $p['media'] ?>" class="w-16 h-12 rounded-lg object-cover ring-1 ring-slate-200 cursor-pointer view-img shadow-2xs" alt="post media">
 <?php endif; ?>
+<?php else: ?>
+<span class="text-xs text-slate-400 font-medium italic">No media</span>
 <?php endif; ?>
 </td>
 
-<td class="px-4 py-3">
+<td class="px-5 py-3.5 text-xs">
 <?php if($p['link']): ?>
-<a href="<?= $p['link'] ?>" target="_blank" class="text-blue-600 underline">Open</a>
+<a href="<?= $p['link'] ?>" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium hover:underline">
+  <span>Link</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+</a>
+<?php else: ?>
+<span class="text-slate-300">-</span>
 <?php endif; ?>
 </td>
 
-<td class="px-4 py-3"><?= date("d M Y",strtotime($p['created_at'])) ?></td>
+<td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap"><?= date("d M Y",strtotime($p['created_at'])) ?></td>
 
-<td class="px-4 py-3 text-center">
+<td class="px-5 py-3.5 text-center">
 <form method="post" onsubmit="return confirm('Delete this post?')">
 <input type="hidden" name="id" value="<?= $p['id'] ?>">
-<button name="action" value="delete" class="w-8 h-8 bg-red-100 text-red-600 rounded">
-<i class="fa-solid fa-trash"></i>
+<button name="action" value="delete" class="w-7 h-7 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition inline-flex items-center justify-center cursor-pointer" title="Delete Post">
+<i class="fa-solid fa-trash text-xs"></i>
 </button>
 </form>
 </td>
@@ -231,27 +275,57 @@ $posts = mysqli_query($con, "
     LIMIT $page_limit
 ");
 while($p=mysqli_fetch_assoc($posts)): 
+  $id = $p['id'];
+  $name = htmlspecialchars($p['name'] ?? 'Unknown User');
+  $mobile = htmlspecialchars($p['mobile'] ?? '-');
+  $status = htmlspecialchars($p['status'] ?? '');
+  $dateFormatted = date('d M Y, h:i A', strtotime($p['created_at']));
 ?>
-<div class="bg-white rounded-xl shadow p-4 mobile-card">
+<div class="premium-card p-4 mobile-card bg-white transition hover:shadow-md">
+  <div class="flex items-start justify-between gap-2.5 mb-2.5">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold flex items-center justify-center text-xs flex-shrink-0">
+        <i class="fa-solid fa-user"></i>
+      </div>
+      <div class="min-w-0">
+        <h3 class="text-sm font-bold text-slate-900 truncate"><?= $name ?></h3>
+        <p class="text-[11px] text-slate-400 font-medium"><?= $mobile ?></p>
+      </div>
+    </div>
+    <span class="text-[11px] text-slate-400 font-medium whitespace-nowrap"><?= $dateFormatted ?></span>
+  </div>
 
-<h3 class="font-bold"><?= htmlspecialchars($p['name'] ?? 'Unknown') ?></h3>
-<p class="text-xs text-gray-500 mb-1"><?= htmlspecialchars($p['mobile'] ?? '-') ?></p>
-<p class="text-sm mb-2"><?= htmlspecialchars($p['status']) ?></p>
+  <p class="text-xs text-slate-700 leading-relaxed mb-3 break-words whitespace-pre-wrap"><?= $status ?></p>
 
-<?php if($p['media']): ?>
-<?php if(preg_match('/mp4|webm|ogg/i',$p['media'])): ?>
-<video src="../uploads/posts/<?= $p['media'] ?>" class="w-full rounded mb-2 cursor-pointer view-video" muted></video>
-<?php else: ?>
-<img src="../uploads/posts/<?= $p['media'] ?>" class="w-full rounded mb-2 cursor-pointer view-img">
-<?php endif; ?>
-<?php endif; ?>
+  <?php if(!empty($p['media'])): ?>
+    <?php if(preg_match('/mp4|webm|ogg/i', $p['media'])): ?>
+      <div class="relative rounded-xl overflow-hidden mb-3 bg-slate-900 border border-slate-200">
+        <video src="../uploads/posts/<?= $p['media'] ?>" class="w-full max-h-64 object-cover cursor-pointer view-video" muted></video>
+        <div class="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-video text-[10px]"></i> Video
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="rounded-xl overflow-hidden mb-3 border border-slate-200">
+        <img src="../uploads/posts/<?= $p['media'] ?>" class="w-full max-h-64 object-cover cursor-pointer view-img hover:scale-102 transition">
+      </div>
+    <?php endif; ?>
+  <?php endif; ?>
 
-<form method="post" onsubmit="return confirm('Delete this post?')">
-<input type="hidden" name="id" value="<?= $p['id'] ?>">
-<button name="action" value="delete" class="w-full bg-red-100 text-red-600 py-2 rounded">
-Delete Post
-</button>
-</form>
+  <?php if(!empty($p['link'])): ?>
+    <div class="mb-3">
+      <a href="<?= htmlspecialchars($p['link']) ?>" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline font-semibold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/60 break-all">
+        <i class="fa-solid fa-link text-[10px]"></i> <?= htmlspecialchars($p['link']) ?>
+      </a>
+    </div>
+  <?php endif; ?>
+
+  <form method="post" onsubmit="return confirm('Delete this post?')" class="pt-2 border-t border-slate-100">
+    <input type="hidden" name="id" value="<?= $id ?>">
+    <button name="action" value="delete" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition cursor-pointer">
+      <i class="fa-solid fa-trash text-xs"></i> Delete Post
+    </button>
+  </form>
 </div>
 <?php endwhile; ?>
 </div>
@@ -273,71 +347,116 @@ let currentPage = 1;
 let loading = false;
 let hasMore = true;
 let currentSearch = '';
+let searchDebounceTimer = null;
 
 const searchInput = document.getElementById('searchInput');
+
+function performSearch() {
+    const val = searchInput ? searchInput.value.trim() : '';
+    currentSearch = val;
+    currentPage = 1;
+    hasMore = true;
+    loading = false;
+    
+    const tbody = document.querySelector('#tableBody');
+    const mobileCards = document.getElementById('mobileCards');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-xs text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching posts...</td></tr>';
+    if (mobileCards) mobileCards.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching posts...</div>';
+    
+    loadMore(true);
+}
+
 if(searchInput) {
-    searchInput.addEventListener('keypress', (e) => {
+    searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-          currentSearch = searchInput.value.trim();
-          currentPage = 1;
-          hasMore = true;
-          document.querySelector('#tableBody').innerHTML = '';
-          document.getElementById('mobileCards').innerHTML = '';
-          loadMore(true);
+          e.preventDefault();
+          clearTimeout(searchDebounceTimer);
+          performSearch();
       }
+    });
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            performSearch();
+        }, 350);
     });
 }
 
 const tableContainer = document.getElementById('tableScrollContainer');
 
-if (tableContainer) {
-    tableContainer.addEventListener('scroll', () => {
-        if (Math.ceil(tableContainer.scrollTop + tableContainer.clientHeight) >= tableContainer.scrollHeight - 150) {
+function checkScrollAndLoad() {
+    if (loading || !hasMore) return;
+    
+    // Check desktop container
+    if (tableContainer && window.innerWidth >= 768) {
+        if (Math.ceil(tableContainer.scrollTop + tableContainer.clientHeight) >= tableContainer.scrollHeight - 250) {
             loadMore();
-        }
-    });
-}
-
-window.addEventListener('scroll', () => {
-    if (window.innerWidth < 768) { 
-        const scrollY = window.scrollY || document.documentElement.scrollTop;
-        if (Math.ceil(window.innerHeight + scrollY) >= document.documentElement.scrollHeight - 200) {
-            loadMore();
+            return;
         }
     }
-});
+    
+    // Check mobile or window scroll
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    if (Math.ceil(window.innerHeight + scrollY) >= document.documentElement.scrollHeight - 350) {
+        loadMore();
+    }
+}
+
+if (tableContainer) {
+    tableContainer.addEventListener('scroll', checkScrollAndLoad);
+}
+window.addEventListener('scroll', checkScrollAndLoad);
 
 function loadMore(isSearch = false) {
     if (loading || (!hasMore && !isSearch)) return;
     loading = true;
     
-    if (!isSearch) {
-        currentPage++;
-    }
+    const nextPage = isSearch ? 1 : (currentPage + 1);
+    const targetUrl = `${window.location.pathname}?ajax=1&page=${nextPage}&search=${encodeURIComponent(currentSearch)}`;
     
-    fetch(`admin_post.php?ajax=1&page=${currentPage}&search=${encodeURIComponent(currentSearch)}`)
-        .then(res => res.json())
+    fetch(targetUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
+            return res.json();
+        })
         .then(data => {
-            if(data.desktop.trim() === '' && data.mobile.trim() === '') {
+            if (!isSearch) {
+                currentPage = nextPage;
+            }
+            if(!data.desktop || (data.desktop.trim() === '' && (!data.mobile || data.mobile.trim() === ''))) {
                 hasMore = false;
             } else {
-                document.querySelector('#tableBody').insertAdjacentHTML('beforeend', data.desktop);
-                document.getElementById('mobileCards').insertAdjacentHTML('beforeend', data.mobile);
+                if (isSearch) {
+                    document.querySelector('#tableBody').innerHTML = data.desktop;
+                    document.getElementById('mobileCards').innerHTML = data.mobile;
+                } else {
+                    document.querySelector('#tableBody').insertAdjacentHTML('beforeend', data.desktop);
+                    document.getElementById('mobileCards').insertAdjacentHTML('beforeend', data.mobile);
+                }
             }
             
             if (data.total !== undefined) {
-                document.getElementById('totalPostsCount').innerText = data.total;
+                const totalEl = document.getElementById('totalPostsCount');
+                if (totalEl) totalEl.innerText = data.total;
             }
             
             loading = false;
             
-            // Auto-load if no scrollbar
-            if (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight && hasMore) {
-                loadMore();
-            }
+            // Auto-load next chunk if page content doesn't fill viewport
+            setTimeout(() => {
+                if (hasMore && (
+                    (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight + 100) ||
+                    (document.documentElement.scrollHeight <= window.innerHeight + 100)
+                )) {
+                    loadMore();
+                }
+            }, 100);
         })
         .catch(err => {
-            console.error(err);
+            console.error('Error loading posts:', err);
             loading = false;
         });
 }
@@ -366,3 +485,4 @@ modal.onclick=e=>{if(e.target===modal)close.click();};
 
 </body>
 </html>
+

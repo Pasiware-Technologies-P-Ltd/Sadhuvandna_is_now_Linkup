@@ -165,68 +165,17 @@ if(isset($name_parts[1])){
   </title>
   <!-- TailwindCSS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Centralized Design System -->
+  <link rel="stylesheet" href="css/theme.css"/>
   <!-- Font Awesome CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <!-- Google Fonts: Roboto -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-  <!-- language script start -->
-
- <!-- faw icon link -->
+  <!-- Google Fonts: Roboto & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
   <link rel="icon" href="images/logo.png">
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-    }
-
-    /* Hide scrollbar but allow scrolling */
-    aside::-webkit-scrollbar {
-      display: none;
-      /* Chrome, Safari, Opera */
-    }
-
-    aside {
-      -ms-overflow-style: none;
-      /* IE and Edge */
-      scrollbar-width: none;
-      /* Firefox */
-    }
-
-    /* Hide horizontal scrollbar */
-    .mob-scroll::-webkit-scrollbar {
-      display: none;
-    }
-
-    .mob-scroll {
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    .goog-te-banner-frame.skiptranslate {
-      display: none !important;
-    }
-
-    body {
-      top: 0px !important;
-    }
-
-    .skiptranslate {
-      display: none !important;
-    }
-
-    .goog-te-banner-frame.skiptranslate {
-      display: none !important;
-    }
-
-    body {
-      top: 0px !important;
-    }
-
-    .skiptranslate {
-      display: none !important;
-    }
-  </style>
-
 </head>
 
 <body class="bg-white min-h-screen flex flex-col ">
@@ -237,7 +186,9 @@ if(isset($name_parts[1])){
 
   <!-- LOGO + CLOCK -->
   <div class="flex items-center gap-3">
-    <img src="images/logo.png" class="w-10" alt="">
+    <a href="index.php" class="flex items-center">
+      <img src="images/logo.png" class="w-10 h-10 rounded-xl object-cover shadow-sm border border-blue-100" alt="Linkup Logo">
+    </a>
 
     <!-- ✅ CLOCK + DATE (NOW VISIBLE ON MOBILE TOO) -->
     <div class="flex flex-col leading-tight cursor-pointer" onclick="openCalendar()">

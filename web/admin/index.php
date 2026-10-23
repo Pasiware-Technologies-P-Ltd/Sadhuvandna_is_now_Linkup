@@ -28,42 +28,63 @@ for($i=6; $i>=0; $i--) {
 }
 ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
  
   <!-- Welcome & Revenue Highlight -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       
       <!-- Welcome Banner (Spans 2 cols on lg) -->
-      <div class="lg:col-span-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl p-8 sm:p-10 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex flex-col justify-center relative overflow-hidden">
+      <div class="lg:col-span-2 rounded-2xl p-7 sm:p-8 text-white relative overflow-hidden shadow-[0_10px_30px_-10px_rgba(37,99,235,0.4)]" style="background: linear-gradient(135deg, #1877F2 0%, #2563EB 50%, #4f46e5 100%);">
           <!-- Decorative shapes -->
-          <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
-          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-xl"></div>
+          <div class="absolute -top-12 -right-12 w-56 h-56 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-cyan-400/20 rounded-full blur-2xl pointer-events-none"></div>
           
-          <div class="relative z-10">
-              <p class="text-orange-100 mb-2 text-sm font-semibold uppercase tracking-wider"><?= date('l, d F Y') ?></p>
-              <h2 class="text-3xl sm:text-4xl font-extrabold mb-3">Welcome Back, Admin! 👋</h2>
-              <p class="text-orange-100 max-w-lg text-sm sm:text-base leading-relaxed">Here's your community snapshot. Monitor member growth, manage content, and track revenue seamlessly.</p>
+          <div class="relative z-10 flex flex-col justify-between h-full">
+              <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-semibold tracking-wide uppercase text-blue-100 mb-3 border border-white/20">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <?= date('l, d F Y') ?>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">Welcome Back, Admin! 👋</h2>
+                <p class="text-blue-100/90 max-w-lg text-xs sm:text-sm leading-relaxed font-normal">Monitor your community members, review pending approvals, and moderate platform posts in real time.</p>
+              </div>
+
+              <div class="mt-6 flex flex-wrap items-center gap-3">
+                <a href="admin_new_registration.php" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-xl text-xs font-bold transition shadow-sm">
+                  <span>Review Pending</span>
+                  <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]"><?= $newRegCount ?></span>
+                </a>
+                <a href="admin_all_community_member.php" class="inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-semibold backdrop-blur transition border border-white/20">
+                  <i class="fa-solid fa-users text-xs"></i>
+                  <span>All Members</span>
+                </a>
+              </div>
           </div>
       </div>
 
       <!-- Revenue Highlight Card -->
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex flex-col justify-between relative overflow-hidden">
-         <div class="absolute top-0 right-0 p-6 opacity-[0.05]">
+      <div class="rounded-2xl p-7 sm:p-8 text-white flex flex-col justify-between relative overflow-hidden shadow-[0_10px_30px_-10px_rgba(15,23,42,0.5)]" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+         <div class="absolute top-0 right-0 p-6 opacity-[0.06] pointer-events-none">
              <i class="fa-solid fa-wallet text-8xl"></i>
          </div>
-         <div class="relative z-10">
-             <div class="flex items-center gap-2 text-gray-400 text-sm font-semibold mb-2">
-                 <i class="fa-solid fa-indian-rupee-sign text-emerald-400"></i> Total Revenue
+         <div class="relative z-10 flex flex-col justify-between h-full">
+             <div>
+               <div class="flex items-center justify-between mb-3">
+                   <div class="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                       <i class="fa-solid fa-indian-rupee-sign text-emerald-400"></i> Total Revenue
+                   </div>
+                   <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Live</span>
+               </div>
+               <h3 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-6">₹<?= number_format($totalEarnings) ?></h3>
              </div>
-             <h3 class="text-4xl sm:text-5xl font-black text-white tracking-tight mb-8">₹<?= number_format($totalEarnings) ?></h3>
              
-             <div class="pt-5 border-t border-gray-700/50 flex justify-between items-end">
+             <div class="pt-4 border-t border-slate-700/60 flex justify-between items-end">
                  <div>
-                     <p class="text-xs text-gray-400 mb-1 uppercase tracking-wider font-semibold">Today's Earnings</p>
-                     <p class="text-xl font-bold text-emerald-400">+₹<?= number_format($todayEarnings) ?></p>
+                     <p class="text-[11px] text-slate-400 mb-0.5 uppercase tracking-wider font-semibold">Today's Earnings</p>
+                     <p class="text-lg font-bold text-emerald-400">+₹<?= number_format($todayEarnings) ?></p>
                  </div>
-                 <a href="admin_wallet.php" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-                     <i class="fa-solid fa-arrow-right"></i>
+                 <a href="admin_wallet.php" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition text-slate-200 hover:text-white border border-white/10" title="Wallet Details">
+                     <i class="fa-solid fa-arrow-right text-xs"></i>
                  </a>
              </div>
          </div>
@@ -71,66 +92,81 @@ for($i=6; $i>=0; $i--) {
   </div>
 
   <!-- Overview Stats -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
     
     <!-- New Registration -->
-    <a href="admin_new_registration.php" class="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 flex items-center gap-6 group relative overflow-hidden">
-      <div class="absolute right-0 top-0 w-32 h-32 bg-orange-50 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-      <div class="w-16 h-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl shadow-sm relative z-10 group-hover:scale-110 transition-transform">
-        <i class="fa-solid fa-user-plus"></i>
+    <a href="admin_new_registration.php" class="premium-card p-5 flex items-center gap-4 hover:border-amber-300 transition-all duration-200 group">
+      <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform flex-shrink-0">
+        <i class="fa-solid fa-user-clock"></i>
       </div>
-      <div class="relative z-10">
-          <p class="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wider">Pending</p>
-          <h3 class="text-3xl font-black text-gray-800"><?= $newRegCount ?></h3>
+      <div class="min-w-0 flex-1">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Approval</p>
+          <div class="flex items-baseline gap-2">
+            <h3 class="text-2xl font-extrabold text-slate-900"><?= number_format($newRegCount) ?></h3>
+            <span class="text-[11px] font-semibold text-amber-600">Needs Review</span>
+          </div>
       </div>
+      <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all text-xs"></i>
     </a>
 
     <!-- All Members -->
-    <a href="admin_all_community_member.php" class="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 flex items-center gap-6 group relative overflow-hidden">
-      <div class="absolute right-0 top-0 w-32 h-32 bg-green-50 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-      <div class="w-16 h-16 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-2xl shadow-sm relative z-10 group-hover:scale-110 transition-transform">
+    <a href="admin_all_community_member.php" class="premium-card p-5 flex items-center gap-4 hover:border-blue-300 transition-all duration-200 group">
+      <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-600 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform flex-shrink-0">
         <i class="fa-solid fa-users"></i>
       </div>
-      <div class="relative z-10">
-          <p class="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wider">Active Members</p>
-          <h3 class="text-3xl font-black text-gray-800"><?= $approvedCount ?></h3>
+      <div class="min-w-0 flex-1">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Members</p>
+          <div class="flex items-baseline gap-2">
+            <h3 class="text-2xl font-extrabold text-slate-900"><?= number_format($approvedCount) ?></h3>
+            <span class="text-[11px] font-semibold text-emerald-600">Verified</span>
+          </div>
       </div>
+      <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all text-xs"></i>
     </a>
 
     <!-- Blocked Members -->
-    <a href="admin_block_user.php" class="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 flex items-center gap-6 group relative overflow-hidden">
-      <div class="absolute right-0 top-0 w-32 h-32 bg-red-50 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-      <div class="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl shadow-sm relative z-10 group-hover:scale-110 transition-transform">
+    <a href="admin_block_user.php" class="premium-card p-5 flex items-center gap-4 hover:border-rose-300 transition-all duration-200 group">
+      <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-200/60 text-rose-600 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform flex-shrink-0">
         <i class="fa-solid fa-user-slash"></i>
       </div>
-      <div class="relative z-10">
-          <p class="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wider">Blocked</p>
-          <h3 class="text-3xl font-black text-gray-800"><?= $blockedCount ?></h3>
+      <div class="min-w-0 flex-1">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Blocked Accounts</p>
+          <div class="flex items-baseline gap-2">
+            <h3 class="text-2xl font-extrabold text-slate-900"><?= number_format($blockedCount) ?></h3>
+            <span class="text-[11px] font-semibold text-rose-600">Restricted</span>
+          </div>
       </div>
+      <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-rose-500 group-hover:translate-x-0.5 transition-all text-xs"></i>
     </a>
   </div>
 
   <!-- Charts Section -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       
       <!-- Registrations Chart -->
-      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-bold text-gray-800">User Growth</h3>
-              <span class="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Last 7 Days</span>
+      <div class="premium-card p-6">
+          <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Member Onboarding Trend</h3>
+                <p class="text-[11px] text-slate-400 font-medium">Daily registered accounts</p>
+              </div>
+              <span class="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200/60">Last 7 Days</span>
           </div>
-          <div class="relative h-72 w-full">
+          <div class="relative h-64 w-full">
               <canvas id="regChart"></canvas>
           </div>
       </div>
 
       <!-- Revenue Chart -->
-      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-bold text-gray-800">Revenue Analytics</h3>
-              <span class="text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 px-3 py-1 rounded-full">Last 7 Days</span>
+      <div class="premium-card p-6">
+          <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Revenue Flow</h3>
+                <p class="text-[11px] text-slate-400 font-medium">Daily verified wallet credit</p>
+              </div>
+              <span class="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2.5 py-1 rounded-full">Last 7 Days</span>
           </div>
-          <div class="relative h-72 w-full">
+          <div class="relative h-64 w-full">
               <canvas id="revChart"></canvas>
           </div>
       </div>
@@ -154,16 +190,16 @@ new Chart(ctxReg, {
         datasets: [{
             label: 'New Users',
             data: regData,
-            borderColor: '#f97316', // orange-500
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
+            borderColor: '#2563EB', // Brand blue
+            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+            borderWidth: 2.5,
+            tension: 0.35,
             fill: true,
-            pointBackgroundColor: '#f97316',
+            pointBackgroundColor: '#2563EB',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointRadius: 4,
+            pointHoverRadius: 6
         }]
     },
     options: {
@@ -175,12 +211,12 @@ new Chart(ctxReg, {
         scales: {
             y: {
                 beginAtZero: true,
-                grid: { borderDash: [4, 4], color: '#f3f4f6' },
-                ticks: { padding: 10, font: { family: 'inherit' } }
+                grid: { borderDash: [3, 3], color: '#f1f5f9' },
+                ticks: { padding: 8, font: { family: 'Plus Jakarta Sans, sans-serif', size: 11 }, color: '#94a3b8' }
             },
             x: {
                 grid: { display: false },
-                ticks: { padding: 10, font: { family: 'inherit' } }
+                ticks: { padding: 8, font: { family: 'Plus Jakarta Sans, sans-serif', size: 11 }, color: '#94a3b8' }
             }
         },
         interaction: { mode: 'index', intersect: false }
@@ -199,7 +235,7 @@ new Chart(ctxRev, {
             backgroundColor: '#10b981', // emerald-500
             borderRadius: 6,
             barThickness: 'flex',
-            maxBarThickness: 32
+            maxBarThickness: 28
         }]
     },
     options: {
@@ -211,10 +247,11 @@ new Chart(ctxRev, {
         scales: {
             y: {
                 beginAtZero: true,
-                grid: { borderDash: [4, 4], color: '#f3f4f6' },
+                grid: { borderDash: [3, 3], color: '#f1f5f9' },
                 ticks: {
-                    padding: 10,
-                    font: { family: 'inherit' },
+                    padding: 8,
+                    font: { family: 'Plus Jakarta Sans, sans-serif', size: 11 },
+                    color: '#94a3b8',
                     callback: function(value) {
                         if (value >= 1000) return '₹' + (value/1000) + 'k';
                         return '₹' + value;
@@ -223,7 +260,7 @@ new Chart(ctxRev, {
             },
             x: {
                 grid: { display: false },
-                ticks: { padding: 10, font: { family: 'inherit' } }
+                ticks: { padding: 8, font: { family: 'Plus Jakarta Sans, sans-serif', size: 11 }, color: '#94a3b8' }
             }
         },
         interaction: { mode: 'index', intersect: false }

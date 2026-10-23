@@ -34,66 +34,73 @@ if (isset($_POST['changePass'])) {
 
 <?php include("header.php"); ?>
 
-<main class="max-w-3xl mx-auto py-8 px-4">
-    <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden w-full max-w-lg mx-auto">
-        <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-            <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-                <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-            </a>
-            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <i class="fa-solid fa-lock-open text-orange-600"></i>
-                Change Password
-            </h2>
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
+    <div class="premium-card overflow-hidden w-full max-w-lg">
+        <div class="page-subheader">
+            <div class="page-subheader-left">
+                <a href="index.php" class="btn-back-nav" title="Back to Dashboard">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                </a>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">
+                        Change Password
+                    </h2>
+                    <p class="text-xs text-slate-400 font-medium">Update your admin account credentials</p>
+                </div>
+            </div>
         </div>
-        <div class="p-6">
+
+        <div class="p-6 space-y-5">
 
         <!-- Messages -->
-        <?php if ($error) { ?>
-            <div class="bg-red-100 border border-red-300 text-red-700 py-2 px-4 rounded-lg text-sm mb-4">
-                <?= $error ?>
+        <?php if ($error): ?>
+            <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                <span><?= htmlspecialchars($error) ?></span>
             </div>
-        <?php } ?>
+        <?php endif; ?>
 
-        <?php if ($success) { ?>
-            <div class="bg-green-100 border border-green-300 text-green-700 py-2 px-4 rounded-lg text-sm mb-4">
-                <?= $success ?>
+        <?php if ($success): ?>
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                <span><?= htmlspecialchars($success) ?></span>
             </div>
-        <?php } ?>
+        <?php endif; ?>
 
         <!-- Form -->
-        <form method="POST" class="space-y-5">
+        <form method="POST" class="space-y-4">
 
             <div>
-                <label class="text-sm font-semibold text-gray-700">Old Password</label>
-                <div class="flex items-center border rounded-lg px-3 py-2 bg-white">
-                    <i class="fa-solid fa-lock text-orange-500 mr-2"></i>
-                    <input type="password" name="old_password" required
-                        class="flex-1 outline-none text-sm">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Old Password *</label>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="password" name="old_password" required placeholder="Enter current password"
+                        class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
                 </div>
             </div>
 
             <div>
-                <label class="text-sm font-semibold text-gray-700">New Password</label>
-                <div class="flex items-center border rounded-lg px-3 py-2 bg-white">
-                    <i class="fa-solid fa-key text-orange-500 mr-2"></i>
-                    <input type="password" name="new_password" required
-                        class="flex-1 outline-none text-sm">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">New Password *</label>
+                <div class="relative">
+                    <i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="password" name="new_password" required placeholder="Enter new strong password"
+                        class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
                 </div>
             </div>
 
             <div>
-                <label class="text-sm font-semibold text-gray-700">Confirm Password</label>
-                <div class="flex items-center border rounded-lg px-3 py-2 bg-white">
-                    <i class="fa-solid fa-check text-orange-500 mr-2"></i>
-                    <input type="password" name="confirm_password" required
-                        class="flex-1 outline-none text-sm">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Confirm New Password *</label>
+                <div class="relative">
+                    <i class="fa-solid fa-check-double absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="password" name="confirm_password" required placeholder="Re-enter new password"
+                        class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
                 </div>
             </div>
 
             <!-- Update Button -->
-            <button type="submit" name="changePass"
-                class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-2.5 rounded-lg font-semibold shadow-lg transition">
-                <i class="fa-solid fa-rotate-right mr-2"></i> Update Password
+            <button type="submit" name="changePass" class="btn-brand-primary w-full py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center justify-center gap-2 cursor-pointer mt-2">
+                <i class="fa-solid fa-shield-halved text-xs"></i>
+                <span>Update Password</span>
             </button>
 
         </form>

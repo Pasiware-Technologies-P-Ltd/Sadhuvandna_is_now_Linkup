@@ -75,83 +75,104 @@ if ($applications_q) {
 
 <?php include("header.php"); ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
-  <!-- Secondary Header -->
-  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-6">
-    <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50">
-      <div class="flex items-center gap-3">
-        <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-          <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+  <!-- Premium Card Wrapper -->
+  <div class="premium-card overflow-hidden mb-6">
+    <!-- Sub-Header / Action Bar -->
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
         </a>
-        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <i class="fa-solid fa-microphone-lines text-orange-600"></i>
-          Anchor Applications
-        </h2>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Anchor Applications</h2>
+          <p class="text-xs text-slate-400 font-medium">Review and manage anchor applicants from the community</p>
+        </div>
       </div>
-      
-      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200"><?= $pending_count ?> Pending</span>
-        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200"><?= $approved_count ?> Approved</span>
-        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200"><?= $rejected_count ?> Rejected</span>
-        <input type="text" id="searchInput" placeholder="Search by name, phone, email..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 w-full md:w-64">
+
+      <div class="page-subheader-right">
+        <!-- Status Counters -->
+        <span class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          Pending: <span class="text-amber-600 font-bold"><?= $pending_count ?></span>
+        </span>
+        <span class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Approved: <span class="text-emerald-600 font-bold"><?= $approved_count ?></span>
+        </span>
+        <span class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          Rejected: <span class="text-rose-600 font-bold"><?= $rejected_count ?></span>
+        </span>
+        <!-- Search -->
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
+          <input type="search" id="searchInput" placeholder="Search name, phone, email...">
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Tab Filter Bar -->
+    <div class="px-5 py-2.5 border-b border-slate-100 flex gap-2 overflow-x-auto bg-white">
+      <button onclick="filterStatus('all')" class="status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-lg shadow-sm transition" id="tab-all">All (<?= count($apps) ?>)</button>
+      <button onclick="filterStatus('Pending')" class="status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition" id="tab-Pending">
+        <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending (<?= $pending_count ?>)</span>
+      </button>
+      <button onclick="filterStatus('Approved')" class="status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition" id="tab-Approved">
+        <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved (<?= $approved_count ?>)</span>
+      </button>
+      <button onclick="filterStatus('Rejected')" class="status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition" id="tab-Rejected">
+        <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Rejected (<?= $rejected_count ?>)</span>
+      </button>
+    </div>
 
   <!-- Message Toast -->
   <?php if(isset($_SESSION['msg'])): ?>
     <?php 
       $is_err = ($_SESSION['msg_type'] ?? '') === 'error';
-      $bg_class = $is_err ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200';
     ?>
-    <div class="mb-6 p-4 rounded-xl border flex items-center gap-3 <?= $bg_class ?> shadow-sm">
-      <i class="fa-solid <?= $is_err ? 'fa-triangle-exclamation' : 'fa-circle-check' ?> text-lg"></i>
-      <span class="font-medium"><?= $_SESSION['msg']; unset($_SESSION['msg']); unset($_SESSION['msg_type']); ?></span>
+    <div class="px-5 py-3 border-b border-slate-100 flex items-center gap-3 <?= $is_err ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800' ?>">
+      <i class="fa-solid <?= $is_err ? 'fa-triangle-exclamation' : 'fa-circle-check' ?> text-base"></i>
+      <span class="text-xs font-semibold flex-1"><?= $_SESSION['msg']; unset($_SESSION['msg']); unset($_SESSION['msg_type']); ?></span>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
     </div>
   <?php endif; ?>
 
-  <!-- Tab Filter Controls -->
-  <div class="flex gap-2 border-b border-orange-200 pb-3 mb-6 overflow-x-auto">
-    <button onclick="filterStatus('all')" class="status-tab-btn px-4 py-2 bg-orange-600 text-white font-bold text-sm rounded-lg shadow-sm transition" id="tab-all">All (<?= count($apps) ?>)</button>
-    <button onclick="filterStatus('Pending')" class="status-tab-btn px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-semibold text-sm rounded-lg transition" id="tab-Pending">Pending (<?= $pending_count ?>)</button>
-    <button onclick="filterStatus('Approved')" class="status-tab-btn px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-semibold text-sm rounded-lg transition" id="tab-Approved">Approved (<?= $approved_count ?>)</button>
-    <button onclick="filterStatus('Rejected')" class="status-tab-btn px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-semibold text-sm rounded-lg transition" id="tab-Rejected">Rejected (<?= $rejected_count ?>)</button>
-  </div>
-
   <?php if (empty($apps)): ?>
-    <div class="bg-white rounded-2xl shadow p-12 text-center border border-orange-100">
-      <i class="fa-solid fa-address-card text-gray-300 text-6xl mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-700">No Applications Yet</h3>
-      <p class="text-gray-500 mt-1">Anchor applications will show up here once users apply from the mobile app.</p>
+    <div class="py-16 text-center">
+      <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3 mx-auto">
+        <i class="fa-solid fa-microphone-lines"></i>
+      </div>
+      <p class="text-sm font-semibold text-slate-600">No Applications Yet</p>
+      <p class="text-xs text-slate-400 mt-0.5">Anchor applications will show up here once users apply from the mobile app.</p>
     </div>
   <?php else: ?>
 
-    <!-- Desktop Table View -->
-    <div class="hidden md:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left border-collapse" id="appsTable">
-          <thead class="bg-gray-50 sticky top-0">
-            <tr class="text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
-              <th class="px-6 py-4">Photo</th>
-              <th class="px-6 py-4">Applicant details</th>
-              <th class="px-6 py-4">Education</th>
-              <th class="px-6 py-4">Documents</th>
-              <th class="px-6 py-4">Applied Date</th>
-              <th class="px-6 py-4">Status</th>
-              <th class="px-6 py-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
+    <!-- Scrollable Table (Desktop) -->
+    <div class="hidden sm:block overflow-y-auto" style="max-height: calc(100vh - 240px);" id="tableScrollContainer">
+      <table class="w-full text-left border-collapse" id="appsTable">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th class="premium-th px-5 py-3 w-16">Photo</th>
+            <th class="premium-th px-5 py-3">Applicant</th>
+            <th class="premium-th px-5 py-3 w-44">Education</th>
+            <th class="premium-th px-5 py-3 w-52">Documents</th>
+            <th class="premium-th px-5 py-3 w-36">Applied Date</th>
+            <th class="premium-th px-5 py-3 w-28">Status</th>
+            <th class="premium-th px-5 py-3 text-center w-32">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
             <?php foreach ($apps as $app): ?>
-              <tr class="hover:bg-orange-50/50 transition duration-150 app-row" data-status="<?= htmlspecialchars($app['status']) ?>">
+              <tr class="hover:bg-slate-50/50 transition duration-150 app-row" data-status="<?= htmlspecialchars($app['status']) ?>">
                 
                 <!-- Photo -->
                 <td class="px-6 py-4">
                   <?php if (!empty($app['photo']) && file_exists("../uploads/anchor_applications/" . $app['photo'])): ?>
-                    <img src="../uploads/anchor_applications/<?= htmlspecialchars($app['photo']) ?>" class="w-12 h-12 rounded-xl object-cover border border-orange-100 shadow-sm cursor-pointer hover:scale-105 transition-transform view-photo" alt="Photo"/>
+                    <img src="../uploads/anchor_applications/<?= htmlspecialchars($app['photo']) ?>" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-sm cursor-pointer hover:scale-105 transition-transform view-photo" alt="Photo"/>
                   <?php else: ?>
-                    <div class="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-400">
+                    <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
                       <i class="fa-solid fa-user-tie text-lg"></i>
                     </div>
                   <?php endif; ?>
@@ -161,8 +182,8 @@ if ($applications_q) {
                 <td class="px-6 py-4">
                   <div class="font-bold text-gray-900"><?= htmlspecialchars($app['name']) ?></div>
                   <div class="text-xs text-gray-500 mt-0.5 flex flex-col gap-0.5">
-                    <span class="hover:text-orange-600 cursor-pointer"><i class="fa-solid fa-phone w-4"></i><?= htmlspecialchars($app['phone']) ?></span>
-                    <span class="hover:text-orange-600 cursor-pointer"><i class="fa-solid fa-envelope w-4"></i><?= htmlspecialchars($app['email']) ?></span>
+                    <span class="hover:text-brand-primary cursor-pointer"><i class="fa-solid fa-phone w-4"></i><?= htmlspecialchars($app['phone']) ?></span>
+                    <span class="hover:text-brand-primary cursor-pointer"><i class="fa-solid fa-envelope w-4"></i><?= htmlspecialchars($app['email']) ?></span>
                   </div>
                 </td>
 
@@ -241,11 +262,10 @@ if ($applications_q) {
             <?php endforeach; ?>
           </tbody>
         </table>
-      </div>
-    </div>
+    </div><!-- /table scroll -->
 
-    <!-- Mobile Cards View -->
-    <div class="md:hidden space-y-4" id="appsCards">
+    <!-- Mobile Cards View (shown only on mobile) -->
+    <div class="sm:hidden space-y-3 p-4" id="appsCards">
       <?php foreach ($apps as $app): ?>
         <?php 
           $status = $app['status'];
@@ -257,14 +277,14 @@ if ($applications_q) {
               $badge = 'bg-yellow-50 text-yellow-700 border-yellow-200';
           }
         ?>
-        <div class="bg-white rounded-2xl shadow border border-orange-100 p-5 app-card transition" data-status="<?= htmlspecialchars($app['status']) ?>">
+        <div class="bg-white rounded-2xl shadow border border-slate-200 p-5 app-card transition" data-status="<?= htmlspecialchars($app['status']) ?>">
           
           <div class="flex justify-between items-start gap-3 mb-4">
             <div class="flex items-center gap-3">
               <?php if (!empty($app['photo']) && file_exists("../uploads/anchor_applications/" . $app['photo'])): ?>
-                <img src="../uploads/anchor_applications/<?= htmlspecialchars($app['photo']) ?>" class="w-14 h-14 rounded-xl object-cover border border-orange-100 shadow-sm view-photo" alt="Photo"/>
+                <img src="../uploads/anchor_applications/<?= htmlspecialchars($app['photo']) ?>" class="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm view-photo" alt="Photo"/>
               <?php else: ?>
-                <div class="w-14 h-14 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-400">
+                <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
                   <i class="fa-solid fa-user-tie text-2xl"></i>
                 </div>
               <?php endif; ?>
@@ -278,27 +298,27 @@ if ($applications_q) {
 
           <div class="space-y-2 border-t border-gray-100 pt-3 mb-4">
             <div class="flex items-center gap-2 text-xs text-gray-600">
-              <i class="fa-solid fa-phone text-orange-500 w-4"></i>
+              <i class="fa-solid fa-phone text-brand-primary w-4"></i>
               <span><?= htmlspecialchars($app['phone']) ?></span>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-600">
-              <i class="fa-solid fa-envelope text-orange-500 w-4"></i>
+              <i class="fa-solid fa-envelope text-brand-primary w-4"></i>
               <span><?= htmlspecialchars($app['email']) ?></span>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-600">
-              <i class="fa-solid fa-calendar-day text-orange-500 w-4"></i>
+              <i class="fa-solid fa-calendar-day text-brand-primary w-4"></i>
               <span><?= date("d M Y", strtotime($app['created_at'])) ?></span>
             </div>
           </div>
 
-          <div class="flex gap-2 mb-4 bg-orange-50/50 p-2.5 rounded-xl border border-orange-100/50">
+          <div class="flex gap-2 mb-4 bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/50">
             <?php if (!empty($app['aadhaar']) && file_exists("../uploads/anchor_applications/" . $app['aadhaar'])): ?>
-              <a href="../uploads/anchor_applications/<?= htmlspecialchars($app['aadhaar']) ?>" target="_blank" class="flex-1 text-center py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-bold rounded-lg text-xs transition">
+              <a href="../uploads/anchor_applications/<?= htmlspecialchars($app['aadhaar']) ?>" target="_blank" class="flex-1 text-center py-2 bg-white hover:bg-slate-50 border border-slate-200 text-blue-800 font-bold rounded-lg text-xs transition">
                 <i class="fa-solid fa-id-card mr-1"></i> Aadhaar
               </a>
             <?php endif; ?>
             <?php if (!empty($app['resume']) && file_exists("../uploads/anchor_applications/" . $app['resume'])): ?>
-              <a href="../uploads/anchor_applications/<?= htmlspecialchars($app['resume']) ?>" target="_blank" class="flex-1 text-center py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-bold rounded-lg text-xs transition">
+              <a href="../uploads/anchor_applications/<?= htmlspecialchars($app['resume']) ?>" target="_blank" class="flex-1 text-center py-2 bg-white hover:bg-slate-50 border border-slate-200 text-blue-800 font-bold rounded-lg text-xs transition">
                 <i class="fa-solid fa-file-invoice mr-1"></i> Resume
               </a>
             <?php endif; ?>
@@ -322,16 +342,21 @@ if ($applications_q) {
 
         </div>
       <?php endforeach; ?>
-    </div>
+    </div><!-- /appsCards -->
 
   <?php endif; ?>
+  </div><!-- /premium-card -->
 
 </main>
 
 <!-- Photo Lightbox Modal -->
-<div id="photoModal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50">
-  <span id="closePhotoModal" class="absolute top-5 right-5 text-white text-4xl cursor-pointer hover:text-orange-500 transition">&times;</span>
-  <img id="modalUserPhoto" class="max-h-[85vh] max-w-[90vw] rounded-xl shadow-2xl border-2 border-white/10" src=""/>
+<div id="photoModal" class="admin-modal-overlay" onclick="if(this===event.target){closePhoto()}">
+  <div class="relative max-w-lg max-h-[90vh] p-2" onclick="event.stopPropagation()">
+    <img id="modalUserPhoto" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-slate-800 bg-slate-900/60 p-2" src=""/>
+    <button onclick="closePhoto()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </div>
 </div>
 
 <script>
@@ -339,21 +364,12 @@ if ($applications_q) {
 document.querySelectorAll(".view-photo").forEach(img => {
     img.onclick = () => {
         document.getElementById("modalUserPhoto").src = img.src;
-        document.getElementById("photoModal").classList.remove("hidden");
-        document.getElementById("photoModal").classList.add("flex");
+        document.getElementById("photoModal").classList.add("active");
     };
 });
 
 const closePhoto = () => {
-    document.getElementById("photoModal").classList.add("hidden");
-    document.getElementById("photoModal").classList.remove("flex");
-};
-
-document.getElementById("closePhotoModal").onclick = closePhoto;
-document.getElementById("photoModal").onclick = e => {
-    if(e.target === document.getElementById("photoModal")){
-        closePhoto();
-    }
+    document.getElementById("photoModal").classList.remove("active");
 };
 
 // 2. Tab Filter State
@@ -364,12 +380,12 @@ function filterStatus(status) {
     
     // Toggle active tab buttons colors
     document.querySelectorAll(".status-tab-btn").forEach(btn => {
-        btn.className = "status-tab-btn px-4 py-2 bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 font-semibold text-sm rounded-lg transition";
+        btn.className = "status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition";
     });
     
     const activeBtn = document.getElementById("tab-" + status);
     if(activeBtn) {
-        activeBtn.className = "status-tab-btn px-4 py-2 bg-orange-600 text-white font-bold text-sm rounded-lg shadow-sm transition";
+        activeBtn.className = "status-tab-btn flex-shrink-0 px-3.5 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-lg shadow-sm transition";
     }
     
     applyFilters();

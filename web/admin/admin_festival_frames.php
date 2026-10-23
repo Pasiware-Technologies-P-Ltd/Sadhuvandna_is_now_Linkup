@@ -61,135 +61,291 @@ if(isset($_GET["delete"])){
 
 /* ============= FETCH ===============*/
 $data = mysqli_query($con,"SELECT * FROM tbl_festival_frames ORDER BY id DESC");
+$total_count = mysqli_num_rows($data);
 ?>
 
 <?php include("header.php"); ?>
 
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
-
-<main class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-8">
-
-  <!-- ================= ADD FORM ================= -->
-  <div class="w-full md:w-1/3">
-    <div class="bg-white rounded-xl shadow-lg p-6">
-        
-      <?php
-      if(isset($_GET['msg'])){
-        $color = (isset($_GET['type']) && $_GET['type']=='success') ? 'green' : 'red';
-        echo "<p class='mb-3 text-$color-600 font-semibold text-sm'>" . htmlspecialchars($_GET['msg']) . "</p>";
-      }
-      ?>
-
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fa-solid fa-image text-orange-600"></i>
-        <h2 class="text-lg font-bold">Add Festival Frame</h2>
+  <?php if(isset($_GET['msg'])): 
+    $is_success = (isset($_GET['type']) && $_GET['type']=='success');
+  ?>
+    <div class="mb-5 p-4 rounded-xl flex items-center justify-between border <?= $is_success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' ?>">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid <?= $is_success ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600' ?> text-lg"></i>
+        <span class="text-xs font-semibold"><?= htmlspecialchars($_GET['msg']) ?></span>
       </div>
-
-      <form method="POST" enctype="multipart/form-data" class="space-y-4">
-
-        <!-- TITLE -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Frame Title</label>
-          <input type="text" name="title" required placeholder="e.g. Diwali Frame 2026"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm">
-        </div>
-
-        <!-- IMAGE -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Upload Frame Image</label>
-          <input type="file" name="image" accept="image/*" required
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm">
-          <p class="text-xs text-gray-500 mt-1">Recommended: PNG with transparency (1080x1080)</p>
-        </div>
-
-        <button name="submit_data"
-          class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold text-sm">
-          Save Frame
-        </button>
-
-      </form>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
     </div>
-  </div>
+  <?php endif; ?>
 
-  <!-- ================= LIST VIEW ================= -->
-  <div class="w-full md:w-2/3">
-    <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-4">
-      <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-        <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-          <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+  <!-- Full-Width Premium Card -->
+  <div class="premium-card overflow-hidden">
+    
+    <!-- Sub-Header / Action Bar -->
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
         </a>
-        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <i class="fa-solid fa-images text-orange-600"></i>
-          Festival Frames Management
-        </h2>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            Festival Frames Management
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Manage personalized festive photo frames and community templates</p>
+        </div>
       </div>
-      <div class="p-4 md:p-6">
+      
+      <div class="page-subheader-right">
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
+          <input 
+            type="search" id="searchInput" placeholder="Search frames...">
+        </div>
 
-      <div class="overflow-x-auto max-h-[500px] relative border border-orange-200 rounded-lg">
-        <table class="min-w-full text-sm">
-          <thead class="bg-orange-500 text-white sticky top-0 z-10">
-            <tr>
-              <th class="px-4 py-2 text-left whitespace-nowrap">Sr No</th>
-              <th class="px-4 py-2 text-left whitespace-nowrap">Preview</th>
-              <th class="px-4 py-2 text-left whitespace-nowrap">Title</th>
-              <th class="px-4 py-2 text-left whitespace-nowrap">Date</th>
-              <th class="px-4 py-2 text-center whitespace-nowrap">Action</th>
-            </tr>
-          </thead>
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          Frames: <span class="text-blue-600 font-bold"><?= $total_count ?></span>
+        </div>
 
-          <tbody class="divide-y bg-white">
+        <!-- Add Button Trigger Modal -->
+        <button type="button" onclick="openAddModal()" class="btn-brand-primary text-xs font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Add Frame</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Table Container -->
+    <div class="hidden sm:block overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
+      <table class="w-full text-left border-collapse" id="framesTable">
+        <thead class="sticky top-0 z-10 shadow-2xs">
+          <tr>
+            <th class="premium-th px-5 py-3 w-14">#</th>
+            <th class="premium-th px-5 py-3 w-28">Frame Preview</th>
+            <th class="premium-th px-5 py-3">Title & Occasion</th>
+            <th class="premium-th px-5 py-3 w-40">Created Date</th>
+            <th class="premium-th px-5 py-3 text-center w-24">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100 bg-white" id="framesTableBody">
           <?php $sr = 1; while($row = mysqli_fetch_assoc($data)) { ?>
-            <tr class="hover:bg-orange-50">
-              <!-- SR NO -->
-              <td class="px-4 py-2 font-semibold"><?= $sr++ ?></td>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $sr++ ?></td>
 
-              <!-- IMAGE -->
-              <td class="px-4 py-2">
-                <?php if($row['frame_image']!=""){ ?>
-                  <img src="../uploads/festival_frames/<?= htmlspecialchars($row['frame_image']) ?>" 
-                       class="w-16 h-16 rounded object-cover border border-orange-200 shadow-sm bg-gray-100">
-                <?php } else { ?>
-                  <span class="text-xs text-gray-400">No Image</span>
-                <?php } ?>
+              <td class="px-5 py-3.5">
+                <?php if(!empty($row['frame_image']) && file_exists("../uploads/festival_frames/".$row['frame_image'])): ?>
+                  <div class="w-14 h-14 rounded-xl p-1 bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center cursor-pointer hover:scale-105 transition"
+                       onclick="previewFullImage('../uploads/festival_frames/<?= htmlspecialchars($row['frame_image']) ?>')">
+                    <img src="../uploads/festival_frames/<?= htmlspecialchars($row['frame_image']) ?>" 
+                         class="max-w-full max-h-full object-contain"
+                         alt="Frame Preview">
+                  </div>
+                <?php else: ?>
+                  <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                  </div>
+                <?php endif; ?>
               </td>
 
-              <!-- TITLE -->
-              <td class="px-4 py-2 font-medium">
-                <?= htmlspecialchars($row['title']) ?>
+              <td class="px-5 py-3.5">
+                <span class="font-bold text-slate-900 text-sm block"><?= htmlspecialchars($row['title']) ?></span>
+                <span class="text-[11px] text-slate-400 font-medium">ID: #<?= $row['id'] ?></span>
               </td>
 
-              <!-- DATE -->
-              <td class="px-4 py-2 whitespace-nowrap text-gray-600">
-                <?= date("d M Y", strtotime($row['created_at'])) ?>
+              <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-slate-400 text-xs"></i>
+                  <?= date("d M Y", strtotime($row['created_at'])) ?>
+                </div>
               </td>
 
-              <!-- ACTION -->
-              <td class="px-4 py-2 text-center flex gap-2 justify-center">
+              <td class="px-5 py-3.5 text-center">
                 <a href="?delete=<?= $row['id'] ?>"
-                  onclick="return confirm('Delete this frame?')"
-                  class="bg-red-100 text-red-600 w-8 h-8 flex items-center justify-center rounded">
-                  <i class="fa-solid fa-trash"></i>
+                  onclick="return confirm('Delete this festival frame?')" title="Delete"
+                  class="w-8 h-8 mx-auto rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                  <i class="fa-solid fa-trash text-xs"></i>
                 </a>
               </td>
             </tr>
           <?php } ?>
 
-          <?php if(mysqli_num_rows($data) == 0){ ?>
+          <?php if($total_count == 0): ?>
             <tr>
-              <td colspan="5" class="text-center py-4 text-gray-500">
-                No frames added yet.
+              <td colspan="5" class="text-center py-12 text-slate-400">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-slate-600">No festival frames added yet</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Click "Add Frame" to upload transparent PNG frames</p>
+                </div>
               </td>
             </tr>
-          <?php } ?>
-          </tbody>
-        </table>
-      </div>
-
-      </div>
+          <?php endif; ?>
+        </tbody>
+      </table>
     </div>
+
+    <!-- Mobile Card View: Festival Frames -->
+    <div class="sm:hidden p-3 space-y-3 bg-slate-50/50" id="frameCards">
+      <?php 
+      if($total_count > 0):
+        mysqli_data_seek($data, 0);
+        while($row = mysqli_fetch_assoc($data)):
+          $img_path = (!empty($row['frame_image']) && file_exists("../uploads/festival_frames/".$row['frame_image'])) ? "../uploads/festival_frames/".htmlspecialchars($row['frame_image']) : null;
+      ?>
+      <div class="premium-card p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs frame-card transition hover:shadow-xs">
+        <div class="flex items-center justify-between gap-3 mb-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <?php if($img_path): ?>
+              <div class="w-14 h-14 rounded-xl p-1 bg-slate-100 border border-slate-200 shadow-2xs flex items-center justify-center flex-shrink-0 cursor-pointer"
+                   onclick="previewFullImage('<?= $img_path ?>')">
+                <img src="<?= $img_path ?>" class="max-w-full max-h-full object-contain" alt="Frame">
+              </div>
+            <?php else: ?>
+              <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+                <i class="fa-solid fa-wand-magic-sparkles text-sm text-slate-400"></i>
+              </div>
+            <?php endif; ?>
+
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 leading-snug truncate"><?= htmlspecialchars($row['title']) ?></h4>
+              <p class="text-[10px] text-slate-400 font-medium">ID: #<?= $row['id'] ?></p>
+              <p class="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                <i class="fa-regular fa-calendar text-[9px] text-slate-400"></i> <?= date("d M Y", strtotime($row['created_at'])) ?>
+              </p>
+            </div>
+          </div>
+
+          <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this festival frame?')" title="Delete"
+            class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs flex-shrink-0">
+            <i class="fa-solid fa-trash text-[11px]"></i>
+          </a>
+        </div>
+      </div>
+      <?php endwhile; else: ?>
+        <div class="text-center py-8 text-slate-400">
+          <p class="text-xs font-semibold">No festival frames added yet</p>
+        </div>
+      <?php endif; ?>
+    </div>
+
   </div>
 
 </main>
 
+<!-- ================= MODAL: ADD FESTIVAL FRAME ================= -->
+<div id="addModal" class="admin-modal-overlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-header">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 leading-tight">Add Festival Frame</h3>
+          <p class="text-[11px] text-slate-400">Upload new festive frame PNG for community members</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeAddModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
+      <div class="admin-modal-body space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Frame Title / Occasion</label>
+          <input type="text" name="title" required placeholder="e.g. Diwali Frame 2026, Holi Special"
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Upload Frame PNG</label>
+          
+          <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:border-blue-400 hover:bg-blue-50/20 transition cursor-pointer relative bg-slate-50/50">
+            <input type="file" name="image" id="modalFrameInput" accept="image/*" required class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFramePreview(event)">
+            <div id="dropzoneContent">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
+              <p class="text-xs font-semibold text-slate-700">Click to upload or drag & drop</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Recommended: PNG with transparency (1080x1080)</p>
+            </div>
+            <img id="framePreview" class="hidden max-h-36 mx-auto rounded-lg object-contain shadow-xs">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" name="submit_data" class="btn-brand-primary px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i>
+          <span>Save Frame</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Image Lightbox Modal -->
+<div id="lightboxModal" class="admin-modal-overlay" onclick="closeLightbox()">
+  <div class="relative max-w-3xl max-h-[90vh] p-2" onclick="event.stopPropagation()">
+    <img id="lightboxImg" src="" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain border border-slate-800 bg-slate-900/60 p-4">
+    <button onclick="closeLightbox()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </div>
+</div>
+
 </body>
+<script>
+function openAddModal() {
+  document.getElementById('addModal').classList.add('active');
+}
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('active');
+}
+
+function handleFramePreview(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      document.getElementById('framePreview').src = evt.target.result;
+      document.getElementById('framePreview').classList.remove('hidden');
+      document.getElementById('dropzoneContent').classList.add('hidden');
+    }
+    reader.readAsDataURL(file);
+  }
+}
+
+function previewFullImage(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxModal').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightboxModal').classList.remove('active');
+}
+
+document.getElementById("searchInput").addEventListener("input", function(){
+  let v = this.value.toLowerCase();
+  document.querySelectorAll("#framesTableBody tr").forEach(r => {
+    if (r.children.length > 1) {
+      r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+    }
+  });
+  document.querySelectorAll("#frameCards .frame-card").forEach(c => {
+    c.style.display = c.innerText.toLowerCase().includes(v) ? "" : "none";
+  });
+});
+</script>
 </html>
+
+
+

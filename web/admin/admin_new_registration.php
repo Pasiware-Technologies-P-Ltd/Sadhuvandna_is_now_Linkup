@@ -32,8 +32,11 @@ if(isset($_POST['action']) && isset($_POST['id'])){
 
 // Handle AJAX Request for Infinite Scroll
 if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    if (ob_get_length()) ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+
     $limit = $page_limit;
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
     $offset = ($page - 1) * $limit;
     
     $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
@@ -45,95 +48,112 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     
     $total_search_query = mysqli_query($con, "SELECT COUNT(*) as count FROM tbl_members WHERE $whereClause");
     $total_search_row = mysqli_fetch_assoc($total_search_query);
-    $total_members = $total_search_row['count'];
+    $total_members = (int)($total_search_row['count'] ?? 0);
     
-    $query = "SELECT * FROM tbl_members WHERE $whereClause ORDER BY date DESC LIMIT $limit OFFSET $offset";
+    $query = "SELECT * FROM tbl_members WHERE $whereClause ORDER BY date DESC, id DESC LIMIT $limit OFFSET $offset";
     $users_ajax = mysqli_query($con, $query);
     
     $desktop_html = '';
     $mobile_html = '';
+    $a = $offset + 1;
     
     while($user = mysqli_fetch_assoc($users_ajax)){
         // Build Desktop HTML
-        $photo_html = '';
-        if($user['profile_photo'] && file_exists("../uploads/photo/".$user['profile_photo'])){
-            $photo_html = '<img src="../uploads/photo/'.$user['profile_photo'].'" class="w-12 h-12 rounded-full object-cover cursor-pointer view-photo"/>';
-        } else {
-            $photo_html = '<i class="fa-solid fa-user text-gray-300 text-xl"></i>';
-        }
+        $photo_src = (!empty($user['profile_photo']) && file_exists("../uploads/photo/".$user['profile_photo'])) 
+            ? "../uploads/photo/".$user['profile_photo'] 
+            : "https://ui-avatars.com/api/?name=".urlencode($user['name'] ?: 'User')."&background=1877F2&color=ffffff&bold=true";
 
-        $desktop_html .= '<tr class="hover:bg-orange-50 transition">
-          <td class="px-3 py-2">'.$photo_html.'</td>
-          <td class="px-3 py-2 font-medium">'.htmlspecialchars($user['name']).'</td>
-          <td class="px-3 py-2">'.htmlspecialchars($user['email']).'</td>
-          <td class="px-3 py-2">'.htmlspecialchars($user['mobile']).'</td>
-          <td class="px-3 py-2">'.htmlspecialchars($user['cast']).'</td>
-          <td class="px-3 py-2">'.date("d M Y", strtotime($user['date'])).'</td>
-          <td class="px-3 py-2">
-            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">Pending</span>
+        $desktop_html .= '<tr class="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
+          <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold">'.$a.'</td>
+          <td class="px-5 py-3.5">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <img src="'.$photo_src.'" class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 shadow-sm cursor-pointer view-photo flex-shrink-0" alt="photo" onerror="this.onerror=null;this.src=\'https://ui-avatars.com/api/?name='.urlencode($user['name'] ?: 'User').'&background=2563EB&color=ffffff&bold=true\';">
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-800 text-xs truncate max-w-[200px]" title="'.htmlspecialchars($user['name']).'">'.htmlspecialchars($user['name']).'</div>
+                <div class="text-[11px] text-slate-400 font-medium">ID: #'.$user['id'].'</div>
+              </div>
+            </div>
           </td>
-          <td class="px-3 py-2 text-center">
-            <form method="post" class="flex justify-center gap-2">
+          <td class="px-5 py-3.5">
+            <div class="text-xs font-medium text-slate-700 truncate max-w-[230px]" title="'.htmlspecialchars($user['email']).'">'.htmlspecialchars($user['email']).'</div>
+            <div class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+              <i class="fa-solid fa-phone text-blue-500 text-[10px]"></i> '.htmlspecialchars($user['mobile']).'
+            </div>
+          </td>
+          <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">'.date("d M Y", strtotime($user['date'])).'</td>
+          <td class="px-5 py-3.5">
+            <span class="status-badge status-pending"><span class="status-badge-dot"></span> Pending</span>
+          </td>
+          <td class="px-5 py-3.5 text-center">
+            <form method="post" class="flex justify-center gap-1.5">
               <input type="hidden" name="id" value="'.$user['id'].'">
-              <button type="submit" name="action" value="approve" class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition" title="Approve">
-                <i class="fa-solid fa-check text-sm"></i>
+              <button type="submit" name="action" value="approve" class="btn-action-icon btn-action-approve" title="Approve">
+                <i class="fa-solid fa-check text-xs"></i>
               </button>
-              <button type="submit" name="action" value="block" class="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition" title="Block">
-                <i class="fa-solid fa-ban text-sm"></i>
+              <button type="submit" name="action" value="block" class="btn-action-icon btn-action-danger" title="Block">
+                <i class="fa-solid fa-ban text-xs"></i>
               </button>
             </form>
           </td>
         </tr>';
         
-        // Build Mobile HTML
-        $m_photo_html = '';
-        if($user['profile_photo'] && file_exists("../uploads/photo/".$user['profile_photo'])){
-            $m_photo_html = '<img src="../uploads/photo/'.$user['profile_photo'].'" class="w-12 h-12 rounded-full object-cover cursor-pointer view-photo"/>';
-        } else {
-            $m_photo_html = '<i class="fa-solid fa-user text-gray-300 w-12 h-12 text-2xl flex items-center justify-center rounded-full bg-gray-100"></i>';
-        }
+        $cast_badge = !empty($user['cast']) ? '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200/60">'.htmlspecialchars($user['cast']).'</span>' : '';
 
-        $mobile_html .= '<div class="bg-white rounded-xl shadow-lg p-4 user-card">
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex items-center gap-3">
-              '.$m_photo_html.'
-              <div>
-                <h3 class="text-base font-bold text-gray-800">'.htmlspecialchars($user['name']).'</h3>
-                <p class="text-xs text-gray-500">'.htmlspecialchars($user['cast']).' | '.date("d M Y", strtotime($user['date'])).'</p>
+        // Build Mobile HTML
+        $mobile_html .= '<div class="premium-card p-4 user-card bg-white transition hover:shadow-md">
+          <div class="flex items-start justify-between gap-2.5 mb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="'.$photo_src.'" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-xs cursor-pointer view-photo flex-shrink-0" alt="photo" onerror="this.onerror=null;this.src=\'https://ui-avatars.com/api/?name='.urlencode($user['name'] ?: 'User').'&background=2563eb&color=ffffff&bold=true\';">
+              <div class="min-w-0">
+                <h3 class="text-sm font-bold text-slate-900 truncate" title="'.htmlspecialchars($user['name']).'">'.htmlspecialchars($user['name']).'</h3>
+                <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-0.5">
+                  <span>ID: #'.$user['id'].'</span>
+                  '.$cast_badge.'
+                </div>
               </div>
             </div>
-            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">Pending</span>
-          </div>
-          <div class="space-y-2 mb-3">
-            <div class="flex items-center gap-2 text-sm text-gray-600">
-              <i class="fa-solid fa-envelope text-orange-500 w-4"></i>
-              <span>'.htmlspecialchars($user['email']).'</span>
-            </div>
-            <div class="flex items-center gap-2 text-sm text-gray-600">
-              <i class="fa-solid fa-phone text-orange-500 w-4"></i>
-              <span>'.htmlspecialchars($user['mobile']).'</span>
+            <div class="flex-shrink-0">
+              <span class="status-badge status-pending"><span class="status-badge-dot"></span> Pending</span>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-2">
+
+          <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 mb-3">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-envelope text-blue-500 w-4 text-center text-xs"></i>
+              <span class="truncate font-medium text-slate-700">'.htmlspecialchars($user['email']).'</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-phone text-blue-500 w-4 text-center text-xs"></i>
+              <a href="tel:'.htmlspecialchars($user['mobile']).'" class="font-medium text-slate-700 hover:text-blue-600">'.htmlspecialchars($user['mobile']).'</a>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-calendar-day text-blue-500 w-4 text-center text-xs"></i>
+              <span class="font-medium text-slate-500">Joined: '.date("d M Y", strtotime($user['date'])).'</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
             <form method="post">
               <input type="hidden" name="id" value="'.$user['id'].'">
-              <button type="submit" name="action" value="approve" class="flex flex-col items-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition w-full">
-                <i class="fa-solid fa-check text-lg"></i>
-                <span class="text-xs font-medium">Approve</span>
+              <button type="submit" name="action" value="approve" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition">
+                <i class="fa-solid fa-check text-xs"></i> Approve
               </button>
             </form>
             <form method="post">
               <input type="hidden" name="id" value="'.$user['id'].'">
-              <button type="submit" name="action" value="block" class="flex flex-col items-center gap-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition w-full">
-                <i class="fa-solid fa-ban text-lg"></i>
-                <span class="text-xs font-medium">Block</span>
+              <button type="submit" name="action" value="block" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition">
+                <i class="fa-solid fa-ban text-xs"></i> Block
               </button>
             </form>
           </div>
         </div>';
+
+        $a++;
     }
     
-    echo json_encode(['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_members]);
+    echo json_encode(['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_members], JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 }
 
@@ -148,138 +168,163 @@ $users = mysqli_query($con, "SELECT * FROM tbl_members WHERE status='Pending' OR
 
 <?php include("header.php"); ?>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+<main class="w-full px-3 sm:px-5 lg:px-6 py-2">
 
 <?php if(isset($_SESSION['msg'])): ?>
-<div class="mb-2 p-1 bg-green-100 text-green-800 rounded text-sm text-center font-semibold border border-green-300">
+<div class="mb-2 p-1.5 bg-green-100 text-green-800 rounded-lg text-sm text-center font-semibold border border-green-300">
   <?= $_SESSION['msg']; unset($_SESSION['msg']); ?>
 </div>
 <?php endif; ?>
 
-<!-- Desktop Table -->
-<div class="hidden md:block bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-  
-  <div class="p-2 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-    <div class="flex items-center gap-3">
-      <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+<!-- Table Sub-Header / Filters (Visible on BOTH Mobile & Desktop) -->
+<div class="premium-card overflow-hidden mb-5">
+  <div class="page-subheader">
+    <div class="page-subheader-left">
+      <a href="index.php" class="btn-back-nav" title="Back to Dashboard">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
       </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        New Registrations
-      </h2>
+      <div>
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          New Registrations
+        </h2>
+        <p class="text-xs text-slate-400">Review and verify pending member join requests</p>
+      </div>
     </div>
     
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <div class="relative w-full sm:w-64">
-        <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
+    <div class="page-subheader-right">
+      <div class="subheader-search">
+        <i class="fa-solid fa-search subheader-search-icon"></i>
         <input 
-          type="text" 
+          type="search" 
           id="searchInput" 
-          placeholder="Search..." 
-          class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
+          placeholder="Search pending members..."
         >
       </div>
-      <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-        Pending: <span class="text-orange-600 font-bold" id="pending-count"><?= $total_members ?></span>
+      <div class="premium-counter-pill">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        Pending: <span class="text-amber-600 font-bold" id="pending-count"><?= number_format($total_members) ?></span>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="overflow-y-auto" style="max-height: calc(100vh - 130px);" id="tableScrollContainer">
+<!-- Desktop Table Container -->
+<div class="hidden md:block premium-card overflow-hidden">
+  <div class="overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
     <table class="w-full text-sm" id="userTable">
-      <thead class="bg-gradient-to-r from-orange-500 to-orange-600 text-white sticky top-0 z-10">
-        <tr>
-          <th class="px-3 py-2 text-left">Photo</th>
-          <th class="px-3 py-2 text-left">Name</th>
-          <th class="px-3 py-2 text-left">Email</th>
-          <th class="px-3 py-2 text-left">Phone</th>
-          <th class="px-3 py-2 text-left">Cast</th>
-          <th class="px-3 py-2 text-left">Date</th>
-          <th class="px-3 py-2 text-left">Status</th>
-          <th class="px-3 py-2 text-center">Actions</th>
+      <thead class="sticky top-0 z-10 shadow-xs">
+        <tr class="bg-slate-50/95 backdrop-blur border-b border-slate-200">
+          <th class="premium-th w-12">#</th>
+          <th class="premium-th">Member</th>
+          <th class="premium-th">Contact Info</th>
+          <th class="premium-th">Joined</th>
+          <th class="premium-th">Status</th>
+          <th class="premium-th text-center w-28">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
-        <?php while($user = mysqli_fetch_assoc($users)): ?>
-        <tr class="hover:bg-orange-50 transition">
-          <td class="px-3 py-2">
-            <?php if($user['profile_photo'] && file_exists("../uploads/photo/".$user['profile_photo'])): ?>
-              <img src="../uploads/photo/<?= $user['profile_photo'] ?>" class="w-12 h-12 rounded-full object-cover cursor-pointer view-photo"/>
-            <?php else: ?>
-              <i class="fa-solid fa-user text-gray-300 text-xl"></i>
-            <?php endif; ?>
+      <tbody class="divide-y divide-slate-100">
+        <?php $a=1; while($user = mysqli_fetch_assoc($users)): 
+          $photo_src = (!empty($user['profile_photo']) && file_exists("../uploads/photo/".$user['profile_photo'])) 
+              ? "../uploads/photo/".$user['profile_photo'] 
+              : "https://ui-avatars.com/api/?name=".urlencode($user['name'] ?: 'User')."&background=2563EB&color=ffffff&bold=true";
+        ?>
+        <tr class="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
+          <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $a;?></td>
+          <td class="px-5 py-3.5">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <img src="<?= $photo_src ?>" class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 shadow-sm cursor-pointer view-photo flex-shrink-0" alt="photo" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=<?= urlencode($user['name'] ?: 'User') ?>&background=2563EB&color=ffffff&bold=true';">
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-800 text-xs truncate max-w-[200px]" title="<?= htmlspecialchars($user['name']) ?>"><?= htmlspecialchars($user['name']) ?></div>
+                <div class="text-[11px] text-slate-400 font-medium">ID: #<?= $user['id'] ?></div>
+              </div>
+            </div>
           </td>
-          <td class="px-3 py-2 font-medium"><?= htmlspecialchars($user['name']) ?></td>
-          <td class="px-3 py-2"><?= htmlspecialchars($user['email']) ?></td>
-          <td class="px-3 py-2"><?= htmlspecialchars($user['mobile']) ?></td>
-          <td class="px-3 py-2"><?= htmlspecialchars($user['cast']) ?></td>
-          <td class="px-3 py-2"><?= date("d M Y", strtotime($user['date'])) ?></td>
-          <td class="px-3 py-2">
-            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">Pending</span>
+          <td class="px-5 py-3.5">
+            <div class="text-xs font-medium text-slate-700 truncate max-w-[230px]" title="<?= htmlspecialchars($user['email']) ?>"><?= htmlspecialchars($user['email']) ?></div>
+            <div class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+              <i class="fa-solid fa-phone text-blue-500 text-[10px]"></i> <?= htmlspecialchars($user['mobile']) ?>
+            </div>
           </td>
-          <td class="px-3 py-2 text-center">
-            <form method="post" class="flex justify-center gap-2">
+          <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap"><?= date("d M Y", strtotime($user['date'])) ?></td>
+          <td class="px-5 py-3.5">
+            <span class="status-badge status-pending">
+              <span class="status-badge-dot"></span> Pending
+            </span>
+          </td>
+          <td class="px-5 py-3.5 text-center">
+            <form method="post" class="flex justify-center gap-1.5">
               <input type="hidden" name="id" value="<?= $user['id'] ?>">
-              <button type="submit" name="action" value="approve" class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition" title="Approve">
-                <i class="fa-solid fa-check text-sm"></i>
+              <button type="submit" name="action" value="approve" class="btn-action-icon btn-action-approve" title="Approve">
+                <i class="fa-solid fa-check text-xs"></i>
               </button>
-              <button type="submit" name="action" value="block" class="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition" title="Block">
-                <i class="fa-solid fa-ban text-sm"></i>
+              <button type="submit" name="action" value="block" class="btn-action-icon btn-action-danger" title="Block">
+                <i class="fa-solid fa-ban text-xs"></i>
               </button>
             </form>
           </td>
         </tr>
-        <?php endwhile; ?>
+        <?php $a++; endwhile; ?>
       </tbody>
     </table>
   </div>
 </div>
 
 <!-- Mobile Cards -->
-<div class="md:hidden space-y-4 mt-4" id="userCards">
+<div class="md:hidden space-y-3 mt-4" id="userCards">
 <?php
 // Initial load for mobile view
 $users = mysqli_query($con, "SELECT * FROM tbl_members WHERE status='Pending' ORDER BY date DESC LIMIT $page_limit");
 while($user = mysqli_fetch_assoc($users)):
+  $photo_src = (!empty($user['profile_photo']) && file_exists("../uploads/photo/".$user['profile_photo'])) 
+      ? "../uploads/photo/".$user['profile_photo'] 
+      : "https://ui-avatars.com/api/?name=".urlencode($user['name'] ?: 'User')."&background=2563eb&color=ffffff&bold=true";
+  $cast_badge = !empty($user['cast']) ? '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200/60">'.htmlspecialchars($user['cast']).'</span>' : '';
 ?>
-<div class="bg-white rounded-xl shadow-lg p-4 user-card">
-  <div class="flex items-start justify-between mb-3">
-    <div class="flex items-center gap-3">
-      <?php if($user['profile_photo'] && file_exists("../uploads/photo/".$user['profile_photo'])): ?>
-        <img src="../uploads/photo/<?= $user['profile_photo'] ?>" class="w-12 h-12 rounded-full object-cover cursor-pointer view-photo"/>
-      <?php else: ?>
-        <i class="fa-solid fa-user text-gray-300 w-12 h-12 text-2xl flex items-center justify-center rounded-full bg-gray-100"></i>
-      <?php endif; ?>
-      <div>
-        <h3 class="text-base font-bold text-gray-800"><?= htmlspecialchars($user['name']) ?></h3>
-        <p class="text-xs text-gray-500"><?= htmlspecialchars($user['cast']) ?> | <?= date("d M Y", strtotime($user['date'])) ?></p>
+<div class="premium-card p-4 user-card bg-white transition hover:shadow-md">
+  <div class="flex items-start justify-between gap-2.5 mb-3">
+    <div class="flex items-center gap-3 min-w-0">
+      <img src="<?= $photo_src ?>" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-xs cursor-pointer view-photo flex-shrink-0" alt="photo" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=<?= urlencode($user['name'] ?: 'User') ?>&background=2563eb&color=ffffff&bold=true';">
+      <div class="min-w-0">
+        <h3 class="text-sm font-bold text-slate-900 truncate" title="<?= htmlspecialchars($user['name']) ?>"><?= htmlspecialchars($user['name']) ?></h3>
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-0.5">
+          <span>ID: #<?= $user['id'] ?></span>
+          <?= $cast_badge ?>
+        </div>
       </div>
     </div>
-    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">Pending</span>
-  </div>
-  <div class="space-y-2 mb-3">
-    <div class="flex items-center gap-2 text-sm text-gray-600">
-      <i class="fa-solid fa-envelope text-orange-500 w-4"></i>
-      <span><?= htmlspecialchars($user['email']) ?></span>
-    </div>
-    <div class="flex items-center gap-2 text-sm text-gray-600">
-      <i class="fa-solid fa-phone text-orange-500 w-4"></i>
-      <span><?= htmlspecialchars($user['mobile']) ?></span>
+    <div class="flex-shrink-0">
+      <span class="status-badge status-pending"><span class="status-badge-dot"></span> Pending</span>
     </div>
   </div>
-  <div class="grid grid-cols-2 gap-2">
+
+  <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 mb-3">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-envelope text-blue-500 w-4 text-center text-xs"></i>
+      <span class="truncate font-medium text-slate-700"><?= htmlspecialchars($user['email']) ?></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-phone text-blue-500 w-4 text-center text-xs"></i>
+      <a href="tel:<?= htmlspecialchars($user['mobile']) ?>" class="font-medium text-slate-700 hover:text-blue-600"><?= htmlspecialchars($user['mobile']) ?></a>
+    </div>
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-calendar-day text-blue-500 w-4 text-center text-xs"></i>
+      <span class="font-medium text-slate-500">Joined: <?= date("d M Y", strtotime($user['date'])) ?></span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
     <form method="post">
       <input type="hidden" name="id" value="<?= $user['id'] ?>">
-      <button type="submit" name="action" value="approve" class="flex flex-col items-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition w-full">
-        <i class="fa-solid fa-check text-lg"></i>
-        <span class="text-xs font-medium">Approve</span>
+      <button type="submit" name="action" value="approve" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition">
+        <i class="fa-solid fa-check text-xs"></i> Approve
       </button>
     </form>
     <form method="post">
       <input type="hidden" name="id" value="<?= $user['id'] ?>">
-      <button type="submit" name="action" value="block" class="flex flex-col items-center gap-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition w-full">
-        <i class="fa-solid fa-ban text-lg"></i>
-        <span class="text-xs font-medium">Block</span>
+      <button type="submit" name="action" value="block" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition">
+        <i class="fa-solid fa-ban text-xs"></i> Block
       </button>
     </form>
   </div>
@@ -320,73 +365,131 @@ let currentPage = 1;
 let loading = false;
 let hasMore = true;
 let currentSearch = '';
+let searchDebounceTimer = null;
 
 const searchInput = document.getElementById('searchInput');
-searchInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-      currentSearch = searchInput.value.trim();
-      currentPage = 1;
-      hasMore = true;
-      document.querySelector('#userTable tbody').innerHTML = '';
-      document.getElementById('userCards').innerHTML = '';
-      loadMore(true);
-  }
-});
 
-const tableContainer = document.getElementById('tableScrollContainer');
+function performSearch() {
+    const val = searchInput ? searchInput.value.trim() : '';
+    currentSearch = val;
+    currentPage = 1;
+    hasMore = true;
+    loading = false;
+    
+    const tbody = document.querySelector('#userTable tbody');
+    const userCards = document.getElementById('userCards');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-xs text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching pending members...</td></tr>';
+    if (userCards) userCards.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching pending members...</div>';
+    
+    loadMore(true);
+}
 
-if (tableContainer) {
-    tableContainer.addEventListener('scroll', () => {
-        if (Math.ceil(tableContainer.scrollTop + tableContainer.clientHeight) >= tableContainer.scrollHeight - 150) {
-            loadMore();
+if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchDebounceTimer);
+            performSearch();
         }
+    });
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            performSearch();
+        }, 350);
     });
 }
 
-window.addEventListener('scroll', () => {
-    if (window.innerWidth < 768) { 
+const tableContainer = document.getElementById('tableScrollContainer');
+
+function checkScrollAndLoad() {
+    if (loading || !hasMore) return;
+    
+    // Check desktop table scroll
+    if (tableContainer && window.innerWidth >= 768) {
+        if (tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 250) {
+            loadMore();
+        }
+    } else {
+        // Mobile window scroll
         const scrollY = window.scrollY || document.documentElement.scrollTop;
-        if (Math.ceil(window.innerHeight + scrollY) >= document.documentElement.scrollHeight - 200) {
+        if (window.innerHeight + scrollY >= document.documentElement.scrollHeight - 350) {
             loadMore();
         }
     }
-});
+}
+
+if (tableContainer) {
+    tableContainer.addEventListener('scroll', checkScrollAndLoad);
+}
+window.addEventListener('scroll', checkScrollAndLoad);
 
 function loadMore(isSearch = false) {
     if (loading || (!hasMore && !isSearch)) return;
     loading = true;
     
-    if (!isSearch) {
-        currentPage++;
-    }
+    const nextPage = isSearch ? 1 : (currentPage + 1);
+    const targetUrl = `${window.location.pathname}?ajax=1&page=${nextPage}&search=${encodeURIComponent(currentSearch)}`;
     
-    fetch(`admin_new_registration.php?ajax=1&page=${currentPage}&search=${encodeURIComponent(currentSearch)}`)
-        .then(res => res.json())
-        .then(data => {
-            if(data.desktop.trim() === '' && data.mobile.trim() === '') {
-                hasMore = false;
-            } else {
-                document.querySelector('#userTable tbody').insertAdjacentHTML('beforeend', data.desktop);
-                document.getElementById('userCards').insertAdjacentHTML('beforeend', data.mobile);
+    fetch(targetUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        const tbody = document.querySelector('#userTable tbody');
+        const userCards = document.getElementById('userCards');
+        
+        if (isSearch) {
+            if (tbody) tbody.innerHTML = '';
+            if (userCards) userCards.innerHTML = '';
+        }
+        
+        const hasDesktopData = data.desktop && data.desktop.trim() !== '';
+        const hasMobileData = data.mobile && data.mobile.trim() !== '';
+        
+        if (!hasDesktopData && !hasMobileData) {
+            hasMore = false;
+            if (isSearch) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-xs text-slate-400 font-medium"><i class="fa-solid fa-user-slash text-slate-300 text-2xl block mb-2"></i>No pending registrations found</td></tr>';
+                if (userCards) userCards.innerHTML = '<div class="text-center py-10 text-xs text-slate-400 font-medium">No pending registrations found.</div>';
             }
-            
-            if (data.total !== undefined) {
-                document.getElementById('pending-count').innerText = data.total;
+        } else {
+            currentPage = nextPage;
+            if (tbody && hasDesktopData) {
+                tbody.insertAdjacentHTML('beforeend', data.desktop);
             }
-            
-            loading = false;
-            
-            // Auto-load if no scrollbar
-            if (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight && hasMore) {
-                loadMore();
+            if (userCards && hasMobileData) {
+                userCards.insertAdjacentHTML('beforeend', data.mobile);
             }
-        })
-        .catch(err => {
-            console.error(err);
-            loading = false;
-        });
+        }
+        
+        if (data.total !== undefined) {
+            const countEl = document.getElementById('pending-count');
+            if (countEl) countEl.innerText = Number(data.total).toLocaleString();
+        }
+        
+        loading = false;
+        
+        // Auto-load if no scrollbar
+        if (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight + 50 && hasMore) {
+            loadMore();
+        }
+    })
+    .catch(err => {
+        console.error("Chunk loading error:", err);
+        loading = false;
+        if (isSearch) {
+            const tbody = document.querySelector('#userTable tbody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-xs text-rose-500 font-medium">Failed to search. Please check network.</td></tr>';
+        }
+    });
 }
 </script>
 
 </body>
 </html>
+

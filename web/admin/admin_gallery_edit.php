@@ -65,64 +65,67 @@ if (isset($_POST['update'])) {
 <?php include("header.php"); ?>
 
 <!-- MAIN -->
-<main class="max-w-3xl mx-auto py-8 px-4">
- <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
+ <div class="premium-card overflow-hidden w-full max-w-xl">
     
-    <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-      <a href="admin_gallery.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-      </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fa-solid fa-image text-orange-600"></i>
-        Edit Gallery Image
-      </h2>
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="admin_gallery.php" class="btn-back-nav" title="Back to Gallery">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">
+            Edit Gallery Image
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Update title and image asset</p>
+        </div>
+      </div>
     </div>
 
     <div class="p-6">
-       <form method="POST" enctype="multipart/form-data" class="space-y-5">
+       <form method="POST" enctype="multipart/form-data" class="space-y-4">
 
       <!-- Title -->
       <div>
-        <label class="block text-sm font-medium mb-1">Title</label>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Title *</label>
         <input type="text" name="title"
          value="<?= htmlspecialchars($data['title']) ?>"
          required
-         class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm">
+         class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
       </div>
 
       <!-- OLD IMAGE -->
       <div>
-        <label class="block text-sm font-medium mb-2">Current Image</label>
-        <img src="../uploads/gallery/<?= $data['image'] ?>"
-         class="w-48 h-48 object-cover rounded border border-orange-200 shadow-sm">
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Current Image</label>
+        <div class="inline-block relative">
+          <img src="../uploads/gallery/<?= $data['image'] ?>"
+           class="w-48 h-36 object-cover rounded-xl border border-slate-200 shadow-2xs">
+        </div>
       </div>
 
       <!-- New -->
       <div>
-        <label class="block text-sm font-medium mb-1">Replace Image</label>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Replace Image</label>
         <input type="file" name="image" accept="image/*"
-         class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm">
-        <p class="text-xs text-gray-500">Leave blank to keep old image</p>
+         class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer">
+        <p class="text-[11px] text-slate-400 mt-1">Leave blank to keep old image</p>
       </div>
 
       <!-- Buttons -->
-      <div class="flex gap-4 pt-4">
+      <div class="flex gap-3 pt-3">
         <button type="submit" name="update"
-          class="flex-1 bg-orange-500 hover:bg-orange-600 
-                 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2">
-          <i class="fa-solid fa-check"></i> Update
+          class="btn-brand-primary flex-1 py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i> <span>Update Image</span>
         </button>
 
         <a href="admin_gallery.php"
-          class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg 
-                 font-semibold flex items-center justify-center gap-2">
-          <i class="fa-solid fa-xmark"></i> Cancel
+          class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-xmark text-xs"></i> <span>Cancel</span>
         </a>
       </div>
 
-      </div>
-   </form>
-   </div>
+      </form>
+    </div>
  </div>
 </main>
 

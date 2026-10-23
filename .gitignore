@@ -101,3 +101,11 @@ scratch/
 
 *.zip
 *.rar
+
+temp/
+
+uploads/
+/admin.zip
+*.log
+
+/server/node_modules

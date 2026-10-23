@@ -95,72 +95,82 @@ if (isset($_POST['updateTemple'])) {
 
 
 <!-- Main -->
-<main class="max-w-3xl mx-auto py-8 px-4">
- <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden w-full max-w-lg mx-auto">
+<!-- Main -->
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
+ <div class="premium-card overflow-hidden w-full max-w-xl">
     
-    <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-      <a href="create_temple.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-      </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fa-solid fa-place-of-worship text-orange-600"></i>
-        Edit Temple
-      </h2>
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="create_temple.php" class="btn-back-nav" title="Back to Temples">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">
+            Edit Temple
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Update temple location and mahant details</p>
+        </div>
+      </div>
     </div>
 
     <div class="p-6">
-        <form method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-6">
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
 
             <!-- Image -->
-            <div class="col-span-2 flex flex-col items-center">
-                <div class="w-28 h-28 bg-gray-100 rounded-full border-2 border-dashed border-orange-300 overflow-hidden flex items-center justify-center">
+            <div class="flex flex-col items-center pb-2">
+                <div class="w-24 h-24 bg-slate-50 rounded-full border-2 border-slate-200 overflow-hidden flex items-center justify-center relative shadow-2xs">
                     <img id="previewImg" 
                          src="../uploads/temple/<?= $data['photo'] ?>" 
                          class="w-full h-full object-cover <?= $data['photo'] ? '' : 'hidden' ?>">
                     
-                    <?php if (!$data['photo']) { ?>
-                        <i id="defaultIcon" class="fa-solid fa-user-tie text-gray-300 text-3xl"></i>
-                    <?php } ?>
+                    <?php if (!$data['photo']): ?>
+                        <i id="defaultIcon" class="fa-solid fa-place-of-worship text-slate-300 text-3xl"></i>
+                    <?php endif; ?>
                 </div>
 
                 <input type="file" name="photo" id="photo" class="hidden" accept="image/*" onchange="showPreview(event)">
-                <label for="photo" class="px-4 py-1 bg-orange-500 text-white rounded-full text-xs cursor-pointer mt-2">
-                    Change Photo
+                <label for="photo" class="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold cursor-pointer mt-2.5 transition">
+                    <i class="fa-solid fa-camera text-xs mr-1"></i> Change Photo
                 </label>
             </div>
 
-            <div>
-                <label class="text-sm">Mahant Name *</label>
-                <input type="text" name="mahant_name" value="<?= $data['mahant_name'] ?>" required class="w-full border px-3 py-2 rounded-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mahant Name *</label>
+                    <input type="text" name="mahant_name" value="<?= htmlspecialchars($data['mahant_name']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mobile *</label>
+                    <input type="text" name="mobile" value="<?= htmlspecialchars($data['mobile']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+                </div>
             </div>
 
-            <div>
-                <label class="text-sm">Mobile *</label>
-                <input type="text" name="mobile" value="<?= $data['mobile'] ?>" required class="w-full border px-3 py-2 rounded-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Village *</label>
+                    <input type="text" name="village" value="<?= htmlspecialchars($data['village']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Taluka *</label>
+                    <input type="text" name="taluka" value="<?= htmlspecialchars($data['taluka']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">District *</label>
+                    <input type="text" name="district" value="<?= htmlspecialchars($data['district']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+                </div>
             </div>
 
-            <div>
-                <label class="text-sm">Village *</label>
-                <input type="text" name="village" value="<?= $data['village'] ?>" required class="w-full border px-3 py-2 rounded-lg">
-            </div>
-
-            <div>
-                <label class="text-sm">Taluka *</label>
-                <input type="text" name="taluka" value="<?= $data['taluka'] ?>" required class="w-full border px-3 py-2 rounded-lg">
-            </div>
-
-            <div>
-                <label class="text-sm">District *</label>
-                <input type="text" name="district" value="<?= $data['district'] ?>" required class="w-full border px-3 py-2 rounded-lg">
-            </div>
-
-            <div class="col-span-2 flex gap-4 mt-4 justify-center">
-                <button type="submit" name="updateTemple" class="px-6 py-2 bg-orange-500 text-white rounded-lg">
-                    <i class="fa-solid fa-check mr-1"></i> Update
+            <!-- Buttons -->
+            <div class="flex gap-3 pt-3">
+                <button type="submit" name="updateTemple" class="btn-brand-primary flex-1 py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-check text-xs"></i> <span>Update Temple</span>
                 </button>
 
-                <a href="create_temple.php" class="px-6 py-2 bg-gray-200 rounded-lg">
-                    Cancel
+                <a href="create_temple.php" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-xmark text-xs"></i> <span>Cancel</span>
                 </a>
             </div>
 

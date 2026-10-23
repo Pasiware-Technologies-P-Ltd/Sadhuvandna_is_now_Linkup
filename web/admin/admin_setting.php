@@ -49,43 +49,59 @@ if ($res && mysqli_num_rows($res) > 0) {
 
 
 
-<main class="max-w-3xl mx-auto py-8 px-4">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
 <?php if(isset($_SESSION['msg'])): ?>
-<div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg shadow-sm border-l-4 border-green-500 font-medium">
-	<?= $_SESSION['msg']; unset($_SESSION['msg']); ?>
+<div class="mb-5 p-4 rounded-xl flex items-center justify-between border bg-emerald-50 border-emerald-200 text-emerald-800">
+  <div class="flex items-center gap-3">
+    <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+    <span class="text-xs font-semibold"><?= $_SESSION['msg']; unset($_SESSION['msg']); ?></span>
+  </div>
+  <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
 </div>
 <?php endif; ?>
 
-<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden w-full max-w-lg mx-auto">
-    <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-      <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+<div class="premium-card overflow-hidden max-w-lg mx-auto">
+  <div class="page-subheader">
+    <div class="page-subheader-left">
+      <a href="index.php" class="btn-back-nav">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
       </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fa-solid fa-gear text-orange-600"></i>
-        Site Settings
-      </h2>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Global Settings</h2>
+        <p class="text-xs text-slate-400 font-medium">Configure platform-level settings and fees</p>
+      </div>
     </div>
+  </div>
 
-    <div class="p-6">
-	<h2 class="text-lg font-semibold mb-4 text-gray-700">Matrimony Profile Fee</h2>
+  <div class="p-6 space-y-5">
+    <div>
+      <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-indian-rupee-sign text-blue-600"></i>
+        Matrimony Profile Fee
+      </h3>
 
-	<form method="post" class="space-y-4">
-		<div>
-			<label class="block text-sm text-gray-600 mb-1">Fee (in your currency)</label>
-			<input name="matrimony_profile_fee" type="number" step="0.01" min="0" value="<?= htmlspecialchars($fee) ?>" class="w-full border rounded-lg px-4 py-2" />
-		</div>
+      <form method="post" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Fee Amount (₹)</label>
+          <input name="matrimony_profile_fee" type="number" step="0.01" min="0" value="<?= htmlspecialchars($fee) ?>"
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm text-slate-800 font-medium transition" />
+        </div>
 
-		<div class="flex items-center gap-3">
-			<button class="bg-orange-600 text-white px-4 py-2 rounded">Save</button>
-			<a href="index" class="text-sm text-gray-500">Cancel</a>
-		</div>
-	</form>
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" class="btn-brand-primary text-xs font-semibold px-5 py-2.5 rounded-xl">
+            <i class="fa-solid fa-check text-xs"></i>
+            Save Settings
+          </button>
+          <a href="index.php" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Cancel</a>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 </main>
+
 
 </body>
 </html>

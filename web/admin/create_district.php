@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $sql = "INSERT INTO tbl_districts (state_id, district_name, created_at) VALUES ($state_id, '$district_name', '$created_at')";
             if(mysqli_query($con, $sql)) {
-                header("Location: create_district.php?success=1");
+                header("Location: create_district.php?msg=".urlencode("District Created Successfully")."&type=success");
                 exit;
             } else {
                 $errors[] = "Database error: " . mysqli_error($con);
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $sql = "UPDATE tbl_districts SET state_id=$state_id, district_name='$district_name' WHERE id=$id";
             if(mysqli_query($con, $sql)) {
-                header("Location: create_district.php?success=2");
+                header("Location: create_district.php?msg=".urlencode("District Updated Successfully")."&type=success");
                 exit;
             } else {
                 $errors[] = "Database error: " . mysqli_error($con);
@@ -85,181 +85,308 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if(isset($_GET['delete'])){
     $id = intval($_GET['delete']);
     mysqli_query($con, "DELETE FROM tbl_districts WHERE id=$id");
-    header("Location: create_district.php");
+    header("Location: create_district.php?msg=".urlencode("District Deleted")."&type=success");
     exit;
-}
-
-$edit_data = null;
-if(isset($_GET['edit'])){
-    $id = intval($_GET['edit']);
-    $q = mysqli_query($con, "SELECT * FROM tbl_districts WHERE id=$id");
-    $edit_data = mysqli_fetch_assoc($q);
 }
 
 // Fetch states for dropdown
 $states = mysqli_query($con, "SELECT * FROM tbl_states ORDER BY state_name ASC");
 
-// Fetch districts for list view
-$districts = mysqli_query($con, "SELECT d.*, s.state_name FROM tbl_districts d LEFT JOIN tbl_states s ON d.state_id = s.id ORDER BY d.id DESC");
+// Fetch districts for list view (optionally filtered by state)
+$state_filter = isset($_GET['state']) ? intval($_GET['state']) : 0;
+$where_clause = $state_filter > 0 ? "WHERE d.state_id = $state_filter" : "";
+$districts = mysqli_query($con, "SELECT d.*, s.state_name FROM tbl_districts d LEFT JOIN tbl_states s ON d.state_id = s.id $where_clause ORDER BY d.id DESC");
+$total_districts = mysqli_num_rows($districts);
 ?>
 
 <?php include("header.php"); ?>
 
-<main class="flex gap-5 max-w-6xl mx-auto p-4 mt-4">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
-  <!-- LEFT FORM -->
-  <div class="w-full md:w-2/5">
-    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-      <h2 class="text-lg font-bold text-orange-600 mb-4"><i class="fa-solid fa-map-pin text-orange-500"></i> <?= $edit_data ? 'Edit District' : 'Create District' ?></h2>
+  <?php if(isset($_GET['msg'])): 
+    $is_success = (isset($_GET['type']) && $_GET['type']=='success');
+  ?>
+    <div class="mb-5 p-4 rounded-xl flex items-center justify-between border <?= $is_success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' ?>">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid <?= $is_success ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600' ?> text-lg"></i>
+        <span class="text-xs font-semibold"><?= htmlspecialchars($_GET['msg']) ?></span>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  <?php endif; ?>
 
-      <?php if(isset($_GET['success'])): ?>
-        <p class="text-green-600 font-semibold mb-2 bg-green-50 p-2 rounded">District <?= $_GET['success'] == 2 ? 'updated' : 'created' ?> successfully.</p>
-      <?php endif; ?>
-      <?php if(!empty($errors)): ?>
-        <div class="text-red-600 mb-3 bg-red-50 p-2 rounded"><?php foreach($errors as $e) echo "• $e<br>"; ?></div>
-      <?php endif; ?>
+  <?php if(!empty($errors)): ?>
+    <div class="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium space-y-1">
+      <?php foreach($errors as $e): ?>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-rose-600"></i> <?= htmlspecialchars($e) ?></div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 
-      <form method="POST" class="flex flex-col gap-4">
-        <?php if($edit_data): ?>
-          <input type="hidden" name="district_id" value="<?= $edit_data['id'] ?>">
-        <?php endif; ?>
+  <!-- Full-Width Premium Card -->
+  <div class="premium-card overflow-hidden">
+    
+    <!-- Sub-Header / Action Bar -->
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
         <div>
-          <label class="text-sm font-medium">Select State *</label>
-          <select name="state_id" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none transition">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            District Management
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Manage district entities grouped under states for community demographics</p>
+        </div>
+      </div>
+      
+      <div class="page-subheader-right">
+        <?php if($state_filter > 0): ?>
+          <a href="create_district.php" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <i class="fa-solid fa-filter-circle-xmark"></i> Clear State Filter
+          </a>
+        <?php endif; ?>
+
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
+          <input 
+            type="search" id="searchInput" placeholder="Search district or state...">
+        </div>
+
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          Districts: <span class="text-blue-600 font-bold"><?= $total_districts ?></span>
+        </div>
+
+        <!-- Add Button Trigger Modal -->
+        <button type="button" onclick="openAddDistrictModal()" class="btn-brand-primary text-xs font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Add District</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Table Container -->
+    <div class="hidden sm:block overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
+      <table class="w-full text-left border-collapse" id="districtsTable">
+        <thead class="sticky top-0 z-10 shadow-2xs">
+          <tr>
+            <th class="premium-th px-5 py-3 w-14">#</th>
+            <th class="premium-th px-5 py-3">District Name</th>
+            <th class="premium-th px-5 py-3 w-48">Parent State</th>
+            <th class="premium-th px-5 py-3 w-44">Created Date</th>
+            <th class="premium-th px-5 py-3 text-center w-28">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100 bg-white" id="districtsTableBody">
+          <?php $sr = 1; while($row = mysqli_fetch_assoc($districts)): ?>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $sr++ ?></td>
+
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    <i class="fa-solid fa-map-pin text-xs"></i>
+                  </div>
+                  <div>
+                    <span class="font-bold text-slate-900 text-sm block"><?= htmlspecialchars($row['district_name']) ?></span>
+                    <span class="text-[11px] text-slate-400 font-medium">District ID: #<?= $row['id'] ?></span>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-5 py-3.5">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                  <i class="fa-solid fa-map text-[10px] text-slate-400"></i>
+                  <?= htmlspecialchars($row['state_name'] ?: 'Unassigned') ?>
+                </span>
+              </td>
+
+              <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-slate-400 text-xs"></i>
+                  <?= date("d M Y", strtotime($row['created_at'])) ?>
+                </div>
+              </td>
+
+              <td class="px-5 py-3.5 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button type="button" onclick="openEditDistrictModal(<?= $row['id'] ?>, <?= $row['state_id'] ?>, '<?= htmlspecialchars(addslashes($row['district_name'])) ?>')" title="Edit"
+                    class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <a href="?delete=<?= $row['id'] ?>" 
+                    onclick="return confirm('Delete this district?')" title="Delete"
+                    class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <?php endwhile; ?>
+
+          <?php if($total_districts == 0): ?>
+            <tr>
+              <td colspan="5" class="text-center py-12 text-slate-400">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3">
+                    <i class="fa-solid fa-map-pin"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-slate-600">No districts registered yet</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Click "Add District" to create a new district entry</p>
+                </div>
+              </td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View: Districts -->
+    <div class="sm:hidden p-3 space-y-3 bg-slate-50/50" id="districtCards">
+      <?php 
+      if($total_districts > 0):
+        mysqli_data_seek($districts, 0);
+        while($row = mysqli_fetch_assoc($districts)):
+      ?>
+      <div class="premium-card p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs district-card transition hover:shadow-xs">
+        <div class="flex items-center justify-between gap-3 mb-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              <i class="fa-solid fa-map-pin text-xs"></i>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 leading-snug truncate"><?= htmlspecialchars($row['district_name']) ?></h4>
+              <p class="text-[10px] text-slate-400 font-medium">District ID: #<?= $row['id'] ?></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button type="button" onclick="openEditDistrictModal(<?= $row['id'] ?>, <?= $row['state_id'] ?>, '<?= htmlspecialchars(addslashes($row['district_name'])) ?>')" title="Edit"
+              class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+              <i class="fa-solid fa-pen text-[11px]"></i>
+            </button>
+            <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this district?')" title="Delete"
+              class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+              <i class="fa-solid fa-trash text-[11px]"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+            <i class="fa-solid fa-map text-[9px] text-slate-400"></i> <?= htmlspecialchars($row['state_name'] ?: 'Unassigned') ?>
+          </span>
+          <span class="text-slate-400 font-medium flex items-center gap-1">
+            <i class="fa-regular fa-calendar text-[10px]"></i> <?= date("d M Y", strtotime($row['created_at'])) ?>
+          </span>
+        </div>
+      </div>
+      <?php endwhile; else: ?>
+        <div class="text-center py-8 text-slate-400">
+          <p class="text-xs font-semibold">No districts registered yet</p>
+        </div>
+      <?php endif; ?>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- ================= MODAL: ADD / EDIT DISTRICT ================= -->
+<div id="districtModal" class="admin-modal-overlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-header">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-map-pin"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 leading-tight" id="districtModalTitle">Add New District</h3>
+          <p class="text-[11px] text-slate-400">Link district to corresponding parent state</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeDistrictModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form method="POST" class="flex flex-col flex-1 overflow-hidden">
+      <input type="hidden" name="district_id" id="modalDistrictId" value="">
+
+      <div class="admin-modal-body space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select State *</label>
+          <select name="state_id" id="modalStateSelect" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
             <option value="">-- Choose State --</option>
             <?php mysqli_data_seek($states, 0); while($st = mysqli_fetch_assoc($states)): ?>
-              <option value="<?= $st['id'] ?>" <?= ($edit_data && $edit_data['state_id'] == $st['id']) ? 'selected' : '' ?>><?= $st['state_name'] ?></option>
+              <option value="<?= $st['id'] ?>"><?= htmlspecialchars($st['state_name']) ?></option>
             <?php endwhile; ?>
           </select>
         </div>
 
         <div>
-          <label class="text-sm font-medium">District Name *</label>
-          <input type="text" name="district_name" required placeholder="e.g. Mumbai" value="<?= $edit_data ? $edit_data['district_name'] : '' ?>" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none transition">
-        </div>
-
-        <div class="flex gap-3 mt-2">
-          <?php if($edit_data): ?>
-            <button name="update_district" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 shadow transition w-full">Update</button>
-            <a href="create_district.php" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 text-center shadow transition w-full">Cancel</a>
-          <?php else: ?>
-            <button name="submit_district" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 shadow transition w-full">Submit</button>
-          <?php endif; ?>
-        </div>
-      </form>
-    </div>
-  </div> <!-- END OF LEFT FORM -->
-
-  <!-- LIST VIEW (Mobile + Desktop) -->
-  <div class="w-full md:w-3/5">
-    
-    <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-4">
-      <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-        <div class="flex items-center gap-3">
-          <a href="index" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-            <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-          </a>
-          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            District List
-          </h2>
-        </div>
-        
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <div class="relative w-full sm:w-64">
-            <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
-            <input 
-              type="search" 
-              id="searchInput" 
-              placeholder="Search district..." 
-              class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
-            >
-          </div>
-          <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-            Total: <span class="text-orange-600 font-bold"><?= mysqli_num_rows($districts) ?></span>
-          </div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">District Name *</label>
+          <input type="text" name="district_name" id="modalDistrictName" required placeholder="e.g. Ahmedabad, Mumbai Suburban, Jaipur"
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
         </div>
       </div>
 
-      <!-- Desktop Table -->
-      <div class="hidden md:block overflow-y-auto max-h-[525px]">
-        <table class="w-full text-sm border-t border-gray-100">
-          <thead class="bg-orange-50 text-gray-700 sticky top-0 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left">Sr No.</th>
-              <th class="px-4 py-3 text-left">District Name</th>
-              <th class="px-4 py-3 text-left">State</th>
-              <th class="px-4 py-3 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-          <?php if(mysqli_num_rows($districts) > 0): ?>
-            <?php mysqli_data_seek($districts,0); $sr = 1; while($row=mysqli_fetch_assoc($districts)): ?>
-              <tr class="hover:bg-gray-50 transition">
-                <td class="px-4 py-3 text-gray-500 font-mono text-xs"><?= $sr++ ?></td>
-                <td class="px-4 py-3 font-semibold text-gray-800"><?= $row['district_name'] ?></td>
-                <td class="px-4 py-3 text-gray-600"><?= $row['state_name'] ?></td>
-                <td class="px-4 py-3 text-center flex justify-center gap-2">
-                  <a href="create_district.php?edit=<?= $row['id'] ?>" class="w-8 h-8 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded flex items-center justify-center transition shadow-sm" title="Edit">
-                    <i class="fa fa-edit"></i>
-                  </a>
-                  <a href="create_district.php?delete=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this district?')" class="w-8 h-8 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded flex items-center justify-center transition shadow-sm" title="Delete">
-                    <i class="fa fa-trash"></i>
-                  </a>
-                </td>
-              </tr>
-            <?php endwhile; ?>
-          <?php else: ?>
-             <tr><td colspan="4" class="text-center py-6 text-gray-400">No districts found.</td></tr>
-          <?php endif; ?>
-          </tbody>
-        </table>
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeDistrictModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" name="submit_district" id="modalDistrictSubmitBtn" class="btn-brand-primary px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i>
+          <span id="modalDistrictSubmitText">Save District</span>
+        </button>
       </div>
-    </div> <!-- /bg-white -->
-
-    <!-- Mobile Cards -->
-    <div class="md:hidden space-y-4" id="mobileCards">
-      <?php if(mysqli_num_rows($districts) > 0): ?>
-        <?php mysqli_data_seek($districts,0); $sr = 1; while($row=mysqli_fetch_assoc($districts)): ?>
-        <div class="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 mobile-card" 
-             data-search="<?= htmlspecialchars(strtolower($row['district_name'].' '.$row['state_name'])) ?>">
-          <div class="flex justify-between items-start">
-            <div>
-               <div class="font-bold text-gray-800 text-lg"><?= $row['district_name'] ?></div>
-               <div class="text-sm text-gray-600 mt-1"><i class="fa-solid fa-map text-xs text-gray-400"></i> <?= $row['state_name'] ?></div>
-               <div class="text-xs text-gray-400 mt-1">Sr No: <?= $sr++ ?></div>
-            </div>
-            <div class="flex gap-2">
-              <a href="create_district.php?edit=<?= $row['id'] ?>" class="w-8 h-8 bg-blue-50 text-blue-500 flex items-center justify-center rounded-lg shadow-sm"><i class="fa fa-edit"></i></a>
-              <a href="create_district.php?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this district?')" class="w-8 h-8 bg-red-50 text-red-500 flex items-center justify-center rounded-lg shadow-sm"><i class="fa fa-trash"></i></a>
-            </div>
-          </div>
-        </div>
-        <?php endwhile; ?>
-      <?php else: ?>
-        <div class="text-center py-6 text-gray-400">No districts found.</div>
-      <?php endif; ?>
-    </div>
+    </form>
   </div>
+</div>
 
-</main>
-
+</body>
 <script>
-// Live Search
+function openAddDistrictModal() {
+  document.getElementById('modalDistrictId').value = '';
+  document.getElementById('modalDistrictName').value = '';
+  document.getElementById('modalStateSelect').value = '<?= $state_filter > 0 ? $state_filter : "" ?>';
+  document.getElementById('districtModalTitle').innerText = 'Add New District';
+  document.getElementById('modalDistrictSubmitBtn').name = 'submit_district';
+  document.getElementById('modalDistrictSubmitText').innerText = 'Save District';
+  document.getElementById('districtModal').classList.add('active');
+  setTimeout(() => document.getElementById('modalDistrictName').focus(), 150);
+}
+
+function openEditDistrictModal(id, stateId, name) {
+  document.getElementById('modalDistrictId').value = id;
+  document.getElementById('modalDistrictName').value = name;
+  document.getElementById('modalStateSelect').value = stateId;
+  document.getElementById('districtModalTitle').innerText = 'Edit District';
+  document.getElementById('modalDistrictSubmitBtn').name = 'update_district';
+  document.getElementById('modalDistrictSubmitText').innerText = 'Update District';
+  document.getElementById('districtModal').classList.add('active');
+  setTimeout(() => document.getElementById('modalDistrictName').focus(), 150);
+}
+
+function closeDistrictModal() {
+  document.getElementById('districtModal').classList.remove('active');
+}
+
 document.getElementById("searchInput").addEventListener("input", function(){
   let v = this.value.toLowerCase();
-  
-  // Desktop table search
-  document.querySelectorAll("tbody tr").forEach(r => {
-    if(r.querySelector("td[colspan]")) return; // skip empty message row
-    r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+  document.querySelectorAll("#districtsTableBody tr").forEach(r => {
+    if (r.children.length > 1) {
+      r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+    }
   });
-  
-  // Mobile cards search
-  document.querySelectorAll(".mobile-card").forEach(c => {
-    c.style.display = c.dataset.search.includes(v) ? "" : "none";
+  document.querySelectorAll("#districtCards .district-card").forEach(c => {
+    c.style.display = c.innerText.toLowerCase().includes(v) ? "" : "none";
   });
 });
 </script>
-
-</body>
 </html>
+
+
+

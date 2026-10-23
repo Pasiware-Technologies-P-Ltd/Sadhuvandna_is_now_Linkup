@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $sql = "INSERT INTO tbl_states (state_name, created_at) VALUES ('$state_name', '$created_at')";
             if(mysqli_query($con, $sql)) {
-                header("Location: create_state.php?success=1");
+                header("Location: create_state.php?msg=".urlencode("State Created Successfully")."&type=success");
                 exit;
             } else {
                 $errors[] = "Database error: " . mysqli_error($con);
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $sql = "UPDATE tbl_states SET state_name='$state_name' WHERE id=$id";
             if(mysqli_query($con, $sql)) {
-                header("Location: create_state.php?success=2");
+                header("Location: create_state.php?msg=".urlencode("State Updated Successfully")."&type=success");
                 exit;
             } else {
                 $errors[] = "Database error: " . mysqli_error($con);
@@ -74,166 +74,284 @@ if(isset($_GET['delete'])){
     $id = intval($_GET['delete']);
     mysqli_query($con, "DELETE FROM tbl_districts WHERE state_id=$id");
     mysqli_query($con, "DELETE FROM tbl_states WHERE id=$id");
-    header("Location: create_state.php");
+    header("Location: create_state.php?msg=".urlencode("State and associated districts deleted")."&type=success");
     exit;
 }
 
-$edit_data = null;
-if(isset($_GET['edit'])){
-    $id = intval($_GET['edit']);
-    $q = mysqli_query($con, "SELECT * FROM tbl_states WHERE id=$id");
-    $edit_data = mysqli_fetch_assoc($q);
-}
-
-$states = mysqli_query($con, "SELECT * FROM tbl_states ORDER BY id DESC");
+$states = mysqli_query($con, "SELECT s.*, (SELECT COUNT(*) FROM tbl_districts d WHERE d.state_id = s.id) AS district_count FROM tbl_states s ORDER BY s.id DESC");
+$total_states = mysqli_num_rows($states);
 ?>
 
 <?php include("header.php"); ?>
 
-<main class="flex gap-5 max-w-6xl mx-auto p-4 mt-4">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
-  <!-- LEFT FORM -->
-  <div class="w-full md:w-2/5">
-    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-      <h2 class="text-lg font-bold text-orange-600 mb-4"><i class="fa-solid fa-map text-orange-500"></i> <?= $edit_data ? 'Edit State' : 'Create State' ?></h2>
-
-      <?php if(isset($_GET['success'])): ?>
-        <p class="text-green-600 font-semibold mb-2 bg-green-50 p-2 rounded">State <?= $_GET['success'] == 2 ? 'updated' : 'created' ?> successfully.</p>
-      <?php endif; ?>
-      <?php if(!empty($errors)): ?>
-        <div class="text-red-600 mb-3 bg-red-50 p-2 rounded"><?php foreach($errors as $e) echo "• $e<br>"; ?></div>
-      <?php endif; ?>
-
-      <form method="POST" class="flex flex-col gap-4">
-        <?php if($edit_data): ?>
-          <input type="hidden" name="state_id" value="<?= $edit_data['id'] ?>">
-        <?php endif; ?>
-        <div>
-          <label class="text-sm font-medium">State Name *</label>
-          <input type="text" name="state_name" required placeholder="e.g. Maharashtra" value="<?= $edit_data ? $edit_data['state_name'] : '' ?>" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-400 outline-none transition">
-        </div>
-
-        <div class="flex gap-3 mt-2">
-          <?php if($edit_data): ?>
-            <button name="update_state" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 shadow transition w-full">Update</button>
-            <a href="create_state.php" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 text-center shadow transition w-full">Cancel</a>
-          <?php else: ?>
-            <button name="submit_state" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 shadow transition w-full">Submit</button>
-          <?php endif; ?>
-        </div>
-      </form>
+  <?php if(isset($_GET['msg'])): 
+    $is_success = (isset($_GET['type']) && $_GET['type']=='success');
+  ?>
+    <div class="mb-5 p-4 rounded-xl flex items-center justify-between border <?= $is_success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' ?>">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid <?= $is_success ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600' ?> text-lg"></i>
+        <span class="text-xs font-semibold"><?= htmlspecialchars($_GET['msg']) ?></span>
+      </div>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
     </div>
-  </div> <!-- END OF LEFT FORM -->
+  <?php endif; ?>
 
-  <!-- LIST VIEW (Mobile + Desktop) -->
-  <div class="w-full md:w-3/5">
+  <?php if(!empty($errors)): ?>
+    <div class="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium space-y-1">
+      <?php foreach($errors as $e): ?>
+        <div class="flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-rose-600"></i> <?= htmlspecialchars($e) ?></div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
+  <!-- Full-Width Premium Card -->
+  <div class="premium-card overflow-hidden">
     
-    <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-4">
-      <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-        <div class="flex items-center gap-3">
-          <a href="index" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-            <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-          </a>
-          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            State List
+    <!-- Sub-Header / Action Bar -->
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            State Management
           </h2>
-        </div>
-        
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <div class="relative w-full sm:w-64">
-            <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
-            <input 
-              type="search" 
-              id="searchInput" 
-              placeholder="Search state..." 
-              class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
-            >
-          </div>
-          <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-            Total: <span class="text-orange-600 font-bold"><?= mysqli_num_rows($states) ?></span>
-          </div>
+          <p class="text-xs text-slate-400 font-medium">Manage territorial state entities for directory and member mapping</p>
         </div>
       </div>
+      
+      <div class="page-subheader-right">
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
+          <input 
+            type="search" id="searchInput" placeholder="Search state...">
+        </div>
 
-      <!-- Desktop Table -->
-      <div class="hidden md:block overflow-y-auto max-h-[525px]">
-        <table class="w-full text-sm border-t border-gray-100">
-          <thead class="bg-orange-50 text-gray-700 sticky top-0 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left">Sr No.</th>
-              <th class="px-4 py-3 text-left">State Name</th>
-              <th class="px-4 py-3 text-left">Created At</th>
-              <th class="px-4 py-3 text-center">Action</th>
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          States: <span class="text-blue-600 font-bold"><?= $total_states ?></span>
+        </div>
+
+        <!-- Add Button Trigger Modal -->
+        <button type="button" onclick="openAddStateModal()" class="btn-brand-primary text-xs font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Add State</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Table Container -->
+    <div class="hidden sm:block overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
+      <table class="w-full text-left border-collapse" id="statesTable">
+        <thead class="sticky top-0 z-10 shadow-2xs">
+          <tr>
+            <th class="premium-th px-5 py-3 w-14">#</th>
+            <th class="premium-th px-5 py-3">State Name</th>
+            <th class="premium-th px-5 py-3 w-40">Districts Count</th>
+            <th class="premium-th px-5 py-3 w-44">Created Date</th>
+            <th class="premium-th px-5 py-3 text-center w-28">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100 bg-white" id="statesTableBody">
+          <?php $sr = 1; while($row = mysqli_fetch_assoc($states)): ?>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $sr++ ?></td>
+
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    <i class="fa-solid fa-map text-xs"></i>
+                  </div>
+                  <div>
+                    <span class="font-bold text-slate-900 text-sm block"><?= htmlspecialchars($row['state_name']) ?></span>
+                    <span class="text-[11px] text-slate-400 font-medium">State ID: #<?= $row['id'] ?></span>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-5 py-3.5">
+                <a href="create_district.php?state=<?= $row['id'] ?>" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition" title="View districts in this state">
+                  <i class="fa-solid fa-map-pin text-[10px] text-blue-600"></i>
+                  <?= intval($row['district_count']) ?> Districts
+                </a>
+              </td>
+
+              <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-slate-400 text-xs"></i>
+                  <?= date("d M Y", strtotime($row['created_at'])) ?>
+                </div>
+              </td>
+
+              <td class="px-5 py-3.5 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button type="button" onclick="openEditStateModal(<?= $row['id'] ?>, '<?= htmlspecialchars(addslashes($row['state_name'])) ?>')" title="Edit"
+                    class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <a href="?delete=<?= $row['id'] ?>" 
+                    onclick="return confirm('Delete this state? All linked districts will also be removed.')" title="Delete"
+                    class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </a>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-          <?php if(mysqli_num_rows($states) > 0): ?>
-            <?php mysqli_data_seek($states,0); $sr = 1; while($row=mysqli_fetch_assoc($states)): ?>
-              <tr class="hover:bg-gray-50 transition">
-                <td class="px-4 py-3 text-gray-500 font-mono text-xs"><?= $sr++ ?></td>
-                <td class="px-4 py-3 font-semibold text-gray-800"><?= $row['state_name'] ?></td>
-                <td class="px-4 py-3 text-gray-500 text-xs"><?= date('d M Y, h:i A', strtotime($row['created_at'])) ?></td>
-                <td class="px-4 py-3 text-center flex justify-center gap-2">
-                  <a href="create_state.php?edit=<?= $row['id'] ?>" class="w-8 h-8 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded flex items-center justify-center transition shadow-sm" title="Edit">
-                    <i class="fa fa-edit"></i>
-                  </a>
-                  <a href="create_state.php?delete=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this state? It will also delete all associated districts.')" class="w-8 h-8 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded flex items-center justify-center transition shadow-sm" title="Delete">
-                    <i class="fa fa-trash"></i>
-                  </a>
-                </td>
-              </tr>
-            <?php endwhile; ?>
-          <?php else: ?>
-             <tr><td colspan="4" class="text-center py-6 text-gray-400">No states found.</td></tr>
-          <?php endif; ?>
-          </tbody>
-        </table>
-      </div>
-    </div> <!-- /bg-white -->
+          <?php endwhile; ?>
 
-    <!-- Mobile Cards -->
-    <div class="md:hidden space-y-4" id="mobileCards">
-      <?php if(mysqli_num_rows($states) > 0): ?>
-        <?php mysqli_data_seek($states,0); $sr = 1; while($row=mysqli_fetch_assoc($states)): ?>
-        <div class="bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 mobile-card" 
-             data-search="<?= htmlspecialchars(strtolower($row['state_name'])) ?>">
-          <div class="flex justify-between items-start">
-            <div>
-               <div class="font-bold text-gray-800 text-lg"><?= $row['state_name'] ?></div>
-               <div class="text-xs text-gray-500 mt-1">Sr No: <?= $sr++ ?> | Added: <?= date('d M Y', strtotime($row['created_at'])) ?></div>
+          <?php if($total_states == 0): ?>
+            <tr>
+              <td colspan="5" class="text-center py-12 text-slate-400">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3">
+                    <i class="fa-solid fa-map"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-slate-600">No states registered yet</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Click "Add State" to create a new state entity</p>
+                </div>
+              </td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View: States -->
+    <div class="sm:hidden p-3 space-y-3 bg-slate-50/50" id="stateCards">
+      <?php 
+      if($total_states > 0):
+        mysqli_data_seek($states, 0);
+        while($row = mysqli_fetch_assoc($states)):
+      ?>
+      <div class="premium-card p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs state-card transition hover:shadow-xs">
+        <div class="flex items-center justify-between gap-3 mb-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              <i class="fa-solid fa-map text-xs"></i>
             </div>
-            <div class="flex gap-2">
-              <a href="create_state.php?edit=<?= $row['id'] ?>" class="w-8 h-8 bg-blue-50 text-blue-500 flex items-center justify-center rounded-lg shadow-sm"><i class="fa fa-edit"></i></a>
-              <a href="create_state.php?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this state?')" class="w-8 h-8 bg-red-50 text-red-500 flex items-center justify-center rounded-lg shadow-sm"><i class="fa fa-trash"></i></a>
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 leading-snug truncate"><?= htmlspecialchars($row['state_name']) ?></h4>
+              <p class="text-[10px] text-slate-400 font-medium">State ID: #<?= $row['id'] ?></p>
             </div>
           </div>
+
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button type="button" onclick="openEditStateModal(<?= $row['id'] ?>, '<?= htmlspecialchars(addslashes($row['state_name'])) ?>')" title="Edit"
+              class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+              <i class="fa-solid fa-pen text-[11px]"></i>
+            </button>
+            <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this state? All linked districts will also be removed.')" title="Delete"
+              class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+              <i class="fa-solid fa-trash text-[11px]"></i>
+            </a>
+          </div>
         </div>
-        <?php endwhile; ?>
-      <?php else: ?>
-        <div class="text-center py-6 text-gray-400">No states found.</div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+          <a href="create_district.php?state=<?= $row['id'] ?>" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
+            <i class="fa-solid fa-map-pin text-[9px]"></i> <?= intval($row['district_count']) ?> Districts
+          </a>
+          <span class="text-slate-400 font-medium flex items-center gap-1">
+            <i class="fa-regular fa-calendar text-[10px]"></i> <?= date("d M Y", strtotime($row['created_at'])) ?>
+          </span>
+        </div>
+      </div>
+      <?php endwhile; else: ?>
+        <div class="text-center py-8 text-slate-400">
+          <p class="text-xs font-semibold">No states registered yet</p>
+        </div>
       <?php endif; ?>
     </div>
+
   </div>
 
 </main>
 
+<!-- ================= MODAL: ADD / EDIT STATE ================= -->
+<div id="stateModal" class="admin-modal-overlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-header">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-map"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 leading-tight" id="stateModalTitle">Add New State</h3>
+          <p class="text-[11px] text-slate-400">Enter official state name for geographical directory</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeStateModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form method="POST" class="flex flex-col flex-1 overflow-hidden">
+      <input type="hidden" name="state_id" id="modalStateId" value="">
+
+      <div class="admin-modal-body space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">State Name *</label>
+          <input type="text" name="state_name" id="modalStateName" required placeholder="e.g. Gujarat, Maharashtra, Rajasthan"
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+        </div>
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeStateModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" name="submit_state" id="modalSubmitBtn" class="btn-brand-primary px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i>
+          <span id="modalSubmitText">Save State</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
 <script>
-// Live Search
+function openAddStateModal() {
+  document.getElementById('modalStateId').value = '';
+  document.getElementById('modalStateName').value = '';
+  document.getElementById('stateModalTitle').innerText = 'Add New State';
+  document.getElementById('modalSubmitBtn').name = 'submit_state';
+  document.getElementById('modalSubmitText').innerText = 'Save State';
+  document.getElementById('stateModal').classList.add('active');
+  setTimeout(() => document.getElementById('modalStateName').focus(), 150);
+}
+
+function openEditStateModal(id, name) {
+  document.getElementById('modalStateId').value = id;
+  document.getElementById('modalStateName').value = name;
+  document.getElementById('stateModalTitle').innerText = 'Edit State';
+  document.getElementById('modalSubmitBtn').name = 'update_state';
+  document.getElementById('modalSubmitText').innerText = 'Update State';
+  document.getElementById('stateModal').classList.add('active');
+  setTimeout(() => document.getElementById('modalStateName').focus(), 150);
+}
+
+function closeStateModal() {
+  document.getElementById('stateModal').classList.remove('active');
+}
+
 document.getElementById("searchInput").addEventListener("input", function(){
   let v = this.value.toLowerCase();
-  
-  // Desktop table search
-  document.querySelectorAll("tbody tr").forEach(r => {
-    if(r.querySelector("td[colspan]")) return; // skip empty message row
-    r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+  document.querySelectorAll("#statesTableBody tr").forEach(r => {
+    if (r.children.length > 1) {
+      r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+    }
   });
-  
-  // Mobile cards search
-  document.querySelectorAll(".mobile-card").forEach(c => {
-    c.style.display = c.dataset.search.includes(v) ? "" : "none";
+  document.querySelectorAll("#stateCards .state-card").forEach(c => {
+    c.style.display = c.innerText.toLowerCase().includes(v) ? "" : "none";
   });
 });
 </script>
-
-</body>
 </html>
+
+
+

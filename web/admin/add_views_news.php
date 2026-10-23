@@ -29,7 +29,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 date_default_timezone_set("Asia/Kolkata");
 
-// Auto-create breaking news table if it doesn't exist for live deployment
+// Auto-create breaking news table if it doesn't exist
 mysqli_query($con, "CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` text NOT NULL,
@@ -39,8 +39,6 @@ mysqli_query($con, "CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-$message = "";
 
 /* -----------------------------
    INSERT NEWS (MULTIPLE IMAGE)
@@ -76,10 +74,11 @@ if(isset($_POST["submit_news"])){
             VALUES ('$title', '$description', '$images', '$date')";
 
     if(mysqli_query($con, $sql)){
-        echo "<script>alert('News Added Successfully!'); window.location='add_views_news.php';</script>";
+        header("Location: add_views_news.php?msg=".urlencode("News Published Successfully")."&type=success");
         exit;
     } else {
-        $message = "<p class='text-red-600 font-semibold'>ERROR!</p>";
+        header("Location: add_views_news.php?msg=".urlencode("Failed to publish news")."&type=error");
+        exit;
     }
 }
 
@@ -87,7 +86,7 @@ if(isset($_POST["submit_news"])){
    DELETE NEWS (ALL IMAGES)
 ------------------------------ */
 if(isset($_GET["delete"])){
-    $del_id = $_GET["delete"];
+    $del_id = intval($_GET["delete"]);
 
     $img = mysqli_fetch_assoc(mysqli_query($con, "SELECT image FROM tbl_news WHERE id='$del_id'"));
     if($img && $img["image"]){
@@ -99,7 +98,8 @@ if(isset($_GET["delete"])){
     }
 
     mysqli_query($con, "DELETE FROM tbl_news WHERE id='$del_id'");
-    echo "<script>window.location='add_views_news.php';</script>";
+    header("Location: add_views_news.php?msg=".urlencode("News Deleted")."&type=success");
+    exit;
 }
 
 /* -----------------------------
@@ -113,10 +113,10 @@ if(isset($_POST['submit_breaking_news'])){
         if(isset($_POST['edit_breaking_id']) && !empty($_POST['edit_breaking_id'])){
             $edit_id = intval($_POST['edit_breaking_id']);
             mysqli_query($con, "UPDATE tbl_breaking_news SET title='$breaking_text' WHERE id='$edit_id'");
-            echo "<script>alert('Breaking News Updated!'); window.location='add_views_news.php#breaking_news_hub';</script>";
+            header("Location: add_views_news.php?msg=".urlencode("Breaking News Updated")."&type=success#breaking_news_hub");
         } else {
             mysqli_query($con, "INSERT INTO tbl_breaking_news (`title`, `posted_by`, `created_at`) VALUES ('$breaking_text', 'Admin', '$date')");
-            echo "<script>alert('Breaking News Added!'); window.location='add_views_news.php#breaking_news_hub';</script>";
+            header("Location: add_views_news.php?msg=".urlencode("Breaking News Added")."&type=success#breaking_news_hub");
         }
         exit;
     }
@@ -141,7 +141,8 @@ if(isset($_GET['edit_breaking'])){
 if(isset($_GET['delete_breaking'])){
     $id = intval($_GET['delete_breaking']);
     mysqli_query($con, "DELETE FROM tbl_breaking_news WHERE id='$id'");
-    echo "<script>window.location='add_views_news.php';</script>";
+    header("Location: add_views_news.php?msg=".urlencode("Breaking News Deleted")."&type=success#breaking_news_hub");
+    exit;
 }
 
 /* -----------------------------
@@ -151,302 +152,551 @@ if(isset($_GET['toggle_breaking'])){
     $id = intval($_GET['toggle_breaking']);
     $status = intval($_GET['status']);
     mysqli_query($con, "UPDATE tbl_breaking_news SET is_active='$status' WHERE id='$id'");
-    echo "<script>window.location='add_views_news.php';</script>";
+    header("Location: add_views_news.php#breaking_news_hub");
+    exit;
 }
 
 // Fetch breaking news list
 $fetch_breaking = mysqli_query($con, "SELECT * FROM tbl_breaking_news ORDER BY id DESC");
+$total_breaking = mysqli_num_rows($fetch_breaking);
 
 /* -----------------------------
    FETCH ALL NEWS
 ------------------------------ */
 $fetch_news = mysqli_query($con, "SELECT * FROM tbl_news ORDER BY id DESC");
-
+$total_news = mysqli_num_rows($fetch_news);
 ?>
+
 <?php include("header.php"); ?>
 
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
-
-<main class="max-w-8xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-8">
-
-<!-- RIGHT: ADD NEWS -->
-<div class="w-full md:max-w-md md:w-1/3 md:order-2">
-  <div class="bg-white rounded-xl shadow-lg p-6 mb-4">
-
-    <?= $message ?>
-
-    <h2 class="text-xl font-bold text-gray-800 mb-6">Add New News</h2>
-
-    <form method="POST" enctype="multipart/form-data">
-
-      <label class="block text-sm font-medium mb-2">News Images</label>
-
-      <div id="previewBox"
-        class="w-full min-h-[120px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-wrap gap-2 p-2 mb-3">
-        <i class="fa-solid fa-image text-gray-400 text-3xl"></i>
+  <?php if(isset($_GET['msg'])): 
+    $is_success = (isset($_GET['type']) && $_GET['type']=='success');
+  ?>
+    <div class="p-4 rounded-xl flex items-center justify-between border <?= $is_success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800' ?>">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid <?= $is_success ? 'fa-circle-check text-emerald-600' : 'fa-circle-exclamation text-rose-600' ?> text-lg"></i>
+        <span class="text-xs font-semibold"><?= htmlspecialchars($_GET['msg']) ?></span>
       </div>
-
-      <input type="file" name="images[]" multiple required
-        accept="image/*"
-        onchange="previewImages(event)"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg mb-4"/>
-
-      <input type="text" name="title" required
-        placeholder="Enter news title"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg mb-4"/>
-
-      <textarea name="description" required rows="5"
-        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg mb-4 resize-none"
-        placeholder="Enter news description"></textarea>
-
-      <button name="submit_news" type="submit"
-        class="w-full px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow">
-        Submit News
-      </button>
-
-    </form>
-  </div>
-
-
-
-
-
-</div>
-
-<!-- LEFT: NEWS LIST -->
-<div class="w-full md:w-2/3 md:order-1 flex flex-col gap-6">
-
-
-  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
-
-  <div class="p-2 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-    <div class="flex items-center gap-3">
-      <a href="index" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-      </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        All News
-      </h2>
+      <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
     </div>
+  <?php endif; ?>
+
+  <!-- ================= SECTION 1: ALL NEWS (FULL WIDTH TABLE) ================= -->
+  <div class="premium-card overflow-hidden">
     
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <div class="relative w-full sm:w-64">
-        <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
-        <input 
-          type="search" 
-          id="searchInput" 
-          placeholder="Search news..." 
-          class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
-        >
+    <!-- Sub-Header / Action Bar -->
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            News & Articles
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Manage news feeds, editorial articles and photo attachments</p>
+        </div>
       </div>
-      <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-        Total: <span class="text-orange-600 font-bold"><?= mysqli_num_rows($fetch_news) ?></span>
+      
+      <div class="page-subheader-right">
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
+          <input type="search" id="searchInput" placeholder="Search news...">
+        </div>
+
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          Total: <span class="text-blue-600 font-bold"><?= $total_news ?></span>
+        </div>
+
+        <!-- Add Button Trigger Modal -->
+        <button type="button" onclick="openAddNewsModal()" class="btn-brand-primary text-xs font-semibold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>Add News</span>
+        </button>
       </div>
     </div>
-  </div>
 
-    <div class="overflow-y-auto h-[525px]">
-
-      <table class="w-full">
-        <thead class="bg-orange-500 text-white sticky top-0">
+    <!-- Desktop Table Container -->
+    <div class="hidden sm:block overflow-y-auto" style="max-height: calc(100vh - 190px);" id="tableScrollContainer">
+      <table class="w-full text-left border-collapse" id="newsTable">
+        <thead class="sticky top-0 z-10 shadow-2xs">
           <tr>
-            <th class="px-4 py-3 whitespace-nowrap">Sr No</th>
-            <th class="px-4 py-3">Images</th>
-            <th class="px-4 py-3">Title</th>
-            <th class="px-4 py-3">Description</th>
-            <th class="px-4 py-3">Date</th>
-            <th class="px-4 py-3 text-center">Actions</th>
+            <th class="premium-th px-5 py-3 w-14">#</th>
+            <th class="premium-th px-5 py-3 w-36">Images</th>
+            <th class="premium-th px-5 py-3 w-1/4">Title</th>
+            <th class="premium-th px-5 py-3">Description</th>
+            <th class="premium-th px-5 py-3 w-40">Published Date</th>
+            <th class="premium-th px-5 py-3 text-center w-28">Actions</th>
           </tr>
         </thead>
 
-        <tbody>
-        <?php $i=1; while($row = mysqli_fetch_assoc($fetch_news)){ ?>
-          <tr class="border-b hover:bg-orange-50">
+        <tbody class="divide-y divide-slate-100 bg-white" id="newsTableBody">
+          <?php $i=1; while($row = mysqli_fetch_assoc($fetch_news)): ?>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-5 py-3.5 text-xs text-slate-400 font-semibold"><?= $i++ ?></td>
 
-            <td class="px-4 py-3 font-semibold"><?= $i ?></td>
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-1.5 flex-wrap max-w-[140px]">
+                  <?php
+                  $imgs = array_filter(explode(",", $row["image"]));
+                  if(count($imgs) > 0):
+                    foreach($imgs as $img):
+                      $path = "../uploads/news/" . trim($img);
+                  ?>
+                    <img src="<?= $path ?>" onclick="openImageModal('<?= $path ?>')" 
+                         class="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-2xs hover:scale-105 transition cursor-pointer"
+                         alt="News img">
+                  <?php endforeach; else: ?>
+                    <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                      <i class="fa-solid fa-image text-xs"></i>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              </td>
 
-            <td class="px-4 py-3">
-              <?php
-              $imgs = explode(",", $row["image"]);
-              foreach($imgs as $img){
-                  $path = "../uploads/news/" . $img;
-              ?>
-              <img src="<?= $path ?>" onclick="openImageModal('<?= $path ?>')" class="w-12 h-12 object-cover rounded inline-block mr-1 mb-1 cursor-pointer hover:opacity-80 transition shadow-sm border border-gray-200">
-              <?php } ?>
-            </td>
+              <td class="px-5 py-3.5">
+                <span class="font-bold text-slate-900 text-sm block leading-snug"><?= htmlspecialchars($row["title"]) ?></span>
+                <span class="text-[11px] text-slate-400 font-medium">ID: #<?= $row['id'] ?></span>
+              </td>
 
-            <td class="px-4 py-3"><?= $row["title"] ?></td>
+              <td class="px-5 py-3.5">
+                <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed" id="desc-<?= $row['id'] ?>">
+                  <?= htmlspecialchars($row["description"]) ?>
+                </p>
+                <button type="button" onclick="toggleDescription('desc-<?= $row['id'] ?>', this)"
+                  class="text-blue-600 text-[11px] font-semibold hover:underline mt-1 block">
+                  see more
+                </button>
+              </td>
 
-            <td class="px-4 py-3 max-w-xs">
-              <p class="line-clamp-1 text-sm" id="desc-<?= $i ?>">
-                <?= $row["description"] ?>
-              </p>
-              <button onclick="toggleDescription('desc-<?= $i ?>', this)"
-                class="text-xs text-orange-600 hover:underline">see more</button>
-            </td>
+              <td class="px-5 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-slate-400 text-xs"></i>
+                  <?= date("d M Y, h:i A", strtotime($row["created_at"])) ?>
+                </div>
+              </td>
 
-            <td class="px-4 py-3 text-sm">
-              <?= date("d M Y, h:i A", strtotime($row["created_at"])) ?>
-            </td>
+              <td class="px-5 py-3.5 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <a href="admin_news_edit?id=<?= $row['id'] ?>" title="Edit"
+                    class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </a>
+                  <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this news article?');" title="Delete"
+                    class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <?php endwhile; ?>
 
-            <td class="px-4 py-3 text-center">
-              <a href="admin_news_edit?id=<?= $row['id'] ?>"
-                class="w-8 h-8 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg">
-                <i class="fa-solid fa-edit"></i>
-              </a>
-
-              <a href="?delete=<?= $row['id'] ?>"
-                onclick="return confirm('Delete this news?');"
-                class="w-8 h-8 inline-flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-lg ml-2">
-                <i class="fa-solid fa-trash"></i>
-              </a>
-            </td>
-
-          </tr>
-        <?php $i++; } ?>
+          <?php if($total_news == 0): ?>
+            <tr>
+              <td colspan="6" class="text-center py-12 text-slate-400">
+                <div class="flex flex-col items-center justify-center">
+                  <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3">
+                    <i class="fa-solid fa-newspaper"></i>
+                  </div>
+                  <p class="text-sm font-semibold text-slate-600">No news articles found</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Click "Add News" to publish your first article</p>
+                </div>
+              </td>
+            </tr>
+          <?php endif; ?>
         </tbody>
       </table>
+    </div>
 
+    <!-- Mobile Card View: News -->
+    <div class="sm:hidden p-3 space-y-3 bg-slate-50/50" id="newsCards">
+      <?php 
+      if($total_news > 0):
+        mysqli_data_seek($fetch_news, 0);
+        while($row = mysqli_fetch_assoc($fetch_news)):
+          $imgs = array_filter(explode(",", $row["image"]));
+          $first_img = !empty($imgs) ? "../uploads/news/" . trim($imgs[0]) : null;
+      ?>
+      <div class="premium-card p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs news-card transition hover:shadow-xs">
+        <div class="flex items-start justify-between gap-2.5 mb-2.5">
+          <div class="flex items-start gap-2.5 min-w-0">
+            <?php if($first_img): ?>
+              <img src="<?= $first_img ?>" onclick="openImageModal('<?= $first_img ?>')" 
+                   class="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-2xs flex-shrink-0 cursor-pointer" alt="News">
+            <?php else: ?>
+              <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0 font-bold">
+                <i class="fa-solid fa-newspaper text-sm"></i>
+              </div>
+            <?php endif; ?>
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 leading-snug line-clamp-2"><?= htmlspecialchars($row["title"]) ?></h4>
+              <p class="text-[10px] text-slate-400 font-medium mt-0.5">
+                <i class="fa-regular fa-calendar text-[9px] mr-1"></i><?= date("d M Y", strtotime($row["created_at"])) ?> • ID: #<?= $row['id'] ?>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <a href="admin_news_edit?id=<?= $row['id'] ?>" title="Edit"
+              class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+              <i class="fa-solid fa-pen text-[11px]"></i>
+            </a>
+            <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this news article?');" title="Delete"
+              class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+              <i class="fa-solid fa-trash text-[11px]"></i>
+            </a>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100" id="mdesc-<?= $row['id'] ?>">
+          <?= htmlspecialchars($row["description"]) ?>
+        </p>
+        <button type="button" onclick="toggleDescription('mdesc-<?= $row['id'] ?>', this)"
+          class="text-blue-600 text-[11px] font-semibold hover:underline mt-1.5 inline-block">
+          see more
+        </button>
+      </div>
+      <?php endwhile; else: ?>
+        <div class="text-center py-8 text-slate-400">
+          <p class="text-xs font-semibold">No news articles found</p>
+        </div>
+      <?php endif; ?>
     </div>
 
   </div>
-</div>
+
+  <!-- ================= SECTION 2: BREAKING NEWS HUB (FULL WIDTH) ================= -->
+  <div id="breaking_news_hub" class="premium-card overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-rose-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-rose-50/50">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-rose-500 text-white flex items-center justify-center font-bold text-sm shadow-xs animate-pulse">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            Breaking News Ticker
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Live alerts displayed across mobile app and web tickers</p>
+        </div>
+      </div>
+
+      <div class="page-subheader-right">
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          Active Tickers: <span class="text-rose-600 font-bold"><?= $total_breaking ?></span>
+        </div>
+
+        <button type="button" onclick="openBreakingModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition">
+          <i class="fa-solid fa-bullhorn text-xs"></i>
+          <span>Add Ticker</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Table: Breaking News -->
+    <div class="hidden sm:block overflow-y-auto max-h-[380px]">
+      <table class="w-full text-left border-collapse">
+        <thead class="sticky top-0 z-10 shadow-2xs">
+          <tr>
+            <th class="premium-th px-5 py-3">Ticker Title</th>
+            <th class="premium-th px-5 py-3 w-40">Posted By</th>
+            <th class="premium-th px-5 py-3 text-center w-28">Live Status</th>
+            <th class="premium-th px-5 py-3 text-center w-28">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          <?php if($total_breaking > 0): 
+            mysqli_data_seek($fetch_breaking, 0);
+            while($br = mysqli_fetch_assoc($fetch_breaking)): ?>
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-5 py-3.5 font-bold text-slate-800 text-sm">
+                <?= htmlspecialchars($br['title']) ?>
+              </td>
+              <td class="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                <span class="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md text-slate-700">
+                  <i class="fa-solid fa-user-shield text-[10px] text-slate-400"></i>
+                  <?= htmlspecialchars($br['posted_by']) ?>
+                </span>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <?php if($br['is_active'] == 1): ?>
+                  <a href="?toggle_breaking=<?= $br['id'] ?>&status=0" onclick="return confirm('Turn OFF this ticker?');" 
+                     class="status-badge status-active inline-flex cursor-pointer hover:opacity-80 transition" title="Click to disable">
+                    <span class="status-badge-dot"></span> LIVE
+                  </a>
+                <?php else: ?>
+                  <a href="?toggle_breaking=<?= $br['id'] ?>&status=1" onclick="return confirm('Turn ON this ticker?');" 
+                     class="status-badge status-blocked inline-flex cursor-pointer hover:opacity-80 transition" title="Click to activate">
+                    <span class="status-badge-dot"></span> OFF
+                  </a>
+                <?php endif; ?>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button type="button" onclick="editBreakingItem(<?= $br['id'] ?>, '<?= htmlspecialchars(addslashes($br['title'])) ?>')" title="Edit"
+                    class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <a href="?delete_breaking=<?= $br['id'] ?>#breaking_news_hub" onclick="return confirm('Delete this breaking ticker?');" title="Delete"
+                    class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <?php endwhile; else: ?>
+            <tr>
+              <td colspan="4" class="text-center py-10 text-slate-400">No active breaking news tickers found.</td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View: Breaking News -->
+    <div class="sm:hidden p-3 space-y-3 bg-slate-50/50" id="breakingCards">
+      <?php if($total_breaking > 0): 
+        mysqli_data_seek($fetch_breaking, 0);
+        while($br = mysqli_fetch_assoc($fetch_breaking)): ?>
+        <div class="premium-card p-3.5 bg-white border border-rose-100 rounded-xl shadow-2xs">
+          <div class="flex items-start justify-between gap-2.5 mb-2">
+            <h4 class="text-xs font-bold text-slate-900 leading-snug"><?= htmlspecialchars($br['title']) ?></h4>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button type="button" onclick="editBreakingItem(<?= $br['id'] ?>, '<?= htmlspecialchars(addslashes($br['title'])) ?>')" title="Edit"
+                class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-2xs cursor-pointer">
+                <i class="fa-solid fa-pen text-[11px]"></i>
+              </button>
+              <a href="?delete_breaking=<?= $br['id'] ?>#breaking_news_hub" onclick="return confirm('Delete this breaking ticker?');" title="Delete"
+                class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-2xs">
+                <i class="fa-solid fa-trash text-[11px]"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+            <span class="text-slate-500 font-medium flex items-center gap-1">
+              <i class="fa-solid fa-user-shield text-[10px] text-slate-400"></i> <?= htmlspecialchars($br['posted_by']) ?>
+            </span>
+            <div>
+              <?php if($br['is_active'] == 1): ?>
+                <a href="?toggle_breaking=<?= $br['id'] ?>&status=0" onclick="return confirm('Turn OFF this ticker?');" 
+                   class="status-badge status-active inline-flex text-[10px] py-0.5 px-2">
+                  <span class="status-badge-dot"></span> LIVE
+                </a>
+              <?php else: ?>
+                <a href="?toggle_breaking=<?= $br['id'] ?>&status=1" onclick="return confirm('Turn ON this ticker?');" 
+                   class="status-badge status-blocked inline-flex text-[10px] py-0.5 px-2">
+                  <span class="status-badge-dot"></span> OFF
+                </a>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      <?php endwhile; else: ?>
+        <div class="text-center py-6 text-slate-400">
+          <p class="text-xs">No active tickers</p>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
 </main>
 
-<!-- BREAKING NEWS SECTION -->
-<section id="breaking_news_hub" class="max-w-8xl mx-auto px-4 py-8 mb-12 mt-4 border-t-2 border-red-100">
-  <div class="flex items-center gap-3 mb-6">
-    <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl shadow-sm">
-      <i class="fa-solid fa-bolt"></i>
-    </div>
-    <h2 class="text-3xl font-extrabold text-gray-800">Breaking News Hub</h2>
-  </div>
-
-  <div class="flex flex-col md:flex-row gap-8">
-    
-    <!-- RIGHT: ADD / EDIT BREAKING NEWS -->
-    <div class="w-full md:max-w-md md:w-1/3 md:order-2">
-      <div class="bg-white rounded-xl shadow-lg p-6 mb-4 border-l-4 border-red-500">
-        <h2 class="text-xl font-bold text-red-600 mb-4">
-            <i class="fa-solid fa-bullhorn mr-2"></i><?= $edit_mode_br ? 'Edit Breaking News' : 'Add Breaking News' ?>
-        </h2>
-        <form method="POST">
-          <?php if($edit_mode_br){ ?>
-              <input type="hidden" name="edit_breaking_id" value="<?= $edit_id_br ?>">
-          <?php } ?>
-          <input type="text" name="breaking_news_text" value="<?= htmlspecialchars($edit_title_br) ?>" placeholder="Enter breaking news title..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg mb-4" required/>
-          <button name="submit_breaking_news" type="submit" class="w-full px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow font-semibold">
-            <?= $edit_mode_br ? 'Update Breaking News' : 'Add Breaking News' ?>
-          </button>
-          <?php if($edit_mode_br){ ?>
-              <a href="add_views_news.php#breaking_news_hub" class="block text-center mt-3 text-sm text-gray-500 hover:text-gray-700 underline">Cancel Edit</a>
-          <?php } ?>
-        </form>
-      </div>
-    </div>
-
-    <!-- LEFT: BREAKING NEWS LIST -->
-    <div class="w-full md:w-2/3 md:order-1">
-      <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden border-t-4 border-t-red-500">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-red-50">
-          <h2 class="text-lg font-bold text-red-600 flex items-center gap-2">
-            <i class="fa-solid fa-list"></i> Manage Breaking News
-          </h2>
+<!-- ================= MODAL: ADD NEWS ARTICLE ================= -->
+<div id="addNewsModal" class="admin-modal-overlay">
+  <div class="admin-modal-card" style="max-width: 36rem;">
+    <div class="admin-modal-header">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-newspaper"></i>
         </div>
-        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-red-500 text-white sticky top-0">
-                    <tr>
-                        <th class="px-4 py-3">Title</th>
-                        <th class="px-4 py-3">Posted By</th>
-                        <th class="px-4 py-3 text-center">Status</th>
-                        <th class="px-4 py-3 text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if(mysqli_num_rows($fetch_breaking) > 0) {
-                          mysqli_data_seek($fetch_breaking, 0); 
-                          while($br = mysqli_fetch_assoc($fetch_breaking)){ ?>
-                    <tr class="border-b hover:bg-red-50 transition">
-                        <td class="px-4 py-3 max-w-sm truncate font-medium" title="<?= htmlspecialchars($br['title']) ?>"><?= htmlspecialchars($br['title']) ?></td>
-                        <td class="px-4 py-3 text-gray-700"><?= htmlspecialchars($br['posted_by']) ?></td>
-                        <td class="px-4 py-3 text-center">
-                            <?php if($br['is_active'] == 1){ ?>
-                                <a href="?toggle_breaking=<?= $br['id'] ?>&status=0" onclick="return confirm('Turn OFF this breaking news?');" class="px-3 py-1 bg-green-100 text-green-700 font-bold rounded-lg hover:bg-green-200 transition shadow-sm inline-block min-w-[60px]">ON</a>
-                            <?php } else { ?>
-                                <a href="?toggle_breaking=<?= $br['id'] ?>&status=1" onclick="return confirm('Turn ON this breaking news?');" class="px-3 py-1 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition shadow-sm inline-block min-w-[60px]">OFF</a>
-                            <?php } ?>
-                        </td>
-                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <a href="?edit_breaking=<?= $br['id'] ?>#breaking_news_hub" class="w-8 h-8 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg shadow-sm mr-2">
-                                <i class="fa-solid fa-edit"></i>
-                            </a>
-                            <a href="?delete_breaking=<?= $br['id'] ?>#breaking_news_hub" onclick="return confirm('Delete this breaking news?');" class="w-8 h-8 inline-flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-lg shadow-sm">
-                                <i class="fa-solid fa-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php } } else { ?>
-                    <tr>
-                        <td colspan="4" class="text-center py-6 text-gray-500 font-medium">No breaking news found.</td>
-                    </tr>
-                    <?php } ?>
-                </tbody>
-            </table>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 leading-tight">Publish News Article</h3>
+          <p class="text-[11px] text-slate-400">Create new story with photo attachments</p>
         </div>
       </div>
+      <button type="button" onclick="closeAddNewsModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
     </div>
-  </div>
-</section>
 
-<!-- IMAGE PREVIEW MODAL -->
-<div id="imagePreviewModal" class="fixed inset-0 z-[100] bg-black/90 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-  <button onclick="closeImageModal()" class="absolute top-4 right-4 md:top-6 md:right-6 text-white hover:text-orange-500 bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10">
-    <i class="fa-solid fa-xmark text-xl"></i>
-  </button>
-  <div class="max-w-4xl w-full max-h-[90vh] flex items-center justify-center relative">
-    <img id="modalPreviewImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+    <form method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
+      <div class="admin-modal-body space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Article Headline</label>
+          <input type="text" name="title" required placeholder="Enter compelling news headline"
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Article Description</label>
+          <textarea name="description" required rows="5" placeholder="Write full news article content..."
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Attach News Images</label>
+          
+          <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:border-blue-400 hover:bg-blue-50/20 transition cursor-pointer relative bg-slate-50/50">
+            <input type="file" name="images[]" multiple required accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewNewsImages(event)">
+            <div id="newsDropzoneContent">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1.5"></i>
+              <p class="text-xs font-semibold text-slate-700">Select Multiple Images or Drag & Drop</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">JPG, PNG, WEBP supported</p>
+            </div>
+            <div id="newsPreviewGrid" class="hidden flex flex-wrap gap-2 mt-2 justify-center"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeAddNewsModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" name="submit_news" class="btn-brand-primary px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+          <span>Publish Article</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MODAL: BREAKING NEWS TICKER ================= -->
+<div id="breakingModal" class="admin-modal-overlay">
+  <div class="admin-modal-card">
+    <div class="admin-modal-header bg-rose-50/60">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 leading-tight" id="breakingModalTitle">Add Breaking News</h3>
+          <p class="text-[11px] text-slate-400">Headline alert for live mobile and web ticker</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeBreakingModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <form method="POST" class="flex flex-col flex-1 overflow-hidden">
+      <input type="hidden" name="edit_breaking_id" id="editBreakingId" value="">
+      
+      <div class="admin-modal-body space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Ticker Alert Headline</label>
+          <textarea name="breaking_news_text" id="breakingNewsText" rows="3" required placeholder="Type urgent announcement or headline..."
+            class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none text-xs text-slate-800 font-medium transition resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeBreakingModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" name="submit_breaking_news" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center gap-1.5 cursor-pointer transition">
+          <i class="fa-solid fa-bullhorn text-xs"></i>
+          <span id="breakingSubmitBtn">Save Ticker</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= IMAGE PREVIEW LIGHTBOX ================= -->
+<div id="imagePreviewModal" class="admin-modal-overlay" onclick="closeImageModal()">
+  <div class="relative max-w-4xl max-h-[90vh] p-2" onclick="event.stopPropagation()">
+    <img id="modalPreviewImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800">
+    <button onclick="closeImageModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
   </div>
 </div>
 
 </body>
 <script>
-document.getElementById("searchInput").addEventListener("input", function(){
-  let v = this.value.toLowerCase();
-  document.querySelectorAll("tbody tr").forEach(r => {
-    r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
-  });
-});
+function openAddNewsModal() {
+  document.getElementById('addNewsModal').classList.add('active');
+}
+function closeAddNewsModal() {
+  document.getElementById('addNewsModal').classList.remove('active');
+}
+
+function openBreakingModal() {
+  document.getElementById('editBreakingId').value = '';
+  document.getElementById('breakingNewsText').value = '';
+  document.getElementById('breakingModalTitle').innerText = 'Add Breaking News';
+  document.getElementById('breakingSubmitBtn').innerText = 'Save Ticker';
+  document.getElementById('breakingModal').classList.add('active');
+}
+function closeBreakingModal() {
+  document.getElementById('breakingModal').classList.remove('active');
+}
+
+function editBreakingItem(id, title) {
+  document.getElementById('editBreakingId').value = id;
+  document.getElementById('breakingNewsText').value = title;
+  document.getElementById('breakingModalTitle').innerText = 'Edit Breaking News';
+  document.getElementById('breakingSubmitBtn').innerText = 'Update Ticker';
+  document.getElementById('breakingModal').classList.add('active');
+}
+
+function previewNewsImages(event) {
+  const files = event.target.files;
+  const grid = document.getElementById('newsPreviewGrid');
+  grid.innerHTML = '';
+  if (files.length > 0) {
+    grid.classList.remove('hidden');
+    for (let i = 0; i < files.length; i++) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        grid.innerHTML += `<img src="${e.target.result}" class="w-14 h-14 object-cover rounded-lg border border-slate-200 shadow-2xs">`;
+      }
+      reader.readAsDataURL(files[i]);
+    }
+  }
+}
 
 function toggleDescription(id, btn) {
   let el = document.getElementById(id);
-  if (el.classList.contains('line-clamp-1')) {
-    el.classList.remove('line-clamp-1');
+  if (el.classList.contains('line-clamp-2')) {
+    el.classList.remove('line-clamp-2');
     btn.innerText = "see less";
   } else {
-    el.classList.add('line-clamp-1');
+    el.classList.add('line-clamp-2');
     btn.innerText = "see more";
   }
 }
 
 function openImageModal(src) {
   document.getElementById('modalPreviewImage').src = src;
-  document.getElementById('imagePreviewModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  document.getElementById('imagePreviewModal').classList.add('active');
 }
 
 function closeImageModal() {
-  document.getElementById('imagePreviewModal').classList.add('hidden');
+  document.getElementById('imagePreviewModal').classList.remove('active');
   document.getElementById('modalPreviewImage').src = "";
-  document.body.style.overflow = '';
 }
 
-// Close modal on escape key or clicking outside
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeImageModal();
-});
-document.getElementById('imagePreviewModal').addEventListener('click', function(e) {
-  if (e.target === this) closeImageModal();
+document.getElementById("searchInput").addEventListener("input", function(){
+  let v = this.value.toLowerCase();
+  document.querySelectorAll("#newsTableBody tr").forEach(r => {
+    if (r.children.length > 1) {
+      r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+    }
+  });
+  document.querySelectorAll("#newsCards .news-card").forEach(c => {
+    c.style.display = c.innerText.toLowerCase().includes(v) ? "" : "none";
+  });
 });
 </script>
 </html>
+
+
+

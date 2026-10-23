@@ -93,74 +93,80 @@ if (isset($_POST['update'])) {
 
 
 
-<main class="max-w-3xl mx-auto py-8 px-4">
- <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden w-full max-w-xl mx-auto">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
+ <div class="premium-card overflow-hidden w-full max-w-xl">
     
-    <div class="p-4 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
-      <a href="create_branch.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-        <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
-      </a>
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-        <i class="fa-solid fa-code-branch text-orange-600"></i>
-        Edit Branch
-      </h2>
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="create_branch.php" class="btn-back-nav" title="Back to Branches">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+        </a>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">
+            Edit Branch
+          </h2>
+          <p class="text-xs text-slate-400 font-medium">Update community branch and mahant details</p>
+        </div>
+      </div>
     </div>
 
     <div class="p-6">
-        <?php if(!empty($errors)){ ?>
-            <div class="bg-red-100 border border-red-300 text-red-700 p-3 rounded mb-4">
-                <ul><?php foreach($errors as $e) echo "<li>$e</li>"; ?></ul>
+        <?php if(!empty($errors)): ?>
+            <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-xl text-xs font-semibold mb-4">
+                <ul class="list-disc list-inside space-y-1">
+                    <?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?>
+                </ul>
             </div>
-        <?php } ?>
+        <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" class="space-y-4">
 
             <!-- Image -->
             <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700">Mahant Photo</label>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Mahant Photo</label>
                 <div class="flex items-center gap-4">
-                    <img id="preview" src="../uploads/branches/<?= $data['photo'] ?>" class="w-20 h-20 object-cover rounded-full border">
-                    <input type="file" name="photo" accept="image/*" class="border px-3 py-2 rounded-lg text-sm" onchange="previewImage(this)">
+                    <img id="preview" src="../uploads/branches/<?= $data['photo'] ?>" class="w-16 h-16 object-cover rounded-full border border-slate-200 shadow-2xs flex-shrink-0">
+                    <input type="file" name="photo" accept="image/*" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer" onchange="previewImage(this)">
                 </div>
             </div>
 
             <!-- Branch Village -->
             <div>
-                <label class="text-sm font-medium text-gray-700">Branch Village *</label>
-                <input type="text" name="village" value="<?= htmlspecialchars($data['branch_village']) ?>" class="w-full text-sm px-4 py-2 border rounded-lg">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Branch Village *</label>
+                <input type="text" name="village" value="<?= htmlspecialchars($data['branch_village']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
             </div>
 
             <!-- Branch Name -->
             <div>
-                <label class="text-sm font-medium text-gray-700">Branch Name *</label>
-                <input type="text" name="branch_name" value="<?= htmlspecialchars($data['branch_name']) ?>" class="w-full text-sm px-4 py-2 border rounded-lg">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Branch Name *</label>
+                <input type="text" name="branch_name" value="<?= htmlspecialchars($data['branch_name']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
             </div>
 
             <!-- Mahant Name -->
             <div>
-                <label class="text-sm font-medium text-gray-700">Mahant Name *</label>
-                <input type="text" name="mahant_name" value="<?= htmlspecialchars($data['mahant_name']) ?>" class="w-full text-sm px-4 py-2 border rounded-lg">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mahant Name *</label>
+                <input type="text" name="mahant_name" value="<?= htmlspecialchars($data['mahant_name']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
             </div>
 
             <!-- Mahant Mobile -->
             <div>
-                <label class="text-sm font-medium text-gray-700">Mahant Mobile *</label>
-                <input type="text" name="mahant_mobile" value="<?= htmlspecialchars($data['mahant_mobile']) ?>" class="w-full text-sm px-4 py-2 border rounded-lg">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mahant Mobile *</label>
+                <input type="text" name="mahant_mobile" value="<?= htmlspecialchars($data['mahant_mobile']) ?>" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition">
             </div>
 
             <!-- Details -->
             <div>
-                <label class="text-sm font-medium text-gray-700">Branch History / Details *</label>
-                <textarea name="details" rows="4" class="w-full text-sm px-4 py-2 border rounded-lg"><?= htmlspecialchars($data['details']) ?></textarea>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Branch History / Details *</label>
+                <textarea name="details" rows="4" required class="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-xs text-slate-800 font-medium transition resize-none"><?= htmlspecialchars($data['details']) ?></textarea>
             </div>
 
             <!-- Buttons -->
-            <div class="flex gap-4 pt-3">
-                <button type="submit" name="update" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow text-sm">
-                    <i class="fa-solid fa-check"></i> Update Branch
+            <div class="flex gap-3 pt-3">
+                <button type="submit" name="update" class="btn-brand-primary flex-1 py-2.5 rounded-xl text-xs font-semibold shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-check text-xs"></i> <span>Update Branch</span>
                 </button>
-                <a href="create_branch.php" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm">
-                    <i class="fa-solid fa-xmark"></i> Cancel
+                <a href="create_branch.php" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-xmark text-xs"></i> <span>Cancel</span>
                 </a>
             </div>
 

@@ -6,6 +6,8 @@ $page_limit = 20;
 
 // Handle AJAX Request for Infinite Scroll
 if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    if (ob_get_length()) ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
     $limit = $page_limit;
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
@@ -19,7 +21,7 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     
     $total_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM tbl_wallet w LEFT JOIN tbl_members m ON w.user_id = m.id $whereClause");
     $total_row = mysqli_fetch_assoc($total_q);
-    $total_transactions = $total_row['cnt'];
+    $total_transactions = $total_row['cnt'] ?? 0;
     
     $q = mysqli_query($con, "
         SELECT w.*, m.name, m.mobile, m.profile_photo
@@ -33,66 +35,71 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $desktop_html = '';
     $mobile_html = '';
     
-    while($row = $q->fetch_assoc()) {
-        $txn = "#TXN" . str_pad($row['id'],3,'0',STR_PAD_LEFT);
-        $name = $row['name'] ?: 'Unknown';
-        $phone = $row['mobile'] ?: '---';
-        $amount = $row['payment_ammount'];
-        $payment_id = $row['payment_id'];
-        $date = date("d M Y, h:i A", strtotime($row['date']));
-        $status = ucfirst($row['status']);
-        
-        $profile_html = '';
-        if(!empty($row['profile_photo']) && file_exists("../uploads/photo/".$row['profile_photo'])) {
-            $profile_html = '<img src="../uploads/photo/'.$row['profile_photo'].'" class="w-8 h-8 rounded-full border-2 border-orange-400 shadow cursor-pointer" onclick="openImageModal(\'../uploads/photo/'.$row['profile_photo'].'\')" />';
-        } else {
-            $profile_html = '<div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">'.strtoupper(substr($name,0,1)).'</div>';
+    if ($q) {
+        while($row = mysqli_fetch_assoc($q)) {
+            $txn = "#TXN" . str_pad($row['id'],3,'0',STR_PAD_LEFT);
+            $raw_name = $row['name'] ?: 'Unknown';
+            $name = htmlspecialchars(mb_convert_encoding($raw_name, 'UTF-8', 'UTF-8'));
+            $phone = htmlspecialchars($row['mobile'] ?: '---');
+            $amount = htmlspecialchars($row['payment_ammount'] ?? 0);
+            $payment_id = htmlspecialchars($row['payment_id'] ?? '');
+            $date = date("d M Y, h:i A", strtotime($row['date']));
+            $status = htmlspecialchars(ucfirst($row['status'] ?? ''));
+            
+            $profile_html = '';
+            if(!empty($row['profile_photo']) && file_exists("../uploads/photo/".$row['profile_photo'])) {
+                $profile_html = '<img src="../uploads/photo/'.$row['profile_photo'].'" class="w-8 h-8 rounded-full border-2 border-blue-300 shadow cursor-pointer" onclick="openImageModal(\'../uploads/photo/'.$row['profile_photo'].'\')" />';
+            } else {
+                $firstChar = mb_substr($name, 0, 1, 'UTF-8');
+                $profile_html = '<div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">'.htmlspecialchars(mb_strtoupper($firstChar, 'UTF-8')).'</div>';
+            }
+            
+            $desktop_html .= '<tr class="hover:bg-slate-50 transition search-row">
+                <td class="px-4 py-2 text-sm">'.$txn.'</td>
+                <td class="px-4 py-2 text-sm">
+                  <div class="flex items-center gap-3">
+                    '.$profile_html.'
+                    <span class="font-semibold">'.$name.'</span>
+                  </div>
+                </td>
+                <td class="px-4 py-2 text-sm">'.$phone.'</td>
+                <td class="px-4 py-2 text-sm">'.$payment_id.'</td>
+                <td class="px-4 py-2 text-sm text-green-600 font-bold">₹'.$amount.'</td>
+                <td class="px-4 py-2 text-sm">'.$date.'</td>
+                <td class="px-4 py-2 text-center">
+                  <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Online</span>
+                </td>
+                <td class="px-4 py-2 text-center">
+                  <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">'.$status.'</span>
+                </td>
+              </tr>';
+              
+            $mobile_html .= '<div class="bg-white p-4 rounded-xl shadow border border-gray-100 search-row-mob">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  '.$profile_html.'
+                  <div>
+                    <h3 class="font-bold text-gray-800">'.$name.'</h3>
+                    <p class="text-xs text-gray-500">'.$txn.'</p>
+                  </div>
+                </div>
+                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">'.$status.'</span>
+              </div>
+              <div class="mt-3 space-y-2">
+                <div class="flex justify-between">
+                  <span>Amount:</span>
+                  <span class="font-bold text-green-600">₹'.$amount.'</span>
+                </div>
+                <div class="text-sm text-gray-600">'.$phone.'</div>
+                <div class="text-sm text-gray-600">'.$date.'</div>
+                <div class="text-sm text-gray-600">Online</div>
+              </div>
+            </div>';
         }
-        
-        $desktop_html .= '<tr class="hover:bg-orange-50 transition search-row">
-            <td class="px-4 py-2 text-sm">'.$txn.'</td>
-            <td class="px-4 py-2 text-sm">
-              <div class="flex items-center gap-3">
-                '.$profile_html.'
-                <span class="font-semibold">'.$name.'</span>
-              </div>
-            </td>
-            <td class="px-4 py-2 text-sm">'.$phone.'</td>
-            <td class="px-4 py-2 text-sm">'.$payment_id.'</td>
-            <td class="px-4 py-2 text-sm text-green-600 font-bold">₹'.$amount.'</td>
-            <td class="px-4 py-2 text-sm">'.$date.'</td>
-            <td class="px-4 py-2 text-center">
-              <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Online</span>
-            </td>
-            <td class="px-4 py-2 text-center">
-              <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">'.$status.'</span>
-            </td>
-          </tr>';
-          
-        $mobile_html .= '<div class="bg-white p-4 rounded-xl shadow border border-gray-100 search-row-mob">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-3">
-              '.$profile_html.'
-              <div>
-                <h3 class="font-bold text-gray-800">'.$name.'</h3>
-                <p class="text-xs text-gray-500">'.$txn.'</p>
-              </div>
-            </div>
-            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">'.$status.'</span>
-          </div>
-          <div class="mt-3 space-y-2">
-            <div class="flex justify-between">
-              <span>Amount:</span>
-              <span class="font-bold text-green-600">₹'.$amount.'</span>
-            </div>
-            <div class="text-sm text-gray-600">'.$phone.'</div>
-            <div class="text-sm text-gray-600">'.$date.'</div>
-            <div class="text-sm text-gray-600">Online</div>
-          </div>
-        </div>';
     }
     
-    echo json_encode(['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_transactions]);
+    $payload = ['desktop' => $desktop_html, 'mobile' => $mobile_html, 'total' => $total_transactions];
+    echo json_encode($payload, JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 }
 
@@ -139,7 +146,7 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
 <?php include("header.php"); ?>
 
 <!-- MAIN -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<main class="w-full px-4 sm:px-6 lg:px-8 py-6">
 
 
 
@@ -171,8 +178,8 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
 
     <div class="bg-white rounded-xl shadow-md p-3 border border-gray-100">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-          <i class="fa-solid fa-calendar text-orange-600 text-xl"></i>
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-calendar text-brand-primary text-xl"></i>
         </div>
         <div>
           <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">This Month</p>
@@ -182,39 +189,43 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
     </div>
   </div>
 
-  <!-- LIST VIEW (Desktop Table) -->
-  <div class="hidden md:block bg-white rounded-xl shadow border border-gray-100 overflow-hidden mb-4">
-    
-    <div class="p-2 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-      <div class="flex items-center gap-3">
-        <a href="index.php" class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center hover:bg-orange-200 transition shadow-sm">
-          <i class="fa-solid fa-arrow-left text-orange-600 text-sm"></i>
+  <!-- Sub-Header / Filters (Visible on BOTH Mobile & Desktop) -->
+  <div class="premium-card overflow-hidden mb-5">
+    <div class="page-subheader">
+      <div class="page-subheader-left">
+        <a href="index.php" class="btn-back-nav" title="Back to Dashboard">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
         </a>
-        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <i class="fa-solid fa-wallet text-orange-600"></i>
-          Wallet & Earnings
-        </h2>
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-900">
+            Wallet &amp; Earnings
+          </h2>
+          <p class="text-xs text-slate-400">All member donations and transaction logs</p>
+        </div>
       </div>
       
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <div class="relative w-full sm:w-64">
-          <i class="fa-solid fa-search absolute left-3 top-2.5 text-orange-400 text-sm"></i>
+      <div class="page-subheader-right">
+        <div class="subheader-search">
+          <i class="fa-solid fa-search subheader-search-icon"></i>
           <input 
-            type="text" 
+            type="search" 
             id="searchInput" 
-            placeholder="Search name, phone, or TXN..." 
-            class="w-full pl-9 pr-4 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition text-sm text-gray-700"
+            placeholder="Search name, phone, or TXN..."
           >
         </div>
-        <div class="text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap">
-          Total: <span id="totalTransactionsCount" class="text-orange-600 font-bold"><?= $total_transactions ?></span>
+        <div class="premium-counter-pill">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          Total: <span id="totalTransactionsCount" class="text-blue-600 font-bold"><?= number_format($total_transactions) ?></span>
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- LIST VIEW (Desktop Table) -->
+  <div class="hidden md:block premium-card overflow-hidden mb-4">
     <div class="overflow-y-auto max-h-[525px]" id="tableScrollContainer">
       <table class="w-full text-sm border-t border-gray-100">
-        <thead class="bg-orange-500 text-white sticky top-0 z-10">
+        <thead class="bg-slate-500 text-white sticky top-0 z-10">
           <tr>
             <th class="px-4 py-2 text-left font-medium">#</th>
             <th class="px-4 py-2 text-left font-medium">Donor Name</th>
@@ -229,7 +240,7 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
 
         <tbody id="tableBody" class="divide-y divide-gray-200">
           <?php foreach($transactions as $t): ?>
-          <tr class="hover:bg-orange-50 transition search-row">
+          <tr class="hover:bg-slate-50 transition search-row">
             <td class="px-4 py-2 text-sm"><?= $t['txn'] ?></td>
 
             <td class="px-4 py-2 text-sm">
@@ -238,12 +249,12 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
                 <?php if(!empty($t['profile']) && file_exists("../uploads/photo/".$t['profile'])): ?>
                  <img 
   src="../uploads/photo/<?= $t['profile'] ?>" 
-  class="w-8 h-8 rounded-full border-2 border-orange-400 shadow cursor-pointer"
+  class="w-8 h-8 rounded-full border-2 border-blue-300 shadow cursor-pointer"
   onclick="openImageModal('../uploads/photo/<?= $t['profile'] ?>')"
 />
 
                 <?php else: ?>
-                  <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                  <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
                     <?= strtoupper(substr($t['name'],0,1)) ?>
                   </div>
                 <?php endif; ?>
@@ -285,12 +296,12 @@ $monthSum = $con->query("SELECT SUM(payment_ammount) FROM tbl_wallet WHERE statu
           <?php if(!empty($t['profile']) && file_exists("../uploads/photo/".$t['profile'])): ?>
             <img 
   src="../uploads/photo/<?= $t['profile'] ?>" 
-  class="w-8 h-8 rounded-full border-2 border-orange-400 shadow cursor-pointer"
+  class="w-8 h-8 rounded-full border-2 border-blue-300 shadow cursor-pointer"
   onclick="openImageModal('../uploads/photo/<?= $t['profile'] ?>')"
 />
 
           <?php else: ?>
-            <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
               <?= strtoupper(substr($t['name'],0,1)) ?>
             </div>
           <?php endif; ?>
@@ -382,39 +393,57 @@ if(searchInput) {
 
 const tableContainer = document.getElementById('tableScrollContainer');
 
-if (tableContainer) {
-    tableContainer.addEventListener('scroll', () => {
-        if (Math.ceil(tableContainer.scrollTop + tableContainer.clientHeight) >= tableContainer.scrollHeight - 150) {
+function checkScrollAndLoad() {
+    if (loading || !hasMore) return;
+    
+    // Check desktop container
+    if (tableContainer && window.innerWidth >= 768) {
+        if (Math.ceil(tableContainer.scrollTop + tableContainer.clientHeight) >= tableContainer.scrollHeight - 250) {
             loadMore();
-        }
-    });
-}
-
-window.addEventListener('scroll', () => {
-    if (window.innerWidth < 768) { 
-        const scrollY = window.scrollY || document.documentElement.scrollTop;
-        if (Math.ceil(window.innerHeight + scrollY) >= document.documentElement.scrollHeight - 200) {
-            loadMore();
+            return;
         }
     }
-});
+    
+    // Check mobile or window scroll
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    if (Math.ceil(window.innerHeight + scrollY) >= document.documentElement.scrollHeight - 350) {
+        loadMore();
+    }
+}
+
+if (tableContainer) {
+    tableContainer.addEventListener('scroll', checkScrollAndLoad);
+}
+window.addEventListener('scroll', checkScrollAndLoad);
 
 function loadMore(isSearch = false) {
     if (loading || (!hasMore && !isSearch)) return;
     loading = true;
     
-    if (!isSearch) {
-        currentPage++;
-    }
+    const nextPage = isSearch ? 1 : (currentPage + 1);
+    const targetUrl = `${window.location.pathname}?ajax=1&page=${nextPage}&search=${encodeURIComponent(currentSearch)}`;
     
-    fetch(`admin_wallet.php?ajax=1&page=${currentPage}&search=${encodeURIComponent(currentSearch)}`)
-        .then(res => res.json())
+    fetch(targetUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
+            return res.json();
+        })
         .then(data => {
-            if(data.desktop.trim() === '' && data.mobile.trim() === '') {
+            if (!isSearch) {
+                currentPage = nextPage;
+            }
+            if(!data.desktop || (data.desktop.trim() === '' && (!data.mobile || data.mobile.trim() === ''))) {
                 hasMore = false;
             } else {
-                document.querySelector('#tableBody').insertAdjacentHTML('beforeend', data.desktop);
-                document.getElementById('mobileCards').insertAdjacentHTML('beforeend', data.mobile);
+                if (isSearch) {
+                    document.querySelector('#tableBody').innerHTML = data.desktop;
+                    document.getElementById('mobileCards').innerHTML = data.mobile;
+                } else {
+                    document.querySelector('#tableBody').insertAdjacentHTML('beforeend', data.desktop);
+                    document.getElementById('mobileCards').insertAdjacentHTML('beforeend', data.mobile);
+                }
             }
             
             if (data.total !== undefined) {
@@ -424,13 +453,18 @@ function loadMore(isSearch = false) {
             
             loading = false;
             
-            // Auto-load if no scrollbar
-            if (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight && hasMore) {
-                loadMore();
-            }
+            // Auto-load next chunk if page content doesn't fill viewport
+            setTimeout(() => {
+                if (hasMore && (
+                    (tableContainer && tableContainer.scrollHeight <= tableContainer.clientHeight + 100) ||
+                    (document.documentElement.scrollHeight <= window.innerHeight + 100)
+                )) {
+                    loadMore();
+                }
+            }, 100);
         })
         .catch(err => {
-            console.error(err);
+            console.error('Error loading transactions:', err);
             loading = false;
         });
 }
@@ -438,3 +472,4 @@ function loadMore(isSearch = false) {
 
 </body>
 </html>
+

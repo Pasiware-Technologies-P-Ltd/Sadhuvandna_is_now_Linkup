@@ -11,16 +11,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <style>
   body { font-family: 'Roboto', sans-serif; }
-  .gradient-bg { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); }
+  .gradient-bg { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
   /* Glass effect only for Desktop */
   @media (min-width: 768px) {
-    .glassmin { background: rgba(255,255,255,0.95) !important; box-shadow: 0 10px 40px -10px rgba(251,146,60,0.2); }
+    .glassmin { background: rgba(255,255,255,0.95) !important; box-shadow: 0 10px 40px -10px rgba(37,99,235,0.15); }
   }
   
   .modal-bg { background: rgba(0,0,0,0.5); }
   /* Animation for inputs */
   .slide-down { animation: slideDown 0.3s ease-out forwards; }
   @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Direct Color Mapping to Blue */
+  .bg-orange-50 { background-color: #eff6ff !important; }
+  .bg-orange-100 { background-color: #dbeafe !important; }
+  .bg-orange-200 { background-color: #bfdbfe !important; }
+  .bg-orange-500 { background-color: #1877f2 !important; }
+  .bg-orange-600 { background-color: #2563eb !important; }
+  .text-orange-500 { color: #1877f2 !important; }
+  .text-orange-600 { color: #2563eb !important; }
+  .text-orange-700 { color: #1d4ed8 !important; }
+  .border-orange-200 { border-color: #bfdbfe !important; }
+  .from-orange-500 { --tw-gradient-from: #1877f2 !important; }
+  .to-orange-600 { --tw-gradient-to: #2563eb !important; }
+  .hover\:from-orange-600:hover { --tw-gradient-from: #2563eb !important; }
+  .hover\:to-orange-700:hover { --tw-gradient-to: #1d4ed8 !important; }
+  .focus\:ring-orange-500:focus { --tw-ring-color: #60a5fa !important; }
 </style>
 <script type="text/javascript">
   var configuration = {
@@ -40,17 +56,17 @@
 <body class="gradient-bg min-h-screen block md:flex md:justify-center md:items-center p-0 md:px-4 md:py-6 relative overflow-x-hidden">
 
 <!-- Decorative Blobs (Hidden on Mobile) -->
-<div class="hidden md:block absolute top-0 left-0 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
-<div class="hidden md:block absolute bottom-0 right-0 w-64 h-64 bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 translate-x-1/2 translate-y-1/2"></div>
+<div class="hidden md:block absolute top-0 left-0 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 -translate-x-1/2 -translate-y-1/2"></div>
+<div class="hidden md:block absolute bottom-0 right-0 w-64 h-64 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 translate-x-1/2 translate-y-1/2"></div>
 
 <div class="glassmin bg-white md:rounded-2xl rounded-none border-0 md:border border-white/50 w-full min-h-screen md:min-h-auto md:max-w-md p-6 md:p-8 flex flex-col justify-center md:justify-start gap-6 relative z-10 transition-all duration-300">
   
   <div class="text-center">
-      <div class="w-16 h-16 bg-orange-100/50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-orange-200">
-        <i class="fa-solid fa-users-viewfinder text-3xl text-orange-600"></i>
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-sm overflow-hidden bg-white">
+        <img src="images/logo.png" alt="Linkup Logo" class="w-full h-full object-cover">
       </div>
-      <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
-      <p class="text-sm text-gray-500 mt-1">Enter your email to login or create account</p>
+      <h2 class="text-2xl font-bold text-gray-800">Welcome to Linkup</h2>
+      <p class="text-sm text-gray-500 mt-1">Enter your details to login or create account</p>
   </div>
 
   <form id="loginForm" class="flex flex-col gap-4">

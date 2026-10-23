@@ -1,0 +1,797 @@
+/**
+ * Linkup Centralized Theme System (Admin & Web)
+ * All colors, component classes, status badges, typography, and card tokens in ONE place.
+ * To change the theme in the future, simply update the CSS variables in :root below!
+ */
+
+:root {
+  /* ==========================================================================
+     1. Brand Theme Colors (Mobile App Parity: Royal Blue #1877F2 & #2563EB)
+     ========================================================================== */
+  --brand-50:  #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #1877f2;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-800: #1e40af;
+  --brand-900: #1e3a8a;
+
+  /* Primary Accent & Gradient shortcuts */
+  --color-primary: var(--brand-500);
+  --color-primary-dark: var(--brand-600);
+  --color-primary-light: var(--brand-50);
+  --brand-gradient: linear-gradient(135deg, #1877f2 0%, #2563eb 100%);
+  --brand-gradient-hero: linear-gradient(135deg, #1877f2 0%, #2563eb 50%, #4f46e5 100%);
+  --brand-shadow: 0 4px 14px -2px rgba(24, 119, 242, 0.35);
+
+  /* ==========================================================================
+     2. Semantic Status Colors (Active, Pending, Blocked)
+     ========================================================================== */
+  --status-active-bg: #ecfdf5;
+  --status-active-border: rgba(167, 243, 208, 0.6);
+  --status-active-text: #047857;
+  --status-active-dot: #10b981;
+
+  --status-pending-bg: #fffbeb;
+  --status-pending-border: rgba(254, 243, 199, 0.8);
+  --status-pending-text: #b45309;
+  --status-pending-dot: #f59e0b;
+
+  --status-blocked-bg: #fff1f2;
+  --status-blocked-border: rgba(254, 205, 211, 0.6);
+  --status-blocked-text: #be123c;
+  --status-blocked-dot: #f43f5e;
+
+  /* ==========================================================================
+     3. Surface, Neutral & Typography Tokens
+     ========================================================================== */
+  --font-family-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --bg-page: #f8fafc;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-border-hover: #cbd5e1;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --card-radius: 1rem;
+
+  --th-bg: #f8fafc;
+  --th-color: #475569;
+  --th-border: #e2e8f0;
+}
+
+/* ==========================================================================
+   Global Base Typography & Layout
+   ========================================================================== */
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--bg-page);
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Centralized Reusable Components
+   ========================================================================== */
+
+/* Premium Card Container */
+.premium-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Premium Table Header */
+.premium-th {
+  background-color: var(--th-bg) !important;
+  color: var(--th-color) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 1px solid var(--th-border) !important;
+  text-align: left;
+}
+
+.premium-th.text-center {
+  text-align: center !important;
+}
+
+/* Centralized Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.status-badge.status-active {
+  background-color: var(--status-active-bg);
+  border: 1px solid var(--status-active-border);
+  color: var(--status-active-text);
+}
+.status-badge.status-active .status-badge-dot {
+  background-color: var(--status-active-dot);
+}
+
+.status-badge.status-pending {
+  background-color: var(--status-pending-bg);
+  border: 1px solid var(--status-pending-border);
+  color: var(--status-pending-text);
+}
+.status-badge.status-pending .status-badge-dot {
+  background-color: var(--status-pending-dot);
+}
+
+.status-badge.status-blocked {
+  background-color: var(--status-blocked-bg);
+  border: 1px solid var(--status-blocked-border);
+  color: var(--status-blocked-text);
+}
+.status-badge.status-blocked .status-badge-dot {
+  background-color: var(--status-blocked-dot);
+}
+
+/* Centralized Action Buttons */
+.btn-action-icon {
+  width: 1.85rem;
+  height: 1.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-action-approve {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+.btn-action-approve:hover {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.btn-action-danger {
+  background-color: #fff1f2;
+  color: #e11d48;
+}
+.btn-action-danger:hover {
+  background-color: #ffe4e6;
+  color: #be123c;
+}
+
+.btn-action-unblock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid var(--status-active-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+.btn-action-unblock:hover {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+/* Search Input Styling */
+.premium-search-input {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #0f172a;
+  transition: all 0.15s ease;
+}
+.premium-search-input:hover {
+  background-color: #f1f5f9;
+}
+.premium-search-input:focus {
+  background-color: #ffffff;
+  border-color: var(--brand-600);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Counter Badge */
+.premium-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+}
+
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Table Scrollbar Alignment: Scrollbar track beside TH matches the <th> background (#f8fafc) 100% seamlessly */
+#tableScrollContainer,
+.table-scroll-container,
+.table-container {
+  overflow-y: auto;
+  position: relative;
+}
+
+#tableScrollContainer thead,
+.table-scroll-container thead,
+.table-container thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+#tableScrollContainer thead tr,
+.table-scroll-container thead tr,
+.table-container thead tr {
+  background-color: var(--th-bg);
+}
+
+#tableScrollContainer thead th,
+.table-scroll-container thead th,
+.table-container thead th {
+  background-color: var(--th-bg) !important;
+}
+
+/* Set scrollbar width */
+#tableScrollContainer::-webkit-scrollbar,
+.table-scroll-container::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+  width: 6px;
+  background-color: var(--th-bg);
+}
+
+/* Background of track: top part is identical to TH background (#f8fafc) with the same bottom border, then transparent below */
+#tableScrollContainer::-webkit-scrollbar-track,
+.table-scroll-container::-webkit-scrollbar-track,
+.table-container::-webkit-scrollbar-track {
+  background: linear-gradient(
+    to bottom,
+    var(--th-bg) 0px,
+    var(--th-bg) 42px,
+    var(--th-border) 42px,
+    var(--th-border) 43px,
+    transparent 43px,
+    transparent 100%
+  );
+  margin-top: 44px;
+}
+
+/* ==========================================================================
+   4. Semantic App & Admin Custom Classes (Use these in HTML for clean code)
+   ========================================================================== */
+
+/* Brand Buttons */
+.btn-brand-primary {
+  background: var(--brand-gradient);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  padding: 0.5rem 1.25rem;
+  box-shadow: 0 4px 12px -2px rgba(24, 119, 242, 0.35);
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.btn-brand-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 16px -2px rgba(24, 119, 242, 0.45);
+}
+
+.btn-brand-light {
+  background-color: var(--brand-50);
+  color: var(--brand-600) !important;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--brand-200);
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.btn-brand-light:hover {
+  background-color: var(--brand-100);
+  color: var(--brand-700) !important;
+}
+
+/* Back Button */
+.btn-back-nav {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.625rem;
+  background-color: #ffffff;
+  border: 1px solid var(--card-border);
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.btn-back-nav:hover {
+  background-color: var(--brand-50);
+  color: var(--brand-600);
+  border-color: var(--brand-200);
+}
+
+/* Brand Text & Icons */
+.text-brand-primary { color: var(--brand-500) !important; }
+.text-brand-dark    { color: var(--brand-700) !important; }
+.text-brand-muted   { color: var(--brand-400) !important; }
+
+/* Brand Backgrounds & Hero */
+.bg-brand-surface { background-color: var(--brand-50) !important; }
+.bg-brand-solid   { background-color: var(--brand-500) !important; }
+.bg-brand-hero    { background: var(--brand-gradient-hero) !important; }
+
+/* Brand Borders */
+.border-brand-subtle { border-color: var(--brand-200) !important; }
+.border-brand-active { border-color: var(--brand-500) !important; }
+
+/* ==========================================================================
+   5. Centralized Modal System (Clean Full-Screen Backdrop & Animated Dialog)
+   ========================================================================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.admin-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.admin-modal-card {
+  background-color: #ffffff;
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.95) translateY(8px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-modal-overlay.active .admin-modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.admin-modal-header {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8fafc;
+}
+
+.admin-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.admin-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: #f8fafc;
+}
+
+/* ==========================================================================
+   6. Universal Mobile Responsive — Sub-header, Search, Cards, Modal
+   ========================================================================== */
+
+/* ── Sub-header container ── */
+.page-subheader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+@media (min-width: 640px) {
+  .page-subheader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+}
+
+/* ── Left block: back arrow + title ── */
+.page-subheader-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* ── Right block: search + counter + button ── */
+.page-subheader-right {
+  display: grid;
+  /* Row 1: search full-width; Row 2: counter + button side-by-side */
+  grid-template-columns: 1fr auto auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* On mobile: force two rows — search alone, then counter + button */
+@media (max-width: 639px) {
+  .page-subheader-right {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "search  search"
+      "counter button";
+  }
+  .subheader-search        { grid-area: search; }
+  .premium-counter-pill    { grid-area: counter; justify-self: start; }
+  .page-subheader-right > a,
+  .page-subheader-right > button:not([style*="display:none"]) { grid-area: button; justify-self: end; }
+}
+
+@media (min-width: 640px) {
+  .page-subheader-right {
+    grid-template-columns: minmax(160px, 260px) auto auto;
+    width: auto;
+  }
+}
+
+/* ── Search wrapper ── */
+.subheader-search {
+  position: relative;
+  min-width: 0;
+}
+
+/* ── Search input — HIGH SPECIFICITY so Tailwind doesn't override ── */
+div.subheader-search input[type="search"],
+div.subheader-search input[type="text"] {
+  display: block !important;
+  width: 100% !important;
+  padding: 0.5rem 0.875rem 0.5rem 2.125rem !important;
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  outline: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box !important;
+  height: 2.125rem !important;
+  line-height: 1 !important;
+}
+div.subheader-search input[type="search"]:focus,
+div.subheader-search input[type="text"]:focus {
+  border-color: var(--brand-600) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12) !important;
+}
+div.subheader-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+/* ── Search icon ── */
+.subheader-search-icon {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.65rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Counter pill ── */
+.premium-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Mobile card components ── */
+.mobile-list-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.mobile-card-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+.mobile-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.mobile-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+.mobile-meta-row i {
+  width: 0.875rem;
+  text-align: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* ── Desktop table / Mobile card toggle ── */
+/* Tables are shown sm+ and hidden on mobile */
+.desktop-table-view  { display: none; }
+.mobile-cards-view   { display: block; }
+
+@media (min-width: 640px) {
+  .desktop-table-view { display: block; }
+  .mobile-cards-view  { display: none; }
+}
+
+/* ── Mobile viewport scroll & Sticky Subheader ── */
+@media (max-width: 639px) {
+  body { 
+    overflow-x: hidden; 
+  }
+
+  /* When inside a premium-card on mobile, allow sticky subheader to stick cleanly */
+  .premium-card {
+    overflow: visible !important;
+  }
+
+  /* Sticky subheader: full solid background, clean border & shadow */
+  .page-subheader {
+    position: sticky !important;
+    top: 4rem !important; /* Exactly below top header h-16 (64px) */
+    z-index: 30 !important;
+    background-color: #ffffff !important;
+    border-top-left-radius: var(--card-radius);
+    border-top-right-radius: var(--card-radius);
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.06) !important;
+  }
+
+  /* Dedicated mobile scroll container: cards scroll inside cleanly without overlapping top borders */
+  #musicCards,
+  #contactCards,
+  #newsCards,
+  #breakingCards,
+  #jobsCards,
+  #galleryCards,
+  #stateCards,
+  #districtCards,
+  #templeCards,
+  #branchCards,
+  #frameCards,
+  #appsCards,
+  #mobileCards,
+  #userCards,
+  #postCards,
+  .mobile-cards-scroll {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: calc(100vh - 270px) !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    background-color: #f8fafc;
+    border-bottom-left-radius: var(--card-radius);
+    border-bottom-right-radius: var(--card-radius);
+  }
+
+  #tableScrollContainer,
+  .table-scroll-container,
+  .table-container {
+    overflow-x: hidden !important;
+  }
+}
+
+/* ── Modals: bottom-sheet on mobile, centered on desktop ── */
+.admin-modal-overlay {
+  padding: 0.5rem;
+  align-items: flex-end;
+}
+.admin-modal-card {
+  max-height: 88vh;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+@media (min-width: 640px) {
+  .admin-modal-overlay {
+    padding: 1rem;
+    align-items: center;
+  }
+  .admin-modal-card {
+    border-radius: 1.25rem !important;
+    max-height: 90vh;
+  }
+}
+
+
+
+
+/* Mobile card layout for list pages */
+.mobile-list-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: border-color 0.15s ease;
+}
+
+.mobile-list-card:active {
+  border-color: var(--brand-200);
+}
+
+/* Mobile card avatar */
+.mobile-card-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.mobile-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Mobile meta row (icon + text) */
+.mobile-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.mobile-meta-row i {
+  width: 0.875rem;
+  text-align: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* Table Container Mobile Touch Scroll */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  #tableScrollContainer,
+  .table-scroll-container,
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(100vh - 200px) !important;
+  }
+
+
+
+  /* Modal responsive sizing on small screens */
+  .admin-modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+
+  .admin-modal-card {
+    max-height: 88vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .admin-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .admin-modal-body {
+    padding: 1.25rem;
+  }
+
+  .admin-modal-footer {
+    padding: 0.85rem 1.25rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .admin-modal-overlay {
+    padding: 1rem;
+    align-items: center;
+  }
+
+  .admin-modal-card {
+    border-radius: 1.25rem;
+    max-height: 90vh;
+  }
+}
+
+
