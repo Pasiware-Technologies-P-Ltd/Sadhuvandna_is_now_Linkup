@@ -267,9 +267,18 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
             const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
 
-            const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                contents: [{ parts: [{ text: prompt }] }]
-            });
+            const response = await axios.post(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                    contents: [{ parts: [{ text: prompt }] }]
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': GEMINI_API_KEY
+                    }
+                }
+            );
 
             const text = response.data.candidates[0].content.parts[0].text;
             const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();

@@ -16,6 +16,19 @@ if (!$user_id || !$name || !$phone || !$email || !$education) {
     exit;
 }
 
+// Verify payment before submission
+$checkPaid = $con->query("
+    SELECT id FROM tbl_wallet 
+    WHERE user_id = '$user_id' 
+    AND payment_type = 'anchor' 
+    AND status = 'success' 
+    LIMIT 1
+");
+if (!$checkPaid || $checkPaid->num_rows == 0) {
+    echo json_encode(["status" => "error", "message" => "Anchor application fee payment is required before submitting."]);
+    exit;
+}
+
 $uploadDir = "../uploads/anchor_applications/";
 if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
 

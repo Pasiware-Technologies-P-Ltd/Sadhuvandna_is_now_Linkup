@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import api from '../../services/api';
+import api, { getFullPaymentUrl } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -53,6 +53,31 @@ const ApplyJobScreen = ({ navigation, route }: any) => {
             const uStr = await AsyncStorage.getItem('user');
             const user = uStr ? JSON.parse(uStr) : null;
             const userId = user ? user.id : 0;
+
+            if (isAnchorApplication) {
+                const checkRes = await api.get(`/check_anchor_status.php?user_id=${userId}`);
+                if (checkRes.data && checkRes.data.status === 'success') {
+                    if (!checkRes.data.paid) {
+                        setLoading(false);
+                        const pUrl = checkRes.data.payment_url ? getFullPaymentUrl(checkRes.data.payment_url) : '';
+                        Alert.alert(
+                            'Application Fee Required',
+                            `To submit your news anchor application, an application fee of ₹${checkRes.data.fee || 100} is required. Would you like to pay now?`,
+                            [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                    text: 'Pay Now',
+                                    onPress: () => {
+                                        if (pUrl) Linking.openURL(pUrl);
+                                        else Alert.alert('Error', 'Payment URL is not available.');
+                                    }
+                                }
+                            ]
+                        );
+                        return;
+                    }
+                }
+            }
 
             const formData = new FormData();
             if (isAnchorApplication) {

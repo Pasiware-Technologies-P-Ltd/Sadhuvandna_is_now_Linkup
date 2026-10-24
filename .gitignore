@@ -109,3 +109,5 @@ uploads/
 *.log
 
 /server/node_modules
+vendor/
+backend/Api/vendor/

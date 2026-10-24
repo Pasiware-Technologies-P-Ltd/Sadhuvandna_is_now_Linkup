@@ -30,7 +30,7 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useIsFocused } from '@react-navigation/native';
-import api, { API_BASE_URL, WEBSITE_URL } from '../../services/api';
+import api, { API_BASE_URL, WEBSITE_URL, getFullPaymentUrl } from '../../services/api';
 import { CompatVideo as Video, ResizeMode } from '../../components/CompatVideo';
 import { ImageService } from '../../services/ImageService';
 import { useTabSwipe } from '../../utils/useTabSwipe';
@@ -811,6 +811,53 @@ const NewsScreen = ({ navigation }: any) => {
     // List news items (from index 1 onwards so hero isn't duplicated)
     const listNewsItems = filteredNews.length > 1 ? filteredNews.slice(1) : [];
 
+    const checkAnchorPaymentAndProceed = async (title: string, message: string) => {
+        try {
+            const uStr = await AsyncStorage.getItem('user');
+            const u = uStr ? JSON.parse(uStr) : null;
+            if (!u || !u.id) {
+                Alert.alert('Login Required', 'Please login to continue.');
+                return;
+            }
+
+            const res = await api.get(`/check_anchor_status.php?user_id=${u.id}`);
+            if (res.data && res.data.status === 'success') {
+                const paid = !!res.data.paid;
+                const fee = res.data.fee || 100;
+                const pUrl = res.data.payment_url ? getFullPaymentUrl(res.data.payment_url) : '';
+
+                if (!paid) {
+                    Alert.alert(
+                        'Application Fee Required',
+                        `To apply for News Anchor verification, a one-time registration fee of ₹${fee} is required. Would you like to pay now?`,
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                                text: 'Pay Now',
+                                onPress: () => {
+                                    if (pUrl) {
+                                        Linking.openURL(pUrl);
+                                    } else {
+                                        Alert.alert('Error', 'Payment URL is not available. Please try again.');
+                                    }
+                                }
+                            }
+                        ]
+                    );
+                    return;
+                }
+
+                // If already paid, navigate to the application form
+                navigation.navigate('ApplyJob', { jobId: 'anchor', jobTitle: 'News Anchor', isAnchorApplication: true });
+            } else {
+                Alert.alert('Error', res.data?.message || 'Failed to verify anchor status.');
+            }
+        } catch (e) {
+            console.error('Error verifying anchor payment:', e);
+            Alert.alert('Error', 'Unable to check application payment status.');
+        }
+    };
+
     // Handlers for Anchor buttons
     const handleBreakingPress = () => {
         if (anchorStatus === 'Approved') {
@@ -821,7 +868,7 @@ const NewsScreen = ({ navigation }: any) => {
                 'Only verified news anchors can post live breaking news. Would you like to apply?',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Apply', onPress: () => navigation.navigate('ApplyJob', { jobId: 'anchor', jobTitle: 'News Anchor', isAnchorApplication: true }) },
+                    { text: 'Apply', onPress: () => checkAnchorPaymentAndProceed('Breaking News', 'Only verified news anchors can post live breaking news.') },
                 ]
             );
         }
@@ -838,7 +885,7 @@ const NewsScreen = ({ navigation }: any) => {
                 'Posting news requires anchor verification. Would you like to apply?',
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Apply', onPress: () => navigation.navigate('ApplyJob', { jobId: 'anchor', jobTitle: 'News Anchor', isAnchorApplication: true }) },
+                    { text: 'Apply', onPress: () => checkAnchorPaymentAndProceed('News Anchor Required', 'Posting news requires anchor verification.') },
                 ]
             );
         }
