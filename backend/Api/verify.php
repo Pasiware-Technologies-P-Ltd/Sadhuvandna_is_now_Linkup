@@ -13,13 +13,13 @@ $logged_user_id = $res['id'] ?? 0;
 $sender_id = intval($_SESSION['sender_id'] ?? 0);
 $receiver_id = intval($_SESSION['receiver_id'] ?? 0);
 
-// Live Keys:
-// $api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
-// $api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
+// Test Keys (Backup):
+// $api_key = 'rzp_test_Trfm3uKQLxIaGH';
+// $api_secret = 'G3jFmzKylfChqBzOEI5sd1fI';
 
-// Test Keys:
-$api_key = $razorpay_config['api_key'] ?? 'rzp_test_Trfm3uKQLxIaGH';
-$api_secret = $razorpay_config['api_secret'] ?? 'G3jFmzKylfChqBzOEI5sd1fI';
+// Live Keys:
+$api_key = $razorpay_config['api_key'] ?? 'rzp_live_Tnenb6CzgoQ3Yh';
+$api_secret = $razorpay_config['api_secret'] ?? 'tqKLPgYVgdhbXoqkDJFKwMip';
 $api = new Api($api_key, $api_secret);
 
 $success = true;

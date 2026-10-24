@@ -40,13 +40,13 @@ if ($settings_q && $settings_q->num_rows > 0) {
 $amounta = $productprice * 100; // in paise
 
 // Razorpay credentials
-// Live Keys:
-// $api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
-// $api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
+// Test Keys (Backup):
+// $api_key = 'rzp_test_Trfm3uKQLxIaGH';
+// $api_secret = 'G3jFmzKylfChqBzOEI5sd1fI';
 
-// Test Keys:
-$api_key = $razorpay_config['api_key'] ?? 'rzp_test_Trfm3uKQLxIaGH';
-$api_secret = $razorpay_config['api_secret'] ?? 'G3jFmzKylfChqBzOEI5sd1fI';
+// Live Keys:
+$api_key = $razorpay_config['api_key'] ?? 'rzp_live_Tnenb6CzgoQ3Yh';
+$api_secret = $razorpay_config['api_secret'] ?? 'tqKLPgYVgdhbXoqkDJFKwMip';
 
 $api = new Api($api_key, $api_secret);
 $order = $api->order->create([
