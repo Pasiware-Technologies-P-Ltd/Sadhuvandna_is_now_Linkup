@@ -266,8 +266,8 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
             const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
 
-            // Try standard models with timeout so it NEVER hangs indefinitely
-            const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+            // Try standard models with a fast 2.5s timeout so user never waits if network is blocked
+            const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
             let generatedData = null;
 
             for (const model of models) {
@@ -281,7 +281,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            timeout: 6000 // 6 second max timeout per model
+                            timeout: 2500 // fast 2.5s max timeout per model
                         }
                     );
 
