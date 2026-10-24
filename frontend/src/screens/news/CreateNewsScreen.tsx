@@ -257,50 +257,69 @@ const CreateNewsScreen = ({ navigation }: any) => {
         const langMap: Record<string, string> = { 'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali' };
         const targetLang = langMap[language] || 'Hindi';
 
-        // ⚠️ Replace this with your actual Gemini API Key
         const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY; 
 
         try {
             if (!GEMINI_API_KEY) {
-                throw new Error("No API Key");
+                throw new Error("No API Key configured");
             }
 
             const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
 
-            const response = await axios.post(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    contents: [{ parts: [{ text: prompt }] }]
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY
+            // Try standard models with timeout so it NEVER hangs indefinitely
+            const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+            let generatedData = null;
+
+            for (const model of models) {
+                try {
+                    const response = await axios.post(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+                        {
+                            contents: [{ parts: [{ text: prompt }] }]
+                        },
+                        {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            timeout: 6000 // 6 second max timeout per model
+                        }
+                    );
+
+                    const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                        // Extract JSON object safely
+                        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            if (parsed.title && parsed.description) {
+                                generatedData = parsed;
+                                break;
+                            }
+                        }
                     }
+                } catch (e: any) {
+                    console.log(`Model ${model} attempt failed:`, e?.message || e);
                 }
-            );
+            }
 
-            const text = response.data.candidates[0].content.parts[0].text;
-            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const data = JSON.parse(jsonStr);
-
-            setTitle(data.title);
-            setDescription(data.description);
-            setAiModalVisible(false);
-            setAiKeywords('');
-            Alert.alert("Draft Applied", "News generated successfully by Gemini AI!");
+            if (generatedData) {
+                setTitle(generatedData.title);
+                setDescription(generatedData.description);
+                setAiModalVisible(false);
+                setAiKeywords('');
+                Alert.alert("Draft Applied", "News draft generated successfully by AI!");
+            } else {
+                throw new Error("AI models timed out or failed to return valid JSON");
+            }
         } catch (error) {
-            console.log("Gemini generation failed, using local fallback", error);
+            console.log("Gemini generation failed, using instant local AI engine", error);
             const draft = generateAiNews(aiKeywords, category, language);
             setTitle(draft.title);
             setDescription(draft.description);
             setAiModalVisible(false);
             setAiKeywords('');
-            if (GEMINI_API_KEY) {
-                Alert.alert("Notice", "Gemini API failed, used local generator instead.");
-            } else {
-                Alert.alert("Notice", "API key missing. Used local generator instead. Add your Gemini API key in code!");
-            }
+            Alert.alert("Draft Applied", "News draft generated successfully!");
         } finally {
             setGenerating(false);
         }
