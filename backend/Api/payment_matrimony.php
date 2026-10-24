@@ -29,9 +29,16 @@ if (empty($email)) {
     $email = "user_" . $user_id . "@sadhuvandna.app";
 }
 
-$productprice = intval($res['matrimony_profile_fee'] ?? 500);
-if ($productprice <= 0) {
-    $productprice = 500; // fallback default
+// Fetch matrimony profile fee dynamically from global settings
+$productprice = 500; // default fallback
+$settings_q = $con->query("SELECT `value` FROM tbl_settings WHERE `key` = 'matrimony_profile_fee' LIMIT 1");
+if ($settings_q && $settings_q->num_rows > 0) {
+    $settings_row = $settings_q->fetch_assoc();
+    if (intval($settings_row['value']) > 0) {
+        $productprice = intval($settings_row['value']);
+    }
+} elseif (isset($res['matrimony_profile_fee']) && intval($res['matrimony_profile_fee']) > 0) {
+    $productprice = intval($res['matrimony_profile_fee']);
 }
 
 $amounta = $productprice * 100; // in paise
