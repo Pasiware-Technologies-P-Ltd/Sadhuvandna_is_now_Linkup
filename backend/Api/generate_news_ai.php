@@ -4,8 +4,8 @@ include 'headers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (file_exists('env.php')) {
-    include 'env.php';
+if (file_exists(__DIR__ . '/load_env.php')) {
+    include_once __DIR__ . '/load_env.php';
 }
 
 $rawInput = file_get_contents('php://input');

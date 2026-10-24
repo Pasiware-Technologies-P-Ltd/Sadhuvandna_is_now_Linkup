@@ -2,8 +2,8 @@
 include 'headers.php';
 include 'connection.php';
 
-if (file_exists('env.php')) {
-    include 'env.php';
+if (file_exists(__DIR__ . '/load_env.php')) {
+    include_once __DIR__ . '/load_env.php';
 }
 
 // Define your Gemini API Key here (or retrieve it from environment variables / settings database)
