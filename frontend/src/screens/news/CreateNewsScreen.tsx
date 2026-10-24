@@ -269,7 +269,6 @@ const CreateNewsScreen = ({ navigation }: any) => {
             setGenerating(false);
         }
     };
-    };
 
     const handleScroll = (event: any, setScrolledState: (val: boolean) => void) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
