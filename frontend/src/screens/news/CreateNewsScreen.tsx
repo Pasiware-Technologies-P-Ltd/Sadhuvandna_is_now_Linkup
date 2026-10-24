@@ -267,6 +267,9 @@ const CreateNewsScreen = ({ navigation }: any) => {
 
             for (const model of models) {
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: {
@@ -274,8 +277,10 @@ const CreateNewsScreen = ({ navigation }: any) => {
                         },
                         body: JSON.stringify({
                             contents: [{ parts: [{ text: prompt }] }]
-                        })
+                        }),
+                        signal: controller.signal
                     });
+                    clearTimeout(timeoutId);
 
                     if (response.ok) {
                         const jsonRes = await response.json();
@@ -297,12 +302,31 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 }
             }
 
+            // If direct phone connection was blocked, try backend proxy
+            if (!generatedData) {
+                try {
+                    const backendRes = await api.post('/generate_news_ai.php', {
+                        keywords: aiKeywords,
+                        category,
+                        language
+                    });
+                    if (backendRes.data && backendRes.data.status === 'success' && backendRes.data.title) {
+                        generatedData = {
+                            title: backendRes.data.title,
+                            description: backendRes.data.description
+                        };
+                    }
+                } catch (bErr) {
+                    console.log("[Backend AI Proxy] error:", bErr);
+                }
+            }
+
             if (generatedData) {
                 setTitle(generatedData.title);
                 setDescription(generatedData.description);
                 setAiModalVisible(false);
                 setAiKeywords('');
-                Alert.alert("Draft Applied", "News generated successfully by Gemini AI!");
+                Alert.alert("Draft Applied", "News generated successfully by AI!");
             } else {
                 // If network/offline, fallback to local generator
                 const draft = generateAiNews(aiKeywords, category, language);
