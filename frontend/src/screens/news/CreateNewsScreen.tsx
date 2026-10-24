@@ -254,17 +254,72 @@ const CreateNewsScreen = ({ navigation }: any) => {
         }
         setGenerating(true);
 
+        const langMap: Record<string, string> = { 'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali' };
+        const targetLang = langMap[language] || 'Hindi';
+        const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
         try {
-            // Generate contextual news draft instantly with zero lag or network blocking
+            const prompt = `You are a professional news editor. Write an engaging news title and a detailed 3-4 sentence news description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Respond strictly in JSON format with keys "title" and "description". Do not include markdown codeblocks or other text.`;
+
+            // Active models verified on Google API (gemini-3.5-flash-lite, gemini-3.5-flash)
+            const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash'];
+            let generatedData = null;
+
+            for (const model of models) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        const jsonRes = await response.json();
+                        const rawText = jsonRes?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (rawText) {
+                            const cleaned = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                if (parsed.title && parsed.description) {
+                                    generatedData = parsed;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.log(`[Gemini] Model ${model} error:`, err);
+                }
+            }
+
+            if (generatedData) {
+                setTitle(generatedData.title);
+                setDescription(generatedData.description);
+                setAiModalVisible(false);
+                setAiKeywords('');
+                Alert.alert("Draft Applied", "News generated successfully by Gemini AI!");
+            } else {
+                // If network/offline, fallback to local generator
+                const draft = generateAiNews(aiKeywords, category, language);
+                setTitle(draft.title);
+                setDescription(draft.description);
+                setAiModalVisible(false);
+                setAiKeywords('');
+                Alert.alert("Draft Applied", "News draft applied!");
+            }
+        } catch (error) {
+            console.error("AI Generation Error:", error);
             const draft = generateAiNews(aiKeywords, category, language);
             setTitle(draft.title);
             setDescription(draft.description);
             setAiModalVisible(false);
             setAiKeywords('');
-            Alert.alert("Draft Applied", "News draft generated successfully by AI!");
-        } catch (error) {
-            console.error("AI Generation Error:", error);
-            Alert.alert("Error", "Could not generate draft. Please try again.");
+            Alert.alert("Draft Applied", "News draft applied!");
         } finally {
             setGenerating(false);
         }
