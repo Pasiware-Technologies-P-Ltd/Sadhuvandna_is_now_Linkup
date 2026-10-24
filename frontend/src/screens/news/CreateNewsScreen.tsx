@@ -705,11 +705,23 @@ const CreateNewsScreen = ({ navigation }: any) => {
                 transparent={true}
                 onRequestClose={() => setAiModalVisible(false)}
             >
-                <Pressable
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-                    onPress={() => setAiModalVisible(false)}
                 >
-                    <View style={{ backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setAiModalVisible(false)}
+                    />
+                    <View
+                        style={{
+                            backgroundColor: 'white',
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            padding: 20,
+                            maxHeight: '85%'
+                        }}
+                    >
                         {/* Handle bar */}
                         <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', marginBottom: 16 }} />
 
@@ -719,12 +731,12 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                 <Ionicons name="sparkles" size={20} color="#2563EB" />
                                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#172554' }}>AI News Assistant</Text>
                             </View>
-                            <TouchableOpacity onPress={() => setAiModalVisible(false)}>
+                            <TouchableOpacity onPress={() => setAiModalVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                 <Ionicons name="close-circle" size={24} color="#9ca3af" />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
                                 Enter topic keywords / मुख्य शब्द दर्ज करें:
                             </Text>
@@ -744,7 +756,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                     height: 80
                                 }}
                                 placeholder="जैसे: दिल्ली में बारिश, खेल प्रतियोगिता जीत, सड़क हादसा आदि..."
-                                placeholderTextColor="#fdba74"
+                                placeholderTextColor="#94A3B8"
                                 value={aiKeywords}
                                 onChangeText={setAiKeywords}
                                 multiline
@@ -769,7 +781,8 @@ const CreateNewsScreen = ({ navigation }: any) => {
                                     shadowOffset: { width: 0, height: 4 },
                                     shadowOpacity: 0.2,
                                     shadowRadius: 6,
-                                    elevation: 3
+                                    elevation: 3,
+                                    marginBottom: 10
                                 }}
                                 activeOpacity={0.8}
                             >
@@ -784,7 +797,7 @@ const CreateNewsScreen = ({ navigation }: any) => {
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
-                </Pressable>
+                </KeyboardAvoidingView>
             </Modal>
 
             {/* Terms & Disclaimer Modal */}
