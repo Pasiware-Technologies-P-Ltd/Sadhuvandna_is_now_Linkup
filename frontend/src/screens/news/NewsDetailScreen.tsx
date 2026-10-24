@@ -251,8 +251,10 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
     // User & Interaction states
     const [user, setUser] = useState<any>(null);
-    const [isLiked, setIsLiked] = useState<boolean>(false);
-    const [likeCount, setLikeCount] = useState<number>(0);
+    const [isLiked, setIsLiked] = useState<boolean>(
+        news ? (news.user_liked === true || news.user_liked === 1 || news.user_liked === '1') : false
+    );
+    const [likeCount, setLikeCount] = useState<number>(Number(news?.likes) || 0);
     const likeScale = useRef(new Animated.Value(1)).current;
 
     // Comments states
@@ -299,7 +301,9 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
     const fetchSingleNews = async (id: string, uid?: string | number) => {
         try {
-            setLoading(true);
+            if (!currentNews) {
+                setLoading(true);
+            }
             const userParam = uid ? `&user_id=${uid}` : '';
             const res = await api.get(`get_news.php?id=${id}${userParam}`);
             const data = Array.isArray(res.data) ? res.data : (res.data.data || []);

@@ -67,9 +67,15 @@ if (isset($_REQUEST['id']) && intval($_REQUEST['id']) > 0) {
     $single_id = intval($_REQUEST['id']);
     $conditions[] = "n.id = $single_id";
 }
-if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
-    $uid = intval($_REQUEST['user_id']);
-    $conditions[] = "n.user_id = $uid";
+
+// Author filter (e.g. MyNewsScreen: show news posted by author_id or author_user_id)
+if (isset($_REQUEST['author_id']) && intval($_REQUEST['author_id']) > 0) {
+    $author_uid = intval($_REQUEST['author_id']);
+    $conditions[] = "n.user_id = $author_uid";
+} else if (!isset($_REQUEST['id']) && isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
+    // Only treat user_id as author filter when fetching a list of user's posts, NOT when fetching single news by id
+    $author_uid = intval($_REQUEST['user_id']);
+    $conditions[] = "n.user_id = $author_uid";
 }
 
 $limit = isset($_REQUEST['limit']) ? intval($_REQUEST['limit']) : 20;
@@ -88,7 +94,14 @@ $query = "SELECT n.*, m.name as user_name, m.profile_photo as user_image, m.city
           ORDER BY n.id DESC LIMIT $limit";
 $result = $con->query($query);
 
-$current_req_user = isset($_REQUEST['user_id']) ? intval($_REQUEST['user_id']) : 0;
+// Current viewer user ID to check if viewer liked the news
+$current_req_user = 0;
+if (isset($_REQUEST['viewer_id']) && intval($_REQUEST['viewer_id']) > 0) {
+    $current_req_user = intval($_REQUEST['viewer_id']);
+} else if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
+    $current_req_user = intval($_REQUEST['user_id']);
+}
+
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $nid = intval($row['id']);
@@ -98,19 +111,45 @@ if ($result->num_rows > 0) {
         }
         $row['images'] = $imgs; // Add array field
 
-        // News Likes count
-        $like_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$nid");
-        $row['likes'] = ($like_cnt_q) ? intval($like_cnt_q->fetch_row()[0]) : 0;
+        // News Likes count (from Redis if available, or tbl_likes)
+        require_once 'RedisConfig.php';
+        $redis = RedisConfig::getConnection();
+        $likes = 0;
+        $user_liked = false;
 
-        // User liked status
-        $row['user_liked'] = false;
-        if ($current_req_user > 0) {
-            $user_l_q = $con->query("SELECT id FROM tbl_likes WHERE post_id=$nid AND user_id=$current_req_user LIMIT 1");
-            $row['user_liked'] = ($user_l_q && $user_l_q->num_rows > 0);
+        if ($redis) {
+            $redisKey = "post:{$nid}:likes";
+            $cacheLoadedKey = "post:{$nid}:likes_loaded";
+            if (!$redis->exists($cacheLoadedKey)) {
+                $likesQ = $con->query("SELECT user_id FROM tbl_likes WHERE post_id=$nid");
+                if ($likesQ && $likesQ->num_rows > 0) {
+                    $userIds = [];
+                    while ($lr = $likesQ->fetch_assoc()) $userIds[] = $lr['user_id'];
+                    if (!empty($userIds)) {
+                        call_user_func_array([$redis, 'sAdd'], array_merge([$redisKey], $userIds));
+                    }
+                }
+                $redis->set($cacheLoadedKey, 1, ['ex' => 86400]);
+                $redis->expire($redisKey, 86400);
+            }
+            $likes = $redis->sCard($redisKey);
+            if ($current_req_user > 0) {
+                $user_liked = (bool)$redis->sIsMember($redisKey, $current_req_user);
+            }
+        } else {
+            $like_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$nid");
+            $likes = ($like_cnt_q) ? intval($like_cnt_q->fetch_row()[0]) : 0;
+            if ($current_req_user > 0) {
+                $user_l_q = $con->query("SELECT id FROM tbl_likes WHERE post_id=$nid AND user_id=$current_req_user LIMIT 1");
+                $user_liked = ($user_l_q && $user_l_q->num_rows > 0);
+            }
         }
 
-        // News Comments count
-        $comm_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_news_comments WHERE news_id=$nid");
+        $row['likes'] = $likes;
+        $row['user_liked'] = $user_liked;
+
+        // News Comments count (using tbl_comments matching live like_comment_action)
+        $comm_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_comments WHERE post_id=$nid");
         $row['comments'] = ($comm_cnt_q) ? intval($comm_cnt_q->fetch_row()[0]) : 0;
 
         $news[] = $row;
