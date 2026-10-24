@@ -1,4 +1,0 @@
-<?php
-// NEVER PUSH THIS FILE TO GITHUB
-putenv("GEMINI_API_KEY=AQ.Ab8RN6KmGITpiKsh0L4QEwswMPrdmeZXnD31qIpmscn_6dr4Ww");
-?>

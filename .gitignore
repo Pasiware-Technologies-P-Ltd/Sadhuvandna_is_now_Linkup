@@ -32,6 +32,8 @@ upload_cert_release.pem
 .env*.local
 .env.development
 .env.production
+env.php
+**/env.php
 
 # ========== FIREBASE (SENSITIVE) ==========
 google-services.json
