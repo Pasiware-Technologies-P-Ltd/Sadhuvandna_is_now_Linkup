@@ -1,8 +1,8 @@
 <?php
 session_start();
 include("connection.php");
-require('../vendor/autoload.php');
-include("../config.php");
+require_once __DIR__ . '/vendor/autoload.php';
+include_once __DIR__ . '/config.php';
 use Razorpay\Api\Api;
 
 $user_id = intval($_GET['user_id'] ?? 0);
