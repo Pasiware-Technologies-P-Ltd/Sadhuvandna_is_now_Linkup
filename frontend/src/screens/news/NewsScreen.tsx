@@ -647,7 +647,8 @@ const NewsScreen = ({ navigation }: any) => {
         }
 
         try {
-            const cursorParam = isMore && cursorRef.current ? `?limit=20&cursor=${cursorRef.current}` : '?limit=20';
+            const uidParam = userId ? `&user_id=${userId}` : '';
+            const cursorParam = isMore && cursorRef.current ? `?limit=20&cursor=${cursorRef.current}${uidParam}` : `?limit=20${uidParam}`;
             const res = await api.get(`/get_news.php${cursorParam}`, {
                 signal: isMore ? undefined : abortControllerRef.current?.signal,
             });

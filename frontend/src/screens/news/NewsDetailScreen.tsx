@@ -278,21 +278,33 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
 
     useEffect(() => {
         loadUserAndInit();
-    }, [newsId]);
+    }, [currentNews?.id, news?.id, newsId]);
 
     const loadUserAndInit = async () => {
         let loggedUser: any = null;
+        const targetId = currentNews?.id || news?.id || newsId;
+
         try {
             const uStr = await AsyncStorage.getItem('user');
             if (uStr) {
                 loggedUser = JSON.parse(uStr);
                 setUser(loggedUser);
             }
+
+            // Check locally persisted likes so like state is instantaneous and preserved across exits
+            if (targetId) {
+                const likedNewsStr = await AsyncStorage.getItem('@liked_news_ids');
+                if (likedNewsStr) {
+                    const likedNewsIds: string[] = JSON.parse(likedNewsStr);
+                    if (likedNewsIds.includes(String(targetId))) {
+                        setIsLiked(true);
+                    }
+                }
+            }
         } catch (e) {
-            console.error(e);
+            console.error("loadUserAndInit error:", e);
         }
 
-        const targetId = currentNews?.id || newsId;
         if (targetId) {
             fetchSingleNews(targetId, loggedUser?.id);
             fetchNewsComments(targetId);
@@ -310,7 +322,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
             if (data.length > 0) {
                 const item = data[0];
                 setCurrentNews(item);
-                setIsLiked(item.user_liked === true || item.user_liked === 1 || item.user_liked === '1');
+                
+                // Check if user has liked locally or via API response
+                const likedNewsStr = await AsyncStorage.getItem('@liked_news_ids');
+                const likedNewsIds: string[] = likedNewsStr ? JSON.parse(likedNewsStr) : [];
+                const isLocallyLiked = likedNewsIds.includes(String(id));
+                const isApiLiked = item.user_liked === true || item.user_liked === 1 || item.user_liked === '1';
+
+                setIsLiked(isLocallyLiked || isApiLiked);
                 setLikeCount(Number(item.likes) || 0);
             } else if (!currentNews) {
                 Alert.alert("Error", "News not found");
@@ -351,7 +370,8 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     };
 
     const handleLikeToggle = async () => {
-        if (!currentNews) return;
+        const targetId = currentNews?.id || news?.id || newsId;
+        if (!targetId) return;
         if (!user) {
             Alert.alert("Login Required", "Please login to like this news.");
             return;
@@ -370,19 +390,53 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
         setIsLiked(nextLiked);
         setLikeCount(nextCount);
 
+        // Update local AsyncStorage liked set immediately
         try {
-            const payload = {
-                action: 'like',
-                id: currentNews.id,
-                user_id: user.id
-            };
-            const res = await api.post('like_comment_action.php', payload);
+            const likedNewsStr = await AsyncStorage.getItem('@liked_news_ids');
+            let likedNewsIds: string[] = likedNewsStr ? JSON.parse(likedNewsStr) : [];
+            const strId = String(targetId);
+            if (nextLiked) {
+                if (!likedNewsIds.includes(strId)) {
+                    likedNewsIds.push(strId);
+                }
+            } else {
+                likedNewsIds = likedNewsIds.filter((id) => id !== strId);
+            }
+            await AsyncStorage.setItem('@liked_news_ids', JSON.stringify(likedNewsIds));
+        } catch (e) {
+            console.error("Failed to update @liked_news_ids:", e);
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('id', String(targetId));
+
+            const res = await api.post(
+                `like_comment_action.php?user_id=${user.id}&action=like`,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+
             if (res.data && res.data.likes !== undefined) {
                 setLikeCount(Number(res.data.likes));
             }
+            if (res.data && res.data.status) {
+                const serverLiked = res.data.status === 'liked';
+                setIsLiked(serverLiked);
+                
+                // Re-sync local storage with server confirmed status
+                const likedNewsStr = await AsyncStorage.getItem('@liked_news_ids');
+                let likedNewsIds: string[] = likedNewsStr ? JSON.parse(likedNewsStr) : [];
+                const strId = String(targetId);
+                if (serverLiked && !likedNewsIds.includes(strId)) {
+                    likedNewsIds.push(strId);
+                } else if (!serverLiked) {
+                    likedNewsIds = likedNewsIds.filter((id) => id !== strId);
+                }
+                await AsyncStorage.setItem('@liked_news_ids', JSON.stringify(likedNewsIds));
+            }
         } catch (e) {
-            setIsLiked(previousLiked);
-            setLikeCount(previousCount);
+            console.error("Like toggle API error:", e);
         }
     };
 
