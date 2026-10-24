@@ -10,8 +10,13 @@ $user_id = intval($_SESSION['payer_user_id'] ?? 0);
 $orderId = $_SESSION['matrimony_orderid'] ?? '';
 $amount = $_SESSION['matrimony_amount'] ?? 500;
 
-$api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
-$api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
+// Live Keys:
+// $api_key = 'rzp_live_Tnenb6CzgoQ3Yh';
+// $api_secret = 'tqKLPgYVgdhbXoqkDJFKwMip';
+
+// Test Keys:
+$api_key = $razorpay_config['api_key'] ?? 'rzp_test_Trfm3uKQLxIaGH';
+$api_secret = $razorpay_config['api_secret'] ?? 'G3jFmzKylfChqBzOEI5sd1fI';
 $api = new Api($api_key, $api_secret);
 
 $success = true;
