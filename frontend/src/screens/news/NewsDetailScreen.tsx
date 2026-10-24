@@ -325,7 +325,7 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
     const fetchNewsComments = async (nid: string | number) => {
         try {
             setLoadingComments(true);
-            const res = await api.get(`like_comment_action.php?action=fetch_news_comments&news_id=${nid}`);
+            const res = await api.get(`get_posts.php?action=fetch_comments&id=${nid}`);
             if (Array.isArray(res.data)) {
                 setComments(res.data);
             } else if (res.data && res.data.status === 'success' && Array.isArray(res.data.data)) {
@@ -425,8 +425,8 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
             if (editingCommentId && !gifUrl) {
                 // EDIT MODE
                 const payload = {
-                    action: 'edit_news_comment',
-                    news_id: currentNews.id,
+                    action: 'edit_comment',
+                    post_id: currentNews.id,
                     user_id: user.id,
                     comment_id: editingCommentId,
                     comment: textToSend
@@ -441,14 +441,14 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
             } else {
                 // CREATE MODE
                 const payload = {
-                    action: 'news_comment',
-                    news_id: currentNews.id,
+                    action: 'comment',
+                    id: currentNews.id,
                     user_id: user.id,
                     comment: textToSend
                 };
 
                 const res = await api.post('like_comment_action.php', payload);
-                if (res.data && (res.data.status === 'success' || res.data.ok)) {
+                if (res.data && (res.data.status === 'success' || res.data.ok || res.data.status === 'commented')) {
                     setNewComment('');
                     setShowEmojiPicker(false);
                     setShowGifPicker(false);
@@ -480,10 +480,11 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
                     onPress: async () => {
                         try {
                             const payload = {
-                                action: 'delete_news_comment',
-                                news_id: currentNews.id,
+                                action: 'delete_comment',
+                                post_id: currentNews.id,
                                 user_id: user.id,
-                                comment_id: selectedComment.comment_id
+                                comment_id: selectedComment.comment_id,
+                                comment: selectedComment.comment
                             };
                             setComments(prev => prev.filter(c => String(c.comment_id) !== String(selectedComment.comment_id)));
                             setCurrentNews((prev: any) => prev ? ({ ...prev, comments: Math.max(0, (Number(prev.comments) || 1) - 1) }) : prev);
