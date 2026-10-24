@@ -518,23 +518,12 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
         commentInputRef.current?.focus();
     };
 
-    if (loading) return (
-        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#2563EB" />
-        </View>
-    );
-    if (!currentNews) return (
-        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: theme.textMuted }}>News not found</Text>
-        </View>
-    );
-
-    const rawImages: string[] = currentNews.images && currentNews.images.length > 0
+    const rawImages: string[] = currentNews?.images && currentNews.images.length > 0
         ? currentNews.images
-        : (currentNews.image ? currentNews.image.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+        : (currentNews?.image ? currentNews.image.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
 
     let parsedAspectRatio: number | undefined = undefined;
-    let cleanDescription = currentNews.description || "";
+    let cleanDescription = currentNews?.description || "";
     
     const aspectMatch = cleanDescription.match(/\[aspect:([^\]]+)\]/);
     if (aspectMatch && aspectMatch[1]) {
@@ -578,6 +567,18 @@ const NewsDetailScreen = ({ route, navigation }: any) => {
         
         return result.length > 0 ? result : [cleanDescription.trim()];
     }, [cleanDescription]);
+
+    if (loading) return (
+        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+    );
+
+    if (!currentNews) return (
+        <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: theme.textMuted }}>News not found</Text>
+        </View>
+    );
 
     const isVideo = (filename: string) => /\.(mp4|mov|avi|wmv|flv|mkv)$/i.test(filename);
     
