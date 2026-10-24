@@ -532,5 +532,121 @@ if ($action === 'fetch_all') {
     exit;
 }
 
+/* ============================
+   📰 NEWS COMMENTS HANDLERS
+============================ */
+if ($action === 'fetch_news_comments') {
+    $news_id = intval($data['news_id'] ?? $_REQUEST['news_id'] ?? 0);
+    if ($news_id <= 0) {
+        echo json_encode(["status" => "error", "message" => "Invalid news id"]);
+        exit;
+    }
+
+    $cres = $con->query("
+        SELECT c.id, c.news_id, c.user_id, c.comment, c.created_at, m.name, m.profile_photo 
+        FROM tbl_news_comments c 
+        JOIN tbl_members m ON c.user_id = m.id 
+        WHERE c.news_id = $news_id 
+        ORDER BY c.created_at DESC
+    ");
+
+    $news_comments = [];
+    if ($cres) {
+        while ($c = $cres->fetch_assoc()) {
+            $news_comments[] = [
+                'comment_id'    => $c['id'],
+                'user_id'       => $c['user_id'],
+                'name'          => htmlspecialchars($c['name']),
+                'profile_photo' => htmlspecialchars($c['profile_photo'] ?? ''),
+                'comment'       => htmlspecialchars($c['comment']),
+                'date'          => date("d M Y, h:i A", strtotime($c['created_at']))
+            ];
+        }
+    }
+
+    echo json_encode(["status" => "success", "data" => $news_comments]);
+    exit;
+}
+
+if ($action === 'news_comment') {
+    $news_id = intval($data['news_id'] ?? $data['id'] ?? $_POST['news_id'] ?? $_POST['id'] ?? 0);
+    $comment = trim($data['comment'] ?? $_POST['comment'] ?? '');
+
+    if ($news_id > 0 && $comment != "") {
+        $stmt = $con->prepare("INSERT INTO tbl_news_comments (news_id, user_id, comment, created_at) VALUES (?, ?, ?, NOW())");
+        $stmt->bind_param("iis", $news_id, $user_id, $comment);
+        if (!$stmt->execute()) {
+            echo json_encode(["ok" => false, "message" => "DB error: " . $con->error]);
+            exit;
+        }
+        $real_id = $con->insert_id;
+
+        $userQ = $con->query("SELECT name, profile_photo FROM tbl_members WHERE id=$user_id LIMIT 1");
+        $name = '';
+        $profile_photo = '';
+        if ($userQ && $userRow = $userQ->fetch_assoc()) {
+            $name          = $userRow['name'];
+            $profile_photo = $userRow['profile_photo'];
+        }
+
+        $commentObj = [
+            'comment_id'    => $real_id,
+            'user_id'       => $user_id,
+            'name'          => htmlspecialchars($name),
+            'profile_photo' => htmlspecialchars($profile_photo),
+            'comment'       => htmlspecialchars($comment),
+            'date'          => date("d M Y, h:i A")
+        ];
+
+        triggerWebSocket("news_{$news_id}", "news_comment_added", ["news_id" => $news_id, "comment" => $commentObj]);
+
+        echo json_encode(["ok" => true, "status" => "commented", "comment_id" => $real_id, "comment" => $commentObj]);
+    } else {
+        echo json_encode(["ok" => false, "message" => "Invalid input"]);
+    }
+    exit;
+}
+
+if ($action === 'delete_news_comment') {
+    $news_id    = intval($data['news_id'] ?? $_POST['news_id'] ?? 0);
+    $comment_id = intval($data['comment_id'] ?? $_POST['comment_id'] ?? 0);
+
+    if ($news_id > 0 && $comment_id > 0) {
+        $stmt = $con->prepare("DELETE FROM tbl_news_comments WHERE id=? AND user_id=?");
+        $stmt->bind_param("ii", $comment_id, $user_id);
+        $stmt->execute();
+        if ($stmt->affected_rows > 0) {
+            triggerWebSocket("news_{$news_id}", "news_comment_deleted", ["news_id" => $news_id, "comment_id" => $comment_id]);
+            echo json_encode(["ok" => true, "status" => "deleted"]);
+        } else {
+            echo json_encode(["ok" => false, "message" => "Unauthorized or not found"]);
+        }
+    } else {
+        echo json_encode(["ok" => false, "message" => "Invalid input"]);
+    }
+    exit;
+}
+
+if ($action === 'edit_news_comment') {
+    $news_id     = intval($data['news_id'] ?? $_POST['news_id'] ?? 0);
+    $comment_id  = intval($data['comment_id'] ?? $_POST['comment_id'] ?? 0);
+    $new_comment = trim($data['comment'] ?? $_POST['comment'] ?? '');
+
+    if ($news_id > 0 && $comment_id > 0 && $new_comment != "") {
+        $stmt = $con->prepare("UPDATE tbl_news_comments SET comment=? WHERE id=? AND user_id=?");
+        $stmt->bind_param("sii", $new_comment, $comment_id, $user_id);
+        $stmt->execute();
+        if ($stmt->affected_rows >= 0) {
+            triggerWebSocket("news_{$news_id}", "news_comment_updated", ["news_id" => $news_id, "comment_id" => $comment_id, "comment" => $new_comment]);
+            echo json_encode(["ok" => true, "status" => "edited"]);
+        } else {
+            echo json_encode(["ok" => false, "message" => "Update failed"]);
+        }
+    } else {
+        echo json_encode(["ok" => false, "message" => "Invalid input"]);
+    }
+    exit;
+}
+
 echo json_encode(["status" => "error", "message" => "Invalid action"]);
 ?>

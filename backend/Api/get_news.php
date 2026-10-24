@@ -50,7 +50,23 @@ $con->query("CREATE TABLE IF NOT EXISTS `tbl_breaking_news` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+// Auto-create news comments table if not exists
+$con->query("CREATE TABLE IF NOT EXISTS `tbl_news_comments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `news_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `comment` text NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `news_id` (`news_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
 $conditions = [];
+if (isset($_REQUEST['id']) && intval($_REQUEST['id']) > 0) {
+    $single_id = intval($_REQUEST['id']);
+    $conditions[] = "n.id = $single_id";
+}
 if (isset($_REQUEST['user_id']) && intval($_REQUEST['user_id']) > 0) {
     $uid = intval($_REQUEST['user_id']);
     $conditions[] = "n.user_id = $uid";
@@ -72,18 +88,31 @@ $query = "SELECT n.*, m.name as user_name, m.profile_photo as user_image, m.city
           ORDER BY n.id DESC LIMIT $limit";
 $result = $con->query($query);
 
-$news = [];
-
+$current_req_user = isset($_REQUEST['user_id']) ? intval($_REQUEST['user_id']) : 0;
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
-        // App expects 'images' field. In DB it might be comma separated 'image' column?
-        // php/news.php used: $images = array_filter(explode(",", $row['image']));
-        // Let's standarize to 'images' array in response.
+        $nid = intval($row['id']);
         $imgs = [];
         if(!empty($row['image'])){
              $imgs = array_values(array_filter(explode(",", $row['image'])));
         }
         $row['images'] = $imgs; // Add array field
+
+        // News Likes count
+        $like_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_likes WHERE post_id=$nid");
+        $row['likes'] = ($like_cnt_q) ? intval($like_cnt_q->fetch_row()[0]) : 0;
+
+        // User liked status
+        $row['user_liked'] = false;
+        if ($current_req_user > 0) {
+            $user_l_q = $con->query("SELECT id FROM tbl_likes WHERE post_id=$nid AND user_id=$current_req_user LIMIT 1");
+            $row['user_liked'] = ($user_l_q && $user_l_q->num_rows > 0);
+        }
+
+        // News Comments count
+        $comm_cnt_q = $con->query("SELECT COUNT(*) FROM tbl_news_comments WHERE news_id=$nid");
+        $row['comments'] = ($comm_cnt_q) ? intval($comm_cnt_q->fetch_row()[0]) : 0;
+
         $news[] = $row;
     }
 }
