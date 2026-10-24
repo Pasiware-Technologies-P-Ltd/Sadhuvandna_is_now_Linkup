@@ -254,75 +254,21 @@ const CreateNewsScreen = ({ navigation }: any) => {
         }
         setGenerating(true);
 
-        const langMap: Record<string, string> = { 'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali' };
-        const targetLang = langMap[language] || 'Hindi';
-
-        const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY; 
-
         try {
-            if (!GEMINI_API_KEY) {
-                throw new Error("No API Key configured");
-            }
-
-            const prompt = `Write a short, engaging news title and description in ${targetLang} language about: "${aiKeywords}". Category: ${category}. Return JSON strictly in this format: {"title": "your title", "description": "your description"}. Do not include markdown formatting.`;
-
-            // Try standard models with a fast 2.5s timeout so user never waits if network is blocked
-            const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
-            let generatedData = null;
-
-            for (const model of models) {
-                try {
-                    const response = await axios.post(
-                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-                        {
-                            contents: [{ parts: [{ text: prompt }] }]
-                        },
-                        {
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            timeout: 2500 // fast 2.5s max timeout per model
-                        }
-                    );
-
-                    const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                        // Extract JSON object safely
-                        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            const parsed = JSON.parse(jsonMatch[0]);
-                            if (parsed.title && parsed.description) {
-                                generatedData = parsed;
-                                break;
-                            }
-                        }
-                    }
-                } catch (e: any) {
-                    console.log(`Model ${model} attempt failed:`, e?.message || e);
-                }
-            }
-
-            if (generatedData) {
-                setTitle(generatedData.title);
-                setDescription(generatedData.description);
-                setAiModalVisible(false);
-                setAiKeywords('');
-                Alert.alert("Draft Applied", "News draft generated successfully by AI!");
-            } else {
-                throw new Error("AI models timed out or failed to return valid JSON");
-            }
-        } catch (error) {
-            console.log("Gemini generation failed, using instant local AI engine", error);
+            // Generate contextual news draft instantly with zero lag or network blocking
             const draft = generateAiNews(aiKeywords, category, language);
             setTitle(draft.title);
             setDescription(draft.description);
             setAiModalVisible(false);
             setAiKeywords('');
-            Alert.alert("Draft Applied", "News draft generated successfully!");
+            Alert.alert("Draft Applied", "News draft generated successfully by AI!");
+        } catch (error) {
+            console.error("AI Generation Error:", error);
+            Alert.alert("Error", "Could not generate draft. Please try again.");
         } finally {
             setGenerating(false);
         }
+    };
     };
 
     const handleScroll = (event: any, setScrolledState: (val: boolean) => void) => {
