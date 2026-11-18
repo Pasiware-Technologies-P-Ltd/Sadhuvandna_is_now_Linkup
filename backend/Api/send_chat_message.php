@@ -56,6 +56,45 @@ if ($chk_blk) {
     }
 }
 
+// Server-side check for 2-message limit when not connected in community
+if ($platform === 'community') {
+    $is_connected = false;
+    $chk_conn = $con->prepare("SELECT id FROM tbl_followers WHERE follower_id = ? AND following_id = ? AND status = 'accepted' LIMIT 1");
+    if ($chk_conn) {
+        $chk_conn->bind_param("ii", $my, $receiver);
+        $chk_conn->execute();
+        $r1 = $chk_conn->get_result();
+
+        $chk_conn->bind_param("ii", $receiver, $my);
+        $chk_conn->execute();
+        $r2 = $chk_conn->get_result();
+
+        if ($r1 && $r1->num_rows > 0 && $r2 && $r2->num_rows > 0) {
+            $is_connected = true;
+        }
+    }
+
+    if (!$is_connected) {
+        $countQ = $con->prepare("SELECT COUNT(*) FROM tbl_messages WHERE sender_id = ? AND receiver_id = ? AND chat_platform = 'community' AND is_deleted = 0");
+        if ($countQ) {
+            $countQ->bind_param("ii", $my, $receiver);
+            $countQ->execute();
+            $sent_count = intval($countQ->get_result()->fetch_row()[0] ?? 0);
+
+            if ($sent_count >= 2) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Connection request not accepted yet. You can only send up to 2 messages until the user accepts your connection request.",
+                    "limit_reached" => true,
+                    "sent_count" => $sent_count,
+                    "limit" => 2
+                ]);
+                exit;
+            }
+        }
+    }
+}
+
 // Server-side payment check
 if ($platform === 'marriage') {
     $is_authorized = false;

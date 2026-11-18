@@ -9,8 +9,8 @@ date_default_timezone_set("Asia/Kolkata");
 $con->query("SET time_zone = '+05:30'");
 
 // profile_id of the OTHER user (receiver)
-$receiver_id = $_GET['profile_id'] ?? 0;
-$my_id = $_GET['my_profile_id'] ?? 0;
+$receiver_id = intval($_GET['profile_id'] ?? 0);
+$my_id = intval($_GET['my_profile_id'] ?? 0);
 $platform = $_GET['platform'] ?? 'marriage';
 
 // 1. Get Receiver Status
@@ -28,7 +28,7 @@ if($platform === 'community'){
 }
 
 $res = $con->query($sql);
-$row = $res->fetch_assoc();
+$row = $res ? $res->fetch_assoc() : null;
 
 $online = false;
 $last_active = null;
@@ -59,10 +59,47 @@ if($my_id){
     }
 }
 
+// 3. Check Connection & 2-Message Limit for Community
+$is_connected = false;
+$sent_count = 0;
+$limit_reached = false;
+
+if ($platform === 'community' && $my_id > 0 && $receiver_id > 0) {
+    // Check mutual connection in tbl_followers
+    $chk1 = $con->prepare("SELECT id FROM tbl_followers WHERE follower_id = ? AND following_id = ? AND status = 'accepted' LIMIT 1");
+    if ($chk1) {
+        $chk1->bind_param("ii", $my_id, $receiver_id);
+        $chk1->execute();
+        $r1 = $chk1->get_result();
+
+        $chk1->bind_param("ii", $receiver_id, $my_id);
+        $chk1->execute();
+        $r2 = $chk1->get_result();
+
+        if ($r1 && $r1->num_rows > 0 && $r2 && $r2->num_rows > 0) {
+            $is_connected = true;
+        }
+    }
+
+    if (!$is_connected) {
+        $cq = $con->prepare("SELECT COUNT(*) FROM tbl_messages WHERE sender_id = ? AND receiver_id = ? AND chat_platform = 'community' AND is_deleted = 0");
+        if ($cq) {
+            $cq->bind_param("ii", $my_id, $receiver_id);
+            $cq->execute();
+            $sent_count = intval($cq->get_result()->fetch_row()[0] ?? 0);
+        }
+        $limit_reached = ($sent_count >= 2);
+    }
+}
+
 echo json_encode([
     'status' => 'success',
     'online' => $online,
     'last_active' => $last_active,
-    'is_typing' => $is_typing
+    'is_typing' => $is_typing,
+    'is_connected' => $is_connected,
+    'sent_count' => $sent_count,
+    'message_limit' => 2,
+    'limit_reached' => $limit_reached
 ]);
 ?>

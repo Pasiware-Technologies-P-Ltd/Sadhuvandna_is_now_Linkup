@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Animated, LayoutAnimation, UIManager } from 'react-native';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal, Pressable, Linking, Keyboard, ScrollView, AppState, FlatList } from 'react-native';
 
@@ -81,6 +81,12 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [isBlockedByMe, setIsBlockedByMe] = useState(false);
     const [isBlockedByThem, setIsBlockedByThem] = useState(false);
     const isBlocked = isBlockedByMe || isBlockedByThem;
+
+    // Community friend limit states (2-message limit if not accepted yet)
+    const [isCommunityFriend, setIsCommunityFriend] = useState<boolean>(true);
+    const [communitySentCount, setCommunitySentCount] = useState<number>(0);
+    const [isCommunityLimitReached, setIsCommunityLimitReached] = useState<boolean>(false);
+
     const [showMenu, setShowMenu] = useState(false);
 
     const toggleMenu = () => {
@@ -122,6 +128,16 @@ const ChatScreen = ({ navigation, route }: any) => {
     const [selectedTargets, setSelectedTargets] = useState<any[]>([]);
     const [isForwarding, setIsForwarding] = useState(false);
     const [forwardSearch, setForwardSearch] = useState('');
+
+    const effectiveSentCount = useMemo(() => {
+        if (platform !== 'community' || route.params?.isGroup || isCommunityFriend) {
+            return 0;
+        }
+        const listSentCount = messages.filter(m => m.is_mine && !m.is_deleted).length;
+        return Math.max(communitySentCount, listSentCount);
+    }, [platform, route.params?.isGroup, isCommunityFriend, messages, communitySentCount]);
+
+    const isPendingLimitReached = platform === 'community' && !route.params?.isGroup && !isCommunityFriend && (effectiveSentCount >= 2 || isCommunityLimitReached);
 
     const flatListRef = useRef<any>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -463,11 +479,16 @@ const ChatScreen = ({ navigation, route }: any) => {
             }
         });
 
+        const limitSub = DeviceEventEmitter.addListener('chat:limit_reached', () => {
+            setIsCommunityLimitReached(true);
+        });
+
         return () => {
             stopPolling();
             unsubscribeFocus();
             unsubscribeBlur();
             subscription.remove();
+            limitSub.remove();
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         };
     }, [paymentStatus, myProfileId, navigation]);
@@ -600,17 +621,19 @@ const ChatScreen = ({ navigation, route }: any) => {
 
         const cacheKey = `payment_cache_${platform}_${uId}_${receiver.id}`;
         try {
-            // Check cache first
-            const cachedData = await AsyncStorage.getItem(cacheKey);
-            if (cachedData) {
-                const parsed = JSON.parse(cachedData);
-                const now = Date.now();
-                // If paid and cache is less than 24 hours old, use it
-                if (parsed.paid && parsed.my_profile_id && (now - parsed.timestamp < 24 * 60 * 60 * 1000)) {
-                    setMyProfileId(parsed.my_profile_id);
-                    setPaymentStatus('paid');
-                    setLoading(false);
-                    return; // Skip API call
+            // Check cache first (skip for community to always verify real-time connection & message limits)
+            if (platform !== 'community') {
+                const cachedData = await AsyncStorage.getItem(cacheKey);
+                if (cachedData) {
+                    const parsed = JSON.parse(cachedData);
+                    const now = Date.now();
+                    // If paid and cache is less than 24 hours old, use it
+                    if (parsed.paid && parsed.my_profile_id && (now - parsed.timestamp < 24 * 60 * 60 * 1000)) {
+                        setMyProfileId(parsed.my_profile_id);
+                        setPaymentStatus('paid');
+                        setLoading(false);
+                        return; // Skip API call
+                    }
                 }
             }
         } catch (e) { }
@@ -622,6 +645,18 @@ const ChatScreen = ({ navigation, route }: any) => {
 
             if (res.data.status === 'success') {
                 setMyProfileId(res.data.my_profile_id);
+
+                if (platform === 'community' && !route.params?.isGroup) {
+                    if (res.data.is_connected !== undefined) {
+                        setIsCommunityFriend(!!res.data.is_connected);
+                    }
+                    if (res.data.sent_count !== undefined) {
+                        setCommunitySentCount(Number(res.data.sent_count));
+                    }
+                    if (res.data.limit_reached !== undefined) {
+                        setIsCommunityLimitReached(!!res.data.limit_reached);
+                    }
+                }
 
                 // Block status will be checked by startPolling once myProfileId is set.
                 if (res.data.paid) {
@@ -927,6 +962,17 @@ const ChatScreen = ({ navigation, route }: any) => {
                 // online status driven by global OnlineContext
                 setReceiverLastSeen((prev: string | null) => (prev === res.data.last_active ? prev : res.data.last_active));
                 setIsReceiverTyping((prev: boolean) => (prev === res.data.is_typing ? prev : res.data.is_typing));
+                if (platform === 'community' && !route.params?.isGroup) {
+                    if (res.data.is_connected !== undefined) {
+                        setIsCommunityFriend(!!res.data.is_connected);
+                    }
+                    if (res.data.sent_count !== undefined) {
+                        setCommunitySentCount(Number(res.data.sent_count));
+                    }
+                    if (res.data.limit_reached !== undefined) {
+                        setIsCommunityLimitReached(!!res.data.limit_reached);
+                    }
+                }
             }
         } catch (e) { console.log("Fetch Status Error", e); }
     };
@@ -1068,6 +1114,14 @@ const ChatScreen = ({ navigation, route }: any) => {
                 paymentStatus,
                 isBlocked
             });
+            return;
+        }
+
+        if (platform === 'community' && !route.params?.isGroup && !isCommunityFriend && isPendingLimitReached) {
+            Alert.alert(
+                'Limit Reached',
+                'You can only send up to 2 messages until this user accepts your connection request.'
+            );
             return;
         }
 
@@ -2088,79 +2142,123 @@ const ChatScreen = ({ navigation, route }: any) => {
                             Only admins can send messages to this group.
                         </Text>
                     </View>
-                ) : (
+                ) : isPendingLimitReached ? (
                     <View style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        backgroundColor: theme.card,
-                        borderTopWidth: 1,
-                        borderTopColor: theme.border,
-                        flexDirection: 'row',
+                        backgroundColor: isDarkMode ? '#1E293B' : '#FEF2F2',
+                        padding: 16,
+                        borderRadius: 18,
+                        borderWidth: 1,
+                        borderColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+                        marginHorizontal: 14,
+                        marginVertical: 10,
                         alignItems: 'center',
-                        gap: 8
+                        gap: 6
                     }}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                Keyboard.dismiss();
-                                setShowAttachmentMenu(!showAttachmentMenu);
-                            }}
-                            style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#DBEAFE' : (isDarkMode ? '#1E293B' : '#F8FAFC'), borderWidth: 1, borderColor: showAttachmentMenu ? '#DBEAFE' : theme.border, alignItems: 'center', justifyContent: 'center' }}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name={showAttachmentMenu ? "close" : "add"} size={22} color="#2563EB" />
-                        </TouchableOpacity>
-
-                        <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderRadius: 20, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', minHeight: 38 }}>
-                            <TextInput
-                                style={{ flex: 1, color: theme.text, fontSize: 14, maxHeight: 100, paddingVertical: 6 }}
-                                placeholder={t('typeMessage')}
-                                placeholderTextColor={theme.textMuted}
-                                multiline
-                                value={text}
-                                onChangeText={handleTextChange}
-                                onFocus={() => {
-                                    setShowEmojiPicker(false);
-                                    setShowAttachmentMenu(false);
-                                }}
-                            />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Ionicons name="lock-closed" size={18} color="#EF4444" />
+                            <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 13.5 }}>
+                                2-Message Limit Reached
+                            </Text>
+                        </View>
+                        <Text style={{ color: isDarkMode ? '#94A3B8' : '#64748B', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+                            You have sent 2 messages. Once {receiver?.name || 'this user'} accepts your connection request, you can chat without limits.
+                        </Text>
+                    </View>
+                ) : (
+                    <>
+                        {platform === 'community' && !route.params?.isGroup && !isCommunityFriend && (
+                            <View style={{
+                                backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF',
+                                paddingVertical: 6,
+                                paddingHorizontal: 14,
+                                borderTopWidth: 1,
+                                borderTopColor: isDarkMode ? '#1E3A8A' : '#DBEAFE',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6
+                            }}>
+                                <Ionicons name="information-circle" size={15} color="#2563EB" />
+                                <Text style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8', fontSize: 11.5, fontWeight: '600' }}>
+                                    {effectiveSentCount === 0
+                                        ? "Connection not accepted yet. You can send up to 2 messages."
+                                        : `Connection not accepted yet. You can send ${2 - effectiveSentCount} more message.`}
+                                </Text>
+                            </View>
+                        )}
+                        <View style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            backgroundColor: theme.card,
+                            borderTopWidth: 1,
+                            borderTopColor: theme.border,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 8
+                        }}>
                             <TouchableOpacity
                                 onPress={() => {
                                     Keyboard.dismiss();
-                                    setShowEmojiPicker(prev => !prev);
-                                    setShowAttachmentMenu(false);
+                                    setShowAttachmentMenu(!showAttachmentMenu);
                                 }}
-                                style={{ padding: 4 }}
+                                style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: showAttachmentMenu ? '#DBEAFE' : (isDarkMode ? '#1E293B' : '#F8FAFC'), borderWidth: 1, borderColor: showAttachmentMenu ? '#DBEAFE' : theme.border, alignItems: 'center', justifyContent: 'center' }}
                                 activeOpacity={0.7}
                             >
-                                <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : "#9ca3af"} />
+                                <Ionicons name={showAttachmentMenu ? "close" : "add"} size={22} color="#2563EB" />
+                            </TouchableOpacity>
+
+                            <View style={{ flex: 1, backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC', borderRadius: 20, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', minHeight: 38 }}>
+                                <TextInput
+                                    style={{ flex: 1, color: theme.text, fontSize: 14, maxHeight: 100, paddingVertical: 6 }}
+                                    placeholder={t('typeMessage')}
+                                    placeholderTextColor={theme.textMuted}
+                                    multiline
+                                    value={text}
+                                    onChangeText={handleTextChange}
+                                    onFocus={() => {
+                                        setShowEmojiPicker(false);
+                                        setShowAttachmentMenu(false);
+                                    }}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        Keyboard.dismiss();
+                                        setShowEmojiPicker(prev => !prev);
+                                        setShowAttachmentMenu(false);
+                                    }}
+                                    style={{ padding: 4 }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name={showEmojiPicker ? "close-circle-outline" : "happy-outline"} size={22} color={showEmojiPicker ? "#2563EB" : "#9ca3af"} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={sendMessage}
+                                disabled={(!text.trim() && !selectedMedia) || uploading}
+                                style={{
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: 19,
+                                    backgroundColor: (text.trim() || selectedMedia) && !uploading ? '#2563EB' : '#E2E8F0',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                {uploading ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Ionicons
+                                        name="send"
+                                        size={16}
+                                        color={(text.trim() || selectedMedia) ? "white" : "#9ca3af"}
+                                        style={{ marginLeft: 2 }}
+                                    />
+                                )}
                             </TouchableOpacity>
                         </View>
-
-                        <TouchableOpacity
-                            onPress={sendMessage}
-                            disabled={(!text.trim() && !selectedMedia) || uploading}
-                            style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: 19,
-                                backgroundColor: (text.trim() || selectedMedia) && !uploading ? '#2563EB' : '#E2E8F0',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            {uploading ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <Ionicons
-                                    name="send"
-                                    size={16}
-                                    color={(text.trim() || selectedMedia) ? "white" : "#9ca3af"}
-                                    style={{ marginLeft: 2 }}
-                                />
-                            )}
-                        </TouchableOpacity>
-                    </View>
+                    </>
                 )}
 
                 {/* Custom Emoji Picker */}

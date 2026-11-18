@@ -657,9 +657,9 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                 disabled={togglingFollow}
                                 onPress={handleToggleFollow}
                                 style={{
-                                    flex: 2,
+                                    flex: 1,
                                     borderRadius: 14,
-                                    height: 42,
+                                    height: 44,
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     backgroundColor: followStats.is_following || followStats.is_connected
@@ -687,11 +687,11 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                             : (followStats.is_connected ? t('connected') :
                                                 followStats.is_requested ? t('requested') :
                                                     followStats.follows_me ? t('acceptRequest') :
-                                                        followStats.is_following ? t('connected') : t('connect'))}
+                                                        followStats.is_following ? t('connected') : `+ ${t('connect')}`)}
                                 </Text>
                             </TouchableOpacity>
 
-                            {(followStats.is_connected || followStats.is_following) && !user.is_business && (
+                            {!user.is_business && (
                                 <TouchableOpacity
                                     onPress={() => navigation.navigate('Chat', {
                                         receiver: {
@@ -701,7 +701,18 @@ const PublicProfileScreen = ({ route, navigation }: any) => {
                                         },
                                         platform: 'community'
                                     })}
-                                    style={{ flex: 1, backgroundColor: isDarkMode ? '#1E3A8A26' : '#EFF6FF', borderWidth: 1, borderColor: isDarkMode ? '#1D4ED8' : '#DBEAFE', borderRadius: 14, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                    style={{
+                                        flex: 1,
+                                        backgroundColor: isDarkMode ? '#1E3A8A26' : '#EFF6FF',
+                                        borderWidth: 1,
+                                        borderColor: isDarkMode ? '#1D4ED8' : '#DBEAFE',
+                                        borderRadius: 14,
+                                        height: 44,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6
+                                    }}
                                     activeOpacity={0.8}
                                 >
                                     <Ionicons name="chatbubble-ellipses" size={16} color="#2563EB" />

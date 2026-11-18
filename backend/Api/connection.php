@@ -1,4 +1,5 @@
 <?php
+if (!function_exists('get_db_connection')) {
 function get_db_connection() {
     $host = getenv('DB_HOST') ?: "e4skgkwwk0s0gkso48oc40kg";
     $user = getenv('DB_USER') ?: "u941015828_sadhuvandna";
@@ -20,7 +21,9 @@ function get_db_connection() {
     @$con->query("SET time_zone = '+05:30'");
     return $con;
 }
+}
 
+if (!function_exists('ensure_db_connection')) {
 function ensure_db_connection(&$con) {
     $needsReconnect = false;
     if (!$con || !($con instanceof mysqli)) {
@@ -45,6 +48,7 @@ function ensure_db_connection(&$con) {
         }
     }
     return $con;
+}
 }
 
 // Initial connection for standard request lifecycle

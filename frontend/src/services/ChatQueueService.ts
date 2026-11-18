@@ -327,6 +327,12 @@ class ChatQueueService {
         const sId = res.data.id || res.data.client_message_id || requestId;
         this.handleServerAck({ requestId, client_message_id: requestId, server_id: sId, status: 'sent' });
         return;
+      } else if (res.data && res.data.limit_reached) {
+        await ChatDBService.updateMessageStatus(requestId, { status: 'failed' });
+        DeviceEventEmitter.emit('chat:limit_reached', {
+          message: res.data.message || 'Connection request pending. Limit of 2 messages reached.'
+        });
+        return;
       }
     } catch (httpErr: any) {
       console.warn('[ChatQueue] HTTP fallback failed:', httpErr.message);
