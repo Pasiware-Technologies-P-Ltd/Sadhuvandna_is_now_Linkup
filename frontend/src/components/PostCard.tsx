@@ -846,6 +846,8 @@ const BasePostCard = ({
 
     const renderContent = (text: string) => {
         if (!text) return null;
+        const textColor = isDarkMode ? '#FFFFFF' : '#0F172A';
+        const linkColor = isDarkMode ? '#60A5FA' : '#2563EB';
         const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g;
         const parts = [];
         let lastIndex = 0;
@@ -855,7 +857,7 @@ const BasePostCard = ({
             const index = match.index;
             if (index > lastIndex) {
                 parts.push(
-                    <Text key={`text-${lastIndex}`} style={{ color: '#172554' }}>
+                    <Text key={`text-${lastIndex}`} style={{ color: textColor }}>
                         {text.substring(lastIndex, index)}
                     </Text>
                 );
@@ -864,7 +866,7 @@ const BasePostCard = ({
             parts.push(
                 <Text
                     key={`link-${index}`}
-                    style={{ color: '#2563eb', textDecorationLine: 'underline' }}
+                    style={{ color: linkColor, textDecorationLine: 'underline' }}
                     onPress={(e) => {
                         e.stopPropagation();
                         Linking.openURL(fullUrl).catch(err =>
@@ -879,13 +881,13 @@ const BasePostCard = ({
         }
         if (lastIndex < text.length) {
             parts.push(
-                <Text key={`text-${lastIndex}`} style={{ color: '#172554' }}>
+                <Text key={`text-${lastIndex}`} style={{ color: textColor }}>
                     {text.substring(lastIndex)}
                 </Text>
             );
         }
         return (
-            <Text style={{ fontSize: 16, lineHeight: 20, marginBottom: 8 }}>
+            <Text style={{ fontSize: 15, lineHeight: 22, color: textColor }}>
                 {parts.length > 0 ? parts : text}
             </Text>
         );
@@ -953,7 +955,7 @@ const BasePostCard = ({
                             return (
                                 <>
                                     <Text
-                                        style={[styles.contentText, { lineHeight: 22 }, isDarkMode && { color: theme.text }]}
+                                        style={[styles.contentText, { lineHeight: 22 }, isDarkMode && { color: '#FFFFFF' }]}
                                         numberOfLines={!isExpanded && shouldTruncate ? 3 : undefined}
                                         textBreakStrategy="highQuality"
                                         android_hyphenationFrequency="normal"
@@ -962,7 +964,7 @@ const BasePostCard = ({
                                     </Text>
                                     {shouldTruncate && (
                                         <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
-                                            <Text style={{ color: isDarkMode ? theme.primary : '#64748B', marginTop: 4, fontWeight: '500' }}>
+                                            <Text style={{ color: isDarkMode ? '#94A3B8' : '#64748B', marginTop: 4, fontWeight: '600' }}>
                                                 {isExpanded ? 'view less' : 'view more'}
                                             </Text>
                                         </TouchableOpacity>
@@ -1311,7 +1313,7 @@ const styles = StyleSheet.create({
     },
     contentText: {
         fontSize: 15,
-        color: '#334155',
+        color: '#0F172A',
         lineHeight: 22,
         textAlign: 'justify',
     },
